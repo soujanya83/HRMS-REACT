@@ -8,7 +8,7 @@ const LoginPage = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  // Re-introducing isSubmitting for the brief loading state
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -32,20 +32,19 @@ const LoginPage = ({ onLogin }) => {
     e.preventDefault();
 
     if (validateForm()) {
-      setIsSubmitting(true); // Show "Logging in..."
+      setIsSubmitting(true);  
       console.log("Submitting:", { email, password });
 
-      // FIX: Added a very short 20ms delay
+    
       setTimeout(() => {
-        // Tell the main App component that login was successful
+       
         onLogin();
-
-        // Immediately navigate to the dashboard
+ 
         navigate("/dashboard");
 
-        // It's good practice to reset the submitting state, even though we are navigating away
+      
         setIsSubmitting(false);
-      }, 20); // 20-millisecond delay
+      }, 20);
     }
   };
 
