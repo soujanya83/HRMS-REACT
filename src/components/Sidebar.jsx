@@ -27,11 +27,16 @@ const Sidebar = ({ onLogout }) => {
   };
 
   return (
-    <div className="w-64 bg-black border-r border-gray-800 flex h-screen flex-col justify-between sticky top-0">
+    // THE FIX: Added `hidden` and `md:flex` to make the sidebar responsive. It will be hidden on mobile.
+    <div className="w-64 bg-black border-r border-gray-800 hidden h-screen flex-col justify-between sticky top-0 md:flex">
       <div>
         <div className="flex items-center justify-center p-6 border-b border-gray-800">
-          {/* THE FIX: Changed h-10 w-10 to h-16 w-16 to make the logo larger */}
-          <img src={logo} alt="CHRISPP Logo" className="h-16 w-16" />
+          {/* THE FIX: Replaced inline style with Tailwind CSS classes */}
+          <img
+            src={logo}
+            alt="CHRISPP Logo"
+            className="h-[70px] w-[136px] rounded-[7%]"
+          />
         </div>
 
         <nav className="mt-6 px-4">
