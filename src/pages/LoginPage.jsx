@@ -109,7 +109,7 @@ const LoginPage = ({ onLogin }) => {
             <p className="text-gray-500 mb-8">Login to your Account</p>
 
             <form onSubmit={handleSubmit} noValidate>
-              {/* 7. Display API error messages to the user */}
+             
               {errors.api && (
                   <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
               )}
