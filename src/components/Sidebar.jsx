@@ -30,7 +30,8 @@ const Sidebar = ({ onLogout }) => {
     <div className="w-64 bg-black border-r border-gray-800 flex h-screen flex-col justify-between sticky top-0">
       <div>
         <div className="flex items-center justify-center p-6 border-b border-gray-800">
-          <img src={logo} alt="CHRISPP Logo" className="h-10 w-10" />
+          {/* THE FIX: Changed h-10 w-10 to h-16 w-16 to make the logo larger */}
+          <img src={logo} alt="CHRISPP Logo" className="h-16 w-16" />
         </div>
 
         <nav className="mt-6 px-4">
@@ -46,7 +47,6 @@ const Sidebar = ({ onLogout }) => {
             <HiOutlineClipboardList size={22} className="mr-4" />
             <span>Attendance</span>
           </NavLink>
-
           <NavLink to="/dashboard/payroll" className={getNavLinkClass}>
             <HiOutlineCreditCard size={22} className="mr-4" />
             <span>Payroll</span>
@@ -68,3 +68,4 @@ const Sidebar = ({ onLogout }) => {
 };
 
 export default Sidebar;
+
