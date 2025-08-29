@@ -2,49 +2,80 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
+ import axios from "axios";
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+ 
   const validateForm = () => {
     const newErrors = {};
     if (!email.trim()) {
       newErrors.email = "Email is required.";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = "Email address is invalid.";
-    }
+    } 
     if (!password) {
       newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
+    }
+    
+    else if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters.";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
+   
+    setErrors({});
 
     if (validateForm()) {
-      setIsSubmitting(true);  
-      console.log("Submitting:", { email, password });
+      setIsSubmitting(true);
 
-    
-      setTimeout(() => {
+      try {
        
-        onLogin();
- 
-        navigate("/dashboard");
+        const response = await axios.post("https://api.chrispp.com/api/v1/login", {
+          email: email,
+          password: password,
+        });
 
       
+        console.log("API Response:", response.data);
+
+      
+        
+
+        
+        onLogin();
+      
+        navigate("/dashboard");
+
+      } catch (error) {
+    
+    
+        
+       
+        const newErrors = {};
+        if (error.response && error.response.data && error.response.data.message) {
+           
+            newErrors.api = error.response.data.message;
+        } else {
+         
+            newErrors.api = "Login failed. Please check your credentials and try again.";
+        }
+        setErrors(newErrors);
+      } finally {
+       
         setIsSubmitting(false);
-      }, 20);
+      }
     }
   };
 
@@ -78,6 +109,11 @@ const LoginPage = ({ onLogin }) => {
             <p className="text-gray-500 mb-8">Login to your Account</p>
 
             <form onSubmit={handleSubmit} noValidate>
+              {/* 7. Display API error messages to the user */}
+              {errors.api && (
+                  <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
+              )}
+
               <div className="mb-6">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
