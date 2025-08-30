@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.svg";
+import logo from "../assets/logo.png";
 import { LuLayoutDashboard } from "react-icons/lu";
 import {
   HiOutlineUsers,
@@ -44,7 +44,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout }) => {
             <img
               src={logo}
               alt="CHRISPP Logo"
-              className="h-[70px] w-[100px] rounded-[7%]"
+              className="h-[70px] w-[100px] rounded-[7%] opacity-1000"
             />
           </div>
 
