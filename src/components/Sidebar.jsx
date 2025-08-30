@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+import logoIcon from "../assets/logo1.png"; 
+import logoText from "../assets/logotext.png"; 
 import { LuLayoutDashboard } from "react-icons/lu";
 import {
   HiOutlineUsers,
@@ -9,7 +10,6 @@ import {
   HiOutlineLogout,
 } from "react-icons/hi";
 
- 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout }) => {
   const navigate = useNavigate();
 
@@ -28,28 +28,35 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout }) => {
 
   return (
     <>
-   
+      {/* Mobile Overlay */}
       <div 
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}
         onClick={() => setSidebarOpen(false)}
       ></div>
  
+      {/* Sidebar Container */}
       <div 
-        className={`fixed inset-y-0 left-0 bg-black border-r border-gray-800 w-64 flex-col justify-between z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex ${
+        className={`fixed inset-y-0 left-0 bg-black border-r border-gray-800 w-64 flex-col justify-between z-30 transform transition-transform duration-300 ease-in-out md:sticky md:top-0 md:h-screen md:translate-x-0 md:flex ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div>
           <div className="flex items-center justify-center p-6 border-b border-gray-800">
-            <img
-              src={logo}
-              alt="CHRISPP Logo"
-              className="h-[70px] w-[100px] rounded-[7%] opacity-1000"
-            />
+            <div className="flex items-center">
+              <img
+                src={logoIcon}
+                alt="CHRISPP Icon"
+                className="h-10 w-auto"
+              />
+              <img
+                src={logoText}
+                alt="CHRISPP Text"
+                className="h-7 w-auto ml-3"
+              />
+            </div>
           </div>
 
           <nav className="mt-6 px-4">
-           
             <NavLink to="/dashboard" end className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
               <LuLayoutDashboard size={22} className="mr-4" />
               <span>Dashboard</span>
@@ -84,3 +91,4 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout }) => {
 };
 
 export default Sidebar;
+
