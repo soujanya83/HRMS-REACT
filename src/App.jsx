@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react--dom";
 import './index.css';
 
 import LoginPage from './pages/LoginPage';
@@ -18,14 +18,31 @@ const ProtectedRoute = ({ isLoggedIn, children }) => {
 };
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem("isLoggedIn") === "true");
+  // FIX 1: Initialize state by checking sessionStorage instead of localStorage.
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => sessionStorage.getItem("isLoggedIn") === "true"
+  );
 
+  // This effect is no longer strictly necessary with sessionStorage, but it's good practice
   useEffect(() => {
-    localStorage.setItem('isLoggedIn', isLoggedIn);
+    if (isLoggedIn) {
+      sessionStorage.setItem('isLoggedIn', 'true');
+    } else {
+      sessionStorage.removeItem('isLoggedIn');
+    }
   }, [isLoggedIn]);
 
-  const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => setIsLoggedIn(false);
+  // FIX 2: When logging in, save the state to sessionStorage.
+  const handleLogin = () => {
+    sessionStorage.setItem("isLoggedIn", "true");
+    setIsLoggedIn(true);
+  };
+
+  // FIX 3: When logging out, remove the state from sessionStorage.
+  const handleLogout = () => {
+    sessionStorage.removeItem("isLoggedIn");
+    setIsLoggedIn(false);
+  };
 
   const router = createBrowserRouter([
     {
@@ -36,7 +53,6 @@ function App() {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-     
           <DashboardLayout onLogout={handleLogout} />
         </ProtectedRoute>
       ),
