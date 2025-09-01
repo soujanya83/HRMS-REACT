@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -8,7 +8,7 @@ import "./index.css";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
-import { logout } from "./services/auth";  
+import { logout } from "./services/auth";
 
 const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
 const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
@@ -25,35 +25,30 @@ const PublicRoute = ({ isLoggedIn, children }) => {
 };
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("ACCESS_TOKEN"));
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("ACCESS_TOKEN");
-    if (token) {
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
-  }, []);
+  // THE FIX: Changed all sessionStorage to localStorage for consistency
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => !!localStorage.getItem("ACCESS_TOKEN")
+  );
+  const [user, setUser] = useState(
+    () => JSON.parse(localStorage.getItem("user")) || null
+  );
 
   const handleLogin = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
- 
     setUser(userData);
     setIsLoggedIn(true);
   };
 
   const handleLogout = async () => {
     try {
-      await logout();  
+      await logout();
       console.log("Logout successful on server");
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      
-      localStorage.removeItem("ACCESS_TOKEN");
+      // This will run even if the API call fails, ensuring the user is logged out on the front-end
       localStorage.removeItem("user");
+      localStorage.removeItem("ACCESS_TOKEN");
       setUser(null);
       setIsLoggedIn(false);
     }
@@ -78,11 +73,18 @@ function App() {
         { path: "payroll", element: <PayrollPage /> },
       ],
     },
-    { path: "/", element: <Navigate to="/login" /> },
-    { path: "*", element: <Navigate to="/login" /> },
+    {
+      path: "/",
+      element: <Navigate to="/login" />,
+    },
+    {
+      path: "*",
+      element: <Navigate to="/login" />,
+    },
   ]);
 
   return <RouterProvider router={router} />;
 }
 
 export default App;
+
