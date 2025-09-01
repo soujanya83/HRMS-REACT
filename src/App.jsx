@@ -42,8 +42,7 @@ const PublicRoute = ({ isLoggedIn, children }) => {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => sessionStorage.getItem("isLoggedIn") === "true"
-  );
-  // THE FIX: Add state to store the user's data from the API
+  ); 
   const [user, setUser] = useState(
     () => JSON.parse(sessionStorage.getItem("user")) || null
   );
@@ -53,11 +52,11 @@ function App() {
       sessionStorage.setItem("isLoggedIn", "true");
     } else {
       sessionStorage.removeItem("isLoggedIn");
-      sessionStorage.removeItem("user"); // Also remove user data on logout
+      sessionStorage.removeItem("user");  
     }
   }, [isLoggedIn]);
 
-  // THE FIX: Update handleLogin to accept and store the user data
+ 
   const handleLogin = (userData) => {
     sessionStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
@@ -82,7 +81,7 @@ function App() {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-          {/* THE FIX: Pass the user data down to the DashboardLayout */}
+         
           <DashboardLayout onLogout={handleLogout} user={user} />
         </ProtectedRoute>
       ),

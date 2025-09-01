@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { HiMenuAlt1, HiUserCircle, HiOutlineUser } from 'react-icons/hi';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 
-// THE FIX: The component now accepts the `user` object as a prop
+ 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -29,10 +29,10 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
     const handleLogoutClick = () => {
         onLogout();
-        // The main App component will handle the redirect
+        
     };
 
-    // Helper function to get initials from a name (e.g., "Deepti Sharma" -> "DS")
+     
     const getInitials = (name) => {
         if (!name) return "";
         const words = name.split(' ');
@@ -61,7 +61,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
                         className="flex items-center"
                     >
-                        {/* THE FIX: Display the real user's name from the API */}
+                      
                         <span className="text-gray-700 font-medium mr-3 hidden sm:block">
                             {user ? user.name : 'User'}
                         </span>
@@ -70,11 +70,11 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
                     {isDropdownOpen && (
                         <div className="absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl p-4 flex flex-col items-center">
-                            {/* THE FIX: Display the real user's initials */}
+                       
                             <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold mb-2">
                                 {user ? getInitials(user.name) : 'U'}
                             </div>
-                            {/* THE FIX: Display the real user's name and email */}
+                      
                             <p className="font-bold text-gray-800 text-lg">{user ? user.name : 'User Name'}</p>
                             <p className="text-sm text-gray-500 mb-4">{user ? user.email : 'user@example.com'}</p>
 

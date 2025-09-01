@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
-// THE FIX: It now accepts the `user` object as a prop
+ 
 const DashboardLayout = ({ onLogout, user }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
@@ -16,7 +16,7 @@ const DashboardLayout = ({ onLogout, user }) => {
             />
 
             <div className="flex-1 flex flex-col">
-                {/* THE FIX: Pass the `user` prop down to the Header component */}
+         
                 <Header 
                     onMenuButtonClick={() => setSidebarOpen(true)} 
                     onLogout={onLogout} 

@@ -34,10 +34,10 @@ const LoginPage = ({ onLogin }) => {
 
         console.log("API Response:", response.data);
 
-        // THE FIX: Extract the user data from the successful response
+      
         const userData = response.data.data.user;
         
-        // THE FIX: Pass the user data up to the App component
+      
         onLogin(userData);
       
         navigate("/dashboard");
