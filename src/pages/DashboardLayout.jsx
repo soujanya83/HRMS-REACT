@@ -31,5 +31,5 @@ const DashboardLayout = ({ onLogout, user }) => {
     );
 };
 
-export default DashboardLayout;
+export default DashboardLayout
 
