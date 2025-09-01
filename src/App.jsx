@@ -1,14 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
-import './index.css';
+import React, { useState, useEffect } from "react";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
+import "./index.css";
+import LoginPage from "./pages/LoginPage";
+import DashboardLayout from "./pages/DashboardLayout";
+import DashboardContent from "./components/DashboardContent";
 
-import LoginPage from './pages/LoginPage';
-import DashboardLayout from './pages/DashboardLayout';
-import DashboardContent from './components/DashboardContent';
-
-const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
-const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
-const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
+const EmployeePage = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold">Employee Page</h1>
+  </div>
+);
+const AttendancePage = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold">Attendance Page</h1>
+  </div>
+);
+const PayrollPage = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold">Payroll Page</h1>
+  </div>
+);
 
 const ProtectedRoute = ({ isLoggedIn, children }) => {
   if (!isLoggedIn) {
@@ -18,36 +33,39 @@ const ProtectedRoute = ({ isLoggedIn, children }) => {
 };
 
 const PublicRoute = ({ isLoggedIn, children }) => {
-    if (isLoggedIn) {
-        return <Navigate to="/dashboard" replace />;
-    }
-    return children;
-}
+  if (isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
 
 function App() {
-  // FIX 1: Initialize state from sessionStorage.
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => sessionStorage.getItem("isLoggedIn") === "true"
   );
+  // THE FIX: Add state to store the user's data from the API
+  const [user, setUser] = useState(
+    () => JSON.parse(sessionStorage.getItem("user")) || null
+  );
 
-  // This effect is optional but helps sync state changes to sessionStorage.
   useEffect(() => {
     if (isLoggedIn) {
-      sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem("isLoggedIn", "true");
     } else {
-      sessionStorage.removeItem('isLoggedIn');
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("user"); // Also remove user data on logout
     }
   }, [isLoggedIn]);
 
-  // FIX 2: On login, save state to sessionStorage.
-  const handleLogin = () => {
-    sessionStorage.setItem("isLoggedIn", "true");
+  // THE FIX: Update handleLogin to accept and store the user data
+  const handleLogin = (userData) => {
+    sessionStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
     setIsLoggedIn(true);
   };
 
-  // FIX 3: On logout, remove state from sessionStorage.
   const handleLogout = () => {
-    sessionStorage.removeItem("isLoggedIn");
+    setUser(null);
     setIsLoggedIn(false);
   };
 
@@ -56,15 +74,16 @@ function App() {
       path: "/login",
       element: (
         <PublicRoute isLoggedIn={isLoggedIn}>
-            <LoginPage onLogin={handleLogin} />
+          <LoginPage onLogin={handleLogin} />
         </PublicRoute>
-      )
+      ),
     },
     {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-          <DashboardLayout onLogout={handleLogout} />
+          {/* THE FIX: Pass the user data down to the DashboardLayout */}
+          <DashboardLayout onLogout={handleLogout} user={user} />
         </ProtectedRoute>
       ),
       children: [

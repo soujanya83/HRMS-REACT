@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
- import axios from "axios";
+import axios from "axios";
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -12,68 +12,45 @@ const LoginPage = ({ onLogin }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
- 
   const validateForm = () => {
     const newErrors = {};
-    if (!email.trim()) {
-      newErrors.email = "Email is required.";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email address is invalid.";
-    } 
-    if (!password) {
-      newErrors.password = "Password is required.";
-    }
-    
-    else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
-    }
+    if (!email.trim()) newErrors.email = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email address is invalid.";
+    if (!password) newErrors.password = "Password is required.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
-   
     setErrors({});
-
     if (validateForm()) {
       setIsSubmitting(true);
-
       try {
-       
         const response = await axios.post("https://api.chrispp.com/api/v1/login", {
           email: email,
           password: password,
         });
 
-      
         console.log("API Response:", response.data);
 
-      
+        // THE FIX: Extract the user data from the successful response
+        const userData = response.data.data.user;
         
-
-        
-        onLogin();
+        // THE FIX: Pass the user data up to the App component
+        onLogin(userData);
       
         navigate("/dashboard");
 
       } catch (error) {
-    
-    
-        
-       
         const newErrors = {};
         if (error.response && error.response.data && error.response.data.message) {
-           
             newErrors.api = error.response.data.message;
         } else {
-         
             newErrors.api = "Login failed. Please check your credentials and try again.";
         }
         setErrors(newErrors);
       } finally {
-       
         setIsSubmitting(false);
       }
     }
@@ -107,13 +84,10 @@ const LoginPage = ({ onLogin }) => {
           <div className="w-full max-w-md">
             <h3 className="text-3xl font-bold text-gray-800 mb-2">Login</h3>
             <p className="text-gray-500 mb-8">Login to your Account</p>
-
             <form onSubmit={handleSubmit} noValidate>
-             
               {errors.api && (
                   <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
               )}
-
               <div className="mb-6">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -195,3 +169,4 @@ const LoginPage = ({ onLogin }) => {
 };
 
 export default LoginPage;
+
