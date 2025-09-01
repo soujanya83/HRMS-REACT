@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// THE FIX: Import the new icons for search and notifications
 import { HiMenuAlt1, HiOutlineUser, HiOutlineSearch, HiOutlineBell } from 'react-icons/hi';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import profileImage from '../assets/dummy.png'; 
@@ -46,7 +45,6 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                     <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
                 </div>
 
-                {/* THE FIX: Added a container for the new search and notification icons */}
                 <div className="flex-1 flex justify-center px-4 lg:px-6">
                     <div className="relative w-full max-w-md">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -61,13 +59,11 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                 </div>
 
                 <div className="flex items-center">
-                    {/* Notification Bell */}
-                    <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100 mr-4">
+                     <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100 mr-4">
                         <HiOutlineBell size={24} />
                     </button>
 
-                    {/* User Profile Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
+                     <div className="relative" ref={dropdownRef}>
                         <button 
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
                             className="flex items-center"
