@@ -23,8 +23,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
   const linkStyle = "flex items-center px-4 py-3 my-1 rounded-lg transition-colors duration-200";
 
   const getNavLinkClass = ({ isActive }) => {
-    // This keeps the icons aligned to the left in both states.
-    const collapsedClass = ''; 
+    const collapsedClass = isCollapsed ? 'justify-center' : '';
     return isActive
       ? `${linkStyle} bg-white text-black font-semibold shadow-lg ${collapsedClass}`
       : `${linkStyle} text-gray-300 font-medium hover:bg-white hover:text-black ${collapsedClass}`;
@@ -49,6 +48,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
         <div>
           {/* Collapse/Expand Button */}
           <div className="relative hidden md:block">
+            {/* THE FIX: Changed top-10 to top-[91px] to move the button to the bottom of the logo area */}
             <button 
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="absolute -right-4 top-[91px] bg-white text-black p-1 rounded-full shadow-md hover:bg-gray-200 transition-transform"
@@ -69,23 +69,19 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 
           <nav className="mt-6 px-4">
             <NavLink to="/dashboard" end className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Added flex-shrink-0 to prevent icon resizing */}
-              <LuLayoutDashboard size={22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
+              <LuLayoutDashboard size={22} className={!isCollapsed ? "mr-4" : ""} />
               {!isCollapsed && <span>Dashboard</span>}
             </NavLink>
             <NavLink to="/dashboard/employees" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Added flex-shrink-0 to prevent icon resizing */}
-              <HiOutlineUsers size={22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
+              <HiOutlineUsers size={22} className={!isCollapsed ? "mr-4" : ""} />
               {!isCollapsed && <span>Employee</span>}
             </NavLink>
             <NavLink to="/dashboard/attendance" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Added flex-shrink-0 to prevent icon resizing */}
-              <HiOutlineClipboardList size={22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
+              <HiOutlineClipboardList size={22} className={!isCollapsed ? "mr-4" : ""} />
               {!isCollapsed && <span>Attendance</span>}
             </NavLink>
             <NavLink to="/dashboard/payroll" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Added flex-shrink-0 to prevent icon resizing */}
-              <HiOutlineCreditCard size={22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
+              <HiOutlineCreditCard size={22} className={!isCollapsed ? "mr-4" : ""} />
               {!isCollapsed && <span>Payroll</span>}
             </NavLink>
           </nav>
@@ -94,10 +90,11 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
         <div className="p-4 border-t border-gray-800">
           <button
             onClick={handleLogoutClick}
-            className={`flex items-center w-full px-4 py-3 my-2 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200`}
+            className={`flex items-center w-full px-4 py-3 my-2 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
           >
-            {/* THE FIX: Added flex-shrink-0 to prevent icon resizing */}
-            <HiOutlineLogout size={22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
+            <HiOutlineLogout size={22} className={!isCollapsed ? "mr-4" : ""} />
             {!isCollapsed && <span>Logout</span>}
           </button>
         </div>
