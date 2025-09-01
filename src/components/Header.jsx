@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-// THE FIX: Remove HiUserCircle as we are now using a real image
-import { HiMenuAlt1, HiOutlineUser } from 'react-icons/hi';
+ import { HiMenuAlt1, HiOutlineUser } from 'react-icons/hi';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-// THE FIX: Import your new profile image
-import profileImage from '../assets/dummy.png'; 
+ import profileImage from '../assets/dummy.png'; 
 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const location = useLocation();
@@ -55,7 +53,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         <span className="text-gray-700 font-medium mr-3 hidden sm:block">
                             {user ? user.name : 'User'}
                         </span>
-                        {/* THE FIX: Replaced the icon with your profile image */}
+                      
                         <img 
                             src={profileImage} 
                             alt="User profile"
@@ -65,7 +63,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
                     {isDropdownOpen && (
                         <div className="absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl p-4 flex flex-col items-center">
-                            {/* THE FIX: Replaced the initials with your profile image */}
+                           
                             <img 
                                 src={profileImage} 
                                 alt="User profile"

@@ -5,7 +5,7 @@ import Header from '../components/Header';
 
 const DashboardLayout = ({ onLogout, user }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    // THE FIX: Add state to manage the collapsed/expanded state of the sidebar
+     
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
@@ -14,7 +14,7 @@ const DashboardLayout = ({ onLogout, user }) => {
                 isSidebarOpen={isSidebarOpen} 
                 setSidebarOpen={setSidebarOpen} 
                 onLogout={onLogout} 
-                // THE FIX: Pass down the collapse state and the function to change it
+               
                 isCollapsed={isCollapsed}
                 setIsCollapsed={setIsCollapsed}
             />

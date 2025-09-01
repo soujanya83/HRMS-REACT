@@ -14,9 +14,7 @@ import {
 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
   const navigate = useNavigate();
-
-  // THE FIX: This function now simply calls the onLogout prop from App.js.
-  // App.js will handle the API call and the redirect.
+ 
   const handleLogoutClick = () => {
     onLogout();
   };

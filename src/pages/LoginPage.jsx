@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
-import { login } from "../services/auth"; // Import the login service
+import { login } from "../services/auth";  
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -30,11 +30,11 @@ const LoginPage = ({ onLogin }) => {
         const response = await login(email, password);
         console.log("API Response:", response.data);
 
-        // Store the token and user data from the response
+       
         localStorage.setItem('ACCESS_TOKEN', response.data.data.token);
         const userData = response.data.data.user;
         
-        onLogin(userData); // Pass user data up to App.js
+        onLogin(userData);  
         navigate("/dashboard");
       } catch (error) {
         const newErrors = {};

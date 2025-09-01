@@ -8,7 +8,7 @@ import "./index.css";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
-import { logout } from "./services/auth"; // Import the logout service
+import { logout } from "./services/auth";  
 
 const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
 const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
@@ -39,19 +39,19 @@ function App() {
 
   const handleLogin = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
-    // The token is already set in LoginPage.jsx
+ 
     setUser(userData);
     setIsLoggedIn(true);
   };
 
   const handleLogout = async () => {
     try {
-      await logout(); // Call the logout API
+      await logout();  
       console.log("Logout successful on server");
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      // This runs whether the API call succeeds or fails
+      
       localStorage.removeItem("ACCESS_TOKEN");
       localStorage.removeItem("user");
       setUser(null);
