@@ -25,7 +25,7 @@ const PublicRoute = ({ isLoggedIn, children }) => {
 };
 
 function App() {
-  // THE FIX: Changed all sessionStorage to localStorage for consistency
+   
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => !!localStorage.getItem("ACCESS_TOKEN")
   );
@@ -46,7 +46,7 @@ function App() {
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      // This will run even if the API call fails, ensuring the user is logged out on the front-end
+      
       localStorage.removeItem("user");
       localStorage.removeItem("ACCESS_TOKEN");
       setUser(null);
