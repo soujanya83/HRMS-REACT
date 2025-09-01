@@ -1,5 +1,6 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+// THE FIX: Import `Link` to make the logo clickable
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
 import { LuLayoutDashboard } from "react-icons/lu";
@@ -23,7 +24,6 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
   const linkStyle = "flex items-center px-4 py-3 my-1 rounded-lg transition-colors duration-200";
 
   const getNavLinkClass = ({ isActive }) => {
-    // THE FIX: Re-added justify-center to center the larger icons when collapsed.
     const collapsedClass = isCollapsed ? 'justify-center' : ''; 
     return isActive
       ? `${linkStyle} bg-white text-black font-semibold shadow-lg ${collapsedClass}`
@@ -32,22 +32,22 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 
   return (
     <>
-      {/* Mobile Overlay */}
+    
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
-
-      {/* Sidebar Container */}
+ 
       <div
         className={`relative bg-black border-r border-gray-800 flex-col justify-between z-30 transition-all duration-300 ease-in-out md:sticky md:top-0 md:h-screen md:flex ${
-          isCollapsed ? 'w-20' : 'w-64'
+        
+          isCollapsed ? 'w-24' : 'w-64'
         } ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div>
-          {/* Collapse/Expand Button */}
+           
           <div className="relative hidden md:block">
             <button 
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -59,32 +59,34 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
           </div>
 
           <div className="flex items-center justify-center p-6 border-b border-gray-800 h-[104px]">
-            <div className="flex items-center">
-              <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto" />
+            
+            <Link to="/dashboard" className="flex items-center">
+           
+              <img 
+                src={logoIcon} 
+                alt="CHRISPP Icon" 
+                className={`w-auto transition-all duration-300 ${isCollapsed ? 'h-10' : 'h-8'}`} 
+              />
               {!isCollapsed && (
-                  <img src={logoText} alt="CHRISPP Text" className="h-7 w-auto ml-3 transition-opacity duration-200" />
+                  <img src={logoText} alt="CHRISPP Text" className="h-6 w-auto ml-2 transition-opacity duration-200" />
               )}
-            </div>
+            </Link>
           </div>
 
           <nav className="mt-6 px-4">
             <NavLink to="/dashboard" end className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Increased icon size when collapsed */}
               <LuLayoutDashboard size={isCollapsed ? 28 : 22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
               {!isCollapsed && <span>Dashboard</span>}
             </NavLink>
             <NavLink to="/dashboard/employees" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Increased icon size when collapsed */}
               <HiOutlineUsers size={isCollapsed ? 28 : 22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
               {!isCollapsed && <span>Employee</span>}
             </NavLink>
             <NavLink to="/dashboard/attendance" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Increased icon size when collapsed */}
               <HiOutlineClipboardList size={isCollapsed ? 28 : 22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
               {!isCollapsed && <span>Attendance</span>}
             </NavLink>
             <NavLink to="/dashboard/payroll" className={getNavLinkClass} onClick={() => setSidebarOpen(false)}>
-              {/* THE FIX: Increased icon size when collapsed */}
               <HiOutlineCreditCard size={isCollapsed ? 28 : 22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
               {!isCollapsed && <span>Payroll</span>}
             </NavLink>
@@ -96,7 +98,6 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
             onClick={handleLogoutClick}
             className={`flex items-center w-full px-4 py-3 my-2 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200 ${isCollapsed ? 'justify-center' : ''}`}
           >
-            {/* THE FIX: Increased icon size when collapsed */}
             <HiOutlineLogout size={isCollapsed ? 28 : 22} className={`flex-shrink-0 ${!isCollapsed ? "mr-4" : ""}`} />
             {!isCollapsed && <span>Logout</span>}
           </button>
