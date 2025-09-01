@@ -8,80 +8,66 @@ import "./index.css";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
+import { logout } from "./services/auth"; // Import the logout service
 
-const EmployeePage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold">Employee Page</h1>
-  </div>
-);
-const AttendancePage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold">Attendance Page</h1>
-  </div>
-);
-const PayrollPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold">Payroll Page</h1>
-  </div>
-);
+const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
+const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
+const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
 
 const ProtectedRoute = ({ isLoggedIn, children }) => {
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
 };
 
 const PublicRoute = ({ isLoggedIn, children }) => {
-  if (isLoggedIn) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (isLoggedIn) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => sessionStorage.getItem("isLoggedIn") === "true"
-  ); 
-  const [user, setUser] = useState(
-    () => JSON.parse(sessionStorage.getItem("user")) || null
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("ACCESS_TOKEN"));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
 
   useEffect(() => {
-    if (isLoggedIn) {
-      sessionStorage.setItem("isLoggedIn", "true");
+    const token = localStorage.getItem("ACCESS_TOKEN");
+    if (token) {
+      setIsLoggedIn(true);
     } else {
-      sessionStorage.removeItem("isLoggedIn");
-      sessionStorage.removeItem("user");  
+      setIsLoggedIn(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
- 
   const handleLogin = (userData) => {
-    sessionStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("user", JSON.stringify(userData));
+    // The token is already set in LoginPage.jsx
     setUser(userData);
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    try {
+      await logout(); // Call the logout API
+      console.log("Logout successful on server");
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      // This runs whether the API call succeeds or fails
+      localStorage.removeItem("ACCESS_TOKEN");
+      localStorage.removeItem("user");
+      setUser(null);
+      setIsLoggedIn(false);
+    }
   };
 
   const router = createBrowserRouter([
     {
       path: "/login",
-      element: (
-        <PublicRoute isLoggedIn={isLoggedIn}>
-          <LoginPage onLogin={handleLogin} />
-        </PublicRoute>
-      ),
+      element: <PublicRoute isLoggedIn={isLoggedIn}><LoginPage onLogin={handleLogin} /></PublicRoute>,
     },
     {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-         
           <DashboardLayout onLogout={handleLogout} user={user} />
         </ProtectedRoute>
       ),
@@ -92,14 +78,8 @@ function App() {
         { path: "payroll", element: <PayrollPage /> },
       ],
     },
-    {
-      path: "/",
-      element: <Navigate to="/login" />,
-    },
-    {
-      path: "*",
-      element: <Navigate to="/login" />,
-    },
+    { path: "/", element: <Navigate to="/login" /> },
+    { path: "*", element: <Navigate to="/login" /> },
   ]);
 
   return <RouterProvider router={router} />;

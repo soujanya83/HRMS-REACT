@@ -1,6 +1,5 @@
 import React from "react";
-// THE FIX: Import `Link` to make the logo clickable
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
 import { LuLayoutDashboard } from "react-icons/lu";
@@ -16,9 +15,10 @@ import {
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
   const navigate = useNavigate();
 
+  // THE FIX: This function now simply calls the onLogout prop from App.js.
+  // App.js will handle the API call and the redirect.
   const handleLogoutClick = () => {
     onLogout();
-    navigate("/login");
   };
 
   const linkStyle = "flex items-center px-4 py-3 my-1 rounded-lg transition-colors duration-200";
@@ -32,22 +32,19 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 
   return (
     <>
-    
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
- 
+
       <div
         className={`relative bg-black border-r border-gray-800 flex-col justify-between z-30 transition-all duration-300 ease-in-out md:sticky md:top-0 md:h-screen md:flex ${
-        
           isCollapsed ? 'w-24' : 'w-64'
         } ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div>
-           
           <div className="relative hidden md:block">
             <button 
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -59,9 +56,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
           </div>
 
           <div className="flex items-center justify-center p-6 border-b border-gray-800 h-[104px]">
-            
-            <Link to="/dashboard" className="flex items-center">
-           
+            <NavLink to="/dashboard" className="flex items-center">
               <img 
                 src={logoIcon} 
                 alt="CHRISPP Icon" 
@@ -70,7 +65,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
               {!isCollapsed && (
                   <img src={logoText} alt="CHRISPP Text" className="h-6 w-auto ml-2 transition-opacity duration-200" />
               )}
-            </Link>
+            </NavLink>
           </div>
 
           <nav className="mt-6 px-4">
@@ -108,4 +103,3 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 };
 
 export default Sidebar;
-

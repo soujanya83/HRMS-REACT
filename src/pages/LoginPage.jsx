@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
-import axios from "axios";
+import { login } from "../services/auth"; // Import the login service
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -27,27 +27,21 @@ const LoginPage = ({ onLogin }) => {
     if (validateForm()) {
       setIsSubmitting(true);
       try {
-        const response = await axios.post("https://api.chrispp.com/api/v1/login", {
-          email: email,
-          password: password,
-        });
-
+        const response = await login(email, password);
         console.log("API Response:", response.data);
 
-      
+        // Store the token and user data from the response
+        localStorage.setItem('ACCESS_TOKEN', response.data.data.token);
         const userData = response.data.data.user;
         
-      
-        onLogin(userData);
-      
+        onLogin(userData); // Pass user data up to App.js
         navigate("/dashboard");
-
       } catch (error) {
         const newErrors = {};
-        if (error.response && error.response.data && error.response.data.message) {
+        if (error.response?.data?.message) {
             newErrors.api = error.response.data.message;
         } else {
-            newErrors.api = "Login failed. Please check your credentials and try again.";
+            newErrors.api = "Login failed. Please check your credentials.";
         }
         setErrors(newErrors);
       } finally {
@@ -79,7 +73,6 @@ const LoginPage = ({ onLogin }) => {
             </p>
           </div>
         </div>
-
         <div className="w-full md:w-1/2 p-8 md:p-12 bg-white flex items-center justify-center">
           <div className="w-full max-w-md">
             <h3 className="text-3xl font-bold text-gray-800 mb-2">Login</h3>
@@ -109,7 +102,6 @@ const LoginPage = ({ onLogin }) => {
                   <p className="text-red-500 text-xs mt-2">{errors.email}</p>
                 )}
               </div>
-
               <div className="mb-6">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -146,13 +138,11 @@ const LoginPage = ({ onLogin }) => {
                   <p className="text-red-500 text-xs mt-2">{errors.password}</p>
                 )}
               </div>
-
               <div className="flex items-center justify-end">
                 <a href="#" className="text-sm text-blue-600 hover:underline">
                   Forgot Password?
                 </a>
               </div>
-
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -169,4 +159,3 @@ const LoginPage = ({ onLogin }) => {
 };
 
 export default LoginPage;
-
