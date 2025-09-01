@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HiMenuAlt1, HiUserCircle, HiOutlineUser } from 'react-icons/hi';
+// THE FIX: Remove HiUserCircle as we are now using a real image
+import { HiMenuAlt1, HiOutlineUser } from 'react-icons/hi';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
+// THE FIX: Import your new profile image
+import profileImage from '../assets/dummy.png'; 
 
- 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -29,17 +31,6 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
     const handleLogoutClick = () => {
         onLogout();
-        
-    };
-
-     
-    const getInitials = (name) => {
-        if (!name) return "";
-        const words = name.split(' ');
-        if (words.length > 1) {
-            return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
     };
 
     return (
@@ -61,20 +52,26 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
                         className="flex items-center"
                     >
-                      
                         <span className="text-gray-700 font-medium mr-3 hidden sm:block">
                             {user ? user.name : 'User'}
                         </span>
-                        <HiUserCircle size={36} className="text-gray-400" />
+                        {/* THE FIX: Replaced the icon with your profile image */}
+                        <img 
+                            src={profileImage} 
+                            alt="User profile"
+                            className="w-10 h-10 rounded-full object-cover"
+                        />
                     </button>
 
                     {isDropdownOpen && (
                         <div className="absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl p-4 flex flex-col items-center">
-                       
-                            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold mb-2">
-                                {user ? getInitials(user.name) : 'U'}
-                            </div>
-                      
+                            {/* THE FIX: Replaced the initials with your profile image */}
+                            <img 
+                                src={profileImage} 
+                                alt="User profile"
+                                className="w-20 h-20 rounded-full object-cover mb-2"
+                            />
+                            
                             <p className="font-bold text-gray-800 text-lg">{user ? user.name : 'User Name'}</p>
                             <p className="text-sm text-gray-500 mb-4">{user ? user.email : 'user@example.com'}</p>
 
