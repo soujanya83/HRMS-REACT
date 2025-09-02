@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
-import { login } from "../services/auth";
+ import { login } from "../services/auth"; 
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -30,12 +30,12 @@ const LoginPage = ({ onLogin }) => {
         const response = await login(email, password);
         console.log("API Response:", response.data);
 
-        // THE FIX: Use sessionStorage to store the token temporarily.
-        sessionStorage.setItem('ACCESS_TOKEN', response.data.data.token);
-        
+         localStorage.setItem('ACCESS_TOKEN', response.data.data.token);
         const userData = response.data.data.user;
-        onLogin(userData);
+        
+        onLogin(userData);  
         navigate("/dashboard");
+
       } catch (error) {
         const newErrors = {};
         if (error.response?.data?.message) {

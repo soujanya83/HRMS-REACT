@@ -20,8 +20,7 @@ import {
     HiChevronDoubleRight
 } from "react-icons/hi";
 
-// --- Navigation Data ---
-const navLinks = [
+ const navLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
     { name: "Organizations", path: "/dashboard/organizations", icon: HiOutlineOfficeBuilding },
     { 
@@ -131,8 +130,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'} 
                 md:translate-x-0`}
             >
-                {/* THE FIX: Moved the collapse button here, outside the scrolling container */}
-                <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
+                 <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
                     <button 
                         onClick={() => setIsCollapsed(!isCollapsed)} 
                         className="bg-white text-black p-1.5 rounded-full shadow-lg hover:bg-gray-200 transition-colors"
@@ -185,8 +183,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                     </nav>
                 </div>
                 
-                {/* --- Footer Section --- */}
-                <div className="p-4 border-t border-gray-800">
+                 <div className="p-4 border-t border-gray-800">
                     <button onClick={handleLogoutClick} className={`flex items-center w-full px-4 py-3 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200 ${isCollapsed ? 'justify-center' : ''}`}>
                         <HiOutlineLogout size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
                         <span className={isCollapsed ? 'hidden' : 'block'}>Logout</span>
