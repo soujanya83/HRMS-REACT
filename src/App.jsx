@@ -21,7 +21,7 @@ const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-
 
 
  const ProtectedRoute = ({ isLoggedIn, children }) => {
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  if (!isLoggedIn) return <Navigate to="/login" replace />
   return children;
 };
 
