@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -16,11 +17,10 @@ import {
     HiOutlineViewGrid, HiOutlineBell, HiOutlineCog, HiOutlineCash,
     HiOutlineMinusCircle, HiOutlinePrinter, HiOutlineGift, HiOutlineFlag,
     HiOutlineChartPie, HiOutlineAnnotation, HiOutlineSpeakerphone,
-    HiChevronDoubleLeft, HiChevronDoubleRight
+    HiChevronDoubleLeft, HiChevronDoubleRight, HiOutlineShieldCheck
 } from "react-icons/hi";
 
-// --- Navigation Data ---
-const navLinks = [
+ const navLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
     { name: "Organizations", path: "/dashboard/organizations", icon: HiOutlineOfficeBuilding },
     { 
@@ -33,8 +33,9 @@ const navLinks = [
             { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd },
         ]
     },
+    // THE FIX: Shortened long names for consistent text size
     { 
-        name: "Employee Management", icon: HiOutlineUsers, 
+        name: "Employee", icon: HiOutlineUsers, 
         children: [
             { name: "Employee Directory", path: "/dashboard/employees/directory", icon: HiOutlineCollection },
             { name: "Add / Manage Profiles", path: "/dashboard/employees/manage", icon: HiOutlineUserCircle },
@@ -45,7 +46,7 @@ const navLinks = [
         ] 
     },
     { 
-        name: "Attendance & Leave", icon: HiOutlineClipboardList, 
+        name: "Attendance", icon: HiOutlineClipboardList, 
         children: [
             { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint },
             { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt },
@@ -55,7 +56,7 @@ const navLinks = [
         ] 
     },
     { 
-        name: "Timesheet Management", icon: HiOutlineClock, 
+        name: "Timesheet", icon: HiOutlineClock, 
         children: [
             { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock },
             { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp },
@@ -64,7 +65,7 @@ const navLinks = [
         ] 
     },
     { 
-        name: "Rostering / Shift", icon: HiOutlineCalendar, 
+        name: "Rostering", icon: HiOutlineCalendar, 
         children: [
             { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
             { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
@@ -84,7 +85,7 @@ const navLinks = [
         ] 
     },
     { 
-        name: "Performance Management", icon: HiOutlineChartBar, 
+        name: "Performance", icon: HiOutlineChartBar, 
         children: [
             { name: "Goal Setting", path: "/dashboard/performance/goals", icon: HiOutlineFlag },
             { name: "KPI / OKR Tracking", path: "/dashboard/performance/tracking", icon: HiOutlineChartPie },
@@ -92,9 +93,15 @@ const navLinks = [
             { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
         ],
     },
+     {
+        name: "Settings", icon: HiOutlineCog,
+        children: [
+            { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck }
+        ]
+    }
 ];
 
-const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
+ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
     const [openMenu, setOpenMenu] = useState(null); 
 
     const handleLogoutClick = () => {
@@ -136,64 +143,67 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'} 
                 md:translate-x-0`}
             >
-                {/* THE FIX: Moved the collapse button here, outside the scrolling container */}
-                <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
-                    <button 
-                        onClick={() => setIsCollapsed(!isCollapsed)} 
-                        className="bg-white text-black p-1.5 rounded-full shadow-lg hover:bg-gray-200 transition-colors"
-                        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    >
-                        {isCollapsed ? <HiChevronDoubleRight size={18} /> : <HiChevronDoubleLeft size={18} />}
-                    </button>
-                </div>
-                
-                <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-                    <div className="flex items-center p-6 border-b border-gray-800 h-[104px] justify-center">
-                        <Link to="/dashboard" className="flex items-center">
-                            <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto flex-shrink-0" />
-                            <img src={logoText} alt="CHRISPP Text" className={`h-7 w-auto ml-3 transition-all duration-200 ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100'}`} />
-                        </Link>
+                <div className="relative h-full flex flex-col">
+                    <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
+                        <button 
+                            onClick={() => setIsCollapsed(!isCollapsed)} 
+                            className="bg-white text-black p-1.5 rounded-full shadow-lg hover:bg-gray-200 transition-colors"
+                            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        >
+                            {isCollapsed ? <HiChevronDoubleRight size={18} /> : <HiChevronDoubleLeft size={18} />}
+                        </button>
                     </div>
+                    
+                    <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+                        <div>
+                            <div className="flex items-center p-6 border-b border-gray-800 h-[104px] justify-center">
+                                <Link to="/dashboard" className="flex items-center">
+                                    <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto flex-shrink-0" />
+                                    <img src={logoText} alt="CHRISPP Text" className={`h-7 w-auto ml-3 transition-all duration-200 ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100'}`} />
+                                </Link>
+                            </div>
 
-                    <nav className="mt-4 px-4">
-                        {navLinks.map((link) => (
-                            <div key={link.name} className="my-2">
-                                {!link.children ? (
-                                    <NavLink to={link.path} end className={getNavLinkClass}>
-                                        <link.icon size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
-                                        <span className={isCollapsed ? 'hidden' : 'block'}>{link.name}</span>
-                                    </NavLink>
-                                ) : (
-                                    <>
-                                        <button onClick={() => handleMenuClick(link.name)} className={`flex items-center w-full px-4 py-3 rounded-lg text-sm text-gray-300 font-medium hover:bg-white hover:text-black transition-colors duration-200 text-left ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-                                            <div className="flex items-center">
+                            <nav className="mt-4 px-4">
+                                {navLinks.map((link) => (
+                                    <div key={link.name} className="my-2">
+                                        {!link.children ? (
+                                            <NavLink to={link.path} end className={getNavLinkClass}>
                                                 <link.icon size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
                                                 <span className={isCollapsed ? 'hidden' : 'block'}>{link.name}</span>
-                                            </div>
-                                            <HiChevronDown className={`transition-transform duration-300 ${isCollapsed ? 'hidden' : 'block'} ${openMenu === link.name ? 'rotate-180' : ''}`} />
-                                        </button>
-                                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? 'max-h-screen' : 'max-h-0'}`}>
-                                            <div className="py-2 pl-4">
-                                                {link.children.map((child) => (
-                                                   <NavLink key={child.name} to={child.path} end className={getSubNavLinkClass}>
-                                                        <child.icon size={18} className="mr-3 flex-shrink-0" />
-                                                        {child.name}
-                                                   </NavLink>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                    </nav>
-                </div>
-                
-                <div className="p-4 border-t border-gray-800">
-                    <button onClick={handleLogoutClick} className={`flex items-center w-full px-4 py-3 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200 ${isCollapsed ? 'justify-center' : ''}`}>
-                        <HiOutlineLogout size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
-                        <span className={isCollapsed ? 'hidden' : 'block'}>Logout</span>
-                    </button>
+                                            </NavLink>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleMenuClick(link.name)} className={`flex items-center w-full px-4 py-3 rounded-lg text-sm text-gray-300 font-medium hover:bg-white hover:text-black transition-colors duration-200 text-left ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                                                    <div className="flex items-center">
+                                                        <link.icon size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
+                                                        <span className={isCollapsed ? 'hidden' : 'block'}>{link.name}</span>
+                                                    </div>
+                                                    <HiChevronDown className={`transition-transform duration-300 ${isCollapsed ? 'hidden' : 'block'} ${openMenu === link.name ? 'rotate-180' : ''}`} />
+                                                </button>
+                                                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? 'max-h-screen' : 'max-h-0'}`}>
+                                                    <div className="py-2 pl-4">
+                                                        {link.children.map((child) => (
+                                                           <NavLink key={child.name} to={child.path} end className={getSubNavLinkClass}>
+                                                                <child.icon size={18} className="mr-3 flex-shrink-0" />
+                                                                {child.name}
+                                                           </NavLink>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <div className="p-4 border-t border-gray-800">
+                        <button onClick={handleLogoutClick} className={`flex items-center w-full px-4 py-3 rounded-lg text-gray-300 font-medium hover:bg-white hover:text-red-600 transition-colors duration-200 ${isCollapsed ? 'justify-center' : ''}`}>
+                            <HiOutlineLogout size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
+                            <span className={isCollapsed ? 'hidden' : 'block'}>Logout</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </>

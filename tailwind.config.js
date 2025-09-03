@@ -1,5 +1,4 @@
 /* eslint-disable no-undef */
-
 export default {
   content: [
     "./index.html",
