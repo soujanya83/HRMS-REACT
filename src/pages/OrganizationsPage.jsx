@@ -5,8 +5,8 @@ import { HiPlus, HiPencil, HiTrash, HiChevronDown, HiArrowLeft, HiOutlineOfficeB
 // In a real app, this data would come from your API.
 let MOCK_ORGANIZATIONS = [
     { id: 1, name: 'Khan Innovations', registration_number: 'ABN 111222333', address: '123 Innovation Dr, Lucknow', contact_email: 'khaninnovations.com' },
-    { id: 2, name: 'Tabrej Tech', registration_number: 'ACN 444555666', address: '456 Tech Park, Mumbai', contact_email: 'gmail@tech.com' },
-    { id: 3, name: 'Farhan Solutions', registration_number: 'ACN 777888999', address: '789 Silicon Ave, Bangalore', contact_email: 'gmail@solutions.com' },
+    { id: 2, name: ' Tech', registration_number: 'ACN 444555666', address: '456 Tech Park, Mumbai', contact_email: 'gmail@tech.com' },
+    { id: 3, name: ' Solutions', registration_number: 'ACN 777888999', address: '789 Silicon Ave, Bangalore', contact_email: 'gmail@solutions.com' },
 ];
 let MOCK_DEPARTMENTS = {
     1: [
