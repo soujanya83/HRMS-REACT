@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -10,18 +10,23 @@ import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
 import { logout } from "./services/auth";
 
- const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
+// THE FIX: Import your new Organizations page
+import OrganizationsPage from "./pages/OrganizationsPage"; 
+
+// --- Placeholder Pages ---
+const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
 const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
-const OrganizationsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Organizations Page</h1></div>;
 const RecruitmentPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Recruitment Page</h1></div>;
 const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
 const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
 const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
+const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
 
- const ProtectedRoute = ({ isLoggedIn, children }) => {
-  if (!isLoggedIn) return <Navigate to="/login" replace />
+// --- Route Protectors ---
+const ProtectedRoute = ({ isLoggedIn, children }) => {
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -30,13 +35,13 @@ const PublicRoute = ({ isLoggedIn, children }) => {
   return children;
 };
 
- function App() {
+// --- Main App Component ---
+function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("ACCESS_TOKEN"));
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
 
   const handleLogin = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
-   
     setUser(userData);
     setIsLoggedIn(true);
   };
@@ -44,7 +49,6 @@ const PublicRoute = ({ isLoggedIn, children }) => {
   const handleLogout = async () => {
     try {
       await logout();
-      console.log("Logout successful on server");
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
@@ -69,14 +73,16 @@ const PublicRoute = ({ isLoggedIn, children }) => {
       ),
       children: [
         { index: true, element: <DashboardContent /> },
+        // THE FIX: Connect the Organizations path to your new component
         { path: "organizations", element: <OrganizationsPage /> },
-        { path: "recruitment", element: <RecruitmentPage /> },
-        { path: "employees", element: <EmployeePage /> },
-        { path: "attendance", element: <AttendancePage /> },
-        { path: "timesheet", element: <TimesheetPage /> },
-        { path: "rostering", element: <RosteringPage /> },
-        { path: "payroll", element: <PayrollPage /> },
-        { path: "performance", element: <PerformancePage /> },
+        { path: "recruitment/*", element: <RecruitmentPage /> }, // Using * to catch sub-routes
+        { path: "employees/*", element: <EmployeePage /> },
+        { path: "attendance/*", element: <AttendancePage /> },
+        { path: "timesheet/*", element: <TimesheetPage /> },
+        { path: "rostering/*", element: <RosteringPage /> },
+        { path: "payroll/*", element: <PayrollPage /> },
+        { path: "performance/*", element: <PerformancePage /> },
+        { path: "settings/*", element: <SettingsPage /> },
       ],
     },
     { path: "/", element: <Navigate to="/login" /> },
@@ -87,4 +93,3 @@ const PublicRoute = ({ isLoggedIn, children }) => {
 }
 
 export default App;
-
