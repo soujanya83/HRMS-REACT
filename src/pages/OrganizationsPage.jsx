@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiPlus, HiPencil, HiTrash, HiChevronDown, HiArrowLeft, HiOutlineOfficeBuilding } from 'react-icons/hi';
 
-// --- Mock Data ---
-// In a real app, this data would come from your API.
+ 
 let MOCK_ORGANIZATIONS = [
     { id: 1, name: 'Khan Innovations', registration_number: 'ABN 111222333', address: '123 Innovation Dr, Lucknow', contact_email: 'khaninnovations.com' },
     { id: 2, name: ' Tech', registration_number: 'ACN 444555666', address: '456 Tech Park, Mumbai', contact_email: 'gmail@tech.com' },
@@ -28,8 +27,7 @@ let nextOrgId = 4;
 let nextDeptId = 104;
 let nextDesigId = 1004;
 
-// --- Main Page Component ---
-function OrganizationsPage() {
+ function OrganizationsPage() {
     const [organizations, setOrganizations] = useState(MOCK_ORGANIZATIONS);
     const [selectedOrg, setSelectedOrg] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,8 +65,7 @@ function OrganizationsPage() {
     );
 }
 
-// --- View 1: List of all organizations ---
-function OrganizationListView({ organizations, onSelectOrg, onAdd, onEdit }) {
+ function OrganizationListView({ organizations, onSelectOrg, onAdd, onEdit }) {
     return (
         <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
             <div className="max-w-7xl mx-auto">
@@ -108,8 +105,7 @@ function OrganizationListView({ organizations, onSelectOrg, onAdd, onEdit }) {
     );
 }
 
-// --- View 2: Detailed view for a single organization ---
-function OrganizationDetailView({ organization, onBack }) {
+ function OrganizationDetailView({ organization, onBack }) {
     return (
         <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
             <div className="max-w-7xl mx-auto">
@@ -135,8 +131,7 @@ function OrganizationDetailView({ organization, onBack }) {
     );
 }
 
-// --- Component to manage Departments ---
-function DepartmentsManager({ orgId }) {
+ function DepartmentsManager({ orgId }) {
     const [departments, setDepartments] = useState(MOCK_DEPARTMENTS[orgId] || []);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -197,8 +192,7 @@ function DepartmentsManager({ orgId }) {
     );
 }
 
-// --- Individual Department Item ---
-function DepartmentItem({ department, onEdit, onDelete }) {
+ function DepartmentItem({ department, onEdit, onDelete }) {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div className="bg-white rounded-xl shadow-lg">
@@ -218,8 +212,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
     );
 }
 
-// --- List of Designations within a Department ---
-function DesignationsList({ departmentId }) {
+ function DesignationsList({ departmentId }) {
     const [designations, setDesignations] = useState(MOCK_DESIGNATIONS[departmentId] || []);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDesig, setEditingDesig] = useState(null);
@@ -266,8 +259,7 @@ function DesignationsList({ departmentId }) {
     );
 }
 
-// --- Modals for Forms and Confirmations ---
-function OrganizationModal({ isOpen, onClose, onSave, organization }) {
+ function OrganizationModal({ isOpen, onClose, onSave, organization }) {
     const [formData, setFormData] = useState({});
     useEffect(() => {
         setFormData(organization || { name: '', registration_number: '', address: '', contact_email: '' });
