@@ -19,17 +19,17 @@ let MOCK_ORGANIZATIONS = [
   },
   {
     id: 2,
-    name: "Tabrej Tech",
+    name: "Tech",
     registration_number: "ACN 444555666",
     address: "456 Tech Park, Mumbai",
-    contact_email: "tabrej@tech.com",
+    contact_email: "@tech.com",
   },
   {
     id: 3,
-    name: "Farhan Solutions",
+    name: "Solutions",
     registration_number: "ACN 777888999",
     address: "789 Silicon Ave, Bangalore",
-    contact_email: "farhan@solutions.com",
+    contact_email: "solutions.com",
   },
 ];
 let MOCK_DEPARTMENTS = {
