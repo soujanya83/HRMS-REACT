@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
 import { HiMenuAlt1, HiOutlineUser, HiOutlineSearch, HiOutlineBell } from 'react-icons/hi';
 import { useLocation, Link, useNavigate } from 'react-router-dom';

@@ -323,8 +323,9 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       ></div>
 
-      <div
-        className={`relative bg-black border-r border-gray-800 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out md:sticky md:top-0 md:h-screen
+       <div
+        className={`fixed inset-y-0 left-0 bg-black border-r border-gray-800 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out
+                md:sticky md:top-0 md:h-screen
                 ${isCollapsed ? "md:w-24" : "md:w-64"}
                 ${
                   isSidebarOpen
@@ -333,65 +334,50 @@ const Sidebar = ({
                 } 
                 md:translate-x-0`}
       >
-         <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="bg-white text-black p-1.5 rounded-full shadow-lg hover:bg-gray-200 transition-colors"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <HiChevronDoubleRight size={18} />
-            ) : (
-              <HiChevronDoubleLeft size={18} />
-            )}
-          </button>
-        </div>
-
-         <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-          <div className="flex items-center p-6 border-b border-gray-800 h-[104px] justify-center flex-shrink-0">
-            <Link to="/dashboard" className="flex items-center">
-              <img
-                src={logoIcon}
-                alt="CHRISPP Icon"
-                className="h-10 w-auto flex-shrink-0"
-              />
-              <img
-                src={logoText}
-                alt="CHRISPP Text"
-                className={`h-7 w-auto ml-3 transition-all duration-200 ${
-                  isCollapsed ? "w-0 opacity-0" : "opacity-100"
-                }`}
-              />
-            </Link>
+        <div className="relative h-full flex flex-col">
+          <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="bg-white text-black p-1.5 rounded-full shadow-lg hover:bg-gray-200 transition-colors"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <HiChevronDoubleRight size={18} />
+              ) : (
+                <HiChevronDoubleLeft size={18} />
+              )}
+            </button>
           </div>
 
-          <nav className="mt-4 px-4">
-            {navLinks.map((link) => (
-              <div key={link.name} className="my-2">
-                {!link.children ? (
-                  <NavLink
-                    to={link.path}
-                    end
-                    className={getNavLinkClass}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <link.icon
-                      size={22}
-                      className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`}
-                    />
-                    <span className={isCollapsed ? "hidden" : "block"}>
-                      {link.name}
-                    </span>
-                  </NavLink>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleMenuClick(link.name)}
-                      className={`flex items-center w-full px-4 h-14 rounded-lg text-base text-gray-300 font-semibold hover:bg-white hover:text-black transition-colors duration-200 text-left ${
-                        isCollapsed ? "justify-center" : "justify-between"
-                      }`}
-                    >
-                      <div className="flex items-center">
+          <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+            <div>
+              <div className="flex items-center p-6 border-b border-gray-800 h-[104px] justify-center">
+                <Link to="/dashboard" className="flex items-center">
+                  <img
+                    src={logoIcon}
+                    alt="CHRISPP Icon"
+                    className="h-10 w-auto flex-shrink-0"
+                  />
+                  <img
+                    src={logoText}
+                    alt="CHRISPP Text"
+                    className={`h-7 w-auto ml-3 transition-all duration-200 ${
+                      isCollapsed ? "w-0 opacity-0" : "opacity-100"
+                    }`}
+                  />
+                </Link>
+              </div>
+
+              <nav className="mt-4 px-4">
+                {navLinks.map((link) => (
+                  <div key={link.name} className="my-2">
+                    {!link.children ? (
+                      <NavLink
+                        to={link.path}
+                        end
+                        className={getNavLinkClass}
+                        onClick={() => setSidebarOpen(false)}
+                      >
                         <link.icon
                           size={22}
                           className={`flex-shrink-0 ${
@@ -401,58 +387,79 @@ const Sidebar = ({
                         <span className={isCollapsed ? "hidden" : "block"}>
                           {link.name}
                         </span>
-                      </div>
-                      <HiChevronDown
-                        className={`transition-transform duration-300 ${
-                          isCollapsed ? "hidden" : "block"
-                        } ${openMenu === link.name ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                    <div
-                      className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                        openMenu === link.name && !isCollapsed
-                          ? "max-h-screen"
-                          : "max-h-0"
-                      }`}
-                    >
-                      <div className="py-2 pl-4">
-                        {link.children.map((child) => (
-                          <NavLink
-                            key={child.name}
-                            to={child.path}
-                            end
-                            className={getSubNavLinkClass}
-                            onClick={() => setSidebarOpen(false)}
-                          >
-                            <child.icon
-                              size={18}
-                              className="mr-3 flex-shrink-0"
+                      </NavLink>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleMenuClick(link.name)}
+                          className={`flex items-center w-full px-4 h-14 rounded-lg text-base text-gray-300 font-semibold hover:bg-white hover:text-black transition-colors duration-200 text-left ${
+                            isCollapsed ? "justify-center" : "justify-between"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <link.icon
+                              size={22}
+                              className={`flex-shrink-0 ${
+                                isCollapsed ? "" : "mr-4"
+                              }`}
                             />
-                            {child.name}
-                          </NavLink>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </nav>
-        </div>
+                            <span className={isCollapsed ? "hidden" : "block"}>
+                              {link.name}
+                            </span>
+                          </div>
+                          <HiChevronDown
+                            className={`transition-transform duration-300 ${
+                              isCollapsed ? "hidden" : "block"
+                            } ${openMenu === link.name ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        <div
+                          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                            openMenu === link.name && !isCollapsed
+                              ? "max-h-screen"
+                              : "max-h-0"
+                          }`}
+                        >
+                          <div className="py-2 pl-4">
+                            {link.children.map((child) => (
+                              <NavLink
+                                key={child.name}
+                                to={child.path}
+                                end
+                                className={getSubNavLinkClass}
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <child.icon
+                                  size={18}
+                                  className="mr-3 flex-shrink-0"
+                                />
+                                {child.name}
+                              </NavLink>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
 
-         <div className="p-4 border-t border-gray-800 flex-shrink-0">
-          <button
-            onClick={handleLogoutClick}
-            className={`flex items-center w-full px-4 h-12 rounded-lg text-base font-semibold hover:bg-white hover:text-red-600 text-white duration-200 ${
-              isCollapsed ? "justify-center" : ""
-            }`}
-          >
-            <HiOutlineLogout
-              size={22}
-              className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`}
-            />
-            <span className={isCollapsed ? "hidden" : "block"}>Logout</span>
-          </button>
+          <div className="p-4 border-t border-gray-800">
+            <button
+              onClick={handleLogoutClick}
+              className={`flex items-center w-full px-4 h-12 rounded-lg text-base font-semibold hover:bg-white hover:text-red-600 text-white duration-200 ${
+                isCollapsed ? "justify-center" : ""
+              }`}
+            >
+              <HiOutlineLogout
+                size={22}
+                className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`}
+              />
+              <span className={isCollapsed ? "hidden" : "block"}>Logout</span>
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -460,3 +467,4 @@ const Sidebar = ({
 };
 
 export default Sidebar;
+

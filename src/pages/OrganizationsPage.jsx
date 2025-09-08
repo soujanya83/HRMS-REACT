@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"
 import {
   HiPlus,
   HiPencil,
   HiTrash,
   HiChevronDown,
   HiArrowLeft,
-  HiOutlineOfficeBuilding,
+  HiOutlineOfficeBuilding
 } from "react-icons/hi";
 
 let MOCK_ORGANIZATIONS = [
@@ -15,7 +15,7 @@ let MOCK_ORGANIZATIONS = [
     name: "Khan Innovations",
     registration_number: "ABN 111222333",
     address: "123 Innovation Dr, Lucknow",
-    contact_email: "dilnawaz@khaninnovations.com",
+    contact_email: "dilnawaz@khaninnovations.com"
   },
   {
     id: 2,
