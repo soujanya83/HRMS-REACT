@@ -1,109 +1,68 @@
-/* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react";
 import {
   HiPlus,
   HiPencil,
   HiTrash,
   HiChevronDown,
   HiArrowLeft,
-  HiOutlineOfficeBuilding
+  HiOutlineOfficeBuilding,
 } from "react-icons/hi";
-
-let MOCK_ORGANIZATIONS = [
-  {
-    id: 1,
-    name: "Khan Innovations",
-    registration_number: "ABN 111222333",
-    address: "123 Innovation Dr, Lucknow",
-    contact_email: "dilnawaz@khaninnovations.com"
-  },
-  {
-    id: 2,
-    name: "Tech",
-    registration_number: "ACN 444555666",
-    address: "456 Tech Park, Mumbai",
-    contact_email: "@tech.com",
-  },
-  {
-    id: 3,
-    name: "Solutions",
-    registration_number: "ACN 777888999",
-    address: "789 Silicon Ave, Bangalore",
-    contact_email: "solutions.com",
-  },
-];
-let MOCK_DEPARTMENTS = {
-  1: [
-    {
-      id: 101,
-      organization_id: 1,
-      name: "Software Development",
-      description: "Core product engineering and architecture.",
-    },
-    {
-      id: 102,
-      organization_id: 1,
-      name: "Human Resources",
-      description: "Manages company culture and personnel.",
-    },
-  ],
-  2: [
-    {
-      id: 103,
-      organization_id: 2,
-      name: "Cloud Services",
-      description: "Manages all cloud infrastructure.",
-    },
-  ],
-  3: [],
-};
-let MOCK_DESIGNATIONS = {
-  101: [
-    {
-      id: 1001,
-      department_id: 101,
-      title: "Lead Software Developer",
-      level: "Senior",
-    },
-    {
-      id: 1002,
-      department_id: 101,
-      title: "Jr. Software Developer",
-      level: "Junior",
-    },
-  ],
-  102: [
-    { id: 1003, department_id: 102, title: "HR Manager", level: "Manager" },
-  ],
-  103: [],
-};
-let nextOrgId = 4;
-let nextDeptId = 104;
-let nextDesigId = 1004;
+import {
+  getOrganizations,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getDepartmentsByOrgId,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  getDesignationsByDeptId,
+  createDesignation,
+  updateDesignation,
+  deleteDesignation,
+} from "../services/organizationService";
 
 function OrganizationsPage() {
-  const [organizations, setOrganizations] = useState(MOCK_ORGANIZATIONS);
+  const [organizations, setOrganizations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState(null);
 
-  const handleSave = (orgData) => {
-    if (editingOrg) {
-      const updated = organizations.map((o) =>
-        o.id === editingOrg.id ? { ...o, ...orgData } : o
-      );
-      setOrganizations(updated);
-      MOCK_ORGANIZATIONS = updated;
-    } else {
-      const newOrg = { ...orgData, id: nextOrgId++ };
-      const updated = [...organizations, newOrg];
-      setOrganizations(updated);
-      MOCK_ORGANIZATIONS = updated;
+  const fetchOrganizations = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getOrganizations();
+      setOrganizations(response.data.data);
+    } catch (err) {
+      setError("Failed to fetch organizations.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-    setIsModalOpen(false);
-    setEditingOrg(null);
+  }, []);
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  const handleSave = async (orgData) => {
+    try {
+      if (editingOrg) {
+        await updateOrganization(editingOrg.id, orgData);
+      } else {
+        await createOrganization(orgData);
+      }
+      fetchOrganizations();
+      setIsModalOpen(false);
+      setEditingOrg(null);
+    } catch (err) {
+      console.error("Failed to save organization:", err);
+    }
   };
 
   const handleDeleteClick = (org) => {
@@ -111,13 +70,16 @@ function OrganizationsPage() {
     setIsConfirmOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (orgToDelete) {
-      const updated = organizations.filter((o) => o.id !== orgToDelete.id);
-      setOrganizations(updated);
-      MOCK_ORGANIZATIONS = updated;
-      setIsConfirmOpen(false);
-      setOrgToDelete(null);
+      try {
+        await deleteOrganization(orgToDelete.id);
+        fetchOrganizations();
+        setIsConfirmOpen(false);
+        setOrgToDelete(null);
+      } catch (err) {
+        console.error("Failed to delete organization:", err);
+      }
     }
   };
 
@@ -133,6 +95,8 @@ function OrganizationsPage() {
   return (
     <>
       <OrganizationListView
+        isLoading={isLoading}
+        error={error}
         organizations={organizations}
         onSelectOrg={setSelectedOrg}
         onAdd={() => {
@@ -163,6 +127,8 @@ function OrganizationsPage() {
 }
 
 function OrganizationListView({
+  isLoading,
+  error,
   organizations,
   onSelectOrg,
   onAdd,
@@ -181,14 +147,16 @@ function OrganizationListView({
             <HiPlus /> Add Organization
           </button>
         </div>
-        {organizations.length > 0 ? (
+        {isLoading && <p>Loading organizations...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {!isLoading && !error && organizations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {organizations.map((org) => (
               <div
                 key={org.id}
                 className="bg-white rounded-xl shadow-lg overflow-hidden transition transform hover:-translate-y-1 hover:shadow-2xl group flex flex-col justify-between"
               >
-                <div className="p-6">
+                 <div className="p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
                     {org.name}
                   </h2>
@@ -199,13 +167,7 @@ function OrganizationListView({
                     {org.contact_email}
                   </p>
                 </div>
-                <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
-                  <button
-                    onClick={() => onSelectOrg(org)}
-                    className="text-sm font-semibold text-brand-blue hover:underline"
-                  >
-                    View Details &rarr;
-                  </button>
+                 <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onEdit(org)}
@@ -220,20 +182,29 @@ function OrganizationListView({
                       <HiTrash />
                     </button>
                   </div>
+                   <button
+                    onClick={() => onSelectOrg(org)}
+                    className="text-sm font-semibold text-brand-blue hover:underline"
+                  >
+                    View Details &rarr;
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 bg-white rounded-lg shadow-md">
-            <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No organizations found
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Get started by adding a new organization.
-            </p>
-          </div>
+          !isLoading &&
+          !error && (
+            <div className="text-center py-16 bg-white rounded-lg shadow-md">
+              <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No organizations found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Get started by adding a new organization.
+              </p>
+            </div>
+          )
         )}
       </div>
     </div>
@@ -257,10 +228,20 @@ function OrganizationDetailView({ organization, onBack }) {
                 {organization.name}
               </h1>
               <p className="text-gray-500 mt-1">
-                {organization.registration_number}
+                <strong>Reg. Number:</strong> {organization.registration_number}
               </p>
-              <p className="text-gray-500">{organization.address}</p>
-              <p className="text-gray-500">{organization.contact_email}</p>
+              <p className="text-gray-500">
+                <strong>Address:</strong> {organization.address}
+              </p>
+              <p className="text-gray-500">
+                <strong>Email:</strong> {organization.contact_email}
+              </p>
+              <p className="text-gray-500">
+                <strong>Phone:</strong> {organization.contact_phone}
+              </p>
+              <p className="text-gray-500">
+                <strong>Industry:</strong> {organization.industry_type}
+              </p>
             </div>
             <button className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto">
               <HiPencil /> Edit Details
@@ -274,24 +255,56 @@ function OrganizationDetailView({ organization, onBack }) {
 }
 
 function DepartmentsManager({ orgId }) {
-  const [departments, setDepartments] = useState(MOCK_DEPARTMENTS[orgId] || []);
+  const [departments, setDepartments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [deptToDelete, setDeptToDelete] = useState(null);
 
-  const handleSave = (deptData) => {
-    let updatedDepts;
-    if (editingDept) {
-      updatedDepts = departments.map((d) =>
-        d.id === editingDept.id ? { ...d, ...deptData } : d
-      );
-    } else {
-      const newDept = { ...deptData, id: nextDeptId++, organization_id: orgId };
-      updatedDepts = [...departments, newDept];
+  const fetchDepts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await getDepartmentsByOrgId(orgId);
+      setDepartments(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch departments", error);
+      setDepartments([]);
+    } finally {
+      setIsLoading(false);
     }
-    setDepartments(updatedDepts);
-    MOCK_DEPARTMENTS[orgId] = updatedDepts;
-    setIsModalOpen(false);
-    setEditingDept(null);
+  }, [orgId]);
+
+  useEffect(() => {
+    fetchDepts();
+  }, [fetchDepts]);
+
+  const handleSave = async (deptData) => {
+    try {
+      if (editingDept) {
+        await updateDepartment(editingDept.id, deptData);
+      } else {
+        await createDepartment(orgId, deptData);
+      }
+      fetchDepts();
+      setIsModalOpen(false);
+      setEditingDept(null);
+    } catch (error) {
+      console.error("Failed to save department", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deptToDelete) {
+      try {
+        await deleteDepartment(deptToDelete.id);
+        fetchDepts();
+        setIsConfirmOpen(false);
+        setDeptToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete department", error);
+      }
+    }
   };
 
   return (
@@ -308,29 +321,44 @@ function DepartmentsManager({ orgId }) {
           <HiPlus /> Add Department
         </button>
       </div>
-      <div className="space-y-4">
-        {departments.map((dept) => (
-          <DepartmentItem
-            key={dept.id}
-            department={dept}
-            onEdit={() => {
-              setEditingDept(dept);
-              setIsModalOpen(true);
-            }}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <p>Loading departments...</p>
+      ) : (
+        <div className="space-y-4">
+          {departments.map((dept) => (
+            <DepartmentItem
+              key={dept.id}
+              department={dept}
+              onEdit={() => {
+                setEditingDept(dept);
+                setIsModalOpen(true);
+              }}
+              onDelete={() => {
+                setDeptToDelete(dept);
+                setIsConfirmOpen(true);
+              }}
+            />
+          ))}
+        </div>
+      )}
       <DepartmentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         department={editingDept}
       />
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Department"
+        message={`Are you sure you want to delete "${deptToDelete?.name}"?`}
+      />
     </div>
   );
 }
 
-function DepartmentItem({ department, onEdit }) {
+function DepartmentItem({ department, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-white rounded-xl shadow-lg">
@@ -353,7 +381,10 @@ function DepartmentItem({ department, onEdit }) {
             <HiPencil />
           </button>
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
           >
             <HiTrash />
@@ -371,43 +402,127 @@ function DepartmentItem({ department, onEdit }) {
 }
 
 function DesignationsList({ departmentId }) {
-  const [designations, setDesignations] = useState(
-    MOCK_DESIGNATIONS[departmentId] || []
-  );
+  const [designations, setDesignations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDesig, setEditingDesig] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [desigToDelete, setDesigToDelete] = useState(null);
+
+  const fetchDesigs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await getDesignationsByDeptId(departmentId);
+      setDesignations(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch designations", error);
+      setDesignations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [departmentId]);
+
+  useEffect(() => {
+    fetchDesigs();
+  }, [fetchDesigs]);
+
+  const handleSave = async (desigData) => {
+    try {
+      if (editingDesig) {
+        await updateDesignation(editingDesig.id, desigData);
+      } else {
+        await createDesignation(departmentId, desigData);
+      }
+      fetchDesigs();
+      setIsModalOpen(false);
+      setEditingDesig(null);
+    } catch (err) {
+      console.error("Failed to save designation:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (desigToDelete) {
+      try {
+        await deleteDesignation(desigToDelete.id);
+        fetchDesigs();
+        setIsConfirmOpen(false);
+        setDesigToDelete(null);
+      } catch (err) {
+        console.error("Failed to delete designation:", err);
+      }
+    }
+  };
+
   return (
     <div className="border-t border-gray-200 p-4">
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-md font-semibold text-gray-700">Designations</h4>
-        <button className="flex items-center gap-1 text-sm bg-blue-100 text-blue-800 font-semibold py-1 px-3 rounded-full hover:bg-blue-200 transition">
+        <button
+          onClick={() => {
+            setEditingDesig(null);
+            setIsModalOpen(true);
+          }}
+          className="flex items-center gap-1 text-sm bg-blue-100 text-blue-800 font-semibold py-1 px-3 rounded-full hover:bg-blue-200 transition"
+        >
           <HiPlus /> Add
         </button>
       </div>
-      <ul className="space-y-2">
-        {designations.map((desig) => (
-          <li
-            key={desig.id}
-            className="flex justify-between items-center bg-gray-50 p-2 rounded-md"
-          >
-            <div>
-              <p className="font-semibold text-gray-800">{desig.title}</p>
-              <p className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full inline-block">
-                {desig.level}
-              </p>
-            </div>
-            <div className="flex items-center gap-1">
-              <button className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700">
-                <HiPencil />
-              </button>
-              <button className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-red-500">
-                <HiTrash />
-              </button>
-            </div>
-          </li>
-        ))}
-        {designations.length === 0 && (
-          <p className="text-sm text-gray-500">No designations found.</p>
-        )}
-      </ul>
+      {isLoading ? (
+        <p>Loading designations...</p>
+      ) : (
+        <ul className="space-y-2">
+          {designations.map((desig) => (
+            <li
+              key={desig.id}
+              className="flex justify-between items-center bg-gray-50 p-2 rounded-md"
+            >
+              <div>
+                <p className="font-semibold text-gray-800">{desig.title}</p>
+                <p className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full inline-block">
+                  {desig.level}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setEditingDesig(desig);
+                    setIsModalOpen(true);
+                  }}
+                  className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700"
+                >
+                  <HiPencil />
+                </button>
+                <button
+                  onClick={() => {
+                    setDesigToDelete(desig);
+                    setIsConfirmOpen(true);
+                  }}
+                  className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-red-500"
+                >
+                  <HiTrash />
+                </button>
+              </div>
+            </li>
+          ))}
+          {designations.length === 0 && (
+            <p className="text-sm text-gray-500">No designations found.</p>
+          )}
+        </ul>
+      )}
+      <DesignationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        designation={editingDesig}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Designation"
+        message={`Are you sure you want to delete "${desigToDelete?.title}"?`}
+      />
     </div>
   );
 }
@@ -421,33 +536,34 @@ function OrganizationModal({ isOpen, onClose, onSave, organization }) {
         registration_number: "",
         address: "",
         contact_email: "",
+        contact_phone: "",
+        industry_type: "",
+        logo_url: "",
+        timezone: "Asia/Kolkata",
       }
     );
   }, [organization, isOpen]);
-
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
   };
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-6">
           {organization ? "Edit Organization" : "Add New Organization"}
         </h2>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
               name="name"
               value={formData.name || ""}
               onChange={handleChange}
               placeholder="Organization Name"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="w-full p-3 border rounded-lg"
               required
             />
             <input
@@ -455,14 +571,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization }) {
               value={formData.registration_number || ""}
               onChange={handleChange}
               placeholder="Registration Number"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
-            />
-            <input
-              name="address"
-              value={formData.address || ""}
-              onChange={handleChange}
-              placeholder="Address"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="w-full p-3 border rounded-lg"
             />
             <input
               type="email"
@@ -470,21 +579,49 @@ function OrganizationModal({ isOpen, onClose, onSave, organization }) {
               value={formData.contact_email || ""}
               onChange={handleChange}
               placeholder="Contact Email"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="w-full p-3 border rounded-lg"
               required
+            />
+            <input
+              name="contact_phone"
+              value={formData.contact_phone || ""}
+              onChange={handleChange}
+              placeholder="Contact Phone"
+              className="w-full p-3 border rounded-lg"
+            />
+            <input
+              name="industry_type"
+              value={formData.industry_type || ""}
+              onChange={handleChange}
+              placeholder="Industry Type"
+              className="w-full p-3 border rounded-lg"
+            />
+            <input
+              name="timezone"
+              value={formData.timezone || ""}
+              onChange={handleChange}
+              placeholder="Timezone"
+              className="w-full p-3 border rounded-lg"
+            />
+            <input
+              name="address"
+              value={formData.address || ""}
+              onChange={handleChange}
+              placeholder="Address"
+              className="sm:col-span-2 w-full p-3 border rounded-lg"
             />
           </div>
           <div className="mt-8 flex justify-end gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              className="py-2 px-4 bg-gray-200 rounded-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-brand-blue text-white rounded-lg hover:opacity-90 transition"
+              className="py-2 px-4 bg-brand-blue text-white rounded-lg"
             >
               {organization ? "Save Changes" : "Create"}
             </button>
@@ -494,22 +631,18 @@ function OrganizationModal({ isOpen, onClose, onSave, organization }) {
     </div>
   );
 }
-
 function DepartmentModal({ isOpen, onClose, onSave, department }) {
   const [formData, setFormData] = useState({});
   useEffect(() => {
     setFormData(department || { name: "", description: "" });
   }, [department, isOpen]);
-
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
   };
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
@@ -523,7 +656,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department }) {
               value={formData.name || ""}
               onChange={handleChange}
               placeholder="Department Name"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="w-full p-3 border rounded-lg"
               required
             />
             <textarea
@@ -531,7 +664,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department }) {
               value={formData.description || ""}
               onChange={handleChange}
               placeholder="Description"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="w-full p-3 border rounded-lg"
               rows="3"
             ></textarea>
           </div>
@@ -539,13 +672,13 @@ function DepartmentModal({ isOpen, onClose, onSave, department }) {
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              className="py-2 px-4 bg-gray-200 rounded-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-green-600 text-white rounded-lg hover:opacity-90 transition"
+              className="py-2 px-4 bg-green-600 text-white rounded-lg"
             >
               {department ? "Save Changes" : "Create"}
             </button>
@@ -555,10 +688,67 @@ function DepartmentModal({ isOpen, onClose, onSave, department }) {
     </div>
   );
 }
-
+function DesignationModal({ isOpen, onClose, onSave, designation }) {
+  const [formData, setFormData] = useState({});
+  useEffect(() => {
+    setFormData(designation || { title: "", level: "Junior" });
+  }, [designation, isOpen]);
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6">
+          {designation ? "Edit Designation" : "Add New Designation"}
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <input
+              name="title"
+              value={formData.title || ""}
+              onChange={handleChange}
+              placeholder="Designation Title"
+              className="w-full p-3 border rounded-lg"
+              required
+            />
+            <select
+              name="level"
+              value={formData.level || "Junior"}
+              onChange={handleChange}
+              className="w-full p-3 border rounded-lg"
+            >
+              <option>Junior</option>
+              <option>Mid</option>
+              <option>Senior</option>
+            </select>
+          </div>
+          <div className="mt-8 flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-2 px-4 bg-gray-200 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="py-2 px-4 bg-blue-600 text-white rounded-lg"
+            >
+              {designation ? "Save Changes" : "Create"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
@@ -567,13 +757,13 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
         <div className="flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="py-2 px-4 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+            className="py-2 px-4 bg-gray-200 rounded-lg"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            className="py-2 px-4 bg-red-600 text-white rounded-lg"
           >
             Delete
           </button>
