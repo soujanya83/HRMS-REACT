@@ -212,6 +212,20 @@ function OrganizationListView({
 }
 
 function OrganizationDetailView({ organization, onBack }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState(null);
+
+  const handleSave = async (orgData) => {
+    try {
+      await updateOrganization(organization.id, orgData);
+      setIsModalOpen(false);
+      setEditingOrg(null);
+      // you might want to refresh details after save
+    } catch (err) {
+      console.error("Failed to update organization:", err);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
       <div className="max-w-7xl mx-auto">
@@ -243,16 +257,33 @@ function OrganizationDetailView({ organization, onBack }) {
                 <strong>Industry:</strong> {organization.industry_type}
               </p>
             </div>
-            <button className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto">
+            <button
+              onClick={() => {
+                setEditingOrg(organization);
+                setIsModalOpen(true);
+              }}
+              className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto"
+            >
               <HiPencil /> Edit Details
             </button>
           </div>
         </div>
+        
+        {/* Departments */}
         <DepartmentsManager orgId={organization.id} />
+
+        {/* Edit Organization Modal */}
+        <OrganizationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+          organization={editingOrg}
+        />
       </div>
     </div>
   );
 }
+
 
 function DepartmentsManager({ orgId }) {
   const [departments, setDepartments] = useState([]);
@@ -371,6 +402,14 @@ function DepartmentItem({ department, onEdit, onDelete }) {
           <p className="text-gray-600 text-sm">{department.description}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* 🔽 Dropdown first */}
+          <HiChevronDown
+            className={`transition-transform duration-300 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+
+          {/* ✏️ Edit */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -380,26 +419,24 @@ function DepartmentItem({ department, onEdit, onDelete }) {
           >
             <HiPencil />
           </button>
+
+          {/* 🗑 Delete */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
+            className=" rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
           >
             <HiTrash />
           </button>
-          <HiChevronDown
-            className={`transition-transform duration-300 ${
-              isOpen ? "rotate-180" : ""
-            }`}
-          />
         </div>
       </div>
       {isOpen && <DesignationsList departmentId={department.id} />}
     </div>
   );
 }
+
 
 function DesignationsList({ departmentId }) {
   const [designations, setDesignations] = useState([]);
