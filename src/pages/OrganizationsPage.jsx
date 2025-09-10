@@ -156,7 +156,7 @@ function OrganizationListView({
                 key={org.id}
                 className="bg-white rounded-xl shadow-lg overflow-hidden transition transform hover:-translate-y-1 hover:shadow-2xl group flex flex-col justify-between"
               >
-                 <div className="p-6">
+                <div className="p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
                     {org.name}
                   </h2>
@@ -167,7 +167,7 @@ function OrganizationListView({
                     {org.contact_email}
                   </p>
                 </div>
-                 <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
+                <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onEdit(org)}
@@ -182,7 +182,7 @@ function OrganizationListView({
                       <HiTrash />
                     </button>
                   </div>
-                   <button
+                  <button
                     onClick={() => onSelectOrg(org)}
                     className="text-sm font-semibold text-brand-blue hover:underline"
                   >
@@ -220,7 +220,6 @@ function OrganizationDetailView({ organization, onBack }) {
       await updateOrganization(organization.id, orgData);
       setIsModalOpen(false);
       setEditingOrg(null);
-      // you might want to refresh details after save
     } catch (err) {
       console.error("Failed to update organization:", err);
     }
@@ -268,11 +267,9 @@ function OrganizationDetailView({ organization, onBack }) {
             </button>
           </div>
         </div>
-        
-        {/* Departments */}
+
         <DepartmentsManager orgId={organization.id} />
 
-        {/* Edit Organization Modal */}
         <OrganizationModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -283,7 +280,6 @@ function OrganizationDetailView({ organization, onBack }) {
     </div>
   );
 }
-
 
 function DepartmentsManager({ orgId }) {
   const [departments, setDepartments] = useState([]);
@@ -436,7 +432,6 @@ function DepartmentItem({ department, onEdit, onDelete }) {
     </div>
   );
 }
-
 
 function DesignationsList({ departmentId }) {
   const [designations, setDesignations] = useState([]);
