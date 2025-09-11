@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useCallback } from "react";
 import {
   HiPlus,
@@ -50,10 +51,23 @@ function OrganizationsPage() {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
+  const handleOpenEditModal = (org) => {
+    setEditingOrg(org);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingOrg(null);
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (orgData) => {
     try {
       if (editingOrg) {
         await updateOrganization(editingOrg.id, orgData);
+        if (selectedOrg && selectedOrg.id === editingOrg.id) {
+          setSelectedOrg({ ...selectedOrg, ...orgData });
+        }
       } else {
         await createOrganization(orgData);
       }
@@ -88,6 +102,8 @@ function OrganizationsPage() {
       <OrganizationDetailView
         organization={selectedOrg}
         onBack={() => setSelectedOrg(null)}
+        // THE FIX: Pass the function to open the edit modal down as a prop
+        onEdit={() => handleOpenEditModal(selectedOrg)}
       />
     );
   }
@@ -99,14 +115,8 @@ function OrganizationsPage() {
         error={error}
         organizations={organizations}
         onSelectOrg={setSelectedOrg}
-        onAdd={() => {
-          setEditingOrg(null);
-          setIsModalOpen(true);
-        }}
-        onEdit={(org) => {
-          setEditingOrg(org);
-          setIsModalOpen(true);
-        }}
+        onAdd={handleOpenAddModal}
+        onEdit={handleOpenEditModal}
         onDelete={handleDeleteClick}
       />
       <OrganizationModal
@@ -144,7 +154,7 @@ function OrganizationListView({
             onClick={onAdd}
             className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
           >
-            <HiPlus /> Add Organization
+            <HiPlus /> Add Workspace
           </button>
         </div>
         {isLoading && <p>Loading organizations...</p>}
@@ -211,20 +221,8 @@ function OrganizationListView({
   );
 }
 
-function OrganizationDetailView({ organization, onBack }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOrg, setEditingOrg] = useState(null);
-
-  const handleSave = async (orgData) => {
-    try {
-      await updateOrganization(organization.id, orgData);
-      setIsModalOpen(false);
-      setEditingOrg(null);
-    } catch (err) {
-      console.error("Failed to update organization:", err);
-    }
-  };
-
+// THE FIX: This component now accepts the `onEdit` prop
+function OrganizationDetailView({ organization, onBack, onEdit }) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
       <div className="max-w-7xl mx-auto">
@@ -256,26 +254,16 @@ function OrganizationDetailView({ organization, onBack }) {
                 <strong>Industry:</strong> {organization.industry_type}
               </p>
             </div>
+            {/* THE FIX: This button now correctly calls the onEdit function */}
             <button
-              onClick={() => {
-                setEditingOrg(organization);
-                setIsModalOpen(true);
-              }}
+              onClick={onEdit}
               className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto"
             >
               <HiPencil /> Edit Details
             </button>
           </div>
         </div>
-
         <DepartmentsManager orgId={organization.id} />
-
-        <OrganizationModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          organization={editingOrg}
-        />
       </div>
     </div>
   );
@@ -393,39 +381,36 @@ function DepartmentItem({ department, onEdit, onDelete }) {
         className="p-4 flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div>
+        <div className="flex-1 pr-4">
           <h3 className="text-lg font-bold text-gray-900">{department.name}</h3>
           <p className="text-gray-600 text-sm">{department.description}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* 🔽 Dropdown first */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800"
+            >
+              <HiPencil />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
+            >
+              <HiTrash />
+            </button>
+          </div>
           <HiChevronDown
             className={`transition-transform duration-300 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
-
-          {/* ✏️ Edit */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800"
-          >
-            <HiPencil />
-          </button>
-
-          {/* 🗑 Delete */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className=" rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
-          >
-            <HiTrash />
-          </button>
         </div>
       </div>
       {isOpen && <DesignationsList departmentId={department.id} />}

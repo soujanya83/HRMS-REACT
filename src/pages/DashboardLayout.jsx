@@ -1,13 +1,17 @@
-import  { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const DashboardLayout = ({ onLogout, user }) => {
-     const [isSidebarOpen, setSidebarOpen] = useState(false);
-     const [isCollapsed, setIsCollapsed] = useState(false);
+    // This state controls the mobile sidebar's slide-in/out visibility
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    // This state controls the desktop sidebar's collapsed/expanded view
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
+        // This `md:flex` class is crucial. It arranges the sidebar and main content
+        // side-by-side on medium screens (tablets) and larger.
         <div className="relative min-h-screen md:flex">
             <Sidebar 
                 isSidebarOpen={isSidebarOpen} 
@@ -16,7 +20,6 @@ const DashboardLayout = ({ onLogout, user }) => {
                 isCollapsed={isCollapsed}
                 setIsCollapsed={setIsCollapsed}
             />
-            
 
             <div className="flex-1 flex flex-col">
                 <Header 
@@ -34,4 +37,4 @@ const DashboardLayout = ({ onLogout, user }) => {
 };
 
 export default DashboardLayout;
-  
+

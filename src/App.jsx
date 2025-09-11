@@ -5,19 +5,23 @@ import {
   Navigate,
 } from "react-router-dom";
 import "./index.css";
+
+// --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
+import OrganizationsPage from "./pages/OrganizationsPage";
+// THE FIX: Import your new JobOpeningsPage component
+import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
+
+// --- Import Services & Contexts ---
 import { logout } from "./services/auth";
+import { OrganizationProvider } from "./contexts/OrganizationContext";
 
-// THE FIX: Import your new Organizations page
-import OrganizationsPage from "./pages/OrganizationsPage"; 
-
-// --- Placeholder Pages ---
+// --- Placeholder Pages (for routes that are not yet built) ---
 const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
 const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
-const RecruitmentPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Recruitment Page</h1></div>;
 const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
 const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
 const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
@@ -29,7 +33,6 @@ const ProtectedRoute = ({ isLoggedIn, children }) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
 };
-
 const PublicRoute = ({ isLoggedIn, children }) => {
   if (isLoggedIn) return <Navigate to="/dashboard" replace />;
   return children;
@@ -52,8 +55,7 @@ function App() {
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      localStorage.removeItem("ACCESS_TOKEN");
-      localStorage.removeItem("user");
+      localStorage.clear();
       setUser(null);
       setIsLoggedIn(false);
     }
@@ -68,14 +70,16 @@ function App() {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
-          <DashboardLayout onLogout={handleLogout} user={user} />
+          <OrganizationProvider>
+            <DashboardLayout onLogout={handleLogout} user={user} />
+          </OrganizationProvider>
         </ProtectedRoute>
       ),
       children: [
         { index: true, element: <DashboardContent /> },
-        // THE FIX: Connect the Organizations path to your new component
-        { path: "organizations", element: <OrganizationsPage /> },
-        { path: "recruitment/*", element: <RecruitmentPage /> }, // Using * to catch sub-routes
+        { path: "organizations/*", element: <OrganizationsPage /> },
+        // THE FIX: The recruitment path now renders your new JobOpeningsPage
+        { path: "recruitment/*", element: <JobOpeningsPage /> },
         { path: "employees/*", element: <EmployeePage /> },
         { path: "attendance/*", element: <AttendancePage /> },
         { path: "timesheet/*", element: <TimesheetPage /> },
@@ -93,3 +97,4 @@ function App() {
 }
 
 export default App;
+
