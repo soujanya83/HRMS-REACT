@@ -7,7 +7,6 @@ import {
     getDepartmentsByOrgId, getDesignationsByDeptId
 } from '../../services/recruitmentService';
 
-// --- Main Component with Nested Routing ---
 function JobOpeningsPage() {
     return (
         <Routes>
@@ -18,7 +17,6 @@ function JobOpeningsPage() {
     );
 }
 
-// --- View 1: List of all job openings ---
 function JobOpeningListPage() {
     const [jobs, setJobs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +46,7 @@ function JobOpeningListPage() {
 
     const handleSave = async (jobData) => {
         try {
-            setModalErrors(null); // Clear previous errors
+            setModalErrors(null); 
             const payload = { ...jobData, organization_id: selectedOrganization.id };
             if (editingJob) {
                 await updateJobOpening(editingJob.id, payload);
@@ -116,7 +114,6 @@ function JobOpeningListPage() {
     );
 }
 
-// --- Job Card Component ---
 function JobCard({ job, onEdit, onDelete }) {
     const statusClasses = {
         Open: 'bg-green-100 text-green-800',
@@ -152,7 +149,6 @@ function JobCard({ job, onEdit, onDelete }) {
     );
 }
 
-// --- View 2: Detailed view for a single job opening ---
 function JobOpeningDetailPage() {
     const { jobId } = useParams();
     const navigate = useNavigate();
@@ -209,7 +205,6 @@ function JobOpeningDetailPage() {
     );
 }
 
-// --- Modal for Adding/Editing a Job Opening ---
 function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     const [formData, setFormData] = useState({});
     const [departments, setDepartments] = useState([]);
@@ -311,7 +306,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     );
 }
 
-// --- Confirmation Modal for Deletion ---
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
     if (!isOpen) return null;
     return (
