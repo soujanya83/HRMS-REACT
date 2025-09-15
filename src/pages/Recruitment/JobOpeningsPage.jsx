@@ -7,7 +7,8 @@ import {
     getDepartmentsByOrgId, getDesignationsByDeptId
 } from '../../services/recruitmentService';
 
-// --- Helper components for the form (moved to top level to fix focus bug) ---
+// --- THE FIX: Form helper components are now defined here, at the top level ---
+// This prevents them from being re-created on every render, which solves the input focus bug.
 const FormInput = ({ label, name, error, ...props }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
@@ -63,8 +64,14 @@ function JobOpeningListPage() {
         }
         setIsLoading(true);
         try {
-            const response = await getJobOpenings(selectedOrganization.id);
-            setJobs(response.data.data || []);
+            // 1. Fetch ALL job openings from the API
+            const response = await getJobOpenings();
+            const allJobs = response.data.data || [];
+
+            // 2. THE FIX: Filter the jobs on the front-end to match the selected organization
+            const filteredJobs = allJobs.filter(job => job.organization_id === selectedOrganization.id);
+            
+            setJobs(filteredJobs);
         } catch (error) {
             console.error("Failed to fetch job openings:", error);
             setJobs([]);
@@ -341,4 +348,3 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
 }
 
 export default JobOpeningsPage;
-
