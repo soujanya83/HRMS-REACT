@@ -7,6 +7,33 @@ import {
     getDepartmentsByOrgId, getDesignationsByDeptId
 } from '../../services/recruitmentService';
 
+// --- Helper components for the form (moved to top level to fix focus bug) ---
+const FormInput = ({ label, name, error, ...props }) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+        <input id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`} />
+        {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
+    </div>
+);
+const FormSelect = ({ label, name, error, children, ...props }) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+        <select id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}>
+            {children}
+        </select>
+        {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
+    </div>
+);
+const FormTextarea = ({ label, name, error, ...props }) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+        <textarea id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}></textarea>
+        {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
+    </div>
+);
+
+
+// --- Main Component with Nested Routing ---
 function JobOpeningsPage() {
     return (
         <Routes>
@@ -17,6 +44,7 @@ function JobOpeningsPage() {
     );
 }
 
+// --- View 1: List of all job openings ---
 function JobOpeningListPage() {
     const [jobs, setJobs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -28,13 +56,18 @@ function JobOpeningListPage() {
     const [modalErrors, setModalErrors] = useState(null);
 
     const fetchJobs = useCallback(async () => {
-        if (!selectedOrganization) return;
+        if (!selectedOrganization) {
+            setIsLoading(false);
+            setJobs([]);
+            return;
+        }
         setIsLoading(true);
         try {
             const response = await getJobOpenings(selectedOrganization.id);
             setJobs(response.data.data || []);
         } catch (error) {
             console.error("Failed to fetch job openings:", error);
+            setJobs([]);
         } finally {
             setIsLoading(false);
         }
@@ -103,7 +136,7 @@ function JobOpeningListPage() {
                         <div className="text-center py-16 bg-white rounded-lg shadow-md">
                             <HiOutlineBriefcase className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">No job openings found</h3>
-                            <p className="mt-1 text-sm text-gray-500">Get started by creating a new job opening for <span className='font-bold'>{selectedOrganization?.name}</span>.</p>
+                            <p className="mt-1 text-sm text-gray-500">There are no jobs for the selected organization: <span className='font-bold'>{selectedOrganization?.name}</span>.</p>
                         </div>
                     )
                 )}
@@ -114,6 +147,7 @@ function JobOpeningListPage() {
     );
 }
 
+// --- Job Card Component ---
 function JobCard({ job, onEdit, onDelete }) {
     const statusClasses = {
         Open: 'bg-green-100 text-green-800',
@@ -149,6 +183,7 @@ function JobCard({ job, onEdit, onDelete }) {
     );
 }
 
+// --- View 2: Detailed view for a single job opening ---
 function JobOpeningDetailPage() {
     const { jobId } = useParams();
     const navigate = useNavigate();
@@ -205,6 +240,7 @@ function JobOpeningDetailPage() {
     );
 }
 
+// --- Modal for Adding/Editing a Job Opening ---
 function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     const [formData, setFormData] = useState({});
     const [departments, setDepartments] = useState([]);
@@ -218,12 +254,19 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
         if (isOpen && selectedOrganization) {
             getDepartmentsByOrgId(selectedOrganization.id).then(res => {
                 setDepartments(res.data.data || []);
+                if (initialData.department_id) {
+                    getDesignationsByDeptId(initialData.department_id).then(desigRes => {
+                        setDesignations(desigRes.data.data || []);
+                    });
+                }
             });
         }
     }, [job, isOpen, selectedOrganization]);
 
     useEffect(() => {
         const deptId = formData.department_id;
+        if (job && deptId === job.department_id) { return; }
+        if (formData.designation_id) { setFormData(prev => ({...prev, designation_id: ''})); }
         if (deptId) {
             getDesignationsByDeptId(deptId).then(res => {
                 setDesignations(res.data.data || []);
@@ -231,38 +274,12 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
         } else {
             setDesignations([]);
         }
-    }, [formData.department_id]);
+    }, [formData.department_id, job]);
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
 
     if (!isOpen) return null;
-
-    const FormInput = ({ label, name, error, ...props }) => (
-        <div>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-            <input id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`} />
-            {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
-        </div>
-    );
-
-    const FormSelect = ({ label, name, error, children, ...props }) => (
-        <div>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-            <select id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}>
-                {children}
-            </select>
-            {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
-        </div>
-    );
-    
-    const FormTextarea = ({ label, name, error, ...props }) => (
-        <div>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-            <textarea id={name} name={name} {...props} className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}></textarea>
-            {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
-        </div>
-    );
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
@@ -274,24 +291,24 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
                     <div className="p-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="sm:col-span-2"><FormInput label="Job Title" name="title" value={formData.title} onChange={handleChange} error={errors?.title} required /></div>
-                            <FormSelect label="Department" name="department_id" value={formData.department_id} onChange={handleChange} error={errors?.department_id} required>
+                            <div className="sm:col-span-2"><FormInput label="Job Title" name="title" value={formData.title || ''} onChange={handleChange} error={errors?.title} required /></div>
+                            <FormSelect label="Department" name="department_id" value={formData.department_id || ''} onChange={handleChange} error={errors?.department_id} required>
                                 <option value="">Select a Department</option>
                                 {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name}</option>)}
                             </FormSelect>
-                            <FormSelect label="Designation" name="designation_id" value={formData.designation_id} onChange={handleChange} error={errors?.designation_id} required disabled={!formData.department_id || designations.length === 0}>
+                            <FormSelect label="Designation" name="designation_id" value={formData.designation_id || ''} onChange={handleChange} error={errors?.designation_id} required disabled={!formData.department_id || designations.length === 0}>
                                 <option value="">Select a Designation</option>
                                 {designations.map(desig => <option key={desig.id} value={desig.id}>{desig.title}</option>)}
                             </FormSelect>
-                            <FormInput label="Location" name="location" value={formData.location} onChange={handleChange} error={errors?.location} required />
-                            <FormSelect label="Employment Type" name="employment_type" value={formData.employment_type} onChange={handleChange} error={errors?.employment_type}>
+                            <FormInput label="Location" name="location" value={formData.location || ''} onChange={handleChange} error={errors?.location} required />
+                            <FormSelect label="Employment Type" name="employment_type" value={formData.employment_type || 'Full-time'} onChange={handleChange} error={errors?.employment_type}>
                                 <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
                             </FormSelect>
-                            <div className="sm:col-span-2"><FormTextarea label="Description" name="description" value={formData.description} onChange={handleChange} error={errors?.description} rows="4" /></div>
-                            <div className="sm:col-span-2"><FormTextarea label="Requirements" name="requirements" value={formData.requirements} onChange={handleChange} error={errors?.requirements} rows="4" /></div>
-                            <FormInput type="date" label="Posting Date" name="posting_date" value={formData.posting_date} onChange={handleChange} error={errors?.posting_date} />
-                            <FormInput type="date" label="Closing Date" name="closing_date" value={formData.closing_date} onChange={handleChange} error={errors?.closing_date} />
-                            <div className="sm:col-span-2"><FormSelect label="Status" name="status" value={formData.status} onChange={handleChange} error={errors?.status}>
+                            <div className="sm:col-span-2"><FormTextarea label="Description" name="description" value={formData.description || ''} onChange={handleChange} error={errors?.description} rows="4" /></div>
+                            <div className="sm:col-span-2"><FormTextarea label="Requirements" name="requirements" value={formData.requirements || ''} onChange={handleChange} error={errors?.requirements} rows="4" /></div>
+                            <FormInput type="date" label="Posting Date" name="posting_date" value={formData.posting_date || ''} onChange={handleChange} error={errors?.posting_date} />
+                            <FormInput type="date" label="Closing Date" name="closing_date" value={formData.closing_date || ''} onChange={handleChange} error={errors?.closing_date} />
+                            <div className="sm:col-span-2"><FormSelect label="Status" name="status" value={formData.status || 'Open'} onChange={handleChange} error={errors?.status}>
                                 <option>Open</option><option>On Hold</option><option>Closed</option>
                             </FormSelect></div>
                         </div>
@@ -306,6 +323,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     );
 }
 
+// --- Confirmation Modal for Deletion ---
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
     if (!isOpen) return null;
     return (
@@ -323,3 +341,4 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
 }
 
 export default JobOpeningsPage;
+
