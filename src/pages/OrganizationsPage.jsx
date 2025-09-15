@@ -28,6 +28,8 @@ function OrganizationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
+
+  // organization modals / edit state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -39,7 +41,7 @@ function OrganizationsPage() {
     setError(null);
     try {
       const response = await getOrganizations();
-      setOrganizations(response.data.data);
+      setOrganizations(response.data?.data || []);
     } catch (err) {
       setError("Failed to fetch organizations.");
       console.error(err);
@@ -56,7 +58,7 @@ function OrganizationsPage() {
     setEditingOrg(org);
     setIsModalOpen(true);
   };
-  
+
   const handleOpenAddModal = () => {
     setEditingOrg(null);
     setIsModalOpen(true);
@@ -67,13 +69,14 @@ function OrganizationsPage() {
     try {
       if (editingOrg) {
         const response = await updateOrganization(editingOrg.id, orgData);
+        // update selectedOrg immediately if we're viewing it
         if (selectedOrg && selectedOrg.id === editingOrg.id) {
-          setSelectedOrg(response.data.data);
+          setSelectedOrg(response?.data?.data || { ...selectedOrg, ...orgData });
         }
       } else {
         await createOrganization(orgData);
       }
-      fetchOrganizations();
+      await fetchOrganizations();
       setIsModalOpen(false);
       setEditingOrg(null);
     } catch (err) {
@@ -92,7 +95,11 @@ function OrganizationsPage() {
     if (orgToDelete) {
       try {
         await deleteOrganization(orgToDelete.id);
-        fetchOrganizations();
+        // if currently viewing that org, go back
+        if (selectedOrg && selectedOrg.id === orgToDelete.id) {
+          setSelectedOrg(null);
+        }
+        await fetchOrganizations();
         setIsConfirmOpen(false);
         setOrgToDelete(null);
       } catch (err) {
@@ -101,37 +108,49 @@ function OrganizationsPage() {
     }
   };
 
-  if (selectedOrg) {
-    return (
-      <OrganizationDetailView
-        organization={selectedOrg}
-        onBack={() => setSelectedOrg(null)}
-        onEdit={() => handleOpenEditModal(selectedOrg)}
-      />
-    );
-  }
-
   return (
     <>
-      <OrganizationListView
-        isLoading={isLoading}
-        error={error}
-        organizations={organizations}
-        onSelectOrg={setSelectedOrg}
-        onAdd={handleOpenAddModal}
-        onEdit={handleOpenEditModal}
-        onDelete={handleDeleteClick}
-      />
+      <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
+        <div className="max-w-7xl mx-auto">
+          {/* show either list or detail - but DO NOT return early so modals render below */}
+          {!selectedOrg ? (
+            <OrganizationListView
+              isLoading={isLoading}
+              error={error}
+              organizations={organizations}
+              onSelectOrg={setSelectedOrg}
+              onAdd={handleOpenAddModal}
+              onEdit={handleOpenEditModal}
+              onDelete={handleDeleteClick}
+            />
+          ) : (
+            <OrganizationDetailView
+              organization={selectedOrg}
+              onBack={() => setSelectedOrg(null)}
+              onEdit={handleOpenEditModal} // pass handler directly
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Modals always rendered at top level so they work from either view */}
       <OrganizationModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingOrg(null);
+        }}
         onSave={handleSave}
         organization={editingOrg}
         isSubmitting={isSubmitting}
       />
+
       <ConfirmationModal
         isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setOrgToDelete(null);
+        }}
         onConfirm={handleDeleteConfirm}
         title="Delete Organization"
         message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
@@ -151,77 +170,69 @@ function OrganizationListView({
   onDelete,
 }) {
   return (
-    <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Organizations</h1>
-          <button
-            onClick={onAdd}
-            className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
-          >
-            <HiPlus /> Add Workspace
-          </button>
-        </div>
-        {isLoading && <p>Loading organizations...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {!isLoading && !error && organizations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {organizations.map((org) => (
-              <div
-                key={org.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden transition transform hover:-translate-y-1 hover:shadow-2xl group flex flex-col justify-between"
-              >
-                 <div className="p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
-                    {org.name}
-                  </h2>
-                  <p className="text-gray-600 mb-1">
-                    {org.registration_number}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {org.contact_email}
-                  </p>
-                </div>
-                 <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => onEdit(org)}
-                      className="p-2 text-gray-500 hover:bg-gray-200 rounded-full"
-                    >
-                      <HiPencil />
-                    </button>
-                    <button
-                      onClick={() => onDelete(org)}
-                      className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
-                    >
-                      <HiTrash />
-                    </button>
-                  </div>
-                   <button
-                    onClick={() => onSelectOrg(org)}
-                    className="text-sm font-semibold text-brand-blue hover:underline"
+    <div>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Organizations</h1>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
+        >
+          <HiPlus /> Add Workspace
+        </button>
+      </div>
+
+      {isLoading && <p>Loading organizations...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {!isLoading && !error && organizations.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {organizations.map((org) => (
+            <div
+              key={org.id}
+              className="bg-white rounded-xl shadow-lg overflow-hidden transition transform hover:-translate-y-1 hover:shadow-2xl group flex flex-col justify-between"
+            >
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
+                  {org.name}
+                </h2>
+                <p className="text-gray-600 mb-1">{org.registration_number}</p>
+                <p className="text-sm text-gray-500 truncate">{org.contact_email}</p>
+              </div>
+              <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => onEdit(org)}
+                    className="p-2 text-gray-500 hover:bg-gray-200 rounded-full"
                   >
-                    View Details &rarr;
+                    <HiPencil />
+                  </button>
+                  <button
+                    onClick={() => onDelete(org)}
+                    className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
+                  >
+                    <HiTrash />
                   </button>
                 </div>
+                <button
+                  onClick={() => onSelectOrg(org)}
+                  className="text-sm font-semibold text-brand-blue hover:underline"
+                >
+                  View Details &rarr;
+                </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          !isLoading &&
-          !error && (
-            <div className="text-center py-16 bg-white rounded-lg shadow-md">
-              <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No organizations found
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Get started by adding a new organization.
-              </p>
             </div>
-          )
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        !isLoading &&
+        !error && (
+          <div className="text-center py-16 bg-white rounded-lg shadow-md">
+            <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by adding a new organization.</p>
+          </div>
+        )
+      )}
     </div>
   );
 }
@@ -229,51 +240,41 @@ function OrganizationListView({
 // --- View 2: Detailed view for a single organization ---
 function OrganizationDetailView({ organization, onBack, onEdit }) {
   return (
-    <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-      <div className="max-w-7xl mx-auto">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
-        >
-          <HiArrowLeft /> Back to Organizations
-        </button>
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                {organization.name}
-              </h1>
-              <p className="text-gray-500 mt-1">
-                <strong>Reg. Number:</strong> {organization.registration_number}
-              </p>
-              <p className="text-gray-500">
-                <strong>Address:</strong> {organization.address}
-              </p>
-              <p className="text-gray-500">
-                <strong>Email:</strong> {organization.contact_email}
-              </p>
-              <p className="text-gray-500">
-                <strong>Phone:</strong> {organization.contact_phone}
-              </p>
-              <p className="text-gray-500">
-                <strong>Industry:</strong> {organization.industry_type}
-              </p>
-            </div>
-            <button
-              onClick={onEdit}
-              className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto"
-            >
-              <HiPencil /> Edit Details
-            </button>
+    <div>
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
+      >
+        <HiArrowLeft /> Back to Organizations
+      </button>
+
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">{organization.name}</h1>
+            <p className="text-gray-500 mt-1"><strong>Reg. Number:</strong> {organization.registration_number}</p>
+            <p className="text-gray-500"><strong>Address:</strong> {organization.address}</p>
+            <p className="text-gray-500"><strong>Email:</strong> {organization.contact_email}</p>
+            <p className="text-gray-500"><strong>Phone:</strong> {organization.contact_phone}</p>
+            <p className="text-gray-500"><strong>Industry:</strong> {organization.industry_type}</p>
           </div>
+
+          {/* IMPORTANT: call onEdit with the current org so the top-level modal opens */}
+          <button
+            onClick={() => onEdit(organization)}
+            className="flex-shrink-0 flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition self-start sm:self-auto"
+          >
+            <HiPencil /> Edit Details
+          </button>
         </div>
-        <DepartmentsManager orgId={organization.id} />
       </div>
+
+      <DepartmentsManager orgId={organization.id} />
     </div>
   );
 }
 
-// --- Component to manage Departments ---
+// --- Component to manage Departments (unchanged logic) ---
 function DepartmentsManager({ orgId }) {
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -287,7 +288,7 @@ function DepartmentsManager({ orgId }) {
     setIsLoading(true);
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      setDepartments(response.data.data || []);
+      setDepartments(response.data?.data || []);
     } catch (error) {
       console.error("Failed to fetch departments", error);
       setDepartments([]);
@@ -308,7 +309,7 @@ function DepartmentsManager({ orgId }) {
       } else {
         await createDepartment(orgId, deptData);
       }
-      fetchDepts();
+      await fetchDepts();
       setIsModalOpen(false);
       setEditingDept(null);
     } catch (error) {
@@ -322,7 +323,7 @@ function DepartmentsManager({ orgId }) {
     if (deptToDelete) {
       try {
         await deleteDepartment(deptToDelete.id);
-        fetchDepts();
+        await fetchDepts();
         setIsConfirmOpen(false);
         setDeptToDelete(null);
       } catch (error) {
@@ -345,6 +346,7 @@ function DepartmentsManager({ orgId }) {
           <HiPlus /> Add Department
         </button>
       </div>
+
       {isLoading ? (
         <p>Loading departments...</p>
       ) : (
@@ -365,6 +367,7 @@ function DepartmentsManager({ orgId }) {
           ))}
         </div>
       )}
+
       <DepartmentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -372,6 +375,7 @@ function DepartmentsManager({ orgId }) {
         department={editingDept}
         isSubmitting={isSubmitting}
       />
+
       <ConfirmationModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
@@ -397,25 +401,27 @@ function DepartmentItem({ department, onEdit, onDelete }) {
           <p className="text-gray-600 text-sm">{department.description}</p>
         </div>
         <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800"
-                >
-                    <HiPencil />
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
-                >
-                    <HiTrash />
-                </button>
-            </div>
-            <HiChevronDown
-                className={`transition-transform duration-300 ${
-                isOpen ? "rotate-180" : ""
-                }`}
-            />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800"
+            >
+              <HiPencil />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600"
+            >
+              <HiTrash />
+            </button>
+          </div>
+          <HiChevronDown className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
         </div>
       </div>
       {isOpen && <DesignationsList departmentId={department.id} />}
@@ -437,7 +443,7 @@ function DesignationsList({ departmentId }) {
     setIsLoading(true);
     try {
       const response = await getDesignationsByDeptId(departmentId);
-      setDesignations(response.data.data || []);
+      setDesignations(response.data?.data || []);
     } catch (error) {
       console.error("Failed to fetch designations", error);
       setDesignations([]);
@@ -458,13 +464,13 @@ function DesignationsList({ departmentId }) {
       } else {
         await createDesignation(departmentId, desigData);
       }
-      fetchDesigs();
+      await fetchDesigs();
       setIsModalOpen(false);
       setEditingDesig(null);
     } catch (err) {
       console.error("Failed to save designation:", err);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -472,11 +478,11 @@ function DesignationsList({ departmentId }) {
     if (desigToDelete) {
       try {
         await deleteDesignation(desigToDelete.id);
-        fetchDesigs();
+        await fetchDesigs();
         setIsConfirmOpen(false);
         setDesigToDelete(null);
       } catch (err) {
-        console.error("Failed to delete designation:", err);
+        console.error("Failed to delete designation", err);
       }
     }
   };
@@ -495,20 +501,16 @@ function DesignationsList({ departmentId }) {
           <HiPlus /> Add
         </button>
       </div>
+
       {isLoading ? (
         <p>Loading designations...</p>
       ) : (
         <ul className="space-y-2">
           {designations.map((desig) => (
-            <li
-              key={desig.id}
-              className="flex justify-between items-center bg-gray-50 p-2 rounded-md"
-            >
+            <li key={desig.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-md">
               <div>
                 <p className="font-semibold text-gray-800">{desig.title}</p>
-                <p className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full inline-block">
-                  {desig.level}
-                </p>
+                <p className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full inline-block">{desig.level}</p>
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -532,11 +534,10 @@ function DesignationsList({ departmentId }) {
               </div>
             </li>
           ))}
-          {designations.length === 0 && (
-            <p className="text-sm text-gray-500">No designations found.</p>
-          )}
+          {designations.length === 0 && <p className="text-sm text-gray-500">No designations found.</p>}
         </ul>
       )}
+
       <DesignationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -544,6 +545,7 @@ function DesignationsList({ departmentId }) {
         designation={editingDesig}
         isSubmitting={isSubmitting}
       />
+
       <ConfirmationModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
@@ -561,24 +563,29 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
   useEffect(() => {
     setFormData(
       organization || {
-        name: "", registration_number: "", address: "", contact_email: "",
-        contact_phone: "", industry_type: "", timezone: "Asia/Kolkata",
+        name: "",
+        registration_number: "",
+        address: "",
+        contact_email: "",
+        contact_phone: "",
+        industry_type: "",
+        timezone: "Asia/Kolkata",
       }
     );
   }, [organization, isOpen]);
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
   };
+
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-6">
-          {organization ? "Edit Organization" : "Add New Organization"}
-        </h2>
+        <h2 className="text-2xl font-bold mb-6">{organization ? "Edit Workspace" : "Add New Organization"}</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input name="name" value={formData.name || ""} onChange={handleChange} placeholder="Organization Name" className="w-full p-3 border rounded-lg" required />
@@ -589,10 +596,11 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
             <input name="timezone" value={formData.timezone || ""} onChange={handleChange} placeholder="Timezone" className="w-full p-3 border rounded-lg" />
             <input name="address" value={formData.address || ""} onChange={handleChange} placeholder="Address" className="sm:col-span-2 w-full p-3 border rounded-lg" />
           </div>
+
           <div className="mt-8 flex justify-end gap-4">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="py-2 px-4 bg-gray-200 rounded-lg">Cancel</button>
             <button type="submit" disabled={isSubmitting} className="py-2 px-4 bg-brand-blue text-white rounded-lg">
-              {isSubmitting ? "Saving..." : (organization ? "Save Changes" : "Create")}
+              {isSubmitting ? (organization ? "Saving..." : "Creating...") : (organization ? "Save Changes" : "Create")}
             </button>
           </div>
         </form>
@@ -605,8 +613,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
   useEffect(() => {
     setFormData(department || { name: "", description: "" });
   }, [department, isOpen]);
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -615,18 +622,17 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6">
-          {department ? "Edit Department" : "Add New Department"}
-        </h2>
+        <h2 className="text-2xl font-bold mb-6">{department ? "Edit Department" : "Add New Department"}</h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <input name="name" value={formData.name || ""} onChange={handleChange} placeholder="Department Name" className="w-full p-3 border rounded-lg" required />
             <textarea name="description" value={formData.description || ""} onChange={handleChange} placeholder="Description" className="w-full p-3 border rounded-lg" rows="3"></textarea>
           </div>
+
           <div className="mt-8 flex justify-end gap-4">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="py-2 px-4 bg-gray-200 rounded-lg">Cancel</button>
             <button type="submit" disabled={isSubmitting} className="py-2 px-4 bg-green-600 text-white rounded-lg">
-              {isSubmitting ? "Saving..." : (department ? "Save Changes" : "Create")}
+              {isSubmitting ? (department ? "Saving..." : "Creating...") : (department ? "Save Changes" : "Create")}
             </button>
           </div>
         </form>
@@ -639,8 +645,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
   useEffect(() => {
     setFormData(designation || { title: "", level: "Junior" });
   }, [designation, isOpen]);
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -649,9 +654,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6">
-          {designation ? "Edit Designation" : "Add New Designation"}
-        </h2>
+        <h2 className="text-2xl font-bold mb-6">{designation ? "Edit Designation" : "Add New Designation"}</h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <input name="title" value={formData.title || ""} onChange={handleChange} placeholder="Designation Title" className="w-full p-3 border rounded-lg" required />
@@ -661,10 +664,11 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
               <option>Senior</option>
             </select>
           </div>
+
           <div className="mt-8 flex justify-end gap-4">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="py-2 px-4 bg-gray-200 rounded-lg">Cancel</button>
             <button type="submit" disabled={isSubmitting} className="py-2 px-4 bg-blue-600 text-white rounded-lg">
-              {isSubmitting ? "Saving..." : (designation ? "Save Changes" : "Create")}
+              {isSubmitting ? (designation ? "Saving..." : "Creating...") : (designation ? "Save Changes" : "Create")}
             </button>
           </div>
         </form>
@@ -681,9 +685,7 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
         <p className="text-gray-600 mb-6">{message}</p>
         <div className="flex justify-end gap-4">
           <button onClick={onClose} className="py-2 px-4 bg-gray-200 rounded-lg">Cancel</button>
-          <button onClick={onConfirm} className="py-2 px-4 bg-red-600 text-white rounded-lg">
-            Delete
-          </button>
+          <button onClick={onConfirm} className="py-2 px-4 bg-red-600 text-white rounded-lg">Delete</button>
         </div>
       </div>
     </div>
@@ -691,4 +693,3 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
 }
 
 export default OrganizationsPage;
-
