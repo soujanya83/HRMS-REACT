@@ -22,15 +22,13 @@ import {
   deleteDesignation,
 } from "../services/organizationService";
 
-// --- Main Page Component ---
-function OrganizationsPage() {
+ function OrganizationsPage() {
   const [organizations, setOrganizations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
 
-  // organization modals / edit state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState(null);
@@ -69,8 +67,7 @@ function OrganizationsPage() {
     try {
       if (editingOrg) {
         const response = await updateOrganization(editingOrg.id, orgData);
-        // update selectedOrg immediately if we're viewing it
-        if (selectedOrg && selectedOrg.id === editingOrg.id) {
+         if (selectedOrg && selectedOrg.id === editingOrg.id) {
           setSelectedOrg(
             response?.data?.data || { ...selectedOrg, ...orgData }
           );
@@ -97,8 +94,7 @@ function OrganizationsPage() {
     if (orgToDelete) {
       try {
         await deleteOrganization(orgToDelete.id);
-        // if currently viewing that org, go back
-        if (selectedOrg && selectedOrg.id === orgToDelete.id) {
+         if (selectedOrg && selectedOrg.id === orgToDelete.id) {
           setSelectedOrg(null);
         }
         await fetchOrganizations();
@@ -114,8 +110,7 @@ function OrganizationsPage() {
     <>
       <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
         <div className="max-w-7xl mx-auto">
-          {/* show either list or detail - but DO NOT return early so modals render below */}
-          {!selectedOrg ? (
+           {!selectedOrg ? (
             <OrganizationListView
               isLoading={isLoading}
               error={error}
@@ -129,14 +124,13 @@ function OrganizationsPage() {
             <OrganizationDetailView
               organization={selectedOrg}
               onBack={() => setSelectedOrg(null)}
-              onEdit={handleOpenEditModal} // pass handler directly
+              onEdit={handleOpenEditModal} 
             />
           )}
         </div>
       </div>
 
-      {/* Modals always rendered at top level so they work from either view */}
-      <OrganizationModal
+       <OrganizationModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -161,8 +155,7 @@ function OrganizationsPage() {
   );
 }
 
-// --- View 1: List of all organizations ---
-function OrganizationListView({
+ function OrganizationListView({
   isLoading,
   error,
   organizations,
@@ -245,8 +238,7 @@ function OrganizationListView({
   );
 }
 
-// --- View 2: Detailed view for a single organization ---
-function OrganizationDetailView({ organization, onBack, onEdit }) {
+ function OrganizationDetailView({ organization, onBack, onEdit }) {
   return (
     <div>
       <button
@@ -294,8 +286,7 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
   );
 }
 
-// --- Component to manage Departments (unchanged logic) ---
-function DepartmentsManager({ orgId }) {
+ function DepartmentsManager({ orgId }) {
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -407,8 +398,7 @@ function DepartmentsManager({ orgId }) {
   );
 }
 
-// --- Individual Department Item ---
-function DepartmentItem({ department, onEdit, onDelete }) {
+ function DepartmentItem({ department, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-white rounded-xl shadow-lg">
@@ -453,8 +443,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
   );
 }
 
-// --- List of Designations within a Department ---
-function DesignationsList({ departmentId }) {
+ function DesignationsList({ departmentId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -588,8 +577,7 @@ function DesignationsList({ departmentId }) {
   );
 }
 
-// --- Modals ---
-function OrganizationModal({
+ function OrganizationModal({
   isOpen,
   onClose,
   onSave,

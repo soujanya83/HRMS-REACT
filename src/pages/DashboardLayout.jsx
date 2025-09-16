@@ -4,14 +4,11 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const DashboardLayout = ({ onLogout, user }) => {
-    // This state controls the mobile sidebar's slide-in/out visibility
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
-    // This state controls the desktop sidebar's collapsed/expanded view
-    const [isCollapsed, setIsCollapsed] = useState(false);
+     const [isSidebarOpen, setSidebarOpen] = useState(false);
+     const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
-        // This `md:flex` class is crucial. It arranges the sidebar and main content
-        // side-by-side on medium screens (tablets) and larger.
+    
         <div className="relative min-h-screen md:flex">
             <Sidebar 
                 isSidebarOpen={isSidebarOpen} 

@@ -7,8 +7,7 @@ import {
     getDepartmentsByOrgId, getDesignationsByDeptId
 } from '../../services/recruitmentService';
 
-// --- THE FIX: Form helper components are now defined here, at the top level ---
-// This prevents them from being re-created on every render, which solves the input focus bug.
+ 
 const FormInput = ({ label, name, error, ...props }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
@@ -34,8 +33,7 @@ const FormTextarea = ({ label, name, error, ...props }) => (
 );
 
 
-// --- Main Component with Nested Routing ---
-function JobOpeningsPage() {
+ function JobOpeningsPage() {
     return (
         <Routes>
             <Route index element={<Navigate to="jobs" replace />} />
@@ -45,8 +43,7 @@ function JobOpeningsPage() {
     );
 }
 
-// --- View 1: List of all job openings ---
-function JobOpeningListPage() {
+ function JobOpeningListPage() {
     const [jobs, setJobs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,12 +61,10 @@ function JobOpeningListPage() {
         }
         setIsLoading(true);
         try {
-            // 1. Fetch ALL job openings from the API
-            const response = await getJobOpenings();
+             const response = await getJobOpenings();
             const allJobs = response.data.data || [];
 
-            // 2. THE FIX: Filter the jobs on the front-end to match the selected organization
-            const filteredJobs = allJobs.filter(job => job.organization_id === selectedOrganization.id);
+             const filteredJobs = allJobs.filter(job => job.organization_id === selectedOrganization.id);
             
             setJobs(filteredJobs);
         } catch (error) {
@@ -154,8 +149,7 @@ function JobOpeningListPage() {
     );
 }
 
-// --- Job Card Component ---
-function JobCard({ job, onEdit, onDelete }) {
+ function JobCard({ job, onEdit, onDelete }) {
     const statusClasses = {
         Open: 'bg-green-100 text-green-800',
         Closed: 'bg-red-100 text-red-800',
@@ -190,8 +184,7 @@ function JobCard({ job, onEdit, onDelete }) {
     );
 }
 
-// --- View 2: Detailed view for a single job opening ---
-function JobOpeningDetailPage() {
+ function JobOpeningDetailPage() {
     const { jobId } = useParams();
     const navigate = useNavigate();
     const [job, setJob] = useState(null);
@@ -247,8 +240,7 @@ function JobOpeningDetailPage() {
     );
 }
 
-// --- Modal for Adding/Editing a Job Opening ---
-function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
+ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     const [formData, setFormData] = useState({});
     const [departments, setDepartments] = useState([]);
     const [designations, setDesignations] = useState([]);
@@ -330,8 +322,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     );
 }
 
-// --- Confirmation Modal for Deletion ---
-function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
+ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">

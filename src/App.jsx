@@ -11,8 +11,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardContent from "./components/DashboardContent";
 import OrganizationsPage from "./pages/OrganizationsPage";
-// THE FIX: Import your new JobOpeningsPage component
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
+import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
@@ -78,8 +78,15 @@ function App() {
       children: [
         { index: true, element: <DashboardContent /> },
         { path: "organizations/*", element: <OrganizationsPage /> },
-        // THE FIX: The recruitment path now renders your new JobOpeningsPage
-        { path: "recruitment/*", element: <JobOpeningsPage /> },
+        // NOTE: The recruitment path now renders a parent component for its sub-routes
+        { 
+          path: "recruitment", 
+          children: [
+            { path: "jobs/*", element: <JobOpeningsPage /> },
+            { path: "applicants/*", element: <ApplicantsPage /> },
+            // Add other recruitment sub-routes here
+          ]
+        },
         { path: "employees/*", element: <EmployeePage /> },
         { path: "attendance/*", element: <AttendancePage /> },
         { path: "timesheet/*", element: <TimesheetPage /> },
@@ -97,4 +104,3 @@ function App() {
 }
 
 export default App;
-
