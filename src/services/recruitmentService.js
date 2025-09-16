@@ -36,9 +36,15 @@ export const getApplicantById = (id) => {
     return axiosClient.post('/recruitment/applicants', data);
 };
 
- export const updateApplicant = (id, data) => {
-    return axiosClient.put(`/recruitment/applicants/${id}`, data);
+// ... other functions are the same
+
+export const updateApplicant = (id, data) => {
+    // Change this from axiosClient.put to axiosClient.post
+    // This is required for file uploads on update to work reliably
+    return axiosClient.post(`/recruitment/applicants/${id}`, data);
 };
+
+// ... other functions are the same
 
  export const deleteApplicant = (id) => {
     return axiosClient.delete(`/recruitment/applicants/${id}`);

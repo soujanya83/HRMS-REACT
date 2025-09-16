@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+// THE FIX: Import `useLocation` to read the current URL
+import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
 import { LuLayoutDashboard } from "react-icons/lu";
@@ -103,7 +104,18 @@ const navLinks = [
 ];
 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
-    const [openMenu, setOpenMenu] = useState(null); 
+    const [openMenu, setOpenMenu] = useState(null);
+    const location = useLocation();
+
+    // THE FIX: This `useEffect` checks the URL and opens the correct parent menu on page load/navigation
+    useEffect(() => {
+        const currentParent = navLinks.find(link =>
+            link.children?.some(child => location.pathname.startsWith(child.path))
+        );
+        if (currentParent) {
+            setOpenMenu(currentParent.name);
+        }
+    }, [location.pathname]);
 
     const handleLogoutClick = () => {
         onLogout();
@@ -185,7 +197,8 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                                                 <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? 'max-h-screen' : 'max-h-0'}`}>
                                                     <div className="py-2 pl-4">
                                                         {link.children.map((child) => (
-                                                           <NavLink key={child.name} to={child.path} end className={getSubNavLinkClass} onClick={() => setSidebarOpen(false)}>
+                                                           // THE FIX: The `end` prop has been removed to allow partial matching
+                                                           <NavLink key={child.name} to={child.path} className={getSubNavLinkClass} onClick={() => setSidebarOpen(false)}>
                                                                 <child.icon size={18} className="mr-3 flex-shrink-0" />
                                                                 {child.name}
                                                            </NavLink>
@@ -213,3 +226,4 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 };
 
 export default Sidebar;
+
