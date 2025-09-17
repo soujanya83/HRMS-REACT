@@ -602,7 +602,7 @@ const ApplicantsPage = () => {
         </div>
       )}
 
-      {/* === ADD/EDIT FORM MODAL (STYLED) === */}
+      {/* === ADD/EDIT FORM MODAL (UPDATED STYLING) === */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
@@ -638,7 +638,7 @@ const ApplicantsPage = () => {
                         name="first_name"
                         id="first_name"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.first_name}
                         onChange={handleInputChange}
                       />
@@ -655,7 +655,7 @@ const ApplicantsPage = () => {
                         name="last_name"
                         id="last_name"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.last_name}
                         onChange={handleInputChange}
                       />
@@ -672,7 +672,7 @@ const ApplicantsPage = () => {
                         name="email"
                         id="email"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.email}
                         onChange={handleInputChange}
                       />
@@ -688,7 +688,7 @@ const ApplicantsPage = () => {
                         type="tel"
                         name="phone"
                         id="phone"
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.phone}
                         onChange={handleInputChange}
                       />
@@ -704,7 +704,7 @@ const ApplicantsPage = () => {
                         name="job_opening_id"
                         id="job_opening_id"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.job_opening_id}
                         onChange={handleInputChange}
                       >
@@ -726,7 +726,7 @@ const ApplicantsPage = () => {
                       <select
                         name="source"
                         id="source"
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.source}
                         onChange={handleInputChange}
                       >
@@ -747,7 +747,7 @@ const ApplicantsPage = () => {
                       <select
                         name="status"
                         id="status"
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.status}
                         onChange={handleInputChange}
                       >
@@ -769,7 +769,7 @@ const ApplicantsPage = () => {
                         name="cover_letter"
                         id="cover_letter"
                         rows={4}
-                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
                         value={formData.cover_letter}
                         onChange={handleInputChange}
                       />
@@ -781,13 +781,13 @@ const ApplicantsPage = () => {
                       >
                         Resume {isEditMode && "(Optional: to replace existing)"}
                       </label>
-                      <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                      <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-black border-dashed rounded-md">
                         <div className="space-y-1 text-center">
                           <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />
                           <div className="flex text-sm text-gray-600">
                             <label
                               htmlFor="resume"
-                              className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500"
+                              className="relative cursor-pointer bg-white rounded-md font-medium text-gray-900"
                             >
                               <span>Upload a file</span>
                               <input
