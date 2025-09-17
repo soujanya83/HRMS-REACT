@@ -23,7 +23,7 @@ import {
   getJobOpenings,
 } from "../../services/recruitmentService";
 
-// --- Data and State (No Changes Here) ---
+// --- Data and State ---
 const statusOptions = [
   {
     value: "applied",
@@ -91,9 +91,10 @@ const ApplicantsPage = () => {
   const [itemsPerPage] = useState(5);
   const [formData, setFormData] = useState(initialFormData);
   const [resumeFile, setResumeFile] = useState(null);
+  const [focusedField, setFocusedField] = useState(null);
   const organizationId = 1;
 
-  // --- All backend logic functions are correct and unchanged ---
+  // Fetch data
   const fetchData = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
@@ -112,9 +113,11 @@ const ApplicantsPage = () => {
       setLoading(false);
     }
   }, [organizationId]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   useEffect(() => {
     let result = applicants;
     if (searchTerm) {
@@ -135,6 +138,7 @@ const ApplicantsPage = () => {
     setFilteredApplicants(result);
     setCurrentPage(1);
   }, [searchTerm, statusFilter, jobFilter, applicants]);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -146,6 +150,7 @@ const ApplicantsPage = () => {
       setResumeFile(file);
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formDataInstance = new FormData();
@@ -180,12 +185,14 @@ const ApplicantsPage = () => {
       }
     }
   };
+
   const handleOpenAddForm = () => {
     setIsEditMode(false);
     setFormData(initialFormData);
     setResumeFile(null);
     setIsFormOpen(true);
   };
+
   const handleEditApplicant = (applicant) => {
     setSelectedApplicant(applicant);
     setFormData({ ...applicant });
@@ -194,16 +201,18 @@ const ApplicantsPage = () => {
     setIsFormOpen(true);
     setIsDetailOpen(false);
   };
+
   const handleDeleteApplicant = async (id) => {
     if (window.confirm("Are you sure you want to delete this applicant?")) {
       try {
         await deleteApplicant(id);
         fetchData();
       } catch (err) {
-        alert("Could not delete applicant.",err);
+        alert("Could not delete applicant.", err);
       }
     }
   };
+
   const handleStatusUpdate = async (applicantId, newStatus) => {
     try {
       await updateApplicantStatus(applicantId, newStatus);
@@ -212,15 +221,27 @@ const ApplicantsPage = () => {
         setSelectedApplicant((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
-      alert("Could not update status.",err);
+      alert("Could not update status.", err);
     }
   };
+
   const handleResumeDownload = async (applicant) => {
+    // Implementation for resume download
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  const handleFocus = (fieldName) => {
+    setFocusedField(fieldName);
+  };
+
+  const handleBlur = () => {
+    setFocusedField(null);
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredApplicants.slice(
@@ -229,10 +250,12 @@ const ApplicantsPage = () => {
   );
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const handleViewApplicant = (applicant) => {
     setSelectedApplicant(applicant);
     setIsDetailOpen(true);
   };
+
   const getStatusInfo = (statusValue) =>
     statusOptions.find((o) => o.value === statusValue) || {
       color: "bg-gray-100",
@@ -310,7 +333,7 @@ const ApplicantsPage = () => {
                 <input
                   type="text"
                   placeholder="Search by name or email..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -318,7 +341,7 @@ const ApplicantsPage = () => {
             </div>
             <div className="md:col-span-2 flex justify-end gap-4">
               <select
-                className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -330,7 +353,7 @@ const ApplicantsPage = () => {
                 ))}
               </select>
               <select
-                className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300"
                 value={jobFilter}
                 onChange={(e) => setJobFilter(e.target.value)}
               >
@@ -472,13 +495,85 @@ const ApplicantsPage = () => {
           </div>
           {filteredApplicants.length > itemsPerPage && (
             <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-              {/* Pagination */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{" "}
+                      <span className="font-medium">{indexOfFirstItem + 1}</span>{" "}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(indexOfLastItem, filteredApplicants.length)}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium">
+                        {filteredApplicants.length}
+                      </span>{" "}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav
+                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                      aria-label="Pagination"
+                    >
+                      <button
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <FiChevronLeft className="h-5 w-5" />
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => paginate(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === page
+                                ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      )}
+                      <button
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <span className="sr-only">Next</span>
+                        <FiChevronRight className="h-5 w-5" />
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </main>
 
-      {/* === VIEW DETAILS MODAL (RESTORED & STYLED) === */}
+      {/* View Details Modal */}
       {isDetailOpen && selectedApplicant && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
@@ -534,7 +629,7 @@ const ApplicantsPage = () => {
                     </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       <select
-                        className="block w-40 pl-3 pr-10 py-1 border-gray-300 rounded-md"
+                        className="block w-40 pl-3 pr-10 py-1 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                         value={selectedApplicant.status}
                         onChange={(e) =>
                           handleStatusUpdate(
@@ -602,7 +697,7 @@ const ApplicantsPage = () => {
         </div>
       )}
 
-      {/* === ADD/EDIT FORM MODAL (UPDATED STYLING) === */}
+      {/* Add/Edit Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
@@ -638,9 +733,15 @@ const ApplicantsPage = () => {
                         name="first_name"
                         id="first_name"
                         required
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "first_name"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.first_name}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("first_name")}
+                        onBlur={handleBlur}
                       />
                     </div>
                     <div>
@@ -655,9 +756,15 @@ const ApplicantsPage = () => {
                         name="last_name"
                         id="last_name"
                         required
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "last_name"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.last_name}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("last_name")}
+                        onBlur={handleBlur}
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -672,9 +779,15 @@ const ApplicantsPage = () => {
                         name="email"
                         id="email"
                         required
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "email"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.email}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("email")}
+                        onBlur={handleBlur}
                       />
                     </div>
                     <div>
@@ -688,9 +801,15 @@ const ApplicantsPage = () => {
                         type="tel"
                         name="phone"
                         id="phone"
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "phone"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.phone}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("phone")}
+                        onBlur={handleBlur}
                       />
                     </div>
                     <div>
@@ -704,9 +823,15 @@ const ApplicantsPage = () => {
                         name="job_opening_id"
                         id="job_opening_id"
                         required
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "job_opening_id"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.job_opening_id}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("job_opening_id")}
+                        onBlur={handleBlur}
                       >
                         <option value="">Select a job</option>
                         {jobOpenings.map((j) => (
@@ -726,9 +851,15 @@ const ApplicantsPage = () => {
                       <select
                         name="source"
                         id="source"
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "source"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.source}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("source")}
+                        onBlur={handleBlur}
                       >
                         {sourceOptions.map((s) => (
                           <option key={s} value={s}>
@@ -747,9 +878,15 @@ const ApplicantsPage = () => {
                       <select
                         name="status"
                         id="status"
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "status"
+                            ? "border-blue-500 ring-2 ring-blue-200 h-12"
+                            : "border-gray-300 h-10"
+                        }`}
                         value={formData.status}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("status")}
+                        onBlur={handleBlur}
                       >
                         {statusOptions.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -768,10 +905,16 @@ const ApplicantsPage = () => {
                       <textarea
                         name="cover_letter"
                         id="cover_letter"
-                        rows={4}
-                        className="block w-full border border-black rounded-md shadow-sm sm:text-sm"
+                        rows={focusedField === "cover_letter" ? 6 : 4}
+                        className={`block w-full border rounded-md shadow-sm sm:text-sm px-3 py-2 transition-all duration-300 ${
+                          focusedField === "cover_letter"
+                            ? "border-blue-500 ring-2 ring-blue-200"
+                            : "border-gray-300"
+                        }`}
                         value={formData.cover_letter}
                         onChange={handleInputChange}
+                        onFocus={() => handleFocus("cover_letter")}
+                        onBlur={handleBlur}
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -781,13 +924,13 @@ const ApplicantsPage = () => {
                       >
                         Resume {isEditMode && "(Optional: to replace existing)"}
                       </label>
-                      <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-black border-dashed rounded-md">
+                      <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all duration-300 hover:border-blue-400">
                         <div className="space-y-1 text-center">
                           <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />
                           <div className="flex text-sm text-gray-600">
                             <label
                               htmlFor="resume"
-                              className="relative cursor-pointer bg-white rounded-md font-medium text-gray-900"
+                              className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"
                             >
                               <span>Upload a file</span>
                               <input
