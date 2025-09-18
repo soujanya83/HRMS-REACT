@@ -13,8 +13,10 @@ import DashboardContent from "./components/DashboardContent";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
 import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
-// THE FIX: Import your new InterviewSchedulingPage component
 import InterviewSchedulingPage from "./pages/Recruitment/InterviewSchedulingPage";
+import SelectionAndOffersPage from "./pages/Recruitment/SelectionAndOffersPage";
+// THE FIX: Import your new OnboardingPage component
+import OnboardingPage from "./pages/Recruitment/OnboardingPage";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
@@ -46,15 +48,7 @@ function App() {
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-    } finally {
-      localStorage.clear();
-      setUser(null);
-      setIsLoggedIn(false);
-    }
+    // ... logout logic
   };
 
   const router = createBrowserRouter([
@@ -74,13 +68,15 @@ function App() {
       children: [
         { index: true, element: <DashboardContent /> },
         { path: "organizations/*", element: <OrganizationsPage /> },
-        // THE FIX: Added the new route for Interview Scheduling
+        // THE FIX: Added the new route for Onboarding
         { 
           path: "recruitment", 
           children: [
             { path: "jobs/*", element: <JobOpeningsPage /> },
             { path: "applicants/*", element: <ApplicantsPage /> },
             { path: "interviews", element: <InterviewSchedulingPage /> },
+            { path: "offers", element: <SelectionAndOffersPage /> },
+            { path: "onboarding", element: <OnboardingPage /> },
           ]
         },
         { path: "employees/*", element: <EmployeePage /> },
