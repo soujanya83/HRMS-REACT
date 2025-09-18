@@ -1,80 +1,55 @@
 import axiosClient from "../axiosClient";
 
- 
+// --- Job Opening APIs ---
 export const getJobOpenings = (orgId) => {
     return axiosClient.get(`/recruitment/job-openings`, {
         params: { organization_id: orgId }
     });
 };
+export const getJobOpeningById = (id) => axiosClient.get(`/recruitment/job-openings/${id}`);
+export const createJobOpening = (data) => axiosClient.post('/recruitment/job-openings', data);
+export const updateJobOpening = (id, data) => axiosClient.put(`/recruitment/job-openings/${id}`, data);
+export const deleteJobOpening = (id) => axiosClient.delete(`/recruitment/job-openings/${id}`);
 
-export const getJobOpeningById = (id) => {
-    return axiosClient.get(`/recruitment/job-openings/${id}`);
+
+// --- Applicant APIs ---
+export const getApplicants = (params) => axiosClient.get('/recruitment/applicants', { params });
+
+// Create Applicant now handles FormData for file uploads
+export const createApplicant = (formData) => {
+    return axiosClient.post('/recruitment/applicants', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
 };
 
-export const createJobOpening = (data) => {
-    return axiosClient.post('/recruitment/job-openings', data);
+// Update Applicant uses POST with _method for file uploads
+export const updateApplicant = (id, formData) => {
+    formData.append('_method', 'PUT');
+    return axiosClient.post(`/recruitment/applicants/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
 };
 
-export const updateJobOpening = (id, data) => {
-    return axiosClient.put(`/recruitment/job-openings/${id}`, data);
+export const deleteApplicant = (id) => axiosClient.delete(`/recruitment/applicants/${id}`);
+export const updateApplicantStatus = (id, status) => axiosClient.patch(`/recruitment/applicants/${id}/status`, { status });
+export const downloadApplicantResume = (id) => {
+    return axiosClient.get(`/recruitment/applicants/${id}/resume/download`, {
+        responseType: 'blob', // Important for file downloads
+    });
 };
-
-export const deleteJobOpening = (id) => {
-    return axiosClient.delete(`/recruitment/job-openings/${id}`);
-};
-
- 
-export const getApplicants = (params) => { 
-    return axiosClient.get(`/recruitment/applicants`, { params });
-};
- 
-export const getApplicantById = (id) => {
-    return axiosClient.get(`/recruitment/applicants/${id}`);
-};
-
- export const createApplicant = (data) => {
-    return axiosClient.post('/recruitment/applicants', data);
-};
-
-// ... other functions are the same
-
-export const updateApplicant = (id, data) => {
-    // Change this from axiosClient.put to axiosClient.post
-    // This is required for file uploads on update to work reliably
-    return axiosClient.post(`/recruitment/applicants/${id}`, data);
-};
-
-// ... other functions are the same
-
- export const deleteApplicant = (id) => {
-    return axiosClient.delete(`/recruitment/applicants/${id}`);
-};
-
-export const getApplicantsByJobOpening = (jobOpeningId) => {
-    return axiosClient.get(`/recruitment/applicants/job-opening/${jobOpeningId}`);
-};
-
+export const getApplicantsByJobOpening = (jobId) => axiosClient.get(`/recruitment/applicants/job-opening/${jobId}`);
 export const getApplicantsByStatus = (status, orgId) => {
     return axiosClient.get(`/recruitment/applicants/status/${status}`, { 
         params: { organization_id: orgId } 
     });
 };
 
-export const updateApplicantStatus = (id, status) => {
-    return axiosClient.patch(`/recruitment/applicants/${id}/status`, { status });
-};
 
-
-export const downloadApplicantResume = (id) => {
-    return axiosClient.get(`/recruitment/applicants/${id}/resume/download`, {
-        responseType: 'blob',
-    });
-};
-
+// --- Helper APIs for Form Dropdowns ---
 export const getDepartmentsByOrgId = (orgId) => {
     return axiosClient.get(`/organizations/${orgId}/departments`);
 };
-
 export const getDesignationsByDeptId = (deptId) => {
     return axiosClient.get(`/departments/${deptId}/designations`);
 };
+
