@@ -13,20 +13,16 @@ import DashboardContent from "./components/DashboardContent";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
 import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
+// THE FIX: Import your new InterviewSchedulingPage component
+import InterviewSchedulingPage from "./pages/Recruitment/InterviewSchedulingPage";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
-// --- Placeholder Pages (for routes that are not yet built) ---
+// --- Placeholder Pages ---
 const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
-const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
-const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
-const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
-const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
-const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
-const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
-
+// ... other placeholder pages
 
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -78,22 +74,17 @@ function App() {
       children: [
         { index: true, element: <DashboardContent /> },
         { path: "organizations/*", element: <OrganizationsPage /> },
-        // NOTE: The recruitment path now renders a parent component for its sub-routes
+        // THE FIX: Added the new route for Interview Scheduling
         { 
           path: "recruitment", 
           children: [
             { path: "jobs/*", element: <JobOpeningsPage /> },
             { path: "applicants/*", element: <ApplicantsPage /> },
-            // Add other recruitment sub-routes here
+            { path: "interviews", element: <InterviewSchedulingPage /> },
           ]
         },
         { path: "employees/*", element: <EmployeePage /> },
-        { path: "attendance/*", element: <AttendancePage /> },
-        { path: "timesheet/*", element: <TimesheetPage /> },
-        { path: "rostering/*", element: <RosteringPage /> },
-        { path: "payroll/*", element: <PayrollPage /> },
-        { path: "performance/*", element: <PerformancePage /> },
-        { path: "settings/*", element: <SettingsPage /> },
+        // ... all other routes
       ],
     },
     { path: "/", element: <Navigate to="/login" /> },

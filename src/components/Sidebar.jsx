@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// THE FIX: Import `useLocation` to read the current URL
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
@@ -21,7 +20,6 @@ import {
     HiChevronDoubleRight,
     HiOutlineShieldCheck
 } from "react-icons/hi";
-
 
 const navLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
@@ -107,8 +105,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
 
-    // THE FIX: This `useEffect` checks the URL and opens the correct parent menu on page load/navigation
-    useEffect(() => {
+     useEffect(() => {
         const currentParent = navLinks.find(link =>
             link.children?.some(child => location.pathname.startsWith(child.path))
         );
@@ -123,7 +120,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 
     const handleMenuClick = (menuName) => {
         if (!isCollapsed) {
-            setOpenMenu(openMenu === menuName ? null : menuName);
+             setOpenMenu(openMenu === menuName ? null : menuName);
         }
     };
 
@@ -168,15 +165,17 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                         </button>
                     </div>
                     
-                    <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-                        <div>
-                            <div className="flex items-center p-6 border-b border-gray-800 h-[104px] justify-center">
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="border-b border-gray-800 h-[104px] flex-shrink-0">
+                            <div className="flex items-center p-6 h-full justify-center">
                                 <Link to="/dashboard" className="flex items-center">
                                     <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto flex-shrink-0" />
                                     <img src={logoText} alt="CHRISPP Text" className={`h-7 w-auto ml-3 transition-all duration-200 ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100'}`} />
                                 </Link>
                             </div>
+                        </div>
 
+                        <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
                             <nav className="mt-4 px-4">
                                 {navLinks.map((link) => (
                                     <div key={link.name} className="my-2">
@@ -197,11 +196,10 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                                                 <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? 'max-h-screen' : 'max-h-0'}`}>
                                                     <div className="py-2 pl-4">
                                                         {link.children.map((child) => (
-                                                           // THE FIX: The `end` prop has been removed to allow partial matching
-                                                           <NavLink key={child.name} to={child.path} className={getSubNavLinkClass} onClick={() => setSidebarOpen(false)}>
+                                                            <NavLink key={child.name} to={child.path} className={getSubNavLinkClass} onClick={() => setSidebarOpen(false)}>
                                                                 <child.icon size={18} className="mr-3 flex-shrink-0" />
                                                                 {child.name}
-                                                           </NavLink>
+                                                            </NavLink>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -213,7 +211,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                         </div>
                     </div>
                     
-                    <div className="p-4 border-t border-gray-800">
+                    <div className="p-4 border-t border-gray-800 flex-shrink-0">
                         <button onClick={handleLogoutClick} className={`flex items-center w-full px-4 h-12 rounded-lg text-base font-semibold hover:bg-white hover:text-red-600 text-white duration-200 ${isCollapsed ? 'justify-center' : ''}`}>
                             <HiOutlineLogout size={22} className={`flex-shrink-0 ${isCollapsed ? '' : 'mr-4'}`} />
                             <span className={isCollapsed ? 'hidden' : 'block'}>Logout</span>
@@ -226,4 +224,3 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 };
 
 export default Sidebar;
-
