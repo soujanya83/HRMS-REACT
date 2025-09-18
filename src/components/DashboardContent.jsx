@@ -32,7 +32,6 @@ const DashboardContent = () => {
             });
             setIsLoading(false);
           }, 500);
-          window.location.reload();
         }
     }, [selectedOrganization]); 
 

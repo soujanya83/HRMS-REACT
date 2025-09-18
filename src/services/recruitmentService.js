@@ -1,7 +1,6 @@
 import axiosClient from "../axiosClient";
 
-// --- Job Opening APIs ---
-export const getJobOpenings = (orgId) => {
+ export const getJobOpenings = (orgId) => {
     return axiosClient.get(`/recruitment/job-openings`, {
         params: { organization_id: orgId }
     });
@@ -12,18 +11,15 @@ export const updateJobOpening = (id, data) => axiosClient.put(`/recruitment/job-
 export const deleteJobOpening = (id) => axiosClient.delete(`/recruitment/job-openings/${id}`);
 
 
-// --- Applicant APIs ---
-export const getApplicants = (params) => axiosClient.get('/recruitment/applicants', { params });
+ export const getApplicants = (params) => axiosClient.get('/recruitment/applicants', { params });
 
-// Create Applicant now handles FormData for file uploads
-export const createApplicant = (formData) => {
+ export const createApplicant = (formData) => {
     return axiosClient.post('/recruitment/applicants', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
 
-// Update Applicant uses POST with _method for file uploads
-export const updateApplicant = (id, formData) => {
+ export const updateApplicant = (id, formData) => {
     formData.append('_method', 'PUT');
     return axiosClient.post(`/recruitment/applicants/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -34,7 +30,7 @@ export const deleteApplicant = (id) => axiosClient.delete(`/recruitment/applican
 export const updateApplicantStatus = (id, status) => axiosClient.patch(`/recruitment/applicants/${id}/status`, { status });
 export const downloadApplicantResume = (id) => {
     return axiosClient.get(`/recruitment/applicants/${id}/resume/download`, {
-        responseType: 'blob', // Important for file downloads
+        responseType: 'blob', 
     });
 };
 export const getApplicantsByJobOpening = (jobId) => axiosClient.get(`/recruitment/applicants/job-opening/${jobId}`);
@@ -45,8 +41,7 @@ export const getApplicantsByStatus = (status, orgId) => {
 };
 
 
-// --- Helper APIs for Form Dropdowns ---
-export const getDepartmentsByOrgId = (orgId) => {
+ export const getDepartmentsByOrgId = (orgId) => {
     return axiosClient.get(`/organizations/${orgId}/departments`);
 };
 export const getDesignationsByDeptId = (deptId) => {
