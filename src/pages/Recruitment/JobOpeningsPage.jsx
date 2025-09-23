@@ -179,7 +179,9 @@ function JobOpeningListPage() {
           </button>
         </div>
         {isLoading ? (
-          <p>Loading jobs...</p>
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
+          </div>
         ) : jobs.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {jobs.map((job) => (
@@ -254,7 +256,7 @@ function JobCard({ job, onEdit, onDelete }) {
       {/* Primary blue colored status bar on the LEFT side */}
       <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
       
-      <div className="p-6 pl-8"> {/* Added extra left padding to account for the status bar */}
+      <div className="p-6 pl-8">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div className="flex-1">
             <Link
@@ -403,7 +405,7 @@ function JobOpeningDetailPage() {
             <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
           )}
           
-          <div className="pl-6"> {/* Added padding to account for status bar */}
+          <div className="pl-6">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
@@ -481,19 +483,42 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
   const [designations, setDesignations] = useState([]);
   const { selectedOrganization } = useOrganizations();
 
+  // Fixed date formatting function
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      // Handle both ISO format (2025-10-10T00:00:00.000000Z) and simple date format
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return ''; // Invalid date
+      
+      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+    } catch {
+      return '';
+    }
+  };
+
   useEffect(() => {
-    const initialData = job || {
+    const initialData = job ? {
+      ...job,
+      posting_date: formatDateForInput(job.posting_date),
+      closing_date: formatDateForInput(job.closing_date),
+      department_id: job.department_id || "",
+      designation_id: job.designation_id || "",
+      status: job.status?.toLowerCase() || "open"
+    } : {
       title: "",
       location: "",
       employment_type: "Full-time",
-      status: "open", // Changed to lowercase for consistency
+      status: "open",
       description: "",
       requirements: "",
-      posting_date: new Date().toISOString().split("T")[0],
+      posting_date: formatDateForInput(new Date()),
       closing_date: "",
       department_id: "",
       designation_id: "",
     };
+    
     setFormData(initialData);
 
     if (isOpen && selectedOrganization) {
@@ -506,34 +531,31 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
             }
           );
         }
+      }).catch(err => {
+        console.error("Failed to load departments:", err);
+        setDepartments([]);
       });
     }
   }, [job, isOpen, selectedOrganization]);
 
   useEffect(() => {
     const deptId = formData.department_id;
-    if (job && deptId === job.department_id) {
-      return;
-    }
-    if (formData.designation_id) {
-      setFormData((prev) => ({ ...prev, designation_id: "" }));
-    }
     if (deptId) {
       getDesignationsByDeptId(deptId).then((res) => {
         setDesignations(res.data.data || []);
+      }).catch(err => {
+        console.error("Failed to load designations:", err);
+        setDesignations([]);
       });
     } else {
       setDesignations([]);
     }
-  }, [formData.department_id, job]);
+  }, [formData.department_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Convert IDs to numbers and handle status in lowercase
     if (name === 'department_id' || name === 'designation_id') {
       setFormData((prev) => ({ ...prev, [name]: value ? parseInt(value, 10) : '' }));
-    } else if (name === 'status') {
-      setFormData((prev) => ({ ...prev, [name]: value.toLowerCase() }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -595,7 +617,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.designation_id}
                 required
-                disabled={!formData.department_id || designations.length === 0}
+                disabled={!formData.department_id}
               >
                 <option value="">Select a Designation</option>
                 {designations.map((desig) => (
@@ -619,10 +641,10 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.employment_type}
               >
-                <option>Full-time</option>
-                <option>Part-time</option>
-                <option>Contract</option>
-                <option>Internship</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
               </FormSelect>
               <div className="sm:col-span-2">
                 <FormTextarea
@@ -668,7 +690,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   onChange={handleChange}
                   error={errors?.status}
                 >
-                  {/* All options in lowercase for consistency */}
                   <option value="open">Open</option>
                   <option value="on-hold">On Hold</option>
                   <option value="closed">Closed</option>
