@@ -9,22 +9,28 @@ import "./index.css";
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
+import ErrorPage from "./pages/ErrorPage"; // Import the new error page
 import DashboardContent from "./components/DashboardContent";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
 import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
 import InterviewSchedulingPage from "./pages/Recruitment/InterviewSchedulingPage";
 import SelectionAndOffersPage from "./pages/Recruitment/SelectionAndOffersPage";
-// THE FIX: Import your new OnboardingPage component
 import OnboardingPage from "./pages/Recruitment/OnboardingPage";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
-// --- Placeholder Pages ---
+// --- Placeholder Pages (for routes that are not yet built) ---
 const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
-// ... other placeholder pages
+const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
+const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
+const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
+const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
+const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
+const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
+
 
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -48,7 +54,16 @@ function App() {
   };
 
   const handleLogout = async () => {
-    // ... logout logic
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      localStorage.clear();
+      setUser(null);
+      setIsLoggedIn(false);
+      // No need for navigate here, ProtectedRoute will handle redirect
+    }
   };
 
   const router = createBrowserRouter([
@@ -65,10 +80,11 @@ function App() {
           </OrganizationProvider>
         </ProtectedRoute>
       ),
+      // This errorElement acts as a "safety net" for all child routes of the dashboard
+      errorElement: <ErrorPage />,
       children: [
         { index: true, element: <DashboardContent /> },
         { path: "organizations/*", element: <OrganizationsPage /> },
-        // THE FIX: Added the new route for Onboarding
         { 
           path: "recruitment", 
           children: [
@@ -80,7 +96,12 @@ function App() {
           ]
         },
         { path: "employees/*", element: <EmployeePage /> },
-        // ... all other routes
+        { path: "attendance/*", element: <AttendancePage /> },
+        { path: "timesheet/*", element: <TimesheetPage /> },
+        { path: "rostering/*", element: <RosteringPage /> },
+        { path: "payroll/*", element: <PayrollPage /> },
+        { path: "performance/*", element: <PerformancePage /> },
+        { path: "settings/*", element: <SettingsPage /> },
       ],
     },
     { path: "/", element: <Navigate to="/login" /> },

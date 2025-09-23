@@ -230,18 +230,35 @@ function JobOpeningListPage() {
 }
 
 function JobCard({ job, onEdit, onDelete }) {
-  const statusClasses = {
-    Open: "bg-green-100 text-green-800",
-    Closed: "bg-red-100 text-red-800",
-    "On Hold": "bg-yellow-100 text-yellow-800",
+  // Fixed status handling - convert to lowercase for comparison but display with proper casing
+  const getStatusConfig = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
+      case 'open':
+        return { text: 'Open', color: 'bg-brand-blue text-white', badgeColor: 'bg-brand-blue' };
+      case 'closed':
+        return { text: 'Closed', color: 'bg-red-100 text-red-800', badgeColor: 'bg-red-500' };
+      case 'draft':
+        return { text: 'Draft', color: 'bg-gray-100 text-gray-800', badgeColor: 'bg-gray-500' };
+      case 'on-hold':
+        return { text: 'On Hold', color: 'bg-yellow-100 text-yellow-800', badgeColor: 'bg-yellow-500' };
+      default:
+        return { text: status || 'Unknown', color: 'bg-gray-100 text-gray-800', badgeColor: 'bg-gray-500' };
+    }
   };
+
+  const statusConfig = getStatusConfig(job.status);
+
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group">
-      <div className="p-6">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
+      {/* Primary blue colored status bar on the LEFT side */}
+      <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
+      
+      <div className="p-6 pl-8"> {/* Added extra left padding to account for the status bar */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div className="flex-1">
             <Link
-              to={`/dashboard/recruitment/jobs/${job.id}`}
+              to={`${job.id}`}
               className="block"
             >
               <h2 className="text-xl font-bold text-gray-900 hover:text-brand-blue transition truncate">
@@ -251,25 +268,23 @@ function JobCard({ job, onEdit, onDelete }) {
             <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
               <span className="flex items-center gap-1.5">
                 <HiOutlineOfficeBuilding />
-                {job.organization.name}
+                {job.organization?.name || 'No organization'}
               </span>
               <span className="flex items-center gap-1.5">
                 <HiOutlineLocationMarker />
-                {job.location}
+                {job.location || 'Remote'}
               </span>
               <span className="flex items-center gap-1.5">
                 <HiOutlineClock />
-                {job.employment_type}
+                {job.employment_type || 'Full-time'}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
             <span
-              className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                statusClasses[job.status] || "bg-gray-100 text-gray-800"
-              }`}
+              className={`px-3 py-1 text-xs font-semibold rounded-full ${statusConfig.color}`}
             >
-              {job.status}
+              {statusConfig.text}
             </span>
             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -296,76 +311,163 @@ function JobOpeningDetailPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchJob = async () => {
+      if (!jobId) {
+        setError('No job ID provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
+        setIsLoading(true);
+        setError(null);
         const response = await getJobOpeningById(jobId);
         setJob(response.data.data);
       } catch (error) {
         console.error("Failed to fetch job details", error);
+        setError('Failed to load job details. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     fetchJob();
   }, [jobId]);
 
-  if (!job)
-    return <div className="p-8 text-center">Loading job details...</div>;
+  // Fixed status handling for detail page
+  const getStatusConfig = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
+      case 'open':
+        return { text: 'Open', color: 'bg-brand-blue text-white', badgeColor: 'bg-brand-blue' };
+      case 'closed':
+        return { text: 'Closed', color: 'bg-red-100 text-red-800', badgeColor: 'bg-red-500' };
+      case 'draft':
+        return { text: 'Draft', color: 'bg-gray-100 text-gray-800', badgeColor: 'bg-gray-500' };
+      case 'on-hold':
+        return { text: 'On Hold', color: 'bg-yellow-100 text-yellow-800', badgeColor: 'bg-yellow-500' };
+      default:
+        return { text: status || 'Unknown', color: 'bg-gray-100 text-gray-800', badgeColor: 'bg-gray-500' };
+    }
+  };
+
+  const statusConfig = job ? getStatusConfig(job.status) : null;
+
+  if (isLoading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading job details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
+          >
+            <HiArrowLeft /> Back to Job Openings
+          </button>
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <HiOutlineBriefcase className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Job Not Found</h2>
+            <p className="text-gray-600">{error || 'The requested job opening could not be found.'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
       <div className="max-w-4xl mx-auto">
         <button
-          onClick={() => navigate("/dashboard/recruitment/jobs")}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
         >
           <HiArrowLeft /> Back to Job Openings
         </button>
-        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-          <div className="flex justify-between items-start gap-4">
-            <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
-            <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition flex-shrink-0">
-              <HiPencil /> Edit
-            </button>
-          </div>
-          <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
-            <span className="flex items-center gap-1.5">
-              <HiOutlineOfficeBuilding />
-              {job.organization.name}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <HiOutlineLocationMarker />
-              {job.location}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <HiOutlineClock />
-              {job.employment_type}
-            </span>
-          </div>
-          <hr className="my-6" />
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Description
-            </h3>
-            <p className="text-gray-700 whitespace-pre-wrap">
-              {job.description}
-            </p>
-          </div>
-          <div className="mt-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Requirements
-            </h3>
-            <p className="text-gray-700 whitespace-pre-wrap">
-              {job.requirements}
-            </p>
-          </div>
-          <div className="mt-6 text-sm text-gray-500">
-            <p>
-              Posting Date: {new Date(job.posting_date).toLocaleDateString()}
-            </p>
-            <p>
-              Closing Date: {new Date(job.closing_date).toLocaleDateString()}
-            </p>
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 relative">
+          {/* Status bar on the LEFT side */}
+          {statusConfig && (
+            <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
+          )}
+          
+          <div className="pl-6"> {/* Added padding to account for status bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
+                <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineOfficeBuilding />
+                    {job.organization?.name || 'No organization'}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineLocationMarker />
+                    {job.location || 'Remote'}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineClock />
+                    {job.employment_type || 'Full-time'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {statusConfig && (
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusConfig.color}`}>
+                    {statusConfig.text}
+                  </span>
+                )}
+                <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                  <HiPencil /> Edit
+                </button>
+              </div>
+            </div>
+            <hr className="my-6" />
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Description
+              </h3>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {job.description || 'No description provided.'}
+              </p>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Requirements
+              </h3>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {job.requirements || 'No requirements provided.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div>
+                <span className="font-semibold">Posting Date:</span>{' '}
+                {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : 'Not specified'}
+              </div>
+              <div>
+                <span className="font-semibold">Closing Date:</span>{' '}
+                {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
+              </div>
+              <div>
+                <span className="font-semibold">Department:</span>{' '}
+                {job.department?.name || 'Not specified'}
+              </div>
+              <div>
+                <span className="font-semibold">Designation:</span>{' '}
+                {job.designation?.title || 'Not specified'}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -384,7 +486,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
       title: "",
       location: "",
       employment_type: "Full-time",
-      status: "Open",
+      status: "open", // Changed to lowercase for consistency
       description: "",
       requirements: "",
       posting_date: new Date().toISOString().split("T")[0],
@@ -425,8 +527,18 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     }
   }, [formData.department_id, job]);
 
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    // Convert IDs to numbers and handle status in lowercase
+    if (name === 'department_id' || name === 'designation_id') {
+      setFormData((prev) => ({ ...prev, [name]: value ? parseInt(value, 10) : '' }));
+    } else if (name === 'status') {
+      setFormData((prev) => ({ ...prev, [name]: value.toLowerCase() }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -552,13 +664,15 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 <FormSelect
                   label="Status"
                   name="status"
-                  value={formData.status || "Open"}
+                  value={formData.status || "open"}
                   onChange={handleChange}
                   error={errors?.status}
                 >
-                  <option>Open</option>
-                  <option>On Hold</option>
-                  <option>Closed</option>
+                  {/* All options in lowercase for consistency */}
+                  <option value="open">Open</option>
+                  <option value="on-hold">On Hold</option>
+                  <option value="closed">Closed</option>
+                  <option value="draft">Draft</option>
                 </FormSelect>
               </div>
             </div>

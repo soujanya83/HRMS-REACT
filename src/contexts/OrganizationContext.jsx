@@ -38,12 +38,14 @@ export const OrganizationProvider = ({ children }) => {
         fetchOrgs();
     }, [fetchOrgs]);
 
-   const selectOrganization = (orgId) => {
+     const selectOrganization = (orgId) => {
         const org = organizations.find(o => o.id === orgId);
         if (org && org.id !== selectedOrganization?.id) {
             setSelectedOrganization(org);
-            localStorage.setItem('selectedOrgId', org.id,);
+            localStorage.setItem('selectedOrgId', org.id);
             
+            // REMOVE THIS LINE
+            // window.location.reload(); 
         }
     };
 
@@ -61,3 +63,4 @@ export const OrganizationProvider = ({ children }) => {
         </OrganizationContext.Provider>
     );
 };
+
