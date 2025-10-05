@@ -9,7 +9,7 @@ import "./index.css";
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
-import ErrorPage from "./pages/ErrorPage"; // Import the new error page
+import ErrorPage from "./pages/ErrorPage";
 import DashboardContent from "./components/DashboardContent";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
@@ -17,13 +17,20 @@ import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
 import InterviewSchedulingPage from "./pages/Recruitment/InterviewSchedulingPage";
 import SelectionAndOffersPage from "./pages/Recruitment/SelectionAndOffersPage";
 import OnboardingPage from "./pages/Recruitment/OnboardingPage";
+// You already have these imported, which is perfect!
+import EmployeeList from "./pages/Employees/EmployeeList";
+import EmployeeForm from "./pages/Employees/EmployeeForm";
+import EmployeeProfile from "./pages/Employees/EmployeeProfile"; // 👈 Add this import
+
+
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
-const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
+// We no longer need EmployeePage, so you can remove it if you like.
+// const EmployeePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Employee Page</h1></div>;
 const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
 const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
@@ -62,7 +69,6 @@ function App() {
       localStorage.clear();
       setUser(null);
       setIsLoggedIn(false);
-      // No need for navigate here, ProtectedRoute will handle redirect
     }
   };
 
@@ -80,7 +86,6 @@ function App() {
           </OrganizationProvider>
         </ProtectedRoute>
       ),
-      // This errorElement acts as a "safety net" for all child routes of the dashboard
       errorElement: <ErrorPage />,
       children: [
         { index: true, element: <DashboardContent /> },
@@ -95,7 +100,27 @@ function App() {
             { path: "onboarding", element: <OnboardingPage /> },
           ]
         },
-        { path: "employees/*", element: <EmployeePage /> },
+        
+        // ======================= ⬇️ START OF CHANGES ⬇️ =======================
+
+        {
+          path: "employees", // The base path for all employee-related pages
+          children: [
+            // This is the default page for "/dashboard/employees"
+            { index: true, element: <EmployeeList /> },
+
+            // This page will show at "/dashboard/employees/new"
+            { path: "new", element: <EmployeeForm /> },
+
+            // This page will show at "/dashboard/employees/edit/some-id-123"
+            // The ":employeeId" is a URL parameter you can use in your form.
+              { path: "edit/:id", element: <EmployeeForm /> }, // Changed from employeeId to id
+            { path: ":id", element: <EmployeeProfile /> },
+          ]
+        },
+        
+        // ======================= ⬆️  END OF CHANGES  ⬆️ =======================
+
         { path: "attendance/*", element: <AttendancePage /> },
         { path: "timesheet/*", element: <TimesheetPage /> },
         { path: "rostering/*", element: <RosteringPage /> },
