@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { getEmployees, deleteEmployee, getTrashedEmployees, restoreEmployee, forceDeleteEmployee } from "../../services/employeeService";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash, FaEye, FaPlus, FaUndo, FaTrashAlt, FaSearch } from 'react-icons/fa';
+import { useOrganizations } from "../../contexts/OrganizationContext"; // THE FIX: Import context
 
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
@@ -27,22 +28,37 @@ export default function EmployeeList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [modalState, setModalState] = useState({ isOpen: false, action: null, title: '', message: '' });
     const navigate = useNavigate();
+    
+    // THE FIX: Get the currently selected organization from the global context
+    const { selectedOrganization } = useOrganizations();
 
     const fetchAllEmployees = useCallback(async () => {
+        // THE FIX: Do not fetch if no organization is selected
+        if (!selectedOrganization) {
+            setLoading(false);
+            setEmployees([]);
+            return;
+        }
+        
         setLoading(true);
         try {
-            const params = { search: searchTerm };
+            // THE FIX: Pass the organization_id and search term to the API
+            const params = { 
+                search: searchTerm,
+                organization_id: selectedOrganization.id 
+            };
+            
             const response = view === 'active' 
                 ? await getEmployees(params)
                 : await getTrashedEmployees(params);
-            setEmployees(response.data.data); // Assuming your API returns data under a 'data' key
+            setEmployees(response.data.data);
         } catch (error) {
             console.error("Error fetching employees:", error);
             setEmployees([]);
         } finally {
             setLoading(false);
         }
-    }, [view, searchTerm]);
+    }, [view, searchTerm, selectedOrganization]); // THE FIX: Add selectedOrganization as a dependency
 
     useEffect(() => {
         const debounceTimer = setTimeout(() => {
@@ -144,8 +160,9 @@ export default function EmployeeList() {
                                         <div className="text-sm text-gray-900">{emp.personal_email}</div>
                                         <div className="text-sm text-gray-500">{emp.phone_number}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{emp.designation?.name || 'N/A'}</div>
+                                    <td className="px-6 py-4 whitespace-nowGrap">
+                                        {/* THE FIX: Check if designation/department exist before accessing name/title */}
+                                        <div className="text-sm text-gray-900">{emp.designation?.title || 'N/A'}</div>
                                         <div className="text-sm text-gray-500">{emp.department?.name || 'N/A'}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

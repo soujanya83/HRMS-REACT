@@ -18,3 +18,5 @@ export const getDesignationsByDeptId = (deptId) => axiosClient.get(`/departments
 export const createDesignation = (deptId, data) => axiosClient.post(`/departments/${deptId}/designations`, data);
 export const updateDesignation = (desigId, data) => axiosClient.put(`/designations/${desigId}`, data);
 export const deleteDesignation = (desigId) => axiosClient.delete(`/designations/${desigId}`);
+
+

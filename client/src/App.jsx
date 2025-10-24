@@ -20,9 +20,8 @@ import OnboardingPage from "./pages/Recruitment/OnboardingPage";
 import EmployeeList from "./pages/Employees/EmployeeList";
 import EmployeeForm from "./pages/Employees/EmployeeForm";
 import EmployeeProfile from "./pages/Employees/EmployeeProfile";
-// THE FIX: Import your new EmployeeHistoryPage component
 import EmployeeHistoryPage from "./pages/Employees/EmployeeHistoryPage";
-
+import ManageProfiles from "./pages/Employees/ManageProfiles"; // ADD THIS IMPORT
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
@@ -36,12 +35,12 @@ const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bo
 const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
-
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
 };
+
 const PublicRoute = ({ isLoggedIn, children }) => {
   if (isLoggedIn) return <Navigate to="/dashboard" replace />;
   return children;
@@ -98,19 +97,19 @@ function App() {
             { path: "onboarding", element: <OnboardingPage /> },
           ]
         },
-        
         {
-          path: "employees", // The base path for all employee-related pages
+          path: "employees",
           children: [
             { index: true, element: <EmployeeList /> },
             { path: "new", element: <EmployeeForm /> },
-            { path: "edit/:id", element: <EmployeeForm /> }, 
-            { path: ":id", element: <EmployeeProfile /> },
-            // THE FIX: Added the new route for Employee History
+            { path: "edit/:id", element: <EmployeeForm /> },
+            // Add the manage route
+            { path: "manage", element: <ManageProfiles /> },
             { path: "history", element: <EmployeeHistoryPage /> },
+            // Dynamic :id route should be last
+            { path: ":id", element: <EmployeeProfile /> },
           ]
         },
-        
         { path: "attendance/*", element: <AttendancePage /> },
         { path: "timesheet/*", element: <TimesheetPage /> },
         { path: "rostering/*", element: <RosteringPage /> },
@@ -127,4 +126,3 @@ function App() {
 }
 
 export default App;
-
