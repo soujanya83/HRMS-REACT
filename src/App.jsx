@@ -21,7 +21,10 @@ import EmployeeList from "./pages/Employees/EmployeeList";
 import EmployeeForm from "./pages/Employees/EmployeeForm";
 import EmployeeProfile from "./pages/Employees/EmployeeProfile";
 import EmployeeHistoryPage from "./pages/Employees/EmployeeHistoryPage";
-import ManageProfiles from "./pages/Employees/ManageProfiles"; // ADD THIS IMPORT
+import ManageProfiles from "./pages/Employees/ManageProfiles"; 
+import ProbationConfirmation from "./pages/Employees/ProbationConfirmation";
+import ExitOffboarding from "./pages/Employees/ExitOffboarding";
+
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
@@ -97,18 +100,21 @@ function App() {
             { path: "onboarding", element: <OnboardingPage /> },
           ]
         },
-        {
-          path: "employees",
-          children: [
-            { index: true, element: <EmployeeList /> },
-            { path: "new", element: <EmployeeForm /> },
-            { path: "edit/:id", element: <EmployeeForm /> },
-            // Add the manage route
-            { path: "manage", element: <ManageProfiles /> },
-            { path: "history", element: <EmployeeHistoryPage /> },
-            // Dynamic :id route should be last
-            { path: ":id", element: <EmployeeProfile /> },
-          ]
+       {
+    path: "employees",
+    children: [
+        { index: true, element: <EmployeeList /> },
+        { path: "new", element: <EmployeeForm /> },
+        { path: "edit/:id", element: <EmployeeForm /> },
+        // Add the specific routes above dynamic routes
+        { path: "manage", element: <ManageProfiles /> },
+        { path: "probation", element: <ProbationConfirmation /> },
+        { path: "exit", element: <ExitOffboarding /> },
+        { path: "history", element: <EmployeeHistoryPage /> },
+        // Dynamic :id route should be last
+        { path: ":id", element: <EmployeeProfile /> },
+    ]
+
         },
         { path: "attendance/*", element: <AttendancePage /> },
         { path: "timesheet/*", element: <TimesheetPage /> },

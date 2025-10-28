@@ -85,7 +85,7 @@ export default function EmployeeProfile() {
         day: 'numeric'
       });
     } catch (error) {
-      return dateString;
+      return dateString, error;
     }
   };
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useMemo, useEffect } from 'react';
 // THE FIX: Added HiOutlineBriefcase to the import list
 import { 
