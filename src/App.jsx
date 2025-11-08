@@ -24,14 +24,20 @@ import EmployeeHistoryPage from "./pages/Employees/EmployeeHistoryPage";
 import ManageProfiles from "./pages/Employees/ManageProfiles"; 
 import ProbationConfirmation from "./pages/Employees/ProbationConfirmation";
 import ExitOffboarding from "./pages/Employees/ExitOffboarding";
+import EmployeeDocumentsPage from "./pages/Employees/EmployeeDocumentsPage";
 
+// --- Import Attendance Pages ---
+import AttendanceTracking from "./pages/Attendance/AttendanceTracking";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
-const AttendancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Attendance Page</h1></div>;
+const ManualAdjustments = () => <div className="p-6"><h1 className="text-2xl font-bold">Manual Adjustments Page</h1></div>;
+const LeaveRequests = () => <div className="p-6"><h1 className="text-2xl font-bold">Leave Requests Page</h1></div>;
+const LeaveBalance = () => <div className="p-6"><h1 className="text-2xl font-bold">Leave Balance Page</h1></div>;
+const HolidaysCalendars = () => <div className="p-6"><h1 className="text-2xl font-bold">Holidays & Calendars Page</h1></div>;
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
 const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
 const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
@@ -100,23 +106,31 @@ function App() {
             { path: "onboarding", element: <OnboardingPage /> },
           ]
         },
-       {
-    path: "employees",
-    children: [
-        { index: true, element: <EmployeeList /> },
-        { path: "new", element: <EmployeeForm /> },
-        { path: "edit/:id", element: <EmployeeForm /> },
-        // Add the specific routes above dynamic routes
-        { path: "manage", element: <ManageProfiles /> },
-        { path: "probation", element: <ProbationConfirmation /> },
-        { path: "exit", element: <ExitOffboarding /> },
-        { path: "history", element: <EmployeeHistoryPage /> },
-        // Dynamic :id route should be last
-        { path: ":id", element: <EmployeeProfile /> },
-    ]
-
+        {
+          path: "employees",
+          children: [
+            { index: true, element: <EmployeeList /> },
+            { path: "new", element: <EmployeeForm /> },
+            { path: "edit/:id", element: <EmployeeForm /> },
+            { path: "manage", element: <ManageProfiles /> },
+            { path: "probation", element: <ProbationConfirmation /> },
+            { path: "exit", element: <ExitOffboarding /> },
+            { path: "history", element: <EmployeeHistoryPage /> },
+            { path: ":id/documents", element: <EmployeeDocumentsPage /> },
+            { path: ":id", element: <EmployeeProfile /> },
+          ]
         },
-        { path: "attendance/*", element: <AttendancePage /> },
+        { 
+          path: "attendance", 
+          children: [
+            { path: "tracking", element: <AttendanceTracking /> },
+            { path: "adjustments", element: <ManualAdjustments /> },
+            { path: "requests", element: <LeaveRequests /> },
+            { path: "balance", element: <LeaveBalance /> },
+            { path: "holidays", element: <HolidaysCalendars /> },
+            { index: true, element: <Navigate to="tracking" replace /> }
+          ]
+        },
         { path: "timesheet/*", element: <TimesheetPage /> },
         { path: "rostering/*", element: <RosteringPage /> },
         { path: "payroll/*", element: <PayrollPage /> },

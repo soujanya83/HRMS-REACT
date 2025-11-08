@@ -16,7 +16,7 @@ import {
   FaTrashAlt,
   FaSearch,
 } from "react-icons/fa";
-import { useOrganizations } from "../../contexts/OrganizationContext"; // THE FIX: Import context
+import { useOrganizations } from "../../contexts/OrganizationContext"; 
 
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   if (!isOpen) return null;

@@ -223,7 +223,6 @@ export default function EmployeeForm() {
       data.append(key, formData[key] === null ? "" : formData[key]);
     }
     data.append("organization_id", organizationId);
-    // data.append('user_id', user.id); // TODO: Get user_id from auth context
 
     try {
       if (isEdit) {

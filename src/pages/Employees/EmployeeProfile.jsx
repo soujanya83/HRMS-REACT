@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getEmployee } from '../../services/employeeService.js';
+import EmployeeDocuments from './EmployeeDocuments';
 import { FaUser, FaBriefcase, FaBuilding, FaPhone, FaEnvelope, FaBirthdayCake, FaMapMarkerAlt, FaFileContract, FaUniversity, FaExclamationTriangle, FaArrowLeft, FaDollarSign, FaShieldAlt, FaPassport, FaCalendarAlt } from 'react-icons/fa';
 
 // Helper component for displaying a detail field
@@ -40,10 +41,6 @@ export default function EmployeeProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Debug the ID parameter
-  console.log('EmployeeProfile - ID from useParams:', id);
-  console.log('EmployeeProfile - Full path:', window.location.pathname);
-
   useEffect(() => {
     const fetchEmployeeData = async () => {
       setLoading(true);
@@ -51,7 +48,6 @@ export default function EmployeeProfile() {
       try {
         console.log('Starting to fetch employee with ID:', id);
         
-        // Check if the ID is valid (should be a number, not "manage")
         if (id === 'manage' || isNaN(parseInt(id))) {
           throw new Error(`Invalid employee ID: ${id}. Please check the URL.`);
         }
@@ -85,7 +81,8 @@ export default function EmployeeProfile() {
         day: 'numeric'
       });
     } catch (error) {
-      return dateString, error;
+      console.error('Date formatting error:', error);
+      return dateString;
     }
   };
 
@@ -282,6 +279,14 @@ export default function EmployeeProfile() {
                 />
               </div>
             </ProfileSection>
+
+            {/* Employee Documents Section */}
+            <div className="mt-8">
+              <EmployeeDocuments 
+                employeeId={id} 
+                employeeName={`${employee.first_name} ${employee.last_name}`}
+              />
+            </div>
           </div>
 
           {/* Right Column - 1/3 width */}

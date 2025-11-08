@@ -5,8 +5,6 @@ import {
   FiPlus,
   FiEdit,
   FiTrash2,
-  FiChevronLeft,
-  FiChevronRight,
   FiDownload,
   FiEye,
   FiX,
@@ -873,3 +871,6 @@ const ApplicantsPage = () => {
 };
 
 export default ApplicantsPage;
+
+
+

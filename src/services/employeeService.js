@@ -1,25 +1,21 @@
 import axiosClient from "../axiosClient";
 
+// --- Core CRUD Operations ---
 
-export const getEmployees = (params) => {
+// Get a list of employees with optional filtering/searching
+export const getEmployees = (params = {}) => {
   return axiosClient.get("/employees", { params });
 };
 
-
+// Get a single employee by their ID
 export const getEmployee = (id) => {
-
-  if (!id || id === 'manage' || id === 'history') {
-    throw new Error(`Invalid employee ID: ${id}`);
-  }
-  
-
+  // Clean the ID parameter to remove any prefixes
   const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
   console.log('EmployeeService - Fetching employee with cleaned ID:', cleanId);
-  
   return axiosClient.get(`/employees/${cleanId}`);
 };
 
-
+// Create a new employee
 export const createEmployee = (employeeData) => {
   return axiosClient.post("/employees", employeeData, {
     headers: {
@@ -28,7 +24,7 @@ export const createEmployee = (employeeData) => {
   });
 };
 
-
+// Update an existing employee
 export const updateEmployee = (id, employeeData) => {
   employeeData.append('_method', 'PUT');
   return axiosClient.post(`/employees/${id}`, employeeData, {
@@ -38,40 +34,83 @@ export const updateEmployee = (id, employeeData) => {
   });
 };
 
-
+// Soft delete an employee (moves them to trash)
 export const deleteEmployee = (id) => {
   return axiosClient.delete(`/employees/${id}`);
 };
 
+// --- Soft Deletes & Trashed Data ---
 
-
-export const getTrashedEmployees = (params) => {
+// Get a list of soft-deleted employees
+export const getTrashedEmployees = (params = {}) => {
   return axiosClient.get('/employees/trashed', { params });
 };
 
+// Restore a soft-deleted employee
 export const restoreEmployee = (id) => {
   return axiosClient.patch(`/employees/${id}/restore`);
 };
 
+// Permanently delete an employee from the database
 export const forceDeleteEmployee = (id) => {
-  return axiosClient.delete(`/employees/${id}/force`);
+  return axiosClient.delete(`/employees/${id}/force-delete`);
 };
 
+// --- Filtering & Searching ---
 
+// List employees by department
+export const getEmployeesByDepartment = (departmentId, params = {}) => {
+  return axiosClient.get(`/employees/department/${departmentId}`, { params });
+};
+
+// List employees by designation
+export const getEmployeesByDesignation = (designationId, params = {}) => {
+  return axiosClient.get(`/employees/designation/${designationId}`, { params });
+};
+
+// List employees by reporting manager
+export const getEmployeesByManager = (managerId, params = {}) => {
+  return axiosClient.get(`/employees/manager/${managerId}`, { params });
+};
+
+// Employees by organization
+export const getEmployeesByOrganization = (organizationId, params = {}) => {
+  return axiosClient.get(`/employees/organization/${organizationId}`, { params });
+};
+
+// Search/filter employees by name
+export const searchEmployees = (searchParams = {}) => {
+  return axiosClient.get('/employees/search', { params: searchParams });
+};
+
+// --- Employee Status & Management ---
+
+// Change employee status
 export const updateEmployeeStatus = (id, status) => {
-    return axiosClient.patch(`/employees/${id}/status`, { status });
+  return axiosClient.post(`/employees/${id}/status`, { status });
 };
 
+// Update employee manager
 export const updateEmployeeManager = (id, managerId) => {
-    return axiosClient.patch(`/employees/${id}/manager`, { reporting_manager_id: managerId });
+  return axiosClient.patch(`/employees/${id}/manager`, { reporting_manager_id: managerId });
 };
 
+// Get an employee's detailed profile data
 export const getEmployeeProfile = (id) => {
-  const cleanId = id.replace('manage:', '').replace('edit:', '');
+  const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
   return axiosClient.get(`/employees/${cleanId}/profile`);
 };
 
-export const getEmployeeDocuments = (id) => {
-  const cleanId = id.replace('manage:', '').replace('edit:', '');
-  return axiosClient.get(`/employees/${cleanId}/documents`);
+// Get an employee's documents
+export const getEmployeeDocuments = (employeeId) => {
+  return axiosClient.get(`/employees/${employeeId}/documents`);
+};
+
+// Upload new employee document
+export const uploadEmployeeDocument = (employeeId, documentData) => {
+  return axiosClient.post(`/employees/${employeeId}/documents`, documentData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
