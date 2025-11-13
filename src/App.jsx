@@ -30,13 +30,13 @@ import EmployeeDocumentsPage from "./pages/Employees/EmployeeDocumentsPage";
 import AttendanceTracking from "./pages/Attendance/AttendanceTracking";
 import ManualAdjustments from "./pages/Attendance/ManualAdjustments";
 import LeaveRequests from "./pages/Attendance/LeaveRequests";
+import LeaveBalance from "./pages/Attendance/LeaveBalance";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
-const LeaveBalance = () => <div className="p-6"><h1 className="text-2xl font-bold">Leave Balance Page</h1></div>;
 const HolidaysCalendars = () => <div className="p-6"><h1 className="text-2xl font-bold">Holidays & Calendars Page</h1></div>;
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
 const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;

@@ -489,7 +489,6 @@ const ManualAdjustments = () => {
           </div>
         )}
 
-        {/* Adjustments Table */}
         <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
