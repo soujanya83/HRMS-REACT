@@ -33,13 +33,18 @@ import LeaveRequests from "./pages/Attendance/LeaveRequests";
 import LeaveBalance from "./pages/Attendance/LeaveBalance";
 import HolidaysCalendars from "./pages/Attendance/HolidaysCalendars";
 
+// --- Import Timesheet Pages ---
+import TimesheetEntry from "./pages/Timesheet/TimesheetEntry";
+import TimesheetApprovals from "./pages/Timesheet/TimesheetApprovals";
+import OvertimeTracking from "./pages/Timesheet/OvertimeTracking";
+import TimesheetReports from "./pages/Timesheet/TimesheetReports";
+
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
 const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
-const TimesheetPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Timesheet Page</h1></div>;
 const RosteringPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Rostering Page</h1></div>;
 const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
@@ -131,7 +136,16 @@ function App() {
             { index: true, element: <Navigate to="tracking" replace /> }
           ]
         },
-        { path: "timesheet/*", element: <TimesheetPage /> },
+        { 
+          path: "timesheet", 
+          children: [
+            { path: "entry", element: <TimesheetEntry /> },
+            { path: "approvals", element: <TimesheetApprovals /> },
+            { path: "overtime", element: <OvertimeTracking /> },
+            { path: "reports", element: <TimesheetReports /> },
+            { index: true, element: <Navigate to="entry" replace /> }
+          ]
+        },
         { path: "rostering/*", element: <RosteringPage /> },
         { path: "payroll/*", element: <PayrollPage /> },
         { path: "performance/*", element: <PerformancePage /> },
