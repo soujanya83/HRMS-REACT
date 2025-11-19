@@ -45,12 +45,23 @@ import ShiftSwapping from "./pages/Rostering/ShiftSwapping";
 import RostersPage from "./pages/Rostering/RostersPage";
 import NotificationsPage from "./pages/Rostering/NotificationsPage";
 
+// --- Import Payroll Pages ---
+import SalaryStructureSetup from "./pages/Payroll/SalaryStructureSetup";
+import SalaryProcessing from "./pages/Payroll/SalaryProcessing";
+import Deductions from "./pages/Payroll/Deductions"; // ✅ ADD THIS IMPORT
+import PayslipGeneration from "./pages/Payroll/PayslipGeneration"; // ✅ ADD THIS IMPORT
+
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
-const PayrollPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Page</h1></div>;
+// ❌ REMOVE THESE PLACEHOLDERS:
+// const Deductions = () => <div className="p-6"><h1 className="text-2xl font-bold">Deductions Page</h1></div>;
+// const PayslipGeneration = () => <div className="p-6"><h1 className="text-2xl font-bold">Payslip Generation Page</h1></div>;
+
+const BonusIncentives = () => <div className="p-6"><h1 className="text-2xl font-bold">Bonus & Incentives Page</h1></div>;
+const PayrollReports = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Reports Page</h1></div>;
 const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
@@ -161,7 +172,18 @@ function App() {
             { index: true, element: <Navigate to="scheduling" replace /> }
           ]
         },
-        { path: "payroll/*", element: <PayrollPage /> },
+        { 
+          path: "payroll", 
+          children: [
+            { path: "setup", element: <SalaryStructureSetup /> },
+            { path: "processing", element: <SalaryProcessing /> },
+            { path: "deductions", element: <Deductions /> }, // ✅ USE ACTUAL COMPONENT
+            { path: "payslips", element: <PayslipGeneration /> }, // ✅ USE ACTUAL COMPONENT
+            { path: "bonus", element: <BonusIncentives /> },
+            { path: "reports", element: <PayrollReports /> },
+            { index: true, element: <Navigate to="processing" replace /> }
+          ]
+        },
         { path: "performance/*", element: <PerformancePage /> },
         { path: "settings/*", element: <SettingsPage /> },
       ],
