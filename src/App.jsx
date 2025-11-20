@@ -48,21 +48,22 @@ import NotificationsPage from "./pages/Rostering/NotificationsPage";
 // --- Import Payroll Pages ---
 import SalaryStructureSetup from "./pages/Payroll/SalaryStructureSetup";
 import SalaryProcessing from "./pages/Payroll/SalaryProcessing";
-import Deductions from "./pages/Payroll/Deductions"; // ✅ ADD THIS IMPORT
-import PayslipGeneration from "./pages/Payroll/PayslipGeneration"; // ✅ ADD THIS IMPORT
+import Deductions from "./pages/Payroll/Deductions";
+import PayslipGeneration from "./pages/Payroll/PayslipGeneration";
+import BonusIncentives from "./pages/Payroll/BonusIncentives";
+import PayrollReports from "./pages/Payroll/PayrollReports";
+
+// --- Import Performance Pages ---
+import GoalSetting from "./pages/Performance/GoalSetting";
+import KPIOKRTracking from "./pages/Performance/KPIOKRTracking";
+import PerformanceReviews from "./pages/Performance/PerformanceReviews";
+import FeedbackAppraisals from "./pages/Performance/FeedbackAppraisals";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
-// ❌ REMOVE THESE PLACEHOLDERS:
-// const Deductions = () => <div className="p-6"><h1 className="text-2xl font-bold">Deductions Page</h1></div>;
-// const PayslipGeneration = () => <div className="p-6"><h1 className="text-2xl font-bold">Payslip Generation Page</h1></div>;
-
-const BonusIncentives = () => <div className="p-6"><h1 className="text-2xl font-bold">Bonus & Incentives Page</h1></div>;
-const PayrollReports = () => <div className="p-6"><h1 className="text-2xl font-bold">Payroll Reports Page</h1></div>;
-const PerformancePage = () => <div className="p-6"><h1 className="text-2xl font-bold">Performance Page</h1></div>;
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
 // --- Route Protectors ---
@@ -177,14 +178,23 @@ function App() {
           children: [
             { path: "setup", element: <SalaryStructureSetup /> },
             { path: "processing", element: <SalaryProcessing /> },
-            { path: "deductions", element: <Deductions /> }, // ✅ USE ACTUAL COMPONENT
-            { path: "payslips", element: <PayslipGeneration /> }, // ✅ USE ACTUAL COMPONENT
+            { path: "deductions", element: <Deductions /> },
+            { path: "payslips", element: <PayslipGeneration /> },
             { path: "bonus", element: <BonusIncentives /> },
             { path: "reports", element: <PayrollReports /> },
             { index: true, element: <Navigate to="processing" replace /> }
           ]
         },
-        { path: "performance/*", element: <PerformancePage /> },
+        { 
+          path: "performance", 
+          children: [
+            { path: "goals", element: <GoalSetting /> },
+            { path: "tracking", element: <KPIOKRTracking /> },
+            { path: "reviews", element: <PerformanceReviews /> },
+            { path: "appraisals", element: <FeedbackAppraisals /> },
+            { index: true, element: <Navigate to="goals" replace /> }
+          ]
+        },
         { path: "settings/*", element: <SettingsPage /> },
       ],
     },
