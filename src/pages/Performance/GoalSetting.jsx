@@ -6,18 +6,12 @@ import {
     FaEdit, 
     FaTrash, 
     FaDownload,
-    FaUpload,
     FaCopy,
     FaSave,
-    FaTimes,
-    FaUserTie,
-    FaBuilding,
-    FaChartLine,
-    FaCalendarAlt,
     FaCheckCircle,
+    FaChartLine,
     FaClock,
     FaExclamationTriangle,
-    FaUsers,
     FaChartBar
 } from 'react-icons/fa';
 
@@ -311,16 +305,16 @@ const GoalSetting = () => {
 
     if (loading) {
         return (
-            <div className="p-6 bg-gray-100 min-h-screen">
-                <div className="max-w-7xl mx-auto">
+            <div className="p-4 bg-gray-100 min-h-screen">
+                <div className="max-w-6xl mx-auto">
                     <div className="animate-pulse">
-                        <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+                                <div key={i} className="h-16 bg-gray-300 rounded"></div>
                             ))}
                         </div>
-                        <div className="h-64 bg-gray-300 rounded"></div>
+                        <div className="h-48 bg-gray-300 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -328,79 +322,79 @@ const GoalSetting = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-            <div className="max-w-7xl mx-auto">
+        <div className="p-4 bg-gray-100 min-h-screen font-sans overflow-x-hidden">
+            <div className="max-w-6xl mx-auto w-full">
                 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                        <FaBullseye className="mr-3 text-blue-600" />
+                <div className="mb-4">
+                    <h1 className="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                        <FaBullseye className="mr-2 text-blue-600 text-lg" />
                         Goal Setting
                     </h1>
-                    <p className="text-gray-600">Set and track organizational, team, and individual goals</p>
+                    <p className="text-xs text-gray-600">Set and track organizational, team, and individual goals</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Goals</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                                <p className="text-xs text-gray-600">Total Goals</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <FaBullseye className="text-blue-500 text-xl" />
+                            <FaBullseye className="text-blue-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Completed</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.completed}</p>
+                                <p className="text-xs text-gray-600">Completed</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.completed}</p>
                             </div>
-                            <FaCheckCircle className="text-green-500 text-xl" />
+                            <FaCheckCircle className="text-green-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">In Progress</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.in_progress}</p>
+                                <p className="text-xs text-gray-600">In Progress</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.in_progress}</p>
                             </div>
-                            <FaChartLine className="text-yellow-500 text-xl" />
+                            <FaChartLine className="text-yellow-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-purple-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Avg Progress</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.avg_progress}%</p>
+                                <p className="text-xs text-gray-600">Avg Progress</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.avg_progress}%</p>
                             </div>
-                            <FaChartBar className="text-purple-500 text-xl" />
+                            <FaChartBar className="text-purple-500 text-base" />
                         </div>
                     </div>
                 </div>
 
                 {/* Filters and Actions */}
-                <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="mb-4 p-3 bg-white shadow rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div className="relative">
-                            <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                            <FaSearch className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 text-xs" />
                             <input 
                                 type="text"
                                 placeholder="Search goals..."
                                 value={filters.search}
                                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 pl-7 pr-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                         </div>
                         
                         <select 
                             value={filters.type}
                             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Types</option>
                             {goalTypes.map(type => (
@@ -411,18 +405,18 @@ const GoalSetting = () => {
                         <select 
                             value={filters.status}
                             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Status</option>
                             {statusTypes.map(status => (
-                                <option key={status} value={status}>{status}</option>
+                                <option key={status} value={status}>{status.replace('_', ' ')}</option>
                             ))}
                         </select>
 
                         <select 
                             value={filters.department}
                             onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Departments</option>
                             {departments.map(dept => (
@@ -430,126 +424,130 @@ const GoalSetting = () => {
                             ))}
                         </select>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                             <button
                                 onClick={() => setShowGoalForm(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
+                                className="flex items-center gap-1 px-2 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors flex-1"
                             >
-                                <FaPlus /> New Goal
+                                <FaPlus className="text-xs" /> New Goal
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                <FaDownload />
+                            <button className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">
+                                <FaDownload className="text-xs" />
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Goals Table */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200 text-xs">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Goal Details</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Type & Assignment</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Target & Progress</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Timeline</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status & Priority</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Goal Details</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Type & Assignment</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Progress</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Status & Priority</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {filteredGoals.map((goal) => {
                                     const StatusIcon = getStatusIcon(goal.status);
+                                    const daysLeft = Math.ceil((new Date(goal.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+                                    
                                     return (
                                         <tr key={goal.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center space-x-3">
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center space-x-2">
                                                     <div className="flex-shrink-0">
-                                                        <FaBullseye className="text-blue-500" />
+                                                        <FaBullseye className="text-blue-500 text-xs" />
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-gray-900 truncate">
                                                             {goal.title}
                                                         </div>
-                                                        <div className="text-sm text-gray-500 max-w-xs truncate">
+                                                        <div className="text-gray-500 truncate max-w-[150px]">
                                                             {goal.description}
                                                         </div>
-                                                        <div className="text-xs text-gray-400">
+                                                        <div className="text-gray-400 text-[10px]">
                                                             {goal.kpis.slice(0, 2).join(', ')}
                                                             {goal.kpis.length > 2 && ` +${goal.kpis.length - 2} more`}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{goal.type}</div>
-                                                <div className="text-sm text-gray-500">{goal.department}</div>
-                                                <div className="text-xs text-gray-400">{goal.assigned_to}</div>
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="text-gray-900">{goal.type}</div>
+                                                <div className="text-gray-500">{goal.department}</div>
+                                                <div className="text-gray-400 text-[10px]">{goal.assigned_to}</div>
+                                                <div className="text-gray-400 text-[10px]">
+                                                    {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="text-sm font-semibold text-gray-900">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="font-semibold text-gray-900 text-[10px]">
                                                     {goal.unit === 'INR' ? formatCurrency(goal.target_value) : `${goal.target_value} ${goal.unit}`}
                                                 </div>
-                                                <div className="text-sm text-green-600">
+                                                <div className="text-green-600 text-[10px]">
                                                     Current: {goal.unit === 'INR' ? formatCurrency(goal.current_value) : `${goal.current_value} ${goal.unit}`}
                                                 </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                                                     <div 
-                                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                                        className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                                         style={{ width: `${goal.progress}%` }}
                                                     ></div>
                                                 </div>
-                                                <div className="text-xs text-gray-500 text-right">{goal.progress}%</div>
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                <div>Start: {new Date(goal.start_date).toLocaleDateString()}</div>
-                                                <div>End: {new Date(goal.end_date).toLocaleDateString()}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    {Math.ceil((new Date(goal.end_date) - new Date()) / (1000 * 60 * 60 * 24))} days left
+                                                <div className="flex justify-between items-center mt-0.5">
+                                                    <div className="text-[10px] text-gray-500">
+                                                        {goal.progress}%
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(goal.status)} mb-1`}>
-                                                    <StatusIcon className="mr-1" size={12} />
-                                                    {goal.status.replace('_', ' ')}
-                                                </span>
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(goal.priority)}`}>
-                                                    {goal.priority}
-                                                </span>
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="space-y-1">
+                                                    <span className={`px-1.5 py-0.5 inline-flex items-center text-[10px] font-semibold rounded-full ${getStatusColor(goal.status)}`}>
+                                                        <StatusIcon className="mr-0.5" size={8} />
+                                                        {goal.status.replace('_', ' ')}
+                                                    </span>
+                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-semibold rounded-full ${getPriorityColor(goal.priority)}`}>
+                                                        {goal.priority}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex gap-1">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="flex gap-1 mb-1">
                                                     <button
                                                         onClick={() => handleEdit(goal)}
-                                                        className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                                        className="p-1 bg-blue-600 text-white text-[10px] rounded hover:bg-blue-700 transition-colors"
                                                         title="Edit"
                                                     >
-                                                        <FaEdit />
+                                                        <FaEdit size={8} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDuplicate(goal)}
-                                                        className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                                        className="p-1 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 transition-colors"
                                                         title="Duplicate"
                                                     >
-                                                        <FaCopy />
+                                                        <FaCopy size={8} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(goal.id)}
-                                                        className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                                        className="p-1 bg-red-600 text-white text-[10px] rounded hover:bg-red-700 transition-colors"
                                                         title="Delete"
                                                     >
-                                                        <FaTrash />
+                                                        <FaTrash size={8} />
                                                     </button>
                                                 </div>
                                                 <input
                                                     type="number"
                                                     value={goal.current_value}
                                                     onChange={(e) => handleProgressUpdate(goal.id, parseFloat(e.target.value))}
-                                                    className="w-full mt-2 px-2 py-1 border border-gray-300 rounded text-xs"
-                                                    placeholder="Update progress"
+                                                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+                                                    placeholder="Update value"
                                                     min="0"
                                                     max={goal.target_value}
+                                                    size="8"
                                                 />
                                             </td>
                                         </tr>
@@ -559,10 +557,10 @@ const GoalSetting = () => {
                         </table>
                         
                         {filteredGoals.length === 0 && (
-                            <div className="text-center py-12">
-                                <FaBullseye className="mx-auto text-4xl text-gray-300 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-600 mb-2">No goals found</h3>
-                                <p className="text-gray-500">Create your first goal to get started.</p>
+                            <div className="text-center py-8">
+                                <FaBullseye className="mx-auto text-2xl text-gray-300 mb-2" />
+                                <h3 className="text-sm font-semibold text-gray-600 mb-1">No goals found</h3>
+                                <p className="text-gray-500 text-xs">Create your first goal to get started.</p>
                             </div>
                         )}
                     </div>
@@ -570,12 +568,12 @@ const GoalSetting = () => {
 
                 {/* Summary Footer */}
                 {filteredGoals.length > 0 && (
-                    <div className="mt-4 bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
+                    <div className="mt-3 bg-gray-50 px-3 py-2 border-t border-gray-200 rounded text-xs">
+                        <div className="flex justify-between items-center text-gray-600">
+                            <div>
                                 Showing {filteredGoals.length} of {goals.length} goals
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
+                            <div className="font-semibold">
                                 Overall Progress: {Math.round(filteredGoals.reduce((sum, g) => sum + g.progress, 0) / filteredGoals.length)}%
                             </div>
                         </div>
@@ -585,14 +583,14 @@ const GoalSetting = () => {
                 {/* Goal Form Modal */}
                 {showGoalForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                        <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="bg-white p-4 rounded shadow w-full max-w-md max-h-[90vh] overflow-y-auto">
                             <h2 className="text-lg font-bold mb-3">
                                 {editingGoal ? 'Edit Goal' : 'Create New Goal'}
                             </h2>
                             <form onSubmit={handleSubmitGoal}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="grid grid-cols-1 gap-3 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Goal Title *
                                         </label>
                                         <input
@@ -601,13 +599,13 @@ const GoalSetting = () => {
                                             value={newGoal.title}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Enter goal title"
                                         />
                                     </div>
                                     
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Description
                                         </label>
                                         <textarea
@@ -615,47 +613,49 @@ const GoalSetting = () => {
                                             value={newGoal.description}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Describe the goal..."
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Goal Type *
-                                        </label>
-                                        <select
-                                            name="type"
-                                            value={newGoal.type}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {goalTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Goal Type *
+                                            </label>
+                                            <select
+                                                name="type"
+                                                value={newGoal.type}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {goalTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Department
+                                            </label>
+                                            <select
+                                                name="department"
+                                                value={newGoal.department}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Department</option>
+                                                {departments.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Department
-                                        </label>
-                                        <select
-                                            name="department"
-                                            value={newGoal.department}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="">Select Department</option>
-                                            {departments.map(dept => (
-                                                <option key={dept} value={dept}>{dept}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Assigned To *
                                         </label>
                                         <input
@@ -664,107 +664,113 @@ const GoalSetting = () => {
                                             value={newGoal.assigned_to}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Enter assignee name or team"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Start Date *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            name="start_date"
-                                            value={newGoal.start_date}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Start Date *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                name="start_date"
+                                                value={newGoal.start_date}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                End Date *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                name="end_date"
+                                                value={newGoal.end_date}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Target Value *
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="target_value"
+                                                value={newGoal.target_value}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Target value"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Unit
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="unit"
+                                                value={newGoal.unit}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="e.g., %, INR, Units"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Current Value
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="current_value"
+                                                value={newGoal.current_value}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Current value"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Priority
+                                            </label>
+                                            <select
+                                                name="priority"
+                                                value={newGoal.priority}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {priorities.map(priority => (
+                                                    <option key={priority} value={priority}>{priority}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            End Date *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            name="end_date"
-                                            value={newGoal.end_date}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Target Value *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="target_value"
-                                            value={newGoal.target_value}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Target value"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Unit
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="unit"
-                                            value={newGoal.unit}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="e.g., %, INR, Units"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Current Value
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="current_value"
-                                            value={newGoal.current_value}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Current value"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Priority
-                                        </label>
-                                        <select
-                                            name="priority"
-                                            value={newGoal.priority}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {priorities.map(priority => (
-                                                <option key={priority} value={priority}>{priority}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Status
                                         </label>
                                         <select
                                             name="status"
                                             value={newGoal.status}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         >
                                             {statusTypes.map(status => (
                                                 <option key={status} value={status}>{status.replace('_', ' ')}</option>
@@ -773,7 +779,7 @@ const GoalSetting = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-3">
+                                <div className="flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -796,15 +802,15 @@ const GoalSetting = () => {
                                                 progress: 0
                                             });
                                         }}
-                                        className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
+                                        className="px-3 py-1.5 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                                        className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors flex items-center gap-1"
                                     >
-                                        <FaSave /> {editingGoal ? 'Update Goal' : 'Create Goal'}
+                                        <FaSave size={12} /> {editingGoal ? 'Update Goal' : 'Create Goal'}
                                     </button>
                                 </div>
                             </form>

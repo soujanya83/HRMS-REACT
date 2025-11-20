@@ -334,16 +334,16 @@ const KPIOKRTracking = () => {
 
     if (loading) {
         return (
-            <div className="p-6 bg-gray-100 min-h-screen">
-                <div className="max-w-7xl mx-auto">
+            <div className="p-4 bg-gray-100 min-h-screen">
+                <div className="max-w-6xl mx-auto">
                     <div className="animate-pulse">
-                        <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+                                <div key={i} className="h-16 bg-gray-300 rounded"></div>
                             ))}
                         </div>
-                        <div className="h-64 bg-gray-300 rounded"></div>
+                        <div className="h-48 bg-gray-300 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -351,79 +351,79 @@ const KPIOKRTracking = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-            <div className="max-w-7xl mx-auto">
+        <div className="p-4 bg-gray-100 min-h-screen font-sans overflow-x-hidden">
+            <div className="max-w-6xl mx-auto w-full">
                 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                        <FaChartLine className="mr-3 text-purple-600" />
+                <div className="mb-4">
+                    <h1 className="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                        <FaChartLine className="mr-2 text-purple-600 text-lg" />
                         KPI / OKR Tracking
                     </h1>
-                    <p className="text-gray-600">Monitor and track Key Performance Indicators and Objectives & Key Results</p>
+                    <p className="text-xs text-gray-600">Monitor and track Key Performance Indicators and Objectives & Key Results</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-purple-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Metrics</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                                <p className="text-xs text-gray-600">Total Metrics</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <FaChartLine className="text-purple-500 text-xl" />
+                            <FaChartLine className="text-purple-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">KPIs</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.kpis}</p>
+                                <p className="text-xs text-gray-600">KPIs</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.kpis}</p>
                             </div>
-                            <FaBullseye className="text-blue-500 text-xl" />
+                            <FaBullseye className="text-blue-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">OKRs</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.okrs}</p>
+                                <p className="text-xs text-gray-600">OKRs</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.okrs}</p>
                             </div>
-                            <FaChartBar className="text-green-500 text-xl" />
+                            <FaChartBar className="text-green-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-orange-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-orange-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">On Track</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.on_track}</p>
+                                <p className="text-xs text-gray-600">On Track</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.on_track}</p>
                             </div>
-                            <FaCheckCircle className="text-orange-500 text-xl" />
+                            <FaCheckCircle className="text-orange-500 text-base" />
                         </div>
                     </div>
                 </div>
 
                 {/* Filters and Actions */}
-                <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="mb-4 p-3 bg-white shadow rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div className="relative">
-                            <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                            <FaSearch className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 text-xs" />
                             <input 
                                 type="text"
                                 placeholder="Search KPIs..."
                                 value={filters.search}
                                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 pl-7 pr-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                         </div>
                         
                         <select 
                             value={filters.category}
                             onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Categories</option>
                             {categories.map(category => (
@@ -434,7 +434,7 @@ const KPIOKRTracking = () => {
                         <select 
                             value={filters.type}
                             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Types</option>
                             {kpiTypes.map(type => (
@@ -445,7 +445,7 @@ const KPIOKRTracking = () => {
                         <select 
                             value={filters.department}
                             onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Departments</option>
                             {departments.map(dept => (
@@ -453,32 +453,31 @@ const KPIOKRTracking = () => {
                             ))}
                         </select>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                             <button
                                 onClick={() => setShowKpiForm(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex-1"
+                                className="flex items-center gap-1 px-2 py-1.5 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors flex-1"
                             >
-                                <FaPlus /> New KPI
+                                <FaPlus className="text-xs" /> New KPI
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                <FaDownload />
+                            <button className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">
+                                <FaDownload className="text-xs" />
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* KPIs Table */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200 text-xs">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">KPI Details</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Category & Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Values & Progress</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Frequency & Trend</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Performance</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">KPI Details</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Category & Type</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Values & Progress</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Performance</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -487,95 +486,94 @@ const KPIOKRTracking = () => {
                                     const progress = (kpi.current_value / kpi.target_value) * 100;
                                     return (
                                         <tr key={kpi.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center space-x-3">
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center space-x-2">
                                                     <div className="flex-shrink-0">
-                                                        <FaChartLine className="text-purple-500" />
+                                                        <FaChartLine className="text-purple-500 text-xs" />
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-gray-900 truncate">
                                                             {kpi.name}
                                                         </div>
-                                                        <div className="text-sm text-gray-500 max-w-xs truncate">
+                                                        <div className="text-gray-500 truncate max-w-[150px]">
                                                             {kpi.description}
                                                         </div>
-                                                        <div className="text-xs text-gray-400">
-                                                            Owner: {kpi.owner} | Source: {kpi.data_source}
+                                                        <div className="text-gray-400 text-[10px]">
+                                                            {kpi.owner} • {kpi.frequency}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{kpi.category}</div>
-                                                <div className="text-sm text-gray-500">{kpi.type}</div>
-                                                <div className="text-xs text-gray-400">{kpi.department}</div>
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="text-gray-900">{kpi.category}</div>
+                                                <div className="text-gray-500">{kpi.type}</div>
+                                                <div className="text-gray-400 text-[10px]">{kpi.department}</div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="text-sm font-semibold text-gray-900">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="font-semibold text-gray-900 text-[10px]">
                                                     Target: {kpi.target_value} {kpi.unit}
                                                 </div>
-                                                <div className="text-sm text-green-600">
+                                                <div className="text-green-600 text-[10px]">
                                                     Current: {kpi.current_value} {kpi.unit}
                                                 </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                                                     <div 
-                                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                                        className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                                         style={{ width: `${Math.min(progress, 100)}%` }}
                                                     ></div>
                                                 </div>
-                                                <div className="text-xs text-gray-500 text-right">
-                                                    {progress.toFixed(1)}% of target
+                                                <div className="flex justify-between items-center mt-0.5">
+                                                    <div className={`flex items-center text-[10px] ${getTrendColor(kpi.trend)}`}>
+                                                        <TrendIcon className="mr-0.5" size={8} />
+                                                        {kpi.trend}
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-500">
+                                                        {progress.toFixed(0)}%
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{kpi.frequency}</div>
-                                                <div className={`flex items-center text-sm ${getTrendColor(kpi.trend)}`}>
-                                                    <TrendIcon className="mr-1" size={12} />
-                                                    {kpi.trend}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    Updated: {new Date(kpi.last_updated).toLocaleDateString()}
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="space-y-1">
+                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-semibold rounded-full ${getPerformanceColor(kpi.performance)}`}>
+                                                        {kpi.performance.replace('_', ' ')}
+                                                    </span>
+                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-semibold rounded-full ${getStatusColor(kpi.status)}`}>
+                                                        {kpi.status}
+                                                    </span>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPerformanceColor(kpi.performance)} mb-1`}>
-                                                    {kpi.performance.replace('_', ' ')}
-                                                </span>
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(kpi.status)}`}>
-                                                    {kpi.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex gap-1">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="flex gap-1 mb-1">
                                                     <button
                                                         onClick={() => handleEdit(kpi)}
-                                                        className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                                        className="p-1 bg-blue-600 text-white text-[10px] rounded hover:bg-blue-700 transition-colors"
                                                         title="Edit"
                                                     >
-                                                        <FaEdit />
+                                                        <FaEdit size={8} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDuplicate(kpi)}
-                                                        className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                                        className="p-1 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 transition-colors"
                                                         title="Duplicate"
                                                     >
-                                                        <FaCopy />
+                                                        <FaCopy size={8} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(kpi.id)}
-                                                        className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                                        className="p-1 bg-red-600 text-white text-[10px] rounded hover:bg-red-700 transition-colors"
                                                         title="Delete"
                                                     >
-                                                        <FaTrash />
+                                                        <FaTrash size={8} />
                                                     </button>
                                                 </div>
                                                 <input
                                                     type="number"
                                                     value={kpi.current_value}
                                                     onChange={(e) => handleValueUpdate(kpi.id, parseFloat(e.target.value))}
-                                                    className="w-full mt-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                                                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
                                                     placeholder="Update value"
                                                     step="0.1"
+                                                    size="8"
                                                 />
                                             </td>
                                         </tr>
@@ -585,10 +583,10 @@ const KPIOKRTracking = () => {
                         </table>
                         
                         {filteredKpis.length === 0 && (
-                            <div className="text-center py-12">
-                                <FaChartLine className="mx-auto text-4xl text-gray-300 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-600 mb-2">No KPIs found</h3>
-                                <p className="text-gray-500">Create your first KPI to get started.</p>
+                            <div className="text-center py-8">
+                                <FaChartLine className="mx-auto text-2xl text-gray-300 mb-2" />
+                                <h3 className="text-sm font-semibold text-gray-600 mb-1">No KPIs found</h3>
+                                <p className="text-gray-500 text-xs">Create your first KPI to get started.</p>
                             </div>
                         )}
                     </div>
@@ -596,12 +594,12 @@ const KPIOKRTracking = () => {
 
                 {/* Summary Footer */}
                 {filteredKpis.length > 0 && (
-                    <div className="mt-4 bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
+                    <div className="mt-3 bg-gray-50 px-3 py-2 border-t border-gray-200 rounded text-xs">
+                        <div className="flex justify-between items-center text-gray-600">
+                            <div>
                                 Showing {filteredKpis.length} of {kpis.length} KPIs
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
+                            <div className="font-semibold">
                                 {stats.on_track} on track • {stats.at_risk} at risk • {stats.exceeding} exceeding
                             </div>
                         </div>
@@ -611,14 +609,14 @@ const KPIOKRTracking = () => {
                 {/* KPI Form Modal */}
                 {showKpiForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                        <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="bg-white p-4 rounded shadow w-full max-w-md max-h-[90vh] overflow-y-auto">
                             <h2 className="text-lg font-bold mb-3">
                                 {editingKpi ? 'Edit KPI' : 'Create New KPI'}
                             </h2>
                             <form onSubmit={handleSubmitKpi}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="grid grid-cols-1 gap-3 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             KPI Name *
                                         </label>
                                         <input
@@ -627,13 +625,13 @@ const KPIOKRTracking = () => {
                                             value={newKpi.name}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Enter KPI name"
                                         />
                                     </div>
                                     
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Description
                                         </label>
                                         <textarea
@@ -641,112 +639,118 @@ const KPIOKRTracking = () => {
                                             value={newKpi.description}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Describe the KPI..."
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Category *
-                                        </label>
-                                        <select
-                                            name="category"
-                                            value={newKpi.category}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {categories.map(category => (
-                                                <option key={category} value={category}>{category}</option>
-                                            ))}
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Category *
+                                            </label>
+                                            <select
+                                                name="category"
+                                                value={newKpi.category}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {categories.map(category => (
+                                                    <option key={category} value={category}>{category}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Type *
+                                            </label>
+                                            <select
+                                                name="type"
+                                                value={newKpi.type}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {kpiTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Department
+                                            </label>
+                                            <select
+                                                name="department"
+                                                value={newKpi.department}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Department</option>
+                                                {departments.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Frequency *
+                                            </label>
+                                            <select
+                                                name="frequency"
+                                                value={newKpi.frequency}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {frequencies.map(freq => (
+                                                    <option key={freq} value={freq}>{freq}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Target Value *
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="target_value"
+                                                value={newKpi.target_value}
+                                                onChange={handleInputChange}
+                                                required
+                                                step="0.1"
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Target value"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Current Value
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="current_value"
+                                                value={newKpi.current_value}
+                                                onChange={handleInputChange}
+                                                step="0.1"
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Current value"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Type *
-                                        </label>
-                                        <select
-                                            name="type"
-                                            value={newKpi.type}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {kpiTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Department
-                                        </label>
-                                        <select
-                                            name="department"
-                                            value={newKpi.department}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="">Select Department</option>
-                                            {departments.map(dept => (
-                                                <option key={dept} value={dept}>{dept}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Frequency *
-                                        </label>
-                                        <select
-                                            name="frequency"
-                                            value={newKpi.frequency}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {frequencies.map(freq => (
-                                                <option key={freq} value={freq}>{freq}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Target Value *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="target_value"
-                                            value={newKpi.target_value}
-                                            onChange={handleInputChange}
-                                            required
-                                            step="0.1"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Target value"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Current Value
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="current_value"
-                                            value={newKpi.current_value}
-                                            onChange={handleInputChange}
-                                            step="0.1"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Current value"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Unit
                                         </label>
                                         <input
@@ -754,59 +758,78 @@ const KPIOKRTracking = () => {
                                             name="unit"
                                             value={newKpi.unit}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="e.g., %, $, Units"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Min Threshold
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="threshold_min"
-                                            value={newKpi.threshold_min}
-                                            onChange={handleInputChange}
-                                            step="0.1"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Minimum threshold"
-                                        />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Min Threshold
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="threshold_min"
+                                                value={newKpi.threshold_min}
+                                                onChange={handleInputChange}
+                                                step="0.1"
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Minimum threshold"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Max Threshold
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="threshold_max"
+                                                value={newKpi.threshold_max}
+                                                onChange={handleInputChange}
+                                                step="0.1"
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Maximum threshold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Trend
+                                            </label>
+                                            <select
+                                                name="trend"
+                                                value={newKpi.trend}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {trends.map(trend => (
+                                                    <option key={trend} value={trend}>{trend}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Status
+                                            </label>
+                                            <select
+                                                name="status"
+                                                value={newKpi.status}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Max Threshold
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="threshold_max"
-                                            value={newKpi.threshold_max}
-                                            onChange={handleInputChange}
-                                            step="0.1"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Maximum threshold"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Trend
-                                        </label>
-                                        <select
-                                            name="trend"
-                                            value={newKpi.trend}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {trends.map(trend => (
-                                                <option key={trend} value={trend}>{trend}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Owner *
                                         </label>
                                         <input
@@ -815,13 +838,13 @@ const KPIOKRTracking = () => {
                                             value={newKpi.owner}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="KPI owner"
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Data Source
                                         </label>
                                         <input
@@ -829,28 +852,13 @@ const KPIOKRTracking = () => {
                                             name="data_source"
                                             value={newKpi.data_source}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Data source system"
                                         />
                                     </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Status
-                                        </label>
-                                        <select
-                                            name="status"
-                                            value={newKpi.status}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
-                                        </select>
-                                    </div>
                                 </div>
 
-                                <div className="flex justify-end gap-3">
+                                <div className="flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -874,15 +882,15 @@ const KPIOKRTracking = () => {
                                                 status: 'active'
                                             });
                                         }}
-                                        className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
+                                        className="px-3 py-1.5 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-sm"
+                                        className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors flex items-center gap-1"
                                     >
-                                        <FaSave /> {editingKpi ? 'Update KPI' : 'Create KPI'}
+                                        <FaSave size={12} /> {editingKpi ? 'Update KPI' : 'Create KPI'}
                                     </button>
                                 </div>
                             </form>

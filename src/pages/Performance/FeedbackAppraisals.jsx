@@ -6,20 +6,16 @@ import {
     FaEdit, 
     FaTrash, 
     FaDownload,
-    FaUpload,
     FaEye,
     FaUser,
     FaStar,
     FaCheckCircle,
     FaClock,
     FaTimes,
-    FaFilter,
     FaThumbsUp,
-    FaThumbsDown,
-    FaReply,
-    FaShare,
     FaEnvelope,
-    FaExclamationTriangle
+    FaExclamationTriangle,
+    FaSave
 } from 'react-icons/fa';
 
 const FeedbackAppraisals = () => {
@@ -164,7 +160,7 @@ const FeedbackAppraisals = () => {
             employee_name: employees.find(emp => emp.id === parseInt(newFeedback.employee_id))?.name || '',
             employee_department: employees.find(emp => emp.id === parseInt(newFeedback.employee_id))?.department || '',
             provider_name: employees.find(emp => emp.id === parseInt(newFeedback.provider_id))?.name || '',
-            provider_role: 'Manager', // This would typically come from employee data
+            provider_role: 'Manager',
             created_at: new Date().toISOString().split('T')[0],
             acknowledged_at: newFeedback.status === 'acknowledged' ? new Date().toISOString().split('T')[0] : null
         };
@@ -251,8 +247,8 @@ const FeedbackAppraisals = () => {
         const IconComponent = config.icon;
 
         return (
-            <span className={`px-2 py-1 inline-flex items-center text-xs font-semibold rounded-full ${config.color}`}>
-                <IconComponent className="mr-1" size={10} />
+            <span className={`px-1.5 py-0.5 inline-flex items-center text-[10px] font-semibold rounded-full ${config.color}`}>
+                <IconComponent className="mr-0.5" size={8} />
                 {config.label}
             </span>
         );
@@ -268,7 +264,7 @@ const FeedbackAppraisals = () => {
 
         const config = priorityConfig[priority] || priorityConfig.medium;
         return (
-            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${config.color}`}>
+            <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${config.color}`}>
                 {config.label}
             </span>
         );
@@ -281,26 +277,26 @@ const FeedbackAppraisals = () => {
                     <FaStar
                         key={star}
                         className={star <= rating ? 'text-yellow-500' : 'text-gray-300'}
-                        size={12}
+                        size={10}
                     />
                 ))}
-                <span className="ml-1 text-xs text-gray-600">({rating}/5)</span>
+                <span className="ml-1 text-[10px] text-gray-600">({rating}/5)</span>
             </div>
         );
     };
 
     if (loading) {
         return (
-            <div className="p-6 bg-gray-100 min-h-screen">
-                <div className="max-w-7xl mx-auto">
+            <div className="p-4 bg-gray-100 min-h-screen">
+                <div className="max-w-6xl mx-auto">
                     <div className="animate-pulse">
-                        <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+                                <div key={i} className="h-16 bg-gray-300 rounded"></div>
                             ))}
                         </div>
-                        <div className="h-64 bg-gray-300 rounded"></div>
+                        <div className="h-48 bg-gray-300 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -308,79 +304,79 @@ const FeedbackAppraisals = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-            <div className="max-w-7xl mx-auto">
+        <div className="p-4 bg-gray-100 min-h-screen font-sans overflow-x-hidden">
+            <div className="max-w-6xl mx-auto w-full">
                 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                        <FaComments className="mr-3 text-green-600" />
+                <div className="mb-4">
+                    <h1 className="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                        <FaComments className="mr-2 text-green-600 text-lg" />
                         Feedback & Appraisals
                     </h1>
-                    <p className="text-gray-600">Manage employee feedback, 360-degree reviews, and performance appraisals</p>
+                    <p className="text-xs text-gray-600">Manage employee feedback, 360-degree reviews, and performance appraisals</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Feedback</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                                <p className="text-xs text-gray-600">Total Feedback</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <FaComments className="text-green-500 text-xl" />
+                            <FaComments className="text-green-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Submitted</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.submitted}</p>
+                                <p className="text-xs text-gray-600">Submitted</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.submitted}</p>
                             </div>
-                            <FaEnvelope className="text-blue-500 text-xl" />
+                            <FaEnvelope className="text-blue-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Acknowledged</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.acknowledged}</p>
+                                <p className="text-xs text-gray-600">Acknowledged</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.acknowledged}</p>
                             </div>
-                            <FaCheckCircle className="text-yellow-500 text-xl" />
+                            <FaCheckCircle className="text-yellow-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-red-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">High Priority</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.high_priority}</p>
+                                <p className="text-xs text-gray-600">High Priority</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.high_priority}</p>
                             </div>
-                            <FaExclamationTriangle className="text-red-500 text-xl" />
+                            <FaExclamationTriangle className="text-red-500 text-base" />
                         </div>
                     </div>
                 </div>
 
                 {/* Filters and Actions */}
-                <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="mb-4 p-3 bg-white shadow rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div className="relative">
-                            <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                            <FaSearch className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 text-xs" />
                             <input 
                                 type="text"
                                 placeholder="Search feedback..."
                                 value={filters.search}
                                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 pl-7 pr-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                         </div>
                         
                         <select 
                             value={filters.type}
                             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Types</option>
                             {feedbackTypes.map(type => (
@@ -391,7 +387,7 @@ const FeedbackAppraisals = () => {
                         <select 
                             value={filters.status}
                             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Status</option>
                             {statuses.map(status => (
@@ -402,7 +398,7 @@ const FeedbackAppraisals = () => {
                         <select 
                             value={filters.priority}
                             onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="all">All Priorities</option>
                             {priorities.map(priority => (
@@ -410,109 +406,109 @@ const FeedbackAppraisals = () => {
                             ))}
                         </select>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                             <button
                                 onClick={() => setShowFeedbackForm(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex-1"
+                                className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors flex-1"
                             >
-                                <FaPlus /> New Feedback
+                                <FaPlus className="text-xs" /> New Feedback
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <FaDownload />
+                            <button className="flex items-center gap-1 px-2 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors">
+                                <FaDownload className="text-xs" />
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Feedback Table */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200 text-xs">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Feedback Details</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee & Provider</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Rating & Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Priority & Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Feedback Details</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">People</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Rating & Type</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Priority & Status</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {filteredFeedbacks.map((feedback) => (
                                     <tr key={feedback.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center space-x-3">
+                                        <td className="px-3 py-2">
+                                            <div className="flex items-center space-x-2">
                                                 <div className="flex-shrink-0">
-                                                    <FaComments className="text-green-500" />
+                                                    <FaComments className="text-green-500 text-xs" />
                                                 </div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="font-medium text-gray-900 truncate">
                                                         {feedback.title}
                                                     </div>
-                                                    <div className="text-sm text-gray-500 max-w-xs truncate">
+                                                    <div className="text-gray-500 truncate max-w-[150px] text-[10px]">
                                                         {feedback.strengths}
                                                     </div>
-                                                    <div className="text-xs text-gray-400">
+                                                    <div className="text-gray-400 text-[10px]">
                                                         {feedback.feedback_type} • {feedback.is_anonymous ? 'Anonymous' : 'Identified'}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="text-gray-900 text-[10px]">
                                                 <FaUser className="inline mr-1 text-gray-400" />
                                                 {feedback.employee_name}
                                             </div>
-                                            <div className="text-xs text-gray-500">
+                                            <div className="text-gray-500 text-[10px]">
                                                 {feedback.employee_department}
                                             </div>
-                                            <div className="text-xs text-gray-400">
+                                            <div className="text-gray-400 text-[10px]">
                                                 From: {feedback.provider_name}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-2 whitespace-nowrap">
                                             {getRatingStars(feedback.rating)}
-                                            <div className="text-sm text-gray-900 mt-1">
+                                            <div className="text-gray-900 text-[10px] mt-1">
                                                 {feedback.feedback_type}
                                             </div>
-                                            <div className="text-xs text-gray-500">
+                                            <div className="text-gray-500 text-[10px]">
                                                 {feedback.follow_up_date && `Follow-up: ${feedback.follow_up_date}`}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <div className="mb-2">
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="mb-1">
                                                 {getPriorityBadge(feedback.priority)}
                                             </div>
                                             {getStatusBadge(feedback.status)}
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                            <div className="flex gap-1">
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="flex gap-1 mb-1">
                                                 <button
                                                     onClick={() => handleEdit(feedback)}
-                                                    className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                                    className="p-1 bg-blue-600 text-white text-[10px] rounded hover:bg-blue-700 transition-colors"
                                                     title="Edit"
                                                 >
-                                                    <FaEdit />
+                                                    <FaEdit size={8} />
                                                 </button>
                                                 <button
                                                     onClick={() => {/* View details */}}
-                                                    className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                                    className="p-1 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 transition-colors"
                                                     title="View"
                                                 >
-                                                    <FaEye />
+                                                    <FaEye size={8} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(feedback.id)}
-                                                    className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                                    className="p-1 bg-red-600 text-white text-[10px] rounded hover:bg-red-700 transition-colors"
                                                     title="Delete"
                                                 >
-                                                    <FaTrash />
+                                                    <FaTrash size={8} />
                                                 </button>
                                             </div>
                                             {feedback.status === 'submitted' && (
                                                 <button
                                                     onClick={() => handleStatusChange(feedback.id, 'acknowledged')}
-                                                    className="w-full mt-2 px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
+                                                    className="w-full px-1.5 py-1 bg-yellow-600 text-white text-[10px] rounded hover:bg-yellow-700 transition-colors"
                                                 >
                                                     Acknowledge
                                                 </button>
@@ -520,7 +516,7 @@ const FeedbackAppraisals = () => {
                                             {feedback.status === 'acknowledged' && (
                                                 <button
                                                     onClick={() => handleStatusChange(feedback.id, 'actioned')}
-                                                    className="w-full mt-2 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                                    className="w-full px-1.5 py-1 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 transition-colors"
                                                 >
                                                     Mark Actioned
                                                 </button>
@@ -532,10 +528,10 @@ const FeedbackAppraisals = () => {
                         </table>
                         
                         {filteredFeedbacks.length === 0 && (
-                            <div className="text-center py-12">
-                                <FaComments className="mx-auto text-4xl text-gray-300 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-600 mb-2">No feedback found</h3>
-                                <p className="text-gray-500">Create your first feedback entry to get started.</p>
+                            <div className="text-center py-8">
+                                <FaComments className="mx-auto text-2xl text-gray-300 mb-2" />
+                                <h3 className="text-sm font-semibold text-gray-600 mb-1">No feedback found</h3>
+                                <p className="text-gray-500 text-xs">Create your first feedback entry to get started.</p>
                             </div>
                         )}
                     </div>
@@ -543,12 +539,12 @@ const FeedbackAppraisals = () => {
 
                 {/* Summary Footer */}
                 {filteredFeedbacks.length > 0 && (
-                    <div className="mt-4 bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
+                    <div className="mt-3 bg-gray-50 px-3 py-2 border-t border-gray-200 rounded text-xs">
+                        <div className="flex justify-between items-center text-gray-600">
+                            <div>
                                 Showing {filteredFeedbacks.length} of {feedbacks.length} feedback entries
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
+                            <div className="font-semibold">
                                 {stats.submitted} submitted • {stats.acknowledged} acknowledged • {stats.high_priority} high priority
                             </div>
                         </div>
@@ -558,14 +554,14 @@ const FeedbackAppraisals = () => {
                 {/* Feedback Form Modal */}
                 {showFeedbackForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                        <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div className="bg-white p-4 rounded shadow w-full max-w-md max-h-[90vh] overflow-y-auto">
                             <h2 className="text-lg font-bold mb-3">
                                 {editingFeedback ? 'Edit Feedback' : 'Create New Feedback'}
                             </h2>
                             <form onSubmit={handleSubmitFeedback}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="grid grid-cols-1 gap-3 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Feedback Title *
                                         </label>
                                         <input
@@ -574,117 +570,123 @@ const FeedbackAppraisals = () => {
                                             value={newFeedback.title}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Enter feedback title"
                                         />
                                     </div>
                                     
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Employee *
-                                        </label>
-                                        <select
-                                            name="employee_id"
-                                            value={newFeedback.employee_id}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="">Select Employee</option>
-                                            {employees.map(emp => (
-                                                <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
-                                            ))}
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Employee *
+                                            </label>
+                                            <select
+                                                name="employee_id"
+                                                value={newFeedback.employee_id}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Employee</option>
+                                                {employees.map(emp => (
+                                                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Provider *
+                                            </label>
+                                            <select
+                                                name="provider_id"
+                                                value={newFeedback.provider_id}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Provider</option>
+                                                {employees.map(emp => (
+                                                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Feedback Type *
+                                            </label>
+                                            <select
+                                                name="feedback_type"
+                                                value={newFeedback.feedback_type}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {feedbackTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Priority *
+                                            </label>
+                                            <select
+                                                name="priority"
+                                                value={newFeedback.priority}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {priorities.map(priority => (
+                                                    <option key={priority} value={priority}>{priority}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Status *
+                                            </label>
+                                            <select
+                                                name="status"
+                                                value={newFeedback.status}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                {statuses.map(status => (
+                                                    <option key={status} value={status}>{status.replace('_', ' ')}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Rating
+                                            </label>
+                                            <select
+                                                name="rating"
+                                                value={newFeedback.rating}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="0">No Rating</option>
+                                                {ratingOptions.map(rating => (
+                                                    <option key={rating} value={rating}>{rating}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Feedback Provider *
-                                        </label>
-                                        <select
-                                            name="provider_id"
-                                            value={newFeedback.provider_id}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="">Select Provider</option>
-                                            {employees.map(emp => (
-                                                <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Feedback Type *
-                                        </label>
-                                        <select
-                                            name="feedback_type"
-                                            value={newFeedback.feedback_type}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {feedbackTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Priority *
-                                        </label>
-                                        <select
-                                            name="priority"
-                                            value={newFeedback.priority}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {priorities.map(priority => (
-                                                <option key={priority} value={priority}>{priority}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Status *
-                                        </label>
-                                        <select
-                                            name="status"
-                                            value={newFeedback.status}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            {statuses.map(status => (
-                                                <option key={status} value={status}>{status.replace('_', ' ')}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Rating
-                                        </label>
-                                        <select
-                                            name="rating"
-                                            value={newFeedback.rating}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        >
-                                            <option value="0">No Rating</option>
-                                            {ratingOptions.map(rating => (
-                                                <option key={rating} value={rating}>{rating} Star{rating !== 1 ? 's' : ''}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Follow-up Date
                                         </label>
                                         <input
@@ -692,48 +694,50 @@ const FeedbackAppraisals = () => {
                                             name="follow_up_date"
                                             value={newFeedback.follow_up_date}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         />
                                     </div>
 
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="is_anonymous"
-                                            checked={newFeedback.is_anonymous}
-                                            onChange={handleInputChange}
-                                            className="mr-2"
-                                        />
-                                        <label className="text-sm text-gray-700">Anonymous Feedback</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="is_anonymous"
+                                                checked={newFeedback.is_anonymous}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            <label className="text-xs text-gray-700">Anonymous</label>
+                                        </div>
+
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="is_shared"
+                                                checked={newFeedback.is_shared}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            <label className="text-xs text-gray-700">Share</label>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="is_shared"
-                                            checked={newFeedback.is_shared}
-                                            onChange={handleInputChange}
-                                            className="mr-2"
-                                        />
-                                        <label className="text-sm text-gray-700">Share with Employee</label>
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Strengths & Positive Feedback
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Strengths
                                         </label>
                                         <textarea
                                             name="strengths"
                                             value={newFeedback.strengths}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="What are the employee's strengths and positive contributions?"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Employee strengths and positive contributions..."
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Areas for Improvement
                                         </label>
                                         <textarea
@@ -741,13 +745,13 @@ const FeedbackAppraisals = () => {
                                             value={newFeedback.areas_improvement}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="What areas need improvement or development?"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Areas needing improvement..."
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Specific Examples
                                         </label>
                                         <textarea
@@ -755,27 +759,27 @@ const FeedbackAppraisals = () => {
                                             value={newFeedback.specific_examples}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Provide specific examples or incidents..."
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Specific examples or incidents..."
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Action Plan & Recommendations
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Action Plan
                                         </label>
                                         <textarea
                                             name="action_plan"
                                             value={newFeedback.action_plan}
                                             onChange={handleInputChange}
                                             rows="2"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Recommended actions and development plan..."
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-3">
+                                <div className="flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -798,15 +802,15 @@ const FeedbackAppraisals = () => {
                                                 is_shared: false
                                             });
                                         }}
-                                        className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
+                                        className="px-3 py-1.5 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                                        className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors flex items-center gap-1"
                                     >
-                                        <FaSave /> {editingFeedback ? 'Update Feedback' : 'Create Feedback'}
+                                        <FaSave size={12} /> {editingFeedback ? 'Update Feedback' : 'Create Feedback'}
                                     </button>
                                 </div>
                             </form>

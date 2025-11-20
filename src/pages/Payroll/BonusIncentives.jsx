@@ -6,16 +6,10 @@ import {
     FaEdit, 
     FaTrash, 
     FaDownload,
-    FaUpload,
     FaCopy,
     FaSave,
-    FaTimes,
     FaMoneyBillWave,
     FaPercentage,
-    FaCalculator,
-    FaUserTie,
-    FaChartLine,
-    FaCalendarAlt,
     FaCheckCircle,
     FaClock,
     FaExclamationTriangle
@@ -122,50 +116,6 @@ const BonusIncentives = () => {
             approved_date: '2024-01-10',
             total_employees: 8,
             total_amount: 320000,
-            paid_amount: 0
-        },
-        {
-            id: 4,
-            name: 'Annual Bonus 2024',
-            type: 'Annual Bonus',
-            calculation_type: 'fixed',
-            amount: 20000,
-            percentage: 0,
-            target_amount: 0,
-            min_amount: 0,
-            max_amount: 0,
-            applicable_from: '2024-12-01',
-            applicable_to: '2024-12-31',
-            eligibility_criteria: 'Employees with 1+ year tenure',
-            department: 'all',
-            status: 'pending',
-            description: 'Annual year-end bonus',
-            approved_by: '',
-            approved_date: '',
-            total_employees: 40,
-            total_amount: 800000,
-            paid_amount: 0
-        },
-        {
-            id: 5,
-            name: 'Employee Retention Bonus',
-            type: 'Retention Bonus',
-            calculation_type: 'fixed',
-            amount: 25000,
-            percentage: 0,
-            target_amount: 0,
-            min_amount: 0,
-            max_amount: 0,
-            applicable_from: '2024-02-01',
-            applicable_to: '2024-12-31',
-            eligibility_criteria: 'Key employees with 2+ years',
-            department: 'all',
-            status: 'active',
-            description: 'Retention bonus for key talent',
-            approved_by: 'CEO',
-            approved_date: '2024-01-20',
-            total_employees: 12,
-            total_amount: 300000,
             paid_amount: 0
         }
     ];
@@ -308,16 +258,16 @@ const BonusIncentives = () => {
 
     if (loading) {
         return (
-            <div className="p-6 bg-gray-100 min-h-screen">
-                <div className="max-w-7xl mx-auto">
+            <div className="p-4 bg-gray-100 min-h-screen">
+                <div className="max-w-6xl mx-auto">
                     <div className="animate-pulse">
-                        <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+                                <div key={i} className="h-16 bg-gray-300 rounded"></div>
                             ))}
                         </div>
-                        <div className="h-64 bg-gray-300 rounded"></div>
+                        <div className="h-48 bg-gray-300 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -325,130 +275,123 @@ const BonusIncentives = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-            <div className="max-w-7xl mx-auto">
+        <div className="p-4 bg-gray-100 min-h-screen font-sans overflow-x-hidden">
+            <div className="max-w-6xl mx-auto w-full">
                 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                        <FaGift className="mr-3 text-purple-600" />
+                <div className="mb-4">
+                    <h1 className="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                        <FaGift className="mr-2 text-purple-600 text-lg" />
                         Bonus & Incentives
                     </h1>
-                    <p className="text-gray-600">Manage employee bonuses, incentives, and rewards</p>
+                    <p className="text-xs text-gray-600">Manage employee bonuses, incentives, and rewards</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-purple-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Bonuses</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                                <p className="text-xs text-gray-600">Total Bonuses</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <FaGift className="text-purple-500 text-xl" />
+                            <FaGift className="text-purple-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Active Programs</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.active}</p>
+                                <p className="text-xs text-gray-600">Active Programs</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.active}</p>
                             </div>
-                            <FaCheckCircle className="text-green-500 text-xl" />
+                            <FaCheckCircle className="text-green-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Pending Approval</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.pending}</p>
+                                <p className="text-xs text-gray-600">Pending Approval</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.pending}</p>
                             </div>
-                            <FaClock className="text-yellow-500 text-xl" />
+                            <FaClock className="text-yellow-500 text-base" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-orange-500">
+                    <div className="bg-white p-3 rounded-lg shadow border-l-4 border-orange-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Budget</p>
-                                <p className="text-2xl font-bold text-gray-800">{formatCurrency(stats.total_amount)}</p>
+                                <p className="text-xs text-gray-600">Total Budget</p>
+                                <p className="text-lg font-bold text-gray-800">{formatCurrency(stats.total_amount)}</p>
                             </div>
-                            <FaMoneyBillWave className="text-orange-500 text-xl" />
+                            <FaMoneyBillWave className="text-orange-500 text-base" />
                         </div>
                     </div>
                 </div>
 
                 {/* Filters and Actions */}
-                <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow">
-                            <div className="relative">
-                                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                                <input 
-                                    type="text"
-                                    placeholder="Search bonuses..."
-                                    value={filters.search}
-                                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                    className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            
-                            <select 
-                                value={filters.type}
-                                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">All Types</option>
-                                {bonusTypes.map(type => (
-                                    <option key={type} value={type}>{type}</option>
-                                ))}
-                            </select>
+                <div className="mb-4 p-3 bg-white shadow rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div className="relative">
+                            <FaSearch className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 text-xs" />
+                            <input 
+                                type="text"
+                                placeholder="Search bonuses..."
+                                value={filters.search}
+                                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                                className="w-full border border-gray-300 pl-7 pr-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                        </div>
+                        
+                        <select 
+                            value={filters.type}
+                            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                            <option value="all">All Types</option>
+                            {bonusTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
 
-                            <select 
-                                value={filters.status}
-                                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">All Status</option>
-                                {statusTypes.map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
+                        <select 
+                            value={filters.status}
+                            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                            className="border border-gray-300 px-2 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                            <option value="all">All Status</option>
+                            {statusTypes.map(status => (
+                                <option key={status} value={status}>{status}</option>
+                            ))}
+                        </select>
 
+                        <div className="flex gap-1">
                             <button
                                 onClick={() => setShowBonusForm(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1.5 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors flex-1"
                             >
-                                <FaPlus /> New Bonus
+                                <FaPlus className="text-xs" /> New Bonus
                             </button>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => alert('Exporting bonuses...')}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                <FaDownload /> Export
+                            <button className="flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">
+                                <FaDownload className="text-xs" />
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Bonuses Table */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200 text-xs">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bonus Details</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Type & Calculation</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Amount/Rate</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employees</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Applicability</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Bonus Details</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Type & Calculation</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Amount/Rate</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Employees</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Status</th>
+                                    <th className="px-3 py-2 text-left font-bold text-gray-600 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -456,115 +399,112 @@ const BonusIncentives = () => {
                                     const StatusIcon = getStatusIcon(bonus.status);
                                     return (
                                         <tr key={bonus.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center space-x-3">
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center space-x-2">
                                                     <div className="flex-shrink-0">
-                                                        <FaGift className="text-purple-500" />
+                                                        <FaGift className="text-purple-500 text-xs" />
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-gray-900 truncate">
                                                             {bonus.name}
                                                         </div>
-                                                        <div className="text-sm text-gray-500 max-w-xs truncate">
+                                                        <div className="text-gray-500 truncate max-w-[150px] text-[10px]">
                                                             {bonus.description}
                                                         </div>
-                                                        <div className="text-xs text-gray-400">
+                                                        <div className="text-gray-400 text-[10px]">
                                                             {bonus.eligibility_criteria}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{bonus.type}</div>
-                                                <div className="text-sm text-gray-500 capitalize">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="text-gray-900">{bonus.type}</div>
+                                                <div className="text-gray-500 text-[10px] capitalize">
                                                     {bonus.calculation_type}
                                                 </div>
                                                 {bonus.department !== 'all' && (
-                                                    <div className="text-xs text-gray-400">
+                                                    <div className="text-gray-400 text-[10px]">
                                                         {bonus.department}
                                                     </div>
                                                 )}
+                                                <div className="text-gray-400 text-[10px]">
+                                                    {bonus.applicable_from} to {bonus.applicable_to}
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-3 py-2 whitespace-nowrap">
                                                 {bonus.calculation_type === 'percentage' ? (
-                                                    <div className="text-sm font-semibold text-blue-600">
+                                                    <div className="font-semibold text-blue-600 text-[10px]">
                                                         {bonus.percentage}%
                                                     </div>
                                                 ) : (
-                                                    <div className="text-sm font-semibold text-green-600">
+                                                    <div className="font-semibold text-green-600 text-[10px]">
                                                         {formatCurrency(bonus.amount)}
                                                     </div>
                                                 )}
                                                 {(bonus.min_amount > 0 || bonus.max_amount > 0) && (
-                                                    <div className="text-xs text-gray-500">
-                                                        Range: {formatCurrency(bonus.min_amount)} - {formatCurrency(bonus.max_amount)}
+                                                    <div className="text-gray-500 text-[10px]">
+                                                        {formatCurrency(bonus.min_amount)} - {formatCurrency(bonus.max_amount)}
                                                     </div>
                                                 )}
                                                 {bonus.target_amount > 0 && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-gray-500 text-[10px]">
                                                         Target: {formatCurrency(bonus.target_amount)}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-semibold text-gray-900">
-                                                    {bonus.total_employees}
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="font-semibold text-gray-900 text-[10px]">
+                                                    {bonus.total_employees} employees
                                                 </div>
-                                                <div className="text-sm font-semibold text-green-600">
+                                                <div className="font-semibold text-green-600 text-[10px]">
                                                     {formatCurrency(bonus.total_amount)}
                                                 </div>
-                                                <div className="text-xs text-gray-500">
+                                                <div className="text-gray-500 text-[10px]">
                                                     Paid: {formatCurrency(bonus.paid_amount)}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div>From: {new Date(bonus.applicable_from).toLocaleDateString()}</div>
-                                                {bonus.applicable_to && (
-                                                    <div>To: {new Date(bonus.applicable_to).toLocaleDateString()}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(bonus.status)}`}>
-                                                    <StatusIcon className="mr-1" size={12} />
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <span className={`px-1.5 py-0.5 inline-flex items-center text-[10px] font-semibold rounded-full ${getStatusColor(bonus.status)}`}>
+                                                    <StatusIcon className="mr-0.5" size={8} />
                                                     {bonus.status}
                                                 </span>
                                                 {bonus.approved_by && (
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        Approved by: {bonus.approved_by}
+                                                    <div className="text-gray-500 text-[10px] mt-1">
+                                                        by {bonus.approved_by}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex gap-2">
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                <div className="flex gap-1 mb-1">
                                                     <button
                                                         onClick={() => handleEdit(bonus)}
-                                                        className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                                        className="p-1 bg-blue-600 text-white text-[10px] rounded hover:bg-blue-700 transition-colors"
                                                         title="Edit"
                                                     >
-                                                        <FaEdit />
+                                                        <FaEdit size={8} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDuplicate(bonus)}
-                                                        className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                                        className="p-1 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 transition-colors"
                                                         title="Duplicate"
                                                     >
-                                                        <FaCopy />
+                                                        <FaCopy size={8} />
                                                     </button>
                                                     {bonus.status === 'pending' && (
                                                         <button
                                                             onClick={() => handleApprove(bonus.id)}
-                                                            className="p-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                                                            className="p-1 bg-purple-600 text-white text-[10px] rounded hover:bg-purple-700 transition-colors"
                                                             title="Approve"
                                                         >
-                                                            <FaCheckCircle />
+                                                            <FaCheckCircle size={8} />
                                                         </button>
                                                     )}
                                                     <button
                                                         onClick={() => handleDelete(bonus.id)}
-                                                        className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                                        className="p-1 bg-red-600 text-white text-[10px] rounded hover:bg-red-700 transition-colors"
                                                         title="Delete"
                                                     >
-                                                        <FaTrash />
+                                                        <FaTrash size={8} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -575,10 +515,10 @@ const BonusIncentives = () => {
                         </table>
                         
                         {filteredBonuses.length === 0 && (
-                            <div className="text-center py-12">
-                                <FaGift className="mx-auto text-4xl text-gray-300 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-600 mb-2">No bonuses found</h3>
-                                <p className="text-gray-500">Create your first bonus program to get started.</p>
+                            <div className="text-center py-8">
+                                <FaGift className="mx-auto text-2xl text-gray-300 mb-2" />
+                                <h3 className="text-sm font-semibold text-gray-600 mb-1">No bonuses found</h3>
+                                <p className="text-gray-500 text-xs">Create your first bonus program to get started.</p>
                             </div>
                         )}
                     </div>
@@ -586,12 +526,12 @@ const BonusIncentives = () => {
 
                 {/* Summary Footer */}
                 {filteredBonuses.length > 0 && (
-                    <div className="mt-4 bg-gray-50 px-6 py-3 border-t border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
+                    <div className="mt-3 bg-gray-50 px-3 py-2 border-t border-gray-200 rounded text-xs">
+                        <div className="flex justify-between items-center text-gray-600">
+                            <div>
                                 Showing {filteredBonuses.length} of {bonuses.length} bonuses
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
+                            <div className="font-semibold">
                                 Total budget: {formatCurrency(filteredBonuses.reduce((sum, b) => sum + b.total_amount, 0))}
                             </div>
                         </div>
@@ -601,14 +541,14 @@ const BonusIncentives = () => {
                 {/* Bonus Form Modal */}
                 {showBonusForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <h2 className="text-xl font-bold mb-4">
+                        <div className="bg-white p-4 rounded shadow w-full max-w-md max-h-[90vh] overflow-y-auto">
+                            <h2 className="text-lg font-bold mb-3">
                                 {editingBonus ? 'Edit Bonus Program' : 'Create New Bonus Program'}
                             </h2>
                             <form onSubmit={handleSubmitBonus}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="grid grid-cols-1 gap-3 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Bonus Name *
                                         </label>
                                         <input
@@ -617,48 +557,50 @@ const BonusIncentives = () => {
                                             value={newBonus.name}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="e.g., Q4 Performance Bonus"
                                         />
                                     </div>
                                     
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Type *
-                                        </label>
-                                        <select
-                                            name="type"
-                                            value={newBonus.type}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Select Type</option>
-                                            {bonusTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Type *
+                                            </label>
+                                            <select
+                                                name="type"
+                                                value={newBonus.type}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Type</option>
+                                                {bonusTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Calculation Type *
-                                        </label>
-                                        <select
-                                            name="calculation_type"
-                                            value={newBonus.calculation_type}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="fixed">Fixed Amount</option>
-                                            <option value="percentage">Percentage</option>
-                                        </select>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Calculation Type *
+                                            </label>
+                                            <select
+                                                name="calculation_type"
+                                                value={newBonus.calculation_type}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="fixed">Fixed Amount</option>
+                                                <option value="percentage">Percentage</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     {newBonus.calculation_type === 'fixed' && (
-                                        <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
                                                 Fixed Amount (₹) *
                                             </label>
                                             <input
@@ -667,16 +609,16 @@ const BonusIncentives = () => {
                                                 value={newBonus.amount}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                 placeholder="Enter fixed amount"
                                             />
                                         </div>
                                     )}
 
                                     {newBonus.calculation_type === 'percentage' && (
-                                        <>
+                                        <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
                                                     Percentage (%) *
                                                 </label>
                                                 <input
@@ -686,90 +628,94 @@ const BonusIncentives = () => {
                                                     onChange={handleInputChange}
                                                     required
                                                     step="0.01"
-                                                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                     placeholder="Enter percentage"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Target Amount (Optional)
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Target Amount
                                                 </label>
                                                 <input
                                                     type="number"
                                                     name="target_amount"
                                                     value={newBonus.target_amount}
                                                     onChange={handleInputChange}
-                                                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                     placeholder="Target amount"
                                                 />
                                             </div>
-                                        </>
+                                        </div>
                                     )}
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Minimum Amount
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="min_amount"
-                                            value={newBonus.min_amount}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Minimum amount"
-                                        />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Minimum Amount
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="min_amount"
+                                                value={newBonus.min_amount}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Minimum amount"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Maximum Amount
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="max_amount"
+                                                value={newBonus.max_amount}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="Maximum amount"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Applicable From *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                name="applicable_from"
+                                                value={newBonus.applicable_from}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Applicable To
+                                            </label>
+                                            <input
+                                                type="date"
+                                                name="applicable_to"
+                                                value={newBonus.applicable_to}
+                                                onChange={handleInputChange}
+                                                className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Maximum Amount
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="max_amount"
-                                            value={newBonus.max_amount}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Maximum amount"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Applicable From *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            name="applicable_from"
-                                            value={newBonus.applicable_from}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Applicable To
-                                        </label>
-                                        <input
-                                            type="date"
-                                            name="applicable_to"
-                                            value={newBonus.applicable_to}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Department
                                         </label>
                                         <select
                                             name="department"
                                             value={newBonus.department}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         >
                                             <option value="all">All Departments</option>
                                             {departments.map(dept => (
@@ -778,8 +724,8 @@ const BonusIncentives = () => {
                                         </select>
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Eligibility Criteria
                                         </label>
                                         <input
@@ -787,20 +733,20 @@ const BonusIncentives = () => {
                                             name="eligibility_criteria"
                                             value={newBonus.eligibility_criteria}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="e.g., Employees with rating 4+"
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Status
                                         </label>
                                         <select
                                             name="status"
                                             value={newBonus.status}
                                             onChange={handleInputChange}
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         >
                                             {statusTypes.map(status => (
                                                 <option key={status} value={status}>{status}</option>
@@ -808,22 +754,22 @@ const BonusIncentives = () => {
                                         </select>
                                     </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
                                             Description
                                         </label>
                                         <textarea
                                             name="description"
                                             value={newBonus.description}
                                             onChange={handleInputChange}
-                                            rows="3"
-                                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            rows="2"
+                                            className="w-full border border-gray-300 px-2 py-1.5 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             placeholder="Describe this bonus program..."
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-4">
+                                <div className="flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -848,15 +794,15 @@ const BonusIncentives = () => {
                                                 approved_date: ''
                                             });
                                         }}
-                                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                                        className="px-3 py-1.5 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                        className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors flex items-center gap-1"
                                     >
-                                        <FaSave /> {editingBonus ? 'Update Bonus' : 'Create Bonus'}
+                                        <FaSave size={12} /> {editingBonus ? 'Update Bonus' : 'Create Bonus'}
                                     </button>
                                 </div>
                             </form>
