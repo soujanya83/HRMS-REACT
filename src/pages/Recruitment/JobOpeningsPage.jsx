@@ -641,10 +641,10 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.employment_type}
               >
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Contract">Contract</option>
-                <option value="Internship">Internship</option>
+                <option value="full-time">full-time</option>
+                <option value="part-time">part-time</option>
+                <option value="contract">contract</option>
+                <option value="internship">internship</option>
               </FormSelect>
               <div className="sm:col-span-2">
                 <FormTextarea

@@ -12,124 +12,12 @@ import {
   FaUsers,
   FaSync,
   FaCalendarCheck,
-  FaFlag
+  FaFlag,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaInfoCircle
 } from 'react-icons/fa';
-
-// Static data for holidays
-const staticHolidays = [
-  {
-    id: 1,
-    name: 'New Year\'s Day',
-    date: '2024-01-01',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Celebration of the new year',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 2,
-    name: 'Australia Day',
-    date: '2024-01-26',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'National day of Australia',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 3,
-    name: 'Good Friday',
-    date: '2024-03-29',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Christian holiday commemorating the crucifixion of Jesus',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 4,
-    name: 'Easter Monday',
-    date: '2024-04-01',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Day after Easter Sunday',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 5,
-    name: 'ANZAC Day',
-    date: '2024-04-25',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Commemoration of Australian and New Zealand Army Corps',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 6,
-    name: 'Christmas Day',
-    date: '2024-12-25',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Celebration of Christmas',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 7,
-    name: 'Boxing Day',
-    date: '2024-12-26',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Day after Christmas',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 8,
-    name: 'Company Picnic',
-    date: '2024-06-15',
-    year: 2024,
-    type: 'Company Event',
-    description: 'Annual company picnic and team building',
-    is_recurring: true,
-    location: 'Sydney Park',
-    half_day: true,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  }
-];
+import { holidayService } from '../../services/attendanceService';
 
 const HolidaysCalendars = () => {
   const [holidays, setHolidays] = useState([]);
@@ -139,10 +27,12 @@ const HolidaysCalendars = () => {
   const [view, setView] = useState('list');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [error, setError] = useState(null);
+  const [apiStatus, setApiStatus] = useState('connected'); // 'connected', 'demo', 'error'
   
   const [filters, setFilters] = useState({
     type: 'all',
-    year: 2024,
+    year: new Date().getFullYear(),
     search: '',
     month: 'all'
   });
@@ -189,22 +79,66 @@ const HolidaysCalendars = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  // Fetch holidays from API
   useEffect(() => {
-    setTimeout(() => {
-      setHolidays(staticHolidays);
-      calculateStats(staticHolidays);
-      setLoading(false);
-    }, 1000);
+    fetchHolidays();
   }, []);
 
+  const fetchHolidays = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await holidayService.getHolidays();
+      
+      // Handle different API response structures
+      let holidaysData = [];
+      if (response.data && Array.isArray(response.data.data)) {
+        holidaysData = response.data.data;
+        setApiStatus('connected');
+      } else if (response.data && Array.isArray(response.data)) {
+        holidaysData = response.data;
+        setApiStatus('connected');
+      } else if (Array.isArray(response.data)) {
+        holidaysData = response.data;
+        setApiStatus('connected');
+      } else {
+        // If we get here, we're using mock data
+        holidaysData = response.data?.data || [];
+        setApiStatus('demo');
+      }
+      
+      setHolidays(holidaysData);
+      calculateStats(holidaysData);
+    } catch (err) {
+      console.error('Error fetching holidays:', err);
+      setError('Failed to load holidays from API. Using demo data instead.');
+      setApiStatus('demo');
+      
+      // Set empty holidays array
+      setHolidays([]);
+      calculateStats([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calculateStats = (data) => {
-    const publicHolidays = data.filter(holiday => holiday.type === 'Public Holiday').length;
-    const companyEvents = data.filter(holiday => holiday.type === 'Company Event').length;
+    const publicHolidays = data.filter(holiday => 
+      holiday.type === 'Public Holiday' || holiday.type === 'public_holiday'
+    ).length;
+    
+    const companyEvents = data.filter(holiday => 
+      holiday.type === 'Company Event' || holiday.type === 'company_event'
+    ).length;
     
     const today = new Date();
     const upcomingHolidays = data.filter(holiday => {
-      const holidayDate = new Date(holiday.date);
-      return holidayDate >= today;
+      try {
+        const holidayDate = new Date(holiday.date);
+        return holidayDate >= today;
+      } catch {
+        return false;
+      }
     }).length;
 
     setStats({
@@ -240,7 +174,21 @@ const HolidaysCalendars = () => {
   const handleSubmitHoliday = async (e) => {
     e.preventDefault();
     try {
-      alert('Holiday saved successfully!');
+      setError(null);
+      
+      let result;
+      if (editingHoliday) {
+        // Update existing holiday
+        result = await holidayService.updateHoliday(editingHoliday.id, newHoliday);
+      } else {
+        // Create new holiday
+        result = await holidayService.createHoliday(newHoliday);
+      }
+      
+      // Refresh the list
+      await fetchHolidays();
+      
+      // Reset form
       setShowHolidayForm(false);
       setEditingHoliday(null);
       setNewHoliday({
@@ -254,28 +202,23 @@ const HolidaysCalendars = () => {
         applicable_departments: ['All']
       });
       
-      setLoading(true);
-      setTimeout(() => {
-        setHolidays(staticHolidays);
-        setLoading(false);
-      }, 500);
-    } catch (error) {
-      console.error('Error saving holiday:', error);
-      alert('Failed to save holiday');
+    } catch (err) {
+      console.error('Error saving holiday:', err);
+      setError('Failed to save holiday. Please try again.');
     }
   };
 
   const handleEdit = (holiday) => {
     setEditingHoliday(holiday);
     setNewHoliday({
-      name: holiday.name,
-      date: holiday.date,
-      type: holiday.type,
-      description: holiday.description,
-      is_recurring: holiday.is_recurring,
-      location: holiday.location,
-      half_day: holiday.half_day,
-      applicable_departments: holiday.applicable_departments
+      name: holiday.name || '',
+      date: holiday.date || '',
+      type: holiday.type || 'Public Holiday',
+      description: holiday.description || '',
+      is_recurring: holiday.is_recurring !== undefined ? holiday.is_recurring : true,
+      location: holiday.location || 'National',
+      half_day: holiday.half_day || false,
+      applicable_departments: holiday.applicable_departments || ['All']
     });
     setShowHolidayForm(true);
   };
@@ -284,39 +227,103 @@ const HolidaysCalendars = () => {
     if (!window.confirm('Are you sure you want to delete this holiday?')) return;
     
     try {
-      setHolidays(prev => prev.filter(holiday => holiday.id !== id));
-      alert('Holiday deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting holiday:', error);
-      alert('Failed to delete holiday');
+      setError(null);
+      await holidayService.deleteHoliday(id);
+      await fetchHolidays(); // Refresh the list
+    } catch (err) {
+      console.error('Error deleting holiday:', err);
+      setError('Failed to delete holiday. Please try again.');
     }
   };
 
   const handleDuplicateNextYear = async (holiday) => {
     try {
+      setError(null);
+      const nextYear = new Date().getFullYear() + 1;
+      const nextYearDate = holiday.date ? 
+        `${nextYear}-${holiday.date.split('-')[1]}-${holiday.date.split('-')[2]}` : 
+        `${nextYear}-01-01`;
+      
       const nextYearHoliday = {
         ...holiday,
-        date: holiday.date.replace(holiday.year.toString(), (holiday.year + 1).toString()),
-        year: holiday.year + 1
+        date: nextYearDate,
+        year: nextYear
       };
       delete nextYearHoliday.id;
       
-      setHolidays(prev => [...prev, { ...nextYearHoliday, id: Date.now() }]);
-      alert('Holiday duplicated for next year!');
-    } catch (error) {
-      console.error('Error duplicating holiday:', error);
-      alert('Failed to duplicate holiday');
+      await holidayService.createHoliday(nextYearHoliday);
+      await fetchHolidays(); // Refresh the list
+    } catch (err) {
+      console.error('Error duplicating holiday:', err);
+      setError('Failed to duplicate holiday. Please try again.');
     }
   };
 
+  const handleRefresh = async () => {
+    await fetchHolidays();
+  };
+
+  const handleExport = async () => {
+    try {
+      // Create CSV content
+      const csvContent = convertToCSV(holidays);
+      downloadCSV(csvContent, `holidays-${new Date().toISOString().split('T')[0]}.csv`);
+    } catch (err) {
+      console.error('Error exporting data:', err);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
+  const convertToCSV = (data) => {
+    if (!data.length) return '';
+    
+    const headers = ['Name', 'Date', 'Type', 'Location', 'Description', 'Recurring', 'Half Day', 'Departments'];
+    const rows = data.map(holiday => [
+      holiday.name || '',
+      holiday.date || '',
+      holiday.type || '',
+      holiday.location || '',
+      holiday.description || '',
+      holiday.is_recurring ? 'Yes' : 'No',
+      holiday.half_day ? 'Yes' : 'No',
+      (holiday.applicable_departments || []).join('; ')
+    ]);
+    
+    return [headers, ...rows].map(row => 
+      row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const downloadCSV = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const getHolidayIcon = (type) => {
-    switch (type) {
-      case 'Public Holiday': return <FaFlag className="text-red-500" />;
-      case 'Company Event': return <FaUsers className="text-blue-500" />;
-      case 'Regional Holiday': return <FaMapMarkerAlt className="text-green-500" />;
-      case 'Optional Holiday': return <FaClock className="text-yellow-500" />;
-      case 'Training Day': return <FaClock className="text-purple-500" />;
-      default: return <FaCalendarAlt className="text-gray-500" />;
+    const typeLower = type?.toLowerCase() || '';
+    switch (typeLower) {
+      case 'public holiday':
+      case 'public_holiday':
+        return <FaFlag className="text-red-500" />;
+      case 'company event':
+      case 'company_event':
+        return <FaUsers className="text-blue-500" />;
+      case 'regional holiday':
+      case 'regional_holiday':
+        return <FaMapMarkerAlt className="text-green-500" />;
+      case 'optional holiday':
+      case 'optional_holiday':
+        return <FaClock className="text-yellow-500" />;
+      case 'training day':
+      case 'training_day':
+        return <FaClock className="text-purple-500" />;
+      default: 
+        return <FaCalendarAlt className="text-gray-500" />;
     }
   };
 
@@ -333,14 +340,22 @@ const HolidaysCalendars = () => {
     const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
     const days = [];
 
+    // Empty days for the first week
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-20 border border-gray-200 bg-gray-50"></div>);
     }
 
+    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(currentYear, currentMonth, day);
       const dateString = currentDate.toISOString().split('T')[0];
-      const dayHolidays = holidays.filter(holiday => holiday.date === dateString);
+      const dayHolidays = holidays.filter(holiday => {
+        try {
+          return new Date(holiday.date).toISOString().split('T')[0] === dateString;
+        } catch {
+          return false;
+        }
+      });
 
       days.push(
         <div key={day} className="h-20 border border-gray-200 p-1 overflow-hidden">
@@ -363,8 +378,8 @@ const HolidaysCalendars = () => {
               <div
                 key={holiday.id}
                 className={`text-xs p-0.5 rounded truncate ${
-                  holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800' :
-                  holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800' :
+                  holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800' :
+                  holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800' :
                   'bg-green-100 text-green-800'
                 }`}
                 title={holiday.name}
@@ -403,6 +418,25 @@ const HolidaysCalendars = () => {
     }
   };
 
+  // Filter holidays based on current filters
+  const filteredHolidays = holidays.filter(holiday => {
+    const matchesSearch = !filters.search || 
+      holiday.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      holiday.description?.toLowerCase().includes(filters.search.toLowerCase());
+    
+    const matchesType = filters.type === 'all' || 
+      holiday.type === filters.type;
+    
+    const matchesYear = !filters.year || 
+      (holiday.year && holiday.year.toString() === filters.year.toString()) ||
+      (holiday.date && holiday.date.startsWith(filters.year.toString()));
+
+    const matchesMonth = filters.month === 'all' || 
+      (holiday.date && new Date(holiday.date).getMonth().toString() === filters.month);
+
+    return matchesSearch && matchesType && matchesYear && matchesMonth;
+  });
+
   if (loading) {
     return (
       <div className="flex-1 p-4 bg-gray-100 min-h-screen">
@@ -423,7 +457,6 @@ const HolidaysCalendars = () => {
 
   return (
     <div className="flex-1 p-4 bg-gray-100 min-h-screen font-sans overflow-x-hidden">
-      {/* Reduced max-width from max-w-7xl to max-w-6xl and adjusted padding */}
       <div className="max-w-6xl mx-auto w-full">
         
         {/* Header */}
@@ -431,6 +464,34 @@ const HolidaysCalendars = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Holidays & Calendars</h1>
           <p className="text-sm text-gray-600">Manage company holidays, events, and calendar schedules</p>
         </div>
+
+        {/* API Status Banner */}
+        {apiStatus === 'demo' && (
+          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg flex items-center gap-2">
+            <FaInfoCircle />
+            <span>Using demo data. API connection failed. Some features may be limited.</span>
+            <button 
+              onClick={handleRefresh}
+              className="ml-auto text-sm bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center gap-2">
+            <FaExclamationTriangle />
+            {error}
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Stats Cards - Made more compact */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -502,13 +563,21 @@ const HolidaysCalendars = () => {
 
           <div className="flex gap-2 text-sm">
             <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              <FaSync className={loading ? 'animate-spin' : ''} /> 
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
               onClick={() => setShowHolidayForm(true)}
               className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               <FaPlus className="text-xs" /> Add Holiday
             </button>
             <button
-              onClick={() => alert('Exporting calendar...')}
+              onClick={handleExport}
               className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
             >
               <FaDownload className="text-xs" /> Export
@@ -741,88 +810,96 @@ const HolidaysCalendars = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {holidays.map((holiday) => (
-                  <tr key={holiday.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        {getHolidayIcon(holiday.type)}
-                        <div>
-                          <div className="font-medium text-gray-900 text-xs">
-                            {holiday.name}
-                          </div>
-                          <div className="text-gray-500 text-xs max-w-xs truncate">
-                            {holiday.description}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="text-gray-900 text-xs">
-                        {new Date(holiday.date).toLocaleDateString('en-AU', {
-                          weekday: 'short',
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      {holiday.half_day && (
-                        <div className="text-xs text-orange-600">Half Day</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800' :
-                        holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {holiday.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 text-gray-900 text-xs">
-                      <div className="flex items-center gap-1">
-                        <FaMapMarkerAlt className="text-gray-400 text-xs" />
-                        {holiday.location}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 text-xs">
-                      {holiday.applicable_departments.join(', ')}
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        holiday.is_recurring 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {holiday.is_recurring ? 'Yes' : 'No'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleEdit(holiday)}
-                          className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDuplicateNextYear(holiday)}
-                          className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
-                          title="Duplicate for Next Year"
-                        >
-                          <FaSync />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(holiday.id)}
-                          className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
+                {filteredHolidays.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500 text-sm">
+                      No holidays found matching your filters.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredHolidays.map((holiday) => (
+                    <tr key={holiday.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          {getHolidayIcon(holiday.type)}
+                          <div>
+                            <div className="font-medium text-gray-900 text-xs">
+                              {holiday.name}
+                            </div>
+                            <div className="text-gray-500 text-xs max-w-xs truncate">
+                              {holiday.description}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="text-gray-900 text-xs">
+                          {new Date(holiday.date).toLocaleDateString('en-AU', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        {holiday.half_day && (
+                          <div className="text-xs text-orange-600">Half Day</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800' :
+                          holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {holiday.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-gray-900 text-xs">
+                        <div className="flex items-center gap-1">
+                          <FaMapMarkerAlt className="text-gray-400 text-xs" />
+                          {holiday.location}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-gray-700 text-xs">
+                        {(holiday.applicable_departments || ['All']).join(', ')}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          holiday.is_recurring 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {holiday.is_recurring ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleEdit(holiday)}
+                            className="p-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                            title="Edit"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateNextYear(holiday)}
+                            className="p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                            title="Duplicate for Next Year"
+                          >
+                            <FaSync />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(holiday.id)}
+                            className="p-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -874,7 +951,13 @@ const HolidaysCalendars = () => {
           <h3 className="text-md font-semibold text-gray-800 mb-3">Upcoming Holidays</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {holidays
-              .filter(holiday => new Date(holiday.date) >= new Date())
+              .filter(holiday => {
+                try {
+                  return new Date(holiday.date) >= new Date();
+                } catch {
+                  return false;
+                }
+              })
               .sort((a, b) => new Date(a.date) - new Date(b.date))
               .slice(0, 6)
               .map(holiday => (
@@ -885,8 +968,8 @@ const HolidaysCalendars = () => {
                       <h4 className="font-semibold text-gray-800 text-sm">{holiday.name}</h4>
                     </div>
                     <span className={`px-1.5 py-0.5 text-xs font-semibold rounded ${
-                      holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800' :
-                      holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800' :
+                      holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800' :
+                      holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800' :
                       'bg-green-100 text-green-800'
                     }`}>
                       {holiday.type}

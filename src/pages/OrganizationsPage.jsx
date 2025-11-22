@@ -24,7 +24,7 @@ import {
   deleteDesignation,
 } from "../services/organizationService";
 
-// Reusable Form Components (same as JobOpeningsPage)
+// Reusable Form Components
 const FormInput = ({ label, name, error, ...props }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium text-gray-700">
@@ -78,6 +78,9 @@ const FormTextarea = ({ label, name, error, ...props }) => (
   </div>
 );
 
+// Create a context for modal management
+const DesignationModalContext = React.createContext();
+
 function OrganizationsPage() {
   const [organizations, setOrganizations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +92,13 @@ function OrganizationsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Designation modal states
+  const [isDesignationModalOpen, setIsDesignationModalOpen] = useState(false);
+  const [editingDesignation, setEditingDesignation] = useState(null);
+  const [currentDepartmentId, setCurrentDepartmentId] = useState(null);
+  const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
+  const [designationToDelete, setDesignationToDelete] = useState(null);
 
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
@@ -162,8 +172,61 @@ function OrganizationsPage() {
     }
   };
 
+  // Designation modal handlers
+  const handleOpenDesignationModal = (departmentId, designation = null) => {
+    setCurrentDepartmentId(departmentId);
+    setEditingDesignation(designation);
+    setIsDesignationModalOpen(true);
+  };
+
+  const handleCloseDesignationModal = () => {
+    setIsDesignationModalOpen(false);
+    setEditingDesignation(null);
+    setCurrentDepartmentId(null);
+  };
+
+  const handleSaveDesignation = async (designationData) => {
+    setIsSubmitting(true);
+    try {
+      if (editingDesignation) {
+        await updateDesignation(editingDesignation.id, designationData);
+      } else {
+        await createDesignation(currentDepartmentId, designationData);
+      }
+      handleCloseDesignationModal();
+      // You might want to refresh the designations list here
+    } catch (err) {
+      console.error("Failed to save designation:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDesignationDeleteClick = (designation) => {
+    setDesignationToDelete(designation);
+    setIsDesignationConfirmOpen(true);
+  };
+
+  const handleDesignationDeleteConfirm = async () => {
+    if (designationToDelete) {
+      try {
+        await deleteDesignation(designationToDelete.id);
+        setIsDesignationConfirmOpen(false);
+        setDesignationToDelete(null);
+      } catch (err) {
+        console.error("Failed to delete designation:", err);
+      }
+    }
+  };
+
+  // Context value for designation modal
+  const designationModalContextValue = {
+    openDesignationModal: handleOpenDesignationModal,
+    deleteDesignation: handleDesignationDeleteClick
+  };
+
   return (
-    <>
+    <DesignationModalContext.Provider value={designationModalContextValue}>
       <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
         <div className="max-w-7xl mx-auto">
           {!selectedOrg ? (
@@ -207,7 +270,27 @@ function OrganizationsPage() {
         title="Delete Organization"
         message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
       />
-    </>
+
+      {/* Designation Modal - Rendered at top level */}
+      <DesignationModal
+        isOpen={isDesignationModalOpen}
+        onClose={handleCloseDesignationModal}
+        onSave={handleSaveDesignation}
+        designation={editingDesignation}
+        isSubmitting={isSubmitting}
+      />
+
+      <ConfirmationModal
+        isOpen={isDesignationConfirmOpen}
+        onClose={() => {
+          setIsDesignationConfirmOpen(false);
+          setDesignationToDelete(null);
+        }}
+        onConfirm={handleDesignationDeleteConfirm}
+        title="Delete Designation"
+        message={`Are you sure you want to delete "${designationToDelete?.title}"?`}
+      />
+    </DesignationModalContext.Provider>
   );
 }
 
@@ -277,7 +360,6 @@ function OrganizationListView({
 function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      {/* Primary blue colored status bar on the LEFT side */}
       <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
       
       <div className="p-6 pl-8">
@@ -293,7 +375,6 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
           </div>
           
           <div className="flex flex-col items-end gap-3 self-start sm:self-center flex-shrink-0">
-            {/* Edit and Delete buttons positioned above View Details */}
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => onEdit(organization)}
@@ -311,7 +392,6 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
               </button>
             </div>
             
-            {/* View Details button at the bottom */}
             <button
               onClick={() => onSelectOrg(organization)}
               className="text-sm font-semibold text-brand-blue hover:underline transition-colors"
@@ -336,7 +416,6 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
       </button>
 
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8 relative">
-        {/* Primary blue colored status bar on the LEFT side */}
         <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
         
         <div className="pl-6">
@@ -493,7 +572,6 @@ function DepartmentItem({ department, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      {/* Primary blue colored status bar on the LEFT side */}
       <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
       
       <div className="p-6 pl-8">
@@ -541,11 +619,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
 function DesignationsList({ departmentId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDesig, setEditingDesig] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [desigToDelete, setDesigToDelete] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const designationModalContext = React.useContext(DesignationModalContext);
 
   const fetchDesigs = useCallback(async () => {
     setIsLoading(true);
@@ -564,46 +638,12 @@ function DesignationsList({ departmentId }) {
     fetchDesigs();
   }, [fetchDesigs]);
 
-  const handleSave = async (desigData) => {
-    setIsSubmitting(true);
-    try {
-      if (editingDesig) {
-        await updateDesignation(editingDesig.id, desigData);
-      } else {
-        await createDesignation(departmentId, desigData);
-      }
-      await fetchDesigs();
-      setIsModalOpen(false);
-      setEditingDesig(null);
-    } catch (err) {
-      console.error("Failed to save designation:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (desigToDelete) {
-      try {
-        await deleteDesignation(desigToDelete.id);
-        await fetchDesigs();
-        setIsConfirmOpen(false);
-        setDesigToDelete(null);
-      } catch (err) {
-        console.error("Failed to delete designation", err);
-      }
-    }
-  };
-
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-md font-semibold text-gray-700">Designations</h4>
         <button
-          onClick={() => {
-            setEditingDesig(null);
-            setIsModalOpen(true);
-          }}
+          onClick={() => designationModalContext.openDesignationModal(departmentId)}
           className="flex items-center gap-1 text-sm bg-brand-blue text-white font-semibold py-1 px-3 rounded-full hover:opacity-90 transition"
         >
           <HiPlus /> Add Designation
@@ -629,20 +669,14 @@ function DesignationsList({ departmentId }) {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => {
-                    setEditingDesig(desig);
-                    setIsModalOpen(true);
-                  }}
+                  onClick={() => designationModalContext.openDesignationModal(departmentId, desig)}
                   className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
                   title="Edit Designation"
                 >
                   <HiPencil />
                 </button>
                 <button
-                  onClick={() => {
-                    setDesigToDelete(desig);
-                    setIsConfirmOpen(true);
-                  }}
+                  onClick={() => designationModalContext.deleteDesignation(desig)}
                   className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-red-500 transition-colors"
                   title="Delete Designation"
                 >
@@ -656,33 +690,12 @@ function DesignationsList({ departmentId }) {
           )}
         </ul>
       )}
-
-      <DesignationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
-        designation={editingDesig}
-        isSubmitting={isSubmitting}
-      />
-
-      <ConfirmationModal
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Designation"
-        message={`Are you sure you want to delete "${desigToDelete?.title}"?`}
-      />
     </div>
   );
 }
 
-function OrganizationModal({
-  isOpen,
-  onClose,
-  onSave,
-  organization,
-  isSubmitting,
-}) {
+// Modal Components (keep the same as before)
+function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting }) {
   const [formData, setFormData] = useState({});
   
   useEffect(() => {
@@ -710,7 +723,7 @@ function OrganizationModal({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
@@ -822,13 +835,7 @@ function OrganizationModal({
   );
 }
 
-function DepartmentModal({
-  isOpen,
-  onClose,
-  onSave,
-  department,
-  isSubmitting,
-}) {
+function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) {
   const [formData, setFormData] = useState({});
   
   useEffect(() => {
@@ -912,13 +919,7 @@ function DepartmentModal({
   );
 }
 
-function DesignationModal({
-  isOpen,
-  onClose,
-  onSave,
-  designation,
-  isSubmitting,
-}) {
+function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }) {
   const [formData, setFormData] = useState({});
   
   useEffect(() => {
@@ -944,7 +945,7 @@ function DesignationModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200"
+            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
           >
             <HiX size={24} />
           </button>
@@ -971,6 +972,9 @@ function DesignationModal({
                 <option value="Junior">Junior</option>
                 <option value="Mid">Mid</option>
                 <option value="Senior">Senior</option>
+                <option value="Lead">Lead</option>
+                <option value="Manager">Manager</option>
+                <option value="Director">Director</option>
               </FormSelect>
             </div>
           </div>
@@ -980,14 +984,14 @@ function DesignationModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition"
+              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
             >
               {isSubmitting
                 ? designation
