@@ -1,355 +1,127 @@
 // src/services/attendanceService.js
-import axios from 'axios';
-
-const BASE_URL = 'https://api.chrispp.com/api/v1';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 second timeout
-});
-
-// Add request interceptor to include auth token
-api.interceptors.request.use(
-  (config) => {
-    // Try multiple possible token storage locations
-    const token = localStorage.getItem('authToken') || 
-                  localStorage.getItem('token') ||
-                  sessionStorage.getItem('authToken') ||
-                  sessionStorage.getItem('token');
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn('No authentication token found. API calls may fail.');
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor for better error handling
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    const { status, data } = error.response || {};
-    
-    if (status === 401) {
-      console.error('Authentication failed. Redirecting to login...');
-      // You might want to redirect to login page here
-      // window.location.href = '/login';
-    } else if (status === 404) {
-      console.warn('API endpoint not found:', error.config.url);
-    }
-    
-    return Promise.reject(error);
-  }
-);
-
-// Mock data for fallback
-const mockHolidays = [
-  {
-    id: 1,
-    name: 'New Year\'s Day',
-    date: '2024-01-01',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'Celebration of the new year',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  },
-  {
-    id: 2,
-    name: 'Australia Day',
-    date: '2024-01-26',
-    year: 2024,
-    type: 'Public Holiday',
-    description: 'National day of Australia',
-    is_recurring: true,
-    location: 'National',
-    half_day: false,
-    applicable_departments: ['All'],
-    created_at: '2024-01-01',
-    updated_at: '2024-01-01'
-  }
-];
-
-const mockEmployees = [
-  { id: 1, employee_id: 'EMP001', name: 'John Smith', department: 'Engineering' },
-  { id: 2, employee_id: 'EMP002', name: 'Sarah Johnson', department: 'Marketing' },
-  { id: 3, employee_id: 'EMP003', name: 'Mike Chen', department: 'Sales' }
-];
-
-const mockDepartments = ['Engineering', 'Marketing', 'Sales', 'HR', 'Design'];
-
-// Helper function to handle API calls with fallback
-const apiCallWithFallback = async (apiCall, fallbackData, operation = 'fetch') => {
-  try {
-    const response = await apiCall();
-    return response;
-  } catch (error) {
-    console.warn(`API ${operation} failed, using mock data:`, error.message);
-    
-    // Return mock data structure that matches API response format
-    return {
-      data: {
-        data: fallbackData,
-        message: `Using demo data (API ${operation} failed)`
-      },
-      status: 200
-    };
-  }
-};
+import axiosClient from '../axiosClient';
 
 // Attendance APIs
 export const attendanceService = {
   // Get attendance records with filters
   getAttendance: (params = {}) => {
-    return apiCallWithFallback(
-      () => api.get('/attendance', { params }),
-      [] // fallback empty array
-    );
+    return axiosClient.get('/attendance', { params });
   },
 
   // Clock in
   clockIn: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/clock-in', data),
-      { success: true, message: 'Clock in recorded (demo)' },
-      'clock in'
-    );
+    return axiosClient.post('/attendance/clock-in', data);
   },
 
   // Clock out
   clockOut: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/clock-out', data),
-      { success: true, message: 'Clock out recorded (demo)' },
-      'clock out'
-    );
+    return axiosClient.post('/attendance/clock-out', data);
   },
 
   // Create attendance record
   createAttendance: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/store', data),
-      { success: true, message: 'Attendance recorded (demo)' },
-      'create attendance'
-    );
+    return axiosClient.post('/attendance/store', data);
   },
 
   // Update attendance record
   updateAttendance: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/update', data),
-      { success: true, message: 'Attendance updated (demo)' },
-      'update attendance'
-    );
+    return axiosClient.post('/attendance/update', data);
   },
 
   // Delete attendance record
   deleteAttendance: (id) => {
-    return apiCallWithFallback(
-      () => api.delete(`/attendance/destroy/${id}`),
-      { success: true, message: 'Attendance deleted (demo)' },
-      'delete attendance'
-    );
+    return axiosClient.delete(`/attendance/destroy/${id}`);
   },
 
   // Work on holiday request
   workOnHoliday: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/work-on-holiday', data),
-      { success: true, message: 'Work on holiday request submitted (demo)' },
-      'work on holiday'
-    );
+    return axiosClient.post('/attendance/work-on-holiday', data);
   },
 
   // Approve work on holiday
   approveWorkOnHoliday: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/attendance/approve-work-on-holiday', data),
-      { success: true, message: 'Work on holiday approved (demo)' },
-      'approve work on holiday'
-    );
+    return axiosClient.post('/attendance/approve-work-on-holiday', data);
   },
 
   // Get work on holiday requests
   getWorkOnHoliday: () => {
-    return apiCallWithFallback(
-      () => api.get('/attendance/work-on-holiday'),
-      [],
-      'fetch work on holiday'
-    );
+    return axiosClient.get('/attendance/work-on-holiday');
   }
 };
 
 // Organization attendance rules
 export const attendanceRuleService = {
   getRules: () => {
-    return apiCallWithFallback(
-      () => api.get('/organization-attendance-rule'),
-      [],
-      'fetch attendance rules'
-    );
+    return axiosClient.get('/organization-attendance-rule');
   },
 
   createRule: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/organization-attendance-rule', data),
-      { success: true, message: 'Rule created (demo)' },
-      'create rule'
-    );
+    return axiosClient.post('/organization-attendance-rule', data);
   },
 
   getRule: (id) => {
-    return apiCallWithFallback(
-      () => api.get(`/organization-attendance-rule/${id}`),
-      {},
-      'fetch rule'
-    );
+    return axiosClient.get(`/organization-attendance-rule/${id}`);
   },
 
   updateRule: (id, data) => {
-    return apiCallWithFallback(
-      () => api.post(`/organization-attendance-rule/${id}`, data),
-      { success: true, message: 'Rule updated (demo)' },
-      'update rule'
-    );
+    return axiosClient.post(`/organization-attendance-rule/${id}`, data);
   },
 
   deleteRule: (id) => {
-    return apiCallWithFallback(
-      () => api.delete(`/organization-attendance-rule/${id}`),
-      { success: true, message: 'Rule deleted (demo)' },
-      'delete rule'
-    );
+    return axiosClient.delete(`/organization-attendance-rule/${id}`);
   }
 };
 
 // Organization holidays
 export const holidayService = {
   getHolidays: () => {
-    return apiCallWithFallback(
-      () => api.get('/organization-holiday'),
-      mockHolidays,
-      'fetch holidays'
-    );
+    return axiosClient.get('/organization-holiday');
   },
 
   createHoliday: (data) => {
-    return apiCallWithFallback(
-      () => api.post('/organization-holiday', data),
-      { 
-        success: true, 
-        message: 'Holiday created successfully',
-        data: { id: Date.now(), ...data }
-      },
-      'create holiday'
-    );
+    return axiosClient.post('/organization-holiday', data);
   },
 
   getHoliday: (id) => {
-    return apiCallWithFallback(
-      () => api.get(`/organization-holiday/${id}`),
-      mockHolidays.find(h => h.id === id) || {},
-      'fetch holiday'
-    );
+    return axiosClient.get(`/organization-holiday/${id}`);
   },
 
   updateHoliday: (id, data) => {
-    return apiCallWithFallback(
-      () => api.post(`/organization-holiday/${id}`, data),
-      { 
-        success: true, 
-        message: 'Holiday updated successfully',
-        data: { id, ...data }
-      },
-      'update holiday'
-    );
+    return axiosClient.post(`/organization-holiday/${id}`, data);
   },
 
   partialUpdateHoliday: (id, data) => {
-    return apiCallWithFallback(
-      () => api.post(`/organization-holiday/${id}/partial`, data),
-      { 
-        success: true, 
-        message: 'Holiday partially updated successfully',
-        data: { id, ...data }
-      },
-      'partial update holiday'
-    );
+    return axiosClient.post(`/organization-holiday/${id}/partial`, data);
   },
 
   deleteHoliday: (id) => {
-    return apiCallWithFallback(
-      () => api.delete(`/organization-holiday/${id}`),
-      { success: true, message: 'Holiday deleted successfully' },
-      'delete holiday'
-    );
+    return axiosClient.delete(`/organization-holiday/${id}`);
   }
 };
 
 // Employee leaves
 export const leaveService = {
   getLeaves: (params = {}) => {
-    return apiCallWithFallback(
-      () => api.get('/leave', { params }),
-      [],
-      'fetch leaves'
-    );
+    return axiosClient.get('/leave', { params });
   },
 
   createLeave: (employeeId, data) => {
-    return apiCallWithFallback(
-      () => api.post(`/leave/store/${employeeId}`, data),
-      { success: true, message: 'Leave request submitted successfully' },
-      'create leave'
-    );
+    return axiosClient.post(`/leave/store/${employeeId}`, data);
   },
 
   approveLeave: (leaveId, data) => {
-    return apiCallWithFallback(
-      () => api.put(`/leave/approve-leave/${leaveId}`, data),
-      { success: true, message: 'Leave approved successfully' },
-      'approve leave'
-    );
+    return axiosClient.put(`/leave/approve-leave/${leaveId}`, data);
   },
 
   getLeave: (leaveId) => {
-    return apiCallWithFallback(
-      () => api.get(`/leave/show/${leaveId}`),
-      {},
-      'fetch leave'
-    );
+    return axiosClient.get(`/leave/show/${leaveId}`);
   },
 
   deleteLeave: (leaveId) => {
-    return apiCallWithFallback(
-      () => api.delete(`/leave/destroy/${leaveId}`),
-      { success: true, message: 'Leave deleted successfully' },
-      'delete leave'
-    );
+    return axiosClient.delete(`/leave/destroy/${leaveId}`);
   },
 
   getLeaveBalance: () => {
-    return apiCallWithFallback(
-      () => api.get('/leave/leaveBalance'),
-      [],
-      'fetch leave balance'
-    );
+    return axiosClient.get('/leave/leaveBalance');
   }
 };
-
-export default api;
