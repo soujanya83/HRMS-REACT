@@ -26,43 +26,71 @@ import {
 
 const statusOptions = [
   {
-    value: "applied",
+    value: "Applied",
     label: "Applied",
     color: "bg-blue-100 text-blue-800",
     borderColor: "border-blue-500",
   },
   {
-    value: "interview",
-    label: "Interview",
+    value: "Screening",
+    label: "Screening",
     color: "bg-purple-100 text-purple-800",
     borderColor: "border-purple-500",
   },
   {
-    value: "offer",
-    label: "Offer",
+    value: "Interviewing",
+    label: "Interviewing",
+    color: "bg-purple-100 text-purple-800",
+    borderColor: "border-purple-500",
+  },
+  {
+    value: "Offered",
+    label: "Offered",
     color: "bg-green-100 text-green-800",
     borderColor: "border-green-500",
   },
   {
-    value: "hired",
+    value: "Hired",
     label: "Hired",
     color: "bg-teal-100 text-teal-800",
     borderColor: "border-teal-500",
   },
   {
-    value: "rejected",
+    value: "Rejected",
     label: "Rejected",
     color: "bg-red-100 text-red-800",
     borderColor: "border-red-500",
   },
+  {
+    value: "Withdrawn",
+    label: "Withdrawn",
+    color: "bg-gray-100 text-gray-800",
+    borderColor: "border-gray-500",
+  },
 ];
+
 const sourceOptions = [
-  "LinkedIn",
-  "Indeed",
-  "Referral",
-  "Company Website",
-  "Other",
+  "website",
+  "linkedin",
+  "referral",
+  "job-board",
+  "social-media",
+  "direct-application",
+  "recruiter",
+  "other",
 ];
+
+const sourceLabels = {
+  website: "Website",
+  linkedin: "LinkedIn",
+  referral: "Referral",
+  "job-board": "Job Board",
+  "social-media": "Social Media",
+  "direct-application": "Direct Application",
+  recruiter: "Recruiter",
+  other: "Other",
+};
+
 const initialFormData = {
   first_name: "",
   last_name: "",
@@ -70,8 +98,8 @@ const initialFormData = {
   phone: "",
   job_opening_id: "",
   cover_letter: "",
-  source: "LinkedIn",
-  status: "applied",
+  source: "linkedin",
+  status: "Applied", // Capitalized to match API
 };
 
 const ApplicantsPage = () => {
@@ -91,6 +119,7 @@ const ApplicantsPage = () => {
   const [itemsPerPage] = useState(5);
   const [formData, setFormData] = useState(initialFormData);
   const [resumeFile, setResumeFile] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -144,49 +173,203 @@ const ApplicantsPage = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, jobFilter, applicants]);
 
+  const validateForm = () => {
+    const errors = {};
+
+    // Required fields validation
+    if (!formData.first_name?.trim())
+      errors.first_name = ["First name is required"];
+    if (!formData.last_name?.trim())
+      errors.last_name = ["Last name is required"];
+    if (!formData.email?.trim()) errors.email = ["Email is required"];
+    if (!formData.phone?.trim()) errors.phone = ["Phone is required"]; // Added phone validation
+    if (!formData.job_opening_id)
+      errors.job_opening_id = ["Job opening is required"];
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      errors.email = ["Please enter a valid email address"];
+    }
+
+    // Resume validation - required for new applicants
+    if (!isEditMode && !resumeFile) {
+      errors.resume = ["Resume is required"];
+    }
+
+    // File validation if resume is provided
+    if (resumeFile) {
+      const allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!allowedTypes.includes(resumeFile.type)) {
+        errors.resume = ["Resume must be PDF, DOC, or DOCX format"];
+      }
+
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        errors.resume = ["Resume must be less than 5MB"];
+      }
+    }
+
+    // Source validation
+    if (!formData.source || !sourceOptions.includes(formData.source)) {
+      errors.source = ["Please select a valid source"];
+    }
+
+    // Status validation
+    const validStatuses = statusOptions.map((option) => option.value);
+    if (!formData.status || !validStatuses.includes(formData.status)) {
+      errors.status = ["Please select a valid status"];
+    }
+
+    return errors;
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    setFormErrors((prev) => ({ ...prev, resume: null }));
+
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert("File size exceeds 5MB.");
+        setFormErrors((prev) => ({
+          ...prev,
+          resume: ["File size exceeds 5MB."],
+        }));
         e.target.value = null;
         return;
       }
+
+      const allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        setFormErrors((prev) => ({
+          ...prev,
+          resume: ["Please upload only PDF, DOC, or DOCX files."],
+        }));
+        e.target.value = null;
+        return;
+      }
+
       setResumeFile(file);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("=== STARTING FORM SUBMISSION ===");
+
+    // Clear previous errors
+    setFormErrors({});
+
+    // Client-side validation
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFormErrors(validationErrors);
+      alert("Please fix the validation errors before submitting.");
+      return;
+    }
+
+    if (!organizationId) {
+      alert("No organization selected");
+      return;
+    }
+
+    // Create FormData
     const formDataInstance = new FormData();
-    Object.keys(formData).forEach((key) =>
-      formDataInstance.append(key, formData[key])
+
+    // Append all fields with proper formatting
+    formDataInstance.append("first_name", formData.first_name.trim());
+    formDataInstance.append("last_name", formData.last_name.trim());
+    formDataInstance.append("email", formData.email.trim());
+    formDataInstance.append("phone", formData.phone?.trim() || "");
+    formDataInstance.append(
+      "job_opening_id",
+      formData.job_opening_id.toString()
     );
-    formDataInstance.append("organization_id", organizationId);
+    formDataInstance.append(
+      "cover_letter",
+      formData.cover_letter?.trim() || ""
+    );
+    formDataInstance.append("source", formData.source);
+    formDataInstance.append("status", formData.status);
+    formDataInstance.append("organization_id", organizationId.toString());
+
+    if (!isEditMode) {
+      formDataInstance.append(
+        "applied_date",
+        new Date().toISOString().split("T")[0]
+      );
+    }
+
     if (resumeFile) {
       formDataInstance.append("resume", resumeFile);
     }
+
+    // Debug: Log what's being sent
+    console.log("=== FORM DATA BEING SENT ===");
+    for (let pair of formDataInstance.entries()) {
+      console.log(pair[0] + ":", pair[1]);
+    }
+
     try {
       if (isEditMode) {
-        formDataInstance.append("_method", "PUT");
+        console.log("Editing applicant:", selectedApplicant.id);
         await updateApplicant(selectedApplicant.id, formDataInstance);
       } else {
-        formDataInstance.append(
-          "applied_date",
-          new Date().toISOString().split("T")[0]
-        );
+        console.log("Creating new applicant");
         await createApplicant(formDataInstance);
       }
+
+      console.log("=== SUCCESS ===");
       setIsFormOpen(false);
       setResumeFile(null);
+      setFormData(initialFormData);
+      setFormErrors({});
       fetchData();
     } catch (err) {
+      console.error("=== API ERROR DETAILS ===");
+      console.error("Full error:", err);
+      console.error("Response status:", err.response?.status);
+      console.error("Response data:", err.response?.data);
+
       if (err.response?.status === 422) {
-        alert(
-          `Error:\n${Object.values(err.response.data.errors).flat().join("\n")}`
-        );
+        const serverErrors = err.response.data.errors;
+        console.error("Validation errors object:", serverErrors);
+
+        // SPECIFICALLY LOG THE SOURCE ERROR
+        if (serverErrors.source) {
+          console.error("Source error details:", serverErrors.source);
+        }
+
+        // Set form errors for display
+        setFormErrors(serverErrors);
+
+        if (serverErrors && typeof serverErrors === "object") {
+          const errorMessages = Object.entries(serverErrors)
+            .map(
+              ([field, messages]) =>
+                `• ${field}: ${
+                  Array.isArray(messages) ? messages.join(", ") : messages
+                }`
+            )
+            .join("\n");
+          alert(`Validation Errors:\n\n${errorMessages}`);
+        } else {
+          alert(`Validation error: ${JSON.stringify(err.response.data)}`);
+        }
       } else {
-        alert("An unexpected error occurred.");
+        alert(
+          `Error: ${
+            err.response?.data?.message || "An unexpected error occurred"
+          }`
+        );
       }
     }
   };
@@ -195,26 +378,36 @@ const ApplicantsPage = () => {
     setIsEditMode(false);
     setFormData(initialFormData);
     setResumeFile(null);
+    setFormErrors({});
     setIsFormOpen(true);
   };
+
   const handleEditApplicant = (applicant) => {
     setSelectedApplicant(applicant);
-    setFormData({ ...applicant });
+    setFormData({
+      ...applicant,
+      status: applicant.status || "Applied",
+      source: applicant.source || "LinkedIn",
+    });
     setResumeFile(null);
+    setFormErrors({});
     setIsEditMode(true);
     setIsFormOpen(true);
     setIsDetailOpen(false);
   };
+
   const handleDeleteApplicant = async (id) => {
-    if (window.confirm("Are you sure?")) {
+    if (window.confirm("Are you sure you want to delete this applicant?")) {
       try {
         await deleteApplicant(id);
         fetchData();
       } catch (err) {
-        alert("Could not delete applicant.",err);
+        alert("Could not delete applicant.");
+        console.error(err);
       }
     }
   };
+
   const handleStatusUpdate = async (applicantId, newStatus) => {
     try {
       await updateApplicantStatus(applicantId, newStatus);
@@ -223,9 +416,11 @@ const ApplicantsPage = () => {
         setSelectedApplicant((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
-      alert("Could not update status.",err);
+      alert("Could not update status.");
+      console.error(err);
     }
   };
+
   const handleResumeDownload = async (applicant) => {
     try {
       const response = await downloadApplicantResume(applicant.id);
@@ -248,10 +443,16 @@ const ApplicantsPage = () => {
       alert("Could not download resume.");
     }
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredApplicants.slice(
@@ -260,18 +461,23 @@ const ApplicantsPage = () => {
   );
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const handleViewApplicant = (applicant) => {
     setSelectedApplicant(applicant);
     setIsDetailOpen(true);
-    paginate,
-    totalPages
   };
-  const getStatusInfo = (statusValue) =>
-    statusOptions.find((o) => o.value === statusValue) || {
-      color: "bg-gray-100",
-      label: statusValue,
+
+  const getStatusInfo = (statusValue) => {
+    const statusOption = statusOptions.find((o) => o.value === statusValue);
+    if (statusOption) return statusOption;
+
+    // Fallback for any status values from API that aren't in our options
+    return {
+      color: "bg-gray-100 text-gray-800",
+      label: statusValue?.replace(/-/g, " ") || "Unknown", // Convert "interview-scheduled" to "interview scheduled"
       borderColor: "border-gray-500",
     };
+  };
 
   if (loading)
     return (
@@ -350,6 +556,7 @@ const ApplicantsPage = () => {
               </div>
             </div>
             <div className="md:col-span-2 flex justify-end gap-4">
+              // In your status filter dropdown
               <select
                 className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 value={statusFilter}
@@ -425,8 +632,8 @@ const ApplicantsPage = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                               <span className="text-gray-700 font-medium">
-                                {applicant.first_name[0]}
-                                {applicant.last_name[0]}
+                                {applicant.first_name?.[0]}
+                                {applicant.last_name?.[0]}
                               </span>
                             </div>
                             <div className="ml-4">
@@ -448,9 +655,11 @@ const ApplicantsPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {new Date(
-                              applicant.applied_date
-                            ).toLocaleDateString()}
+                            {applicant.applied_date
+                              ? new Date(
+                                  applicant.applied_date
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -505,12 +714,13 @@ const ApplicantsPage = () => {
           </div>
           {filteredApplicants.length > itemsPerPage && (
             <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-              {/* Pagination */}
+              {/* Pagination can be added here */}
             </div>
           )}
         </div>
       </main>
 
+      {/* Applicant Detail Modal */}
       {isDetailOpen && selectedApplicant && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
@@ -628,12 +838,13 @@ const ApplicantsPage = () => {
                 >
                   Close
                 </button>
-                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Applicant Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
@@ -657,85 +868,135 @@ const ApplicantsPage = () => {
                     </button>
                   </div>
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    {/* First Name */}
                     <div>
                       <label
                         htmlFor="first_name"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        First Name
+                        First Name *
                       </label>
                       <input
-  type="text"
-  name="first_name"
-  id="first_name"
-  required
-  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
-  value={formData.first_name}
-  onChange={handleInputChange}
-/>
+                        type="text"
+                        name="first_name"
+                        id="first_name"
+                        required
+                        className={`block w-full border ${
+                          formErrors.first_name
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                        value={formData.first_name}
+                        onChange={handleInputChange}
+                      />
+                      {formErrors.first_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.first_name[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Last Name */}
                     <div>
                       <label
                         htmlFor="last_name"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Last Name
+                        Last Name *
                       </label>
                       <input
-  type="text"
-  name="last_name"
-  id="last_name"
-  required
-  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
-  value={formData.last_name}
-  onChange={handleInputChange}
-/>
+                        type="text"
+                        name="last_name"
+                        id="last_name"
+                        required
+                        className={`block w-full border ${
+                          formErrors.last_name
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                        value={formData.last_name}
+                        onChange={handleInputChange}
+                      />
+                      {formErrors.last_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.last_name[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Email */}
                     <div className="sm:col-span-2">
                       <label
                         htmlFor="email"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Email
+                        Email *
                       </label>
-                     <input
-  type="email"
-  name="email"
-  id="email"
-  required
-  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
-  value={formData.email}
-  onChange={handleInputChange}
-/>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        required
+                        className={`block w-full border ${
+                          formErrors.email
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                        value={formData.email}
+                        onChange={handleInputChange}
+                      />
+                      {formErrors.email && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.email[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Phone */}
                     <div>
                       <label
                         htmlFor="phone"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Phone
+                        Phone *
                       </label>
                       <input
                         type="tel"
                         name="phone"
                         id="phone"
-                        className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
+                        required
+                        className={`block w-full border ${
+                          formErrors.phone
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                         value={formData.phone}
                         onChange={handleInputChange}
                       />
+                      {formErrors.phone && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.phone[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Job Opening */}
                     <div>
                       <label
                         htmlFor="job_opening_id"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Job Opening
+                        Job Opening *
                       </label>
                       <select
                         name="job_opening_id"
                         id="job_opening_id"
                         required
-                       className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
+                        className={`block w-full border ${
+                          formErrors.job_opening_id
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                         value={formData.job_opening_id}
                         onChange={handleInputChange}
                       >
@@ -746,39 +1007,61 @@ const ApplicantsPage = () => {
                           </option>
                         ))}
                       </select>
+                      {formErrors.job_opening_id && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.job_opening_id[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Source */}
                     <div>
                       <label
                         htmlFor="source"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Source
+                        Source *
                       </label>
                       <select
                         name="source"
                         id="source"
-                        className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
+                        className={`block w-full border ${
+                          formErrors.source
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                         value={formData.source}
                         onChange={handleInputChange}
                       >
                         {sourceOptions.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {sourceLabels[s] || s}
                           </option>
                         ))}
                       </select>
+                      {formErrors.source && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.source[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Status */}
                     <div>
                       <label
                         htmlFor="status"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Status
+                        Status *
                       </label>
                       <select
                         name="status"
                         id="status"
-                        className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none"
+                        className={`block w-full border ${
+                          formErrors.status
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                         value={formData.status}
                         onChange={handleInputChange}
                       >
@@ -788,7 +1071,14 @@ const ApplicantsPage = () => {
                           </option>
                         ))}
                       </select>
+                      {formErrors.status && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.status[0]}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Cover Letter */}
                     <div className="sm:col-span-2">
                       <label
                         htmlFor="cover_letter"
@@ -806,14 +1096,22 @@ const ApplicantsPage = () => {
                       />
                     </div>
 
+                    {/* Resume */}
                     <div className="sm:col-span-2">
                       <label
                         htmlFor="resume"
                         className="block text-sm font-medium text-gray-700"
                       >
-                        Resume {isEditMode && "(Optional: to replace existing)"}
+                        Resume {!isEditMode && "*"}{" "}
+                        {isEditMode && "(Optional: to replace existing)"}
                       </label>
-                      <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-black border-dashed rounded-md focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 transition-colors">
+                      <div
+                        className={`mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 ${
+                          formErrors.resume
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } border-dashed rounded-md focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 transition-colors`}
+                      >
                         <div className="space-y-1 text-center">
                           <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />
                           <div className="flex text-sm text-gray-600">
@@ -839,6 +1137,11 @@ const ApplicantsPage = () => {
                           {resumeFile && (
                             <p className="text-sm font-semibold text-green-600 pt-2">
                               Selected: {resumeFile.name}
+                            </p>
+                          )}
+                          {formErrors.resume && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {formErrors.resume[0]}
                             </p>
                           )}
                         </div>
@@ -871,6 +1174,3 @@ const ApplicantsPage = () => {
 };
 
 export default ApplicantsPage;
-
-
-
