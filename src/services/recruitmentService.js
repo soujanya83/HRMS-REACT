@@ -11,13 +11,11 @@ export const createApplicant = (formData) => {
   });
 };
 
-export const getApplicantById = (id) => {
-  return axiosClient.get(`/recruitment/applicants/${id}`);
+export const getApplicantById = (applicantId) => {
+  return axiosClient.get(`/recruitment/applicants/${applicantId}`);
 };
 
-// FIXED: Use POST for update with _method parameter
 export const updateApplicant = (id, formData) => {
-  // Since your API uses POST for updates, we need to handle this differently
   const data = new FormData();
   
   // Copy all form data
@@ -38,8 +36,9 @@ export const deleteApplicant = (id) => {
 };
 
 // FIXED: Status update endpoint
-export const updateApplicantStatus = (id, status) => {
-  return axiosClient.post(`/recruitment/applicants/${id}/status`, { status });
+// Add this function to your recruitmentService.js
+export const updateApplicantStatus = (applicantId, status) => {
+  return axiosClient.put(`/recruitment/applicants/${applicantId}/status`, { status });
 };
 
 export const downloadApplicantResume = (id) => {
@@ -136,47 +135,106 @@ export const updateInterviewFeedback = (id, feedback) => {
   return axiosClient.post(`/recruitment/interviews/${id}/feedback`, { feedback });
 };
 
-// Get applicants for dropdown
 export const getApplicantsForInterviews = (orgId) => {
   return axiosClient.get('/recruitment/applicants', {
     params: { organization_id: orgId }
   });
 };
 
-// Get employees who can be interviewers - Fallback to mock data if endpoint doesn't exist
-export const getInterviewers = async (orgId) => {
-  try {
-    // Try to get from organizations endpoint first
-    const response = await axiosClient.get(`/organizations/${orgId}/employees`);
-    return response;
-  } catch (error) {
-    if (error.response?.status === 404) {
-      console.log('Interviewers endpoint not found, using fallback data');
-      // Return mock interviewers as fallback
-      return {
-        data: {
-          data: [
-            { id: 1, first_name: 'Aftab', last_name: 'Khan', email: 'aftab@example.com' },
-            { id: 2, first_name: 'Rizwan', last_name: 'Dizel', email: 'rizwan@example.com' },
-            { id: 3, first_name: 'Raju', last_name: 'Dizel', email: 'raju@example.com' },
-            { id: 4, first_name: 'Deepak', last_name: 'Kumar', email: 'deepak@example.com' },
-            { id: 5, first_name: 'Tabrej', last_name: 'Khan', email: 'tabrej@example.com' },
-            { id: 6, first_name: 'Farhan', last_name: 'Ansari', email: 'farhan@example.com' }
-          ]
-        }
-      };
-    }
-    throw error;
-  }
+// Get employees who can be interviewers - API only
+export const getInterviewers = (orgId) => {
+  return axiosClient.get(`/organizations/${orgId}/employees`);
 };
 
 // Alternative: Get interviewers from users endpoint if available
-export const getUsersAsInterviewers = async () => {
+export const getUsersAsInterviewers = () => {
+  return axiosClient.get('/users');
+};
+
+// Get interviewers from existing interviews data
+export const getInterviewersFromInterviews = async (orgId) => {
   try {
-    const response = await axiosClient.get('/users');
-    return response;
+    const response = await getInterviews({ organization_id: orgId });
+    const interviews = response.data?.data || [];
+    
+    // Extract unique interviewers from existing interviews
+    const interviewersMap = new Map();
+    
+    interviews.forEach(interview => {
+      if (interview.interviewers && Array.isArray(interview.interviewers)) {
+        interview.interviewers.forEach(interviewer => {
+          if (interviewer.id && !interviewersMap.has(interviewer.id)) {
+            interviewersMap.set(interviewer.id, {
+              id: interviewer.id,
+              name: interviewer.name || `${interviewer.first_name || ''} ${interviewer.last_name || ''}`.trim(),
+              email: interviewer.email || ''
+            });
+          }
+        });
+      }
+    });
+
+
+    
+    
+    return { data: { data: Array.from(interviewersMap.values()) } };
   } catch (error) {
-    console.log('Users endpoint not available for interviewers',error);
+    console.error('Error extracting interviewers from interviews:', error);
     return { data: { data: [] } };
   }
+};
+
+
+
+// Add this to your recruitmentService.js file - Job Offer endpoints
+export const getJobOffers = (params = {}) => {
+  return axiosClient.get('/recruitment/job-offers', { params });
+};
+
+export const createJobOffer = (data) => {
+  return axiosClient.post('/recruitment/job-offers', data);
+};
+
+export const getJobOfferById = (id) => {
+  return axiosClient.get(`/recruitment/job-offers/${id}`);
+};
+
+export const updateJobOffer = (id, data) => {
+  return axiosClient.patch(`/recruitment/job-offers/${id}`, data);
+};
+
+export const deleteJobOffer = (id) => {
+  return axiosClient.delete(`/recruitment/job-offers/${id}`);
+};
+
+export const getJobOffersByJobOpening = (jobOpeningId) => {
+  return axiosClient.get(`/recruitment/job-offers/job-opening/${jobOpeningId}`);
+};
+
+export const updateJobOfferStatus = (id, status) => {
+  return axiosClient.post(`/recruitment/job-offers/${id}/status`, { status });
+};
+
+export const downloadOfferLetter = (id) => {
+  return axiosClient.get(`/recruitment/job-offers/${id}/offer-letter/download`, {
+    responseType: 'blob'
+  });
+};
+
+export const getFinalCandidates = (jobOpeningId) => {
+  return axiosClient.get('/recruitment/applicants', {
+    params: { 
+      job_opening_id: jobOpeningId,
+      status: 'final_round_completed'
+    }
+  });
+};
+
+export const getApplicantsForJob = (jobOpeningId, params = {}) => {
+  return axiosClient.get('/recruitment/applicants', {
+    params: { 
+      job_opening_id: jobOpeningId,
+      ...params
+    }
+  });
 };
