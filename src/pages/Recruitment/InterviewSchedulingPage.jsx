@@ -35,6 +35,14 @@ const statusOptions = [
   { value: 'rescheduled', label: 'Rescheduled', color: 'bg-yellow-100 text-yellow-800' }
 ];
 
+// Result options - UPDATED TO MATCH API VALUES
+const resultOptions = [
+  { value: 'progress', label: 'In Progress' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'on_hold', label: 'On Hold' }
+];
+
 // Helper Form Components
 const FormInput = ({ label, name, type = 'text', error, ...props }) => (
   <div>
@@ -101,7 +109,7 @@ const InterviewFormSlideOver = ({
     location: '',
     notes: '',
     feedback: '',
-    result: 'pending',
+    result: 'progress', // UPDATED: Default to 'progress' to match API
     interviewer_ids: []
   });
 
@@ -119,7 +127,7 @@ const InterviewFormSlideOver = ({
         location: interview.location || '',
         notes: interview.notes || '',
         feedback: interview.feedback || '',
-        result: interview.result || 'pending',
+        result: interview.result || 'progress', // UPDATED: Default to 'progress'
         interviewer_ids: interview.interviewer_ids || interview.interviewers?.map(i => i.id) || []
       });
     } else {
@@ -130,7 +138,7 @@ const InterviewFormSlideOver = ({
         location: '',
         notes: '',
         feedback: '',
-        result: 'pending',
+        result: 'progress', // UPDATED: Default to 'progress'
         interviewer_ids: []
       });
     }
@@ -210,6 +218,22 @@ const InterviewFormSlideOver = ({
                   {interviewTypeOptions.map(type => (
                     <option key={type} value={type}>
                       {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </option>
+                  ))}
+                </FormSelect>
+                
+                {/* UPDATED RESULT FIELD TO MATCH API */}
+                <FormSelect 
+                  label="Initial Result *" 
+                  name="result" 
+                  value={formData.result} 
+                  onChange={handleChange}
+                  error={formErrors.result}
+                  required
+                >
+                  {resultOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </FormSelect>
@@ -382,7 +406,7 @@ const InterviewSchedulingPage = () => {
       const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
+      const seconds = '00';
       
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     } catch (error) {
@@ -408,6 +432,13 @@ const InterviewSchedulingPage = () => {
       }
       if (!interviewData.interviewer_ids || interviewData.interviewer_ids.length === 0) {
         validationErrors.interviewer_ids = ['Please select at least one interviewer'];
+      }
+      if (!interviewData.interview_type) {
+        validationErrors.interview_type = ['Please select interview type'];
+      }
+      // UPDATED: Validate result field with correct values
+      if (!interviewData.result || !resultOptions.find(opt => opt.value === interviewData.result)) {
+        validationErrors.result = ['Please select a valid result'];
       }
 
       // Validate date is in future
@@ -455,7 +486,7 @@ const InterviewSchedulingPage = () => {
         return;
       }
 
-      // Prepare payload with ALL required fields
+      // UPDATED: Proper payload structure with correct result field values
       const payload = {
         applicant_id: parseInt(interviewData.applicant_id),
         interview_type: interviewData.interview_type,
@@ -465,29 +496,54 @@ const InterviewSchedulingPage = () => {
         organization_id: parseInt(organizationId),
         notes: interviewData.notes || '',
         feedback: interviewData.feedback || '',
-        result: interviewData.result || 'pending', // REQUIRED by API
-        interviewer_ids: interviewData.interviewer_ids.map(id => parseInt(id))
+        // UPDATED: Ensure result uses correct API values
+        result: interviewData.result && resultOptions.find(opt => opt.value === interviewData.result) 
+          ? interviewData.result 
+          : 'progress',
+        
+        // Ensure interviewer_ids is properly formatted
+        interviewer_ids: Array.isArray(interviewData.interviewer_ids) 
+          ? interviewData.interviewer_ids.map(id => parseInt(id))
+          : [parseInt(interviewData.interviewer_ids)],
+        
+        // Add commonly required fields
+        duration: 60,
+        interview_round: 1,
       };
 
-      console.log('📤 Final payload being sent:', payload);
+      // Add job_opening_id if available from applicant
+      if (selectedApplicant?.job_opening_id) {
+        payload.job_opening_id = selectedApplicant.job_opening_id;
+      }
+
+      console.log('📤 Final payload being sent:', JSON.stringify(payload, null, 2));
 
       let response;
       if (editingInterview) {
+        console.log('🔄 Updating existing interview:', editingInterview.id);
         response = await updateInterview(editingInterview.id, payload);
       } else {
+        console.log('🆕 Creating new interview');
         response = await createInterview(payload);
       }
       
       console.log('✅ API Success Response:', response.data);
       
-      fetchData();
+      // Refresh data
+      await fetchData();
       setSlideOverOpen(false);
       setEditingInterview(null);
       setFormErrors({});
-      alert('Interview scheduled successfully!');
+      
+      alert(editingInterview ? 'Interview updated successfully!' : 'Interview scheduled successfully!');
       
     } catch (err) {
       console.error('❌ Error saving interview:', err);
+      
+      // Enhanced error logging
+      console.error('🔴 Complete error object:', err);
+      console.error('🔴 Error response data:', err.response?.data);
+      console.error('🔴 Error response status:', err.response?.status);
       
       if (err.response?.status === 400) {
         const errorData = err.response.data;
@@ -514,14 +570,23 @@ const InterviewSchedulingPage = () => {
         console.error('🟡 422 Validation Errors:', validationErrors);
         
         setFormErrors(validationErrors);
-        const errorMessages = Object.entries(validationErrors)
-          .map(([field, messages]) => `• ${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-          .join('\n');
-        alert(`Validation Errors:\n\n${errorMessages}`);
+        
+        // Create detailed error message
+        let errorMessage = 'Please fix the following errors:\n\n';
+        Object.entries(validationErrors).forEach(([field, messages]) => {
+          const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          errorMessage += `• ${fieldName}: ${Array.isArray(messages) ? messages.join(', ') : messages}\n`;
+        });
+        
+        alert(errorMessage);
+        
       } else if (err.response?.status === 500) {
         const errorData = err.response.data;
         console.error('🔴 500 Server Error Details:', errorData);
         alert('Server error occurred. Please try again or contact support.');
+      } else if (err.request) {
+        console.error('🔴 Network Error:', err.request);
+        alert('Network error: Could not connect to server. Please check your internet connection.');
       } else {
         alert('Failed to save interview. Please try again.');
       }
@@ -537,7 +602,7 @@ const InterviewSchedulingPage = () => {
     if (window.confirm('Are you sure you want to delete this interview?')) {
       try {
         await deleteInterview(id);
-        fetchData();
+        await fetchData();
         alert('Interview deleted successfully!');
       } catch (err) {
         console.error('Error deleting interview:', err);
@@ -549,7 +614,7 @@ const InterviewSchedulingPage = () => {
   const handleStatusUpdate = async (interviewId, newStatus) => {
     try {
       await updateInterviewStatus(interviewId, newStatus);
-      fetchData();
+      await fetchData();
       alert(`Interview status updated to ${newStatus}`);
     } catch (err) {
       console.error('Error updating status:', err);
