@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   HiPlus, HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiOutlineClock, 
-  HiOutlineUser, HiOutlineVideoCamera, HiX, HiPencil, HiTrash 
+  HiOutlineUser, HiOutlineVideoCamera, HiX, HiPencil, HiTrash, HiFilter 
 } from 'react-icons/hi';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import {
@@ -91,6 +91,78 @@ const FormTextarea = ({ label, name, error, ...props }) => (
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
 );
+
+// Date Filter Component
+const DateFilter = ({ isOpen, onClose, onApplyFilter, filterDate }) => {
+  const [selectedDate, setSelectedDate] = useState(filterDate || '');
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedDate(filterDate || '');
+    }
+  }, [isOpen, filterDate]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onApplyFilter(selectedDate);
+    onClose();
+  };
+
+  const handleClear = () => {
+    setSelectedDate('');
+    onApplyFilter('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+        <div className="flex justify-between items-center p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-800">
+            Filter Interviews by Date
+          </h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
+            <HiX size={24} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label htmlFor="filterDate" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Date
+            </label>
+            <input
+              type="date"
+              id="filterDate"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to show all interviews
+            </p>
+          </div>
+          <div className="flex justify-end gap-4 pt-4">
+            <button 
+              type="button" 
+              onClick={handleClear}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300"
+            >
+              Clear Filter
+            </button>
+            <button 
+              type="submit" 
+              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90"
+            >
+              Apply Filter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 // Slide-Over Panel for Scheduling/Editing an Interview
 const InterviewFormSlideOver = ({ 
@@ -333,6 +405,9 @@ const InterviewSchedulingPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [isFilterOpen, setFilterOpen] = useState(false);
+  const [filterDate, setFilterDate] = useState('');
+  const [filteredInterviews, setFilteredInterviews] = useState([]);
   
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -354,7 +429,9 @@ const InterviewSchedulingPage = () => {
         getApplicantsForInterviews(organizationId)
       ]);
 
-      setInterviews(interviewsRes.data?.data || []);
+      const interviewsData = interviewsRes.data?.data || [];
+      setInterviews(interviewsData);
+      setFilteredInterviews(interviewsData); // Initialize filtered interviews with all data
       setUpcomingInterviews(upcomingRes.data?.data || []);
       setApplicants(applicantsRes.data?.data || []);
 
@@ -363,7 +440,7 @@ const InterviewSchedulingPage = () => {
       setInterviewers(interviewersRes.data?.data || []);
 
       console.log('📊 Data loaded:', {
-        interviews: interviewsRes.data?.data?.length || 0,
+        interviews: interviewsData.length || 0,
         applicants: applicantsRes.data?.data?.length || 0,
         interviewers: interviewersRes.data?.data?.length || 0
       });
@@ -379,6 +456,24 @@ const InterviewSchedulingPage = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Apply date filter
+  const applyDateFilter = (date) => {
+    setFilterDate(date);
+    
+    if (!date) {
+      // If no date selected, show all interviews
+      setFilteredInterviews(interviews);
+    } else {
+      // Filter interviews by selected date
+      const filtered = interviews.filter(interview => {
+        if (!interview.scheduled_at) return false;
+        const interviewDate = new Date(interview.scheduled_at).toISOString().split('T')[0];
+        return interviewDate === date;
+      });
+      setFilteredInterviews(filtered);
+    }
+  };
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -623,7 +718,8 @@ const InterviewSchedulingPage = () => {
   };
 
   const getInterviewsForDate = (date) => {
-    return interviews.filter(interview => {
+    const interviewsToUse = filterDate ? filteredInterviews : interviews;
+    return interviewsToUse.filter(interview => {
       if (!interview.scheduled_at) return false;
       const interviewDate = new Date(interview.scheduled_at);
       return interviewDate.toDateString() === date.toDateString();
@@ -672,17 +768,61 @@ const InterviewSchedulingPage = () => {
               Manage and schedule interviews for all job applicants.
             </p>
           </div>
-          <button 
-            onClick={() => {
-              setEditingInterview(null);
-              setFormErrors({});
-              setSlideOverOpen(true);
-            }}
-            className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90 self-start sm:self-center"
-          >
-            <HiPlus className="h-5 w-5" /> Schedule Interview
-          </button>
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            {/* Filter Button */}
+            <button 
+              onClick={() => setFilterOpen(true)}
+              className={`inline-flex items-center gap-2 justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm ${
+                filterDate 
+                  ? 'border-brand-blue text-brand-blue bg-blue-50' 
+                  : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+              }`}
+            >
+              <HiFilter className="h-4 w-4" />
+              Filter by Date
+              {filterDate && (
+                <span className="ml-1 bg-brand-blue text-white text-xs px-2 py-1 rounded-full">
+                  {new Date(filterDate).toLocaleDateString()}
+                </span>
+              )}
+            </button>
+            
+            {/* Schedule Interview Button */}
+            <button 
+              onClick={() => {
+                setEditingInterview(null);
+                setFormErrors({});
+                setSlideOverOpen(true);
+              }}
+              className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90"
+            >
+              <HiPlus className="h-5 w-5" /> Schedule Interview
+            </button>
+          </div>
         </div>
+
+        {/* Filter Status Display */}
+        {filterDate && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HiFilter className="h-4 w-4 text-blue-600" />
+                <span className="text-sm text-blue-800">
+                  Showing interviews for: <strong>{new Date(filterDate).toLocaleDateString()}</strong>
+                </span>
+                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                  {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} found
+                </span>
+              </div>
+              <button 
+                onClick={() => applyDateFilter('')}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Clear filter
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-xl shadow-md lg:flex">
           {/* Calendar View */}
@@ -785,7 +925,13 @@ const InterviewSchedulingPage = () => {
         {/* Interviews List Table */}
         <div className="bg-white rounded-xl shadow-md mt-6">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">All Interviews</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">All Interviews</h3>
+              <div className="text-sm text-gray-500">
+                {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} total
+                {filterDate && ` (filtered by date)`}
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -799,8 +945,8 @@ const InterviewSchedulingPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {interviews.length > 0 ? (
-                    interviews.map(interview => (
+                  {filteredInterviews.length > 0 ? (
+                    filteredInterviews.map(interview => (
                       <tr key={interview.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -869,7 +1015,10 @@ const InterviewSchedulingPage = () => {
                   ) : (
                     <tr>
                       <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                        No interviews found. Schedule your first interview to get started.
+                        {filterDate 
+                          ? `No interviews found for ${new Date(filterDate).toLocaleDateString()}. Try a different date or clear the filter.`
+                          : 'No interviews found. Schedule your first interview to get started.'
+                        }
                       </td>
                     </tr>
                   )}
@@ -880,6 +1029,7 @@ const InterviewSchedulingPage = () => {
         </div>
       </div>
       
+      {/* Interview Form SlideOver */}
       <InterviewFormSlideOver 
         isOpen={isSlideOverOpen}
         onClose={() => {
@@ -892,6 +1042,14 @@ const InterviewSchedulingPage = () => {
         applicants={applicants}
         formErrors={formErrors}
         interviewers={interviewers}
+      />
+      
+      {/* Date Filter Modal */}
+      <DateFilter 
+        isOpen={isFilterOpen}
+        onClose={() => setFilterOpen(false)}
+        onApplyFilter={applyDateFilter}
+        filterDate={filterDate}
       />
     </div>
   );

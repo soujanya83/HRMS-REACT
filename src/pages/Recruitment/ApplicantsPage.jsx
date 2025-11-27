@@ -61,12 +61,7 @@ const statusOptions = [
     color: "bg-red-100 text-red-800",
     borderColor: "border-red-500",
   },
-  {
-    value: "Withdrawn",
-    label: "Withdrawn",
-    color: "bg-gray-100 text-gray-800",
-    borderColor: "border-gray-500",
-  },
+ 
 ];
 
 const sourceOptions = [
@@ -507,37 +502,37 @@ const ApplicantsPage = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-          {statusOptions.map((status) => (
-            <div
-              key={status.value}
-              className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${status.borderColor}`}
-            >
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div
-                    className={`flex-shrink-0 rounded-md p-3 ${status.color}`}
-                  >
-                    <FiUsers className="h-6 w-6 text-gray-700" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        {status.label}
-                      </dt>
-                      <dd className="text-3xl font-bold text-gray-900">
-                        {
-                          applicants.filter((a) => a.status === status.value)
-                            .length
-                        }
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+  {statusOptions.map((status) => (
+    <div
+      key={status.value}
+      className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${status.borderColor}`}
+    >
+      <div className="p-4">
+        <div className="flex items-center">
+          <div
+            className={`flex-shrink-0 rounded-md p-2 ${status.color}`}
+          >
+            <FiUsers className="h-5 w-5 text-gray-700" />
+          </div>
+          <div className="ml-3 w-0 flex-1">
+            <dl>
+              <dt className="text-xs font-medium text-gray-500 truncate">
+                {status.label}
+              </dt>
+              <dd className="text-xl font-bold text-gray-900">
+                {
+                  applicants.filter((a) => a.status === status.value)
+                    .length
+                }
+              </dd>
+            </dl>
+          </div>
         </div>
+      </div>
+    </div>
+  ))}
+</div>
 
         <div className="bg-white rounded-lg shadow-sm mb-6 p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
