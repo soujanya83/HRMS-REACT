@@ -1,6 +1,6 @@
 import axiosClient from '../axiosClient';
 
-// Job Offer API Service
+// Job Offer API Service - Complete Implementation
 export const getJobOffers = (params = {}) => {
   return axiosClient.get('/recruitment/job-offers', { params });
 };
@@ -33,6 +33,10 @@ export const getExpiredJobOffers = () => {
   return axiosClient.get('/recruitment/job-offers/expired/list');
 };
 
+export const getPendingJobOffers = () => {
+  return axiosClient.get('/recruitment/job-offers/pending/list');
+};
+
 export const updateJobOfferStatus = (id, status) => {
   return axiosClient.post(`/recruitment/job-offers/${id}/status`, { status });
 };
@@ -43,25 +47,20 @@ export const downloadOfferLetter = (id) => {
   });
 };
 
-// Additional related APIs
+// Additional utility functions for job offers
 export const getJobOpenings = (params = {}) => {
   return axiosClient.get('/recruitment/job-openings', { params });
 };
 
-// Since there's no specific endpoint for final candidates, we'll use applicants endpoint
-// and filter by status or use a different approach
 export const getFinalCandidates = (jobOpeningId) => {
-  // If your API has a specific endpoint for final candidates, use it here
-  // Otherwise, we'll get all applicants and filter by interview status
   return axiosClient.get('/recruitment/applicants', {
     params: { 
       job_opening_id: jobOpeningId,
-      status: 'final_round_completed' // or whatever status indicates final candidates
+      status: 'final_round_completed'
     }
   });
 };
 
-// Alternative: Get candidates who have completed interviews
 export const getApplicantsForJob = (jobOpeningId, params = {}) => {
   return axiosClient.get('/recruitment/applicants', {
     params: { 
@@ -71,5 +70,35 @@ export const getApplicantsForJob = (jobOpeningId, params = {}) => {
   });
 };
 
+// Get applicants who are ready for job offers (completed final interviews)
+export const getOfferReadyApplicants = (jobOpeningId) => {
+  return axiosClient.get('/recruitment/applicants', {
+    params: { 
+      job_opening_id: jobOpeningId,
+      status: 'final_round_completed'
+    }
+  });
+};
 
-
+// Get job offer statistics
+export const getJobOfferStats = (organizationId) => {
+  return axiosClient.get('/recruitment/job-offers', {
+    params: { organization_id: organizationId }
+  }).then(response => {
+    const offers = response.data?.data || [];
+    
+    const stats = {
+      total: offers.length,
+      sent: offers.filter(offer => offer.status === 'Sent').length,
+      accepted: offers.filter(offer => offer.status === 'Accepted').length,
+      rejected: offers.filter(offer => offer.status === 'Rejected').length,
+      expired: offers.filter(offer => {
+        const expiryDate = new Date(offer.expiry_date);
+        return expiryDate < new Date() && offer.status === 'Sent';
+      }).length,
+      pending: offers.filter(offer => offer.status === 'Sent').length
+    };
+    
+    return { data: { data: stats } };
+  });
+};

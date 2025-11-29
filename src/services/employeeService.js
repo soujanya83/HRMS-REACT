@@ -1,16 +1,11 @@
-// src/services/employeeService.js
 import axiosClient from '../axiosClient';
 
-// --- Core CRUD Operations ---
 
-// Get a list of employees with optional filtering/searching
 export const getEmployees = (params = {}) => {
   return axiosClient.get("/employees", { params });
 };
 
-// Get a single employee by their ID
 export const getEmployee = (id) => {
-  // Clean the ID parameter to remove any prefixes
   const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
   console.log('EmployeeService - Fetching employee with cleaned ID:', cleanId);
   return axiosClient.get(`/employees/${cleanId}`);
