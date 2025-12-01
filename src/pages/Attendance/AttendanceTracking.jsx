@@ -11,7 +11,8 @@ import {
   FaMobileAlt,
   FaDesktop,
   FaExclamationTriangle,
-  FaFingerprint
+  FaFingerprint,
+  FaUsers
 } from 'react-icons/fa';
 import { attendanceService } from '../../services/attendanceService';
 import { employeeService } from '../../services/employeeService';
@@ -335,18 +336,63 @@ const AttendanceTracking = () => {
     return matchesSearch && matchesDepartment && matchesStatus;
   }) : [];
 
+  const statusCards = [
+    { 
+      label: 'Total Employees', 
+      value: stats.totalEmployees, 
+      icon: FaUsers, 
+      color: 'blue',
+      borderColor: 'border-blue-500'
+    },
+    { 
+      label: 'Present Today', 
+      value: stats.present, 
+      icon: FaUserCheck, 
+      color: 'green',
+      borderColor: 'border-green-500'
+    },
+    { 
+      label: 'Absent', 
+      value: stats.absent, 
+      icon: FaUserTimes, 
+      color: 'red',
+      borderColor: 'border-red-500'
+    },
+    { 
+      label: 'Late Arrivals', 
+      value: stats.late, 
+      icon: FaClock, 
+      color: 'yellow',
+      borderColor: 'border-yellow-500'
+    },
+    { 
+      label: 'On Time', 
+      value: stats.onTime, 
+      icon: FaUserCheck, 
+      color: 'purple',
+      borderColor: 'border-purple-500'
+    },
+    { 
+      label: 'On Leave', 
+      value: stats.onLeave, 
+      icon: FaCalendarAlt, 
+      color: 'indigo',
+      borderColor: 'border-indigo-500'
+    }
+  ];
+
   if (loading && attendanceData.length === 0) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-300 rounded-lg"></div>
               ))}
             </div>
-            <div className="h-64 bg-gray-300 rounded"></div>
+            <div className="h-64 bg-gray-300 rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -354,121 +400,145 @@ const AttendanceTracking = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Attendance Tracking</h1>
-          <p className="text-gray-600">Monitor and manage employee attendance in real-time</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-gray-900">Attendance Tracking</h1>
+          <p className="text-gray-600 mt-1">Monitor and manage employee attendance in real-time</p>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards - Redesigned */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          {statusCards.map((stat, index) => (
+            <div
+              key={index}
+              className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${stat.borderColor}`}
+            >
+              <div className="p-4">
+                <div className="flex items-center">
+                  <div className={`flex-shrink-0 rounded-md p-2 bg-${stat.color}-100`}>
+                    <stat.icon className={`h-5 w-5 text-${stat.color}-600`} />
+                  </div>
+                  <div className="ml-3 w-0 flex-1">
+                    <dl>
+                      <dt className="text-xs font-medium text-gray-500 truncate">
+                        {stat.label}
+                      </dt>
+                      <dd className="text-xl font-bold text-gray-900">
+                        {stat.value}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
+        {/* Error Alert */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
             <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
             <span className="text-red-700 flex-1">{error}</span>
             <button 
               onClick={handleRefresh}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors shadow-sm"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-          {[
-            { label: 'Total Employees', value: stats.totalEmployees, icon: FaClock, color: 'blue' },
-            { label: 'Present Today', value: stats.present, icon: FaUserCheck, color: 'green' },
-            { label: 'Absent', value: stats.absent, icon: FaUserTimes, color: 'red' },
-            { label: 'Late Arrivals', value: stats.late, icon: FaClock, color: 'yellow' },
-            { label: 'On Time', value: stats.onTime, icon: FaUserCheck, color: 'purple' },
-            { label: 'On Leave', value: stats.onLeave, icon: FaCalendarAlt, color: 'indigo' }
-          ].map((stat, index) => (
-            <div key={index} className={`bg-white p-6 rounded-xl shadow-sm border-l-4 border-${stat.color}-500 hover:shadow-md transition-shadow`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
+        {/* Filters Section */}
+        <div className="bg-white rounded-lg shadow-sm mb-6 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+            {/* Search */}
+            <div className="md:col-span-1">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="h-5 w-5 text-gray-400" />
                 </div>
-                <stat.icon className={`text-${stat.color}-500 text-xl`} />
+                <input 
+                  type="text"
+                  placeholder="Search employees..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                />
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Filters and Actions */}
-        <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Search employees..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              />
-            </div>
             
+            {/* Start Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input 
                 type="date"
                 value={filters.start_date}
                 onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3"
               />
             </div>
 
+            {/* End Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
               <input 
                 type="date"
                 value={filters.end_date}
                 onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3"
               />
             </div>
 
-            <select 
-              value={filters.employee_id}
-              onChange={(e) => handleFilterChange('employee_id', e.target.value)}
-              className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
-            >
-              <option value="all">All Employees</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name || emp.employee_name}
-                </option>
-              ))}
-            </select>
+            {/* Employee Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <select 
+                value={filters.employee_id}
+                onChange={(e) => handleFilterChange('employee_id', e.target.value)}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 bg-white"
+              >
+                <option value="all">All Employees</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name || emp.employee_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select 
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-              <option value="late">Late</option>
-              <option value="on_leave">On Leave</option>
-            </select>
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select 
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+                <option value="on_leave">On Leave</option>
+              </select>
+            </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2">
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-1 justify-center"
+                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1"
               >
                 <FaSync className={loading ? 'animate-spin' : ''} /> 
                 {loading ? 'Loading...' : 'Refresh'}
               </button>
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex-1 justify-center"
+                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all flex-1"
               >
                 <FaDownload /> Export
               </button>
@@ -477,21 +547,35 @@ const AttendanceTracking = () => {
         </div>
 
         {/* Attendance Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Check In/Out</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Hours</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location/Device</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Check In/Out
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hours
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location/Device
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {filteredData.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
@@ -505,19 +589,26 @@ const AttendanceTracking = () => {
                 ) : (
                   filteredData.map((record) => (
                     <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {record.employee_name}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-gray-700 font-medium">
+                              {record.employee_name?.[0] || 'E'}
+                            </span>
                           </div>
-                          <div className="text-sm text-gray-500">{record.employee_id}</div>
-                          <div className="text-xs text-gray-400">{record.department}</div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {record.employee_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{record.employee_id}</div>
+                            <div className="text-xs text-gray-400">{record.department}</div>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(record.date)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="flex items-center gap-2">
                             <FaClock className="text-green-500 text-sm" />
@@ -534,7 +625,7 @@ const AttendanceTracking = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
                           {record.total_hours || '0h 00m'}
                         </div>
@@ -544,12 +635,12 @@ const AttendanceTracking = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={getStatusBadge(record.status)}>
                           {record.status ? record.status.charAt(0).toUpperCase() + record.status.slice(1) : 'Unknown'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-sm">
                           {getDeviceIcon(record.device)}
                           <div>
@@ -561,12 +652,12 @@ const AttendanceTracking = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex gap-2">
                           {!record.check_in && (
                             <button
                               onClick={() => handleClockIn(record.employee_id)}
-                              className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                              className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm"
                             >
                               Clock In
                             </button>
@@ -574,13 +665,13 @@ const AttendanceTracking = () => {
                           {record.check_in && !record.check_out && (
                             <button
                               onClick={() => handleClockOut(record.employee_id)}
-                              className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                              className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors shadow-sm"
                             >
                               Clock Out
                             </button>
                           )}
                           {record.check_in && record.check_out && (
-                            <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                            <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-md">
                               Completed
                             </span>
                           )}
@@ -595,7 +686,7 @@ const AttendanceTracking = () => {
         </div>
 
         {/* Summary Section */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+        <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Summary ({filters.start_date} to {filters.end_date})
           </h3>
@@ -615,7 +706,7 @@ const AttendanceTracking = () => {
             ))}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

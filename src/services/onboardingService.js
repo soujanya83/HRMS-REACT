@@ -1,6 +1,6 @@
 import axiosClient from '../axiosClient';
 
-// Onboarding Tasks API
+
 export const getOnboardingTasks = (params = {}) => {
   return axiosClient.get('/recruitment/onboarding-tasks', { params });
 };
@@ -41,7 +41,6 @@ export const getUpcomingOnboardingTasks = () => {
   return axiosClient.get('/recruitment/onboarding-tasks/upcoming/list');
 };
 
-// Onboarding Templates API
 export const getOnboardingTemplates = (params = {}) => {
   return axiosClient.get('/recruitment/onboarding-templates', { params });
 };

@@ -4,26 +4,19 @@ import { useOrganizations } from '../../contexts/OrganizationContext';
 import {
   getOnboardingTemplates,
   createOnboardingTemplate,
-  updateOnboardingTemplate,
   deleteOnboardingTemplate,
   getOnboardingTemplateTasksByTemplate,
   createOnboardingTemplateTask,
-  updateOnboardingTemplateTask,
-  deleteOnboardingTemplateTask,
   getOnboardingTasksByApplicant,
-  createOnboardingTask,
   updateOnboardingTask,
   completeOnboardingTask,
   getHiredApplicants,
-  generateTasksFromTemplate,
-  getOnboardingDashboard
 } from '../../services/onboardingService';
 
 // Main Page Component
 const OnboardingPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+ 
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
