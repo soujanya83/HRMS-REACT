@@ -24,7 +24,6 @@ const RostersPage = () => {
         shiftType: 'all',
         search: ''
     });
-    const [selectedRoster, setSelectedRoster] = useState(null);
 
     // Sample data
     const employees = [
