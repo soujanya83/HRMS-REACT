@@ -6,6 +6,7 @@ export const getOnboardingTasks = (params = {}) => {
 };
 
 export const createOnboardingTask = (data) => {
+  console.log('📤 Creating onboarding task with data:', JSON.stringify(data, null, 2));
   return axiosClient.post('/recruitment/onboarding-tasks', data);
 };
 
@@ -115,12 +116,12 @@ export const getOnboardingDashboard = () => {
   return axiosClient.get('/recruitment/onboarding-automation/dashboard');
 };
 
-// Utility functions
 export const getHiredApplicants = (organizationId) => {
+  console.log('📋 Fetching ALL applicants for org:', organizationId);
   return axiosClient.get('/recruitment/applicants', {
     params: {
-      organization_id: organizationId,
-      status: 'Hired'
+      organization_id: organizationId
+      // Remove status filter here - fetch ALL applicants
     }
   });
 };
