@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   HiPlus, HiOutlineBriefcase, HiOutlineUser, HiOutlineCalendar, 
   HiOutlineCurrencyDollar, HiOutlineCheckCircle, HiOutlineXCircle, 
@@ -9,12 +10,13 @@ import {
   getJobOffers,
   createJobOffer,
   getJobOffersByJobOpening,
-  updateJobOfferStatus,
   downloadOfferLetter,
   getJobOpenings,
   getFinalCandidates,
-  getApplicantsForJob
-} from '../../services/jobOfferService';
+  getApplicantsForJob,
+  getJobOfferById,
+  updateApplicantStatus  // ADDED for applicant status updates
+} from '../../services/recruitmentService';
 
 // Main Page Component
 const SelectionAndOffersPage = () => {
@@ -224,19 +226,68 @@ const SelectionAndOffersPage = () => {
     }
   };
 
-  // FIXED: Added missing handleUpdateOfferStatus function
+  // UPDATED: Handle applicant status updates
   const handleUpdateOfferStatus = async (offerId, newStatus) => {
     try {
-      console.log('🔄 Updating offer status:', offerId, newStatus);
-      await updateJobOfferStatus(offerId, newStatus);
+      console.log('🔄 Updating applicant status:', { offerId, newStatus });
+      
+      // First, get the job offer to get the applicant ID
+      const currentOfferRes = await getJobOfferById(offerId);
+      const offerData = currentOfferRes.data?.data;
+      
+      if (!offerData || !offerData.applicant_id) {
+        alert('Could not find applicant information for this offer.');
+        return;
+      }
+      
+      const applicantId = offerData.applicant_id;
+      console.log('📋 Found applicant ID:', applicantId);
+      
+      // Define ONLY the 4 statuses you want
+      const validApplicantStatuses = ['applied', 'interview_schedule', 'shortlisted', 'hired'];
+      
+      // Check if the requested status is valid
+      if (!validApplicantStatuses.includes(newStatus)) {
+        alert(`Invalid status. Please use one of: ${validApplicantStatuses.join(', ')}`);
+        return;
+      }
+      
+      console.log('📤 Updating applicant status:', {
+        applicantId,
+        currentStatus: offerData.applicant?.status,
+        newStatus: newStatus
+      });
+      
+      // Update the APPLICANT status
+      const response = await updateApplicantStatus(applicantId, newStatus);
+      console.log('✅ Applicant status updated:', response.data);
+      
+      // Refresh the data to show updated status
       await fetchData();
-      alert(`Offer status updated to ${newStatus}`);
+      
+      alert(`Applicant status updated to ${newStatus}`);
+      
     } catch (err) {
-      console.error('❌ Error updating offer status:', err);
-      alert('Failed to update offer status.');
+      console.error('❌ Error updating applicant status:', err);
+      
+      if (err.response?.data) {
+        console.error('Server error details:', err.response.data);
+        
+        if (err.response.data.errors) {
+          const errorMessages = Object.entries(err.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n');
+          alert(`Validation failed:\n${errorMessages}`);
+        } else if (err.response.data.message) {
+          alert(`Error: ${err.response.data.message}`);
+        }
+      } else {
+        alert('Failed to update applicant status. Please try again.');
+      }
     }
   };
 
+  // ADD THIS FUNCTION - It was missing!
   const handleDownloadOfferLetter = async (offerId) => {
     try {
       console.log('📥 Downloading offer letter for:', offerId);
@@ -262,15 +313,25 @@ const SelectionAndOffersPage = () => {
   };
 
   const offerStatusClasses = {
+    Applied: 'bg-blue-100 text-blue-800',
+    'Interview Schedule': 'bg-purple-100 text-purple-800',
+    Shortlisted: 'bg-yellow-100 text-yellow-800',
+    Hired: 'bg-green-100 text-green-800',
+    // Keep these for backward compatibility
     Sent: 'bg-blue-100 text-blue-800',
     Accepted: 'bg-green-100 text-green-800',
     Rejected: 'bg-red-100 text-red-800',
-    Expired: 'bg-yellow-100 text-yellow-800',
+    Expired: 'bg-orange-100 text-orange-800',
     Withdrawn: 'bg-gray-100 text-gray-800'
   };
 
   const getStatusDisplay = (status) => {
     const statusMap = {
+      applied: 'Applied',
+      interview_schedule: 'Interview Schedule',
+      shortlisted: 'Shortlisted',
+      hired: 'Hired',
+      // Keep these for backward compatibility
       sent: 'Sent',
       accepted: 'Accepted',
       rejected: 'Rejected',
@@ -434,7 +495,6 @@ const SelectionAndOffersPage = () => {
 
 // Candidate Card Component
 const CandidateCard = ({ candidate, onMakeOffer }) => {
-  // Generate avatar from name if not provided
   const getAvatar = (candidate) => {
     if (candidate.avatar) return candidate.avatar;
     return candidate.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CC';
@@ -482,9 +542,15 @@ const CandidateCard = ({ candidate, onMakeOffer }) => {
   );
 };
 
-// Offer Row Component
+// Offer Row Component - FIXED WITH STABLE DROPDOWNS
 const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getStatusDisplay }) => {
   const [showActions, setShowActions] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  
+  const statusBtnRef = useRef(null);
+  const actionBtnRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -518,11 +584,72 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
     return 'Unknown Position';
   };
 
+  // UPDATED: Use ONLY the 4 applicant statuses
+  const statusOptions = [
+    { value: 'applied', label: 'Applied' },
+    { value: 'interview_schedule', label: 'Interview Schedule' },
+    { value: 'shortlisted', label: 'Shortlisted' },
+    { value: 'hired', label: 'Hired' }
+  ];
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowStatusDropdown(false);
+        setShowActions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Helper to calculate position and toggle dropdown
+  const toggleDropdown = (e, type) => {
+    e.stopPropagation();
+    
+    if (type === 'status') {
+      if (!showStatusDropdown) {
+        const rect = statusBtnRef.current.getBoundingClientRect();
+        setDropdownPos({ 
+          top: rect.bottom + window.scrollY + 5, 
+          left: rect.left + window.scrollX 
+        });
+        setShowStatusDropdown(true);
+        setShowActions(false);
+      } else {
+        setShowStatusDropdown(false);
+      }
+    } else if (type === 'actions') {
+      if (!showActions) {
+        const rect = actionBtnRef.current.getBoundingClientRect();
+       setDropdownPos({ top: rect.bottom + 5, left: rect.right - 250 });
+        
+        setShowActions(true);
+        setShowStatusDropdown(false);
+      } else {
+        setShowActions(false);
+      }
+    }
+  };
+
   return (
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="font-medium text-gray-900">{getCandidateName(offer)}</div>
-        <div className="text-sm text-gray-500">{offer.applicant?.email}</div>
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+            <span className="text-indigo-800 font-bold">
+              {getCandidateName(offer).split(' ').map(n => n[0]).join('').toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <div className="font-medium text-gray-900">{getCandidateName(offer)}</div>
+            <div className="text-sm text-gray-500">{offer.applicant?.email}</div>
+          </div>
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
         {getJobTitle(offer)}
@@ -537,11 +664,54 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
         {formatDate(offer.expiry_date)}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          statusClasses[offer.status] || 'bg-gray-100 text-gray-800'
-        }`}>
-          {getStatusDisplay(offer.status)}
-        </span>
+        <div className="relative">
+          <button
+            ref={statusBtnRef}
+            onClick={(e) => toggleDropdown(e, 'status')}
+            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+              statusClasses[getStatusDisplay(offer.status)] || 'bg-gray-100 text-gray-800'
+            } hover:opacity-90 transition-opacity flex items-center gap-1`}
+          >
+            {getStatusDisplay(offer.status)}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {/* Status Dropdown - FIXED POSITION */}
+          {showStatusDropdown && createPortal(
+            <div 
+              ref={dropdownRef}
+              className="absolute w-56 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
+              style={{ 
+                top: dropdownPos.top, 
+                left: dropdownPos.left,
+                maxHeight: '240px',
+                overflowY: 'auto'
+              }}
+            >
+              <div className="py-1">
+                {statusOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      onUpdateStatus(offer.id, option.value);
+                      setShowStatusDropdown(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                      offer.status === option.value 
+                        ? 'bg-brand-blue text-white hover:bg-brand-blue' 
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>,
+            document.body
+          )}
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex justify-end gap-2 relative">
@@ -553,56 +723,83 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
             <HiDownload className="h-4 w-4" />
           </button>
           <button
-            onClick={() => setShowActions(!showActions)}
-            className="text-gray-600 hover:text-gray-900 p-1 transition-colors"
-            title="Manage Offer"
+            ref={actionBtnRef}
+            onClick={(e) => toggleDropdown(e, 'actions')}
+            className="text-gray-600 hover:text-gray-900 p-1 transition-colors relative"
+            title="More Actions"
           >
-            <HiOutlinePencil className="h-4 w-4" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 a1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+            <span className="absolute -top-1 -right-1 bg-brand-blue text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              6
+            </span>
           </button>
           
-          {/* Action Dropdown */}
-          {showActions && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+          {/* Actions Dropdown - FIXED POSITION */}
+          {showActions && createPortal(
+            <div 
+              ref={dropdownRef}
+              className="absolute w-64 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
+              style={{ 
+                top: dropdownPos.top, 
+                left: dropdownPos.left,
+                maxHeight: '280px',
+                overflowY: 'auto'
+              }}
+            >
               <div className="py-1">
                 <button
                   onClick={() => {
-                    onUpdateStatus(offer.id, 'accepted');
+                    onUpdateStatus(offer.id, 'shortlisted');
                     setShowActions(false);
                   }}
-                  className="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors"
                 >
-                  Mark as Accepted
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Mark as Shortlisted
                 </button>
                 <button
                   onClick={() => {
-                    onUpdateStatus(offer.id, 'rejected');
+                    onUpdateStatus(offer.id, 'hired');
                     setShowActions(false);
                   }}
-                  className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
                 >
-                  Mark as Rejected
+                  <HiOutlineCheckCircle className="mr-2 h-4 w-4" />
+                  Mark as Hired
+                </button>
+                <div className="border-t border-gray-200 my-1"></div>
+                <button
+                  onClick={() => setShowActions(false)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <HiEye className="mr-2 h-4 w-4" />
+                  View Details
                 </button>
                 <button
-                  onClick={() => {
-                    onUpdateStatus(offer.id, 'withdrawn');
-                    setShowActions(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setShowActions(false)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  Withdraw Offer
+                  <HiOutlinePencil className="mr-2 h-4 w-4" />
+                  Edit Offer
+                </button>
+                <button
+                  onClick={() => setShowActions(false)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Resend Email
                 </button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
-        
-        {/* Close dropdown when clicking outside */}
-        {showActions && (
-          <div 
-            className="fixed inset-0 z-0" 
-            onClick={() => setShowActions(false)}
-          />
-        )}
       </td>
     </tr>
   );

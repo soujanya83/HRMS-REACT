@@ -37,9 +37,69 @@ export const deleteApplicant = (id) => {
 
 // FIXED: Status update endpoint
 // Add this function to your recruitmentService.js
-export const updateApplicantStatus = (applicantId, status) => {
-  return axiosClient.put(`/recruitment/applicants/${applicantId}/status`, { status });
+// FIXED: Status update endpoint - Follows the same pattern as updateApplicant
+export const updateApplicantStatus = async (applicantId, status) => {
+  console.log('🚀 DEBUG - updateApplicantStatus called:', { applicantId, status });
+  
+  try {
+    // First, get the current applicant data
+    console.log('📡 Fetching current applicant data...');
+    const currentApplicant = await axiosClient.get(`/recruitment/applicants/${applicantId}`);
+    console.log('✅ Current applicant data:', currentApplicant.data);
+    
+    // Extract applicant data
+    const applicantData = currentApplicant.data.data || currentApplicant.data;
+    
+    // Create FormData with all required fields
+    const data = new FormData();
+    
+    // Add ALL fields from current applicant EXCEPT status and complex objects
+    for (const key in applicantData) {
+      // Skip complex objects and the original status
+      if (key !== 'status' && key !== 'job_opening' && key !== 'interviews' && key !== 'onboarding_tasks') {
+        if (applicantData[key] !== null && applicantData[key] !== undefined) {
+          data.append(key, applicantData[key]);
+        }
+      }
+    }
+    
+    // Add the NEW status (use exact values your API accepts)
+    data.append('status', status);
+    data.append('_method', 'PUT');
+    
+    // Log what we're sending
+    console.log('📤 Sending FormData:');
+    for (let [key, value] of data.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+    
+    console.log('🚀 Making API call...');
+    const response = await axiosClient.post(`/recruitment/applicants/${applicantId}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    
+    console.log('✅ Success response:', response.data);
+    return response;
+    
+  } catch (error) {
+    console.error('❌ Full error object:', error);
+    console.error('❌ Error response data:', error.response?.data);
+    
+    // Log the validation errors specifically
+    if (error.response?.data?.errors) {
+      console.error('❌ Validation errors:');
+      for (const [field, messages] of Object.entries(error.response.data.errors)) {
+        console.error(`  ${field}:`, messages);
+      }
+    }
+    
+    throw error;
+  }
 };
+
+
+
+
 
 export const downloadApplicantResume = (id) => {
   return axiosClient.get(`/recruitment/applicants/${id}/resume/download`, {
@@ -212,7 +272,7 @@ export const getJobOffersByJobOpening = (jobOpeningId) => {
 };
 
 export const updateJobOfferStatus = (id, status) => {
-  return axiosClient.post(`/recruitment/job-offers/${id}/status`, { status });
+  return axiosClient.patch(`/recruitment/job-offers/${id}/status`, { status }); // CORRECT - using PATCH
 };
 
 export const downloadOfferLetter = (id) => {

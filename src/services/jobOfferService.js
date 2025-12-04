@@ -37,8 +37,11 @@ export const getPendingJobOffers = () => {
   return axiosClient.get('/recruitment/job-offers/pending/list');
 };
 
+// In jobOfferService.js, make sure it matches:
+// In your recruitmentService.js file, change line 275:
 export const updateJobOfferStatus = (id, status) => {
-  return axiosClient.post(`/recruitment/job-offers/${id}/status`, { status });
+  // CHANGE FROM POST TO PATCH:
+  return axiosClient.patch(`/recruitment/job-offers/${id}/status`, { status });
 };
 
 export const downloadOfferLetter = (id) => {

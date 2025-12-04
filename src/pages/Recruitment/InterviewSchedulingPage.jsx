@@ -10,7 +10,6 @@ import {
   updateInterview,
   deleteInterview,
   getUpcomingInterviews,
-  updateInterviewStatus,
   getApplicantsForInterviews,
   getInterviewersFromInterviews,
   updateApplicantStatus
@@ -28,11 +27,27 @@ const interviewTypeOptions = [
 ];
 
 // Status options
+// Status options - UPDATED WITH ONLY TWO OPTIONS
+// Status options - UPDATED TO MATCH API VALID VALUES
 const statusOptions = [
-  { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-100 text-blue-800' },
-  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
-  { value: 'rescheduled', label: 'Rescheduled', color: 'bg-yellow-100 text-yellow-800' }
+  { 
+    value: 'applied', 
+    label: 'Applied', 
+    color: 'bg-blue-100 text-blue-800',
+    iconColor: 'text-blue-600'
+  },
+  { 
+    value: 'interview-scheduled', 
+    label: 'Interview Scheduled', 
+    color: 'bg-yellow-100 text-yellow-800',
+    iconColor: 'text-yellow-600'
+  },
+  { 
+    value: 'shortlisted', 
+    label: 'Shortlisted', 
+    color: 'bg-green-100 text-green-800',
+    iconColor: 'text-green-600'
+  }
 ];
 
 // Result options - UPDATED TO MATCH API VALUES
@@ -706,16 +721,24 @@ const InterviewSchedulingPage = () => {
     }
   };
 
-  const handleStatusUpdate = async (interviewId, newStatus) => {
-    try {
-      await updateInterviewStatus(interviewId, newStatus);
-      await fetchData();
-      alert(`Interview status updated to ${newStatus}`);
-    } catch (err) {
-      console.error('Error updating status:', err);
-      alert('Failed to update status.');
+const handleStatusUpdate = async (interviewId, newStatus) => {
+  try {
+    // First get the interview to find the applicant ID
+    const interview = interviews.find(i => i.id === interviewId);
+    if (!interview || !interview.applicant_id) {
+      alert('Could not find applicant for this interview');
+      return;
     }
-  };
+    
+    // Update applicant status with the new status values
+    await updateApplicantStatus(interview.applicant_id, newStatus);
+    await fetchData();
+    alert(`Status updated to ${newStatus === 'applied_interview_schedule' ? 'Applied & interview-schedule' : 'Shortlisted'}`);
+  } catch (err) {
+    console.error('Error updating status:', err);
+    alert('Failed to update status.');
+  }
+};
 
   const getInterviewsForDate = (date) => {
     const interviewsToUse = filterDate ? filteredInterviews : interviews;

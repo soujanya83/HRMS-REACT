@@ -10,6 +10,7 @@ import {
   FiX,
   FiLoader,
   FiUploadCloud,
+  FiCheck,
 } from "react-icons/fi";
 
 import { useOrganizations } from "../../contexts/OrganizationContext";
@@ -30,38 +31,50 @@ const statusOptions = [
     label: "Applied",
     color: "bg-blue-100 text-blue-800",
     borderColor: "border-blue-500",
+    hasCheckmark: true,
   },
   {
     value: "Screening",
     label: "Screening",
     color: "bg-purple-100 text-purple-800",
     borderColor: "border-purple-500",
+    hasCheckmark: false,
   },
   {
     value: "Interviewing",
     label: "Interviewing",
     color: "bg-purple-100 text-purple-800",
     borderColor: "border-purple-500",
+    hasCheckmark: false,
+  },
+  {
+    value: "interview-schedule",
+    label: "Interview Schedule",
+    color: "bg-yellow-100 text-yellow-800",
+    borderColor: "border-yellow-500",
+    hasCheckmark: true,
   },
   {
     value: "Offered",
     label: "Offered",
     color: "bg-green-100 text-green-800",
     borderColor: "border-green-500",
+    hasCheckmark: false,
   },
   {
     value: "Hired",
     label: "Hired",
     color: "bg-teal-100 text-teal-800",
     borderColor: "border-teal-500",
+    hasCheckmark: false,
   },
   {
     value: "Rejected",
     label: "Rejected",
     color: "bg-red-100 text-red-800",
     borderColor: "border-red-500",
+    hasCheckmark: false,
   },
- 
 ];
 
 const sourceOptions = [
@@ -94,7 +107,7 @@ const initialFormData = {
   job_opening_id: "",
   cover_letter: "",
   source: "linkedin",
-  status: "Applied", // Capitalized to match API
+  status: "Applied",
 };
 
 const ApplicantsPage = () => {
@@ -177,7 +190,7 @@ const ApplicantsPage = () => {
     if (!formData.last_name?.trim())
       errors.last_name = ["Last name is required"];
     if (!formData.email?.trim()) errors.email = ["Email is required"];
-    if (!formData.phone?.trim()) errors.phone = ["Phone is required"]; // Added phone validation
+    if (!formData.phone?.trim()) errors.phone = ["Phone is required"];
     if (!formData.job_opening_id)
       errors.job_opening_id = ["Job opening is required"];
 
@@ -469,8 +482,9 @@ const ApplicantsPage = () => {
     // Fallback for any status values from API that aren't in our options
     return {
       color: "bg-gray-100 text-gray-800",
-      label: statusValue?.replace(/-/g, " ") || "Unknown", // Convert "interview-scheduled" to "interview scheduled"
+      label: statusValue?.replace(/-/g, " ") || "Unknown",
       borderColor: "border-gray-500",
+      hasCheckmark: false,
     };
   };
 
@@ -502,37 +516,44 @@ const ApplicantsPage = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-  {statusOptions.map((status) => (
-    <div
-      key={status.value}
-      className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${status.borderColor}`}
-    >
-      <div className="p-4">
-        <div className="flex items-center">
-          <div
-            className={`flex-shrink-0 rounded-md p-2 ${status.color}`}
-          >
-            <FiUsers className="h-5 w-5 text-gray-700" />
-          </div>
-          <div className="ml-3 w-0 flex-1">
-            <dl>
-              <dt className="text-xs font-medium text-gray-500 truncate">
-                {status.label}
-              </dt>
-              <dd className="text-xl font-bold text-gray-900">
-                {
-                  applicants.filter((a) => a.status === status.value)
-                    .length
-                }
-              </dd>
-            </dl>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
+          {statusOptions.map((status) => (
+            <div
+              key={status.value}
+              className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${status.borderColor}`}
+            >
+              <div className="p-4">
+                <div className="flex items-center">
+                  <div
+                    className={`flex-shrink-0 rounded-md p-2 ${status.color}`}
+                  >
+                    {status.hasCheckmark ? (
+                      <FiCheck className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <FiUsers className="h-5 w-5 text-gray-700" />
+                    )}
+                  </div>
+                  <div className="ml-3 w-0 flex-1">
+                    <dl>
+                      <dt className="text-xs font-medium text-gray-500 truncate flex items-center">
+                        {status.label}
+                        {status.hasCheckmark && (
+                          <span className="ml-1 text-green-600">✓</span>
+                        )}
+                      </dt>
+                      <dd className="text-xl font-bold text-gray-900">
+                        {
+                          applicants.filter((a) => a.status === status.value)
+                            .length
+                        }
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    </div>
-  ))}
-</div>
 
         <div className="bg-white rounded-lg shadow-sm mb-6 p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -551,7 +572,6 @@ const ApplicantsPage = () => {
               </div>
             </div>
             <div className="md:col-span-2 flex justify-end gap-4">
-              
               <select
                 className="block w-full md:w-auto pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 value={statusFilter}
@@ -658,11 +678,16 @@ const ApplicantsPage = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.color}`}
+                          <select
+                            value={applicant.status || "Applied"}
+                            onChange={(e) => handleStatusUpdate(applicant.id, e.target.value)}
+                            className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
+                              statusInfo.color || "bg-gray-100 text-gray-800"
+                            }`}
                           >
-                            {statusInfo.label}
-                          </span>
+                            <option value="Applied">Applied </option>
+                            <option value="interview-schedule">Interview Schedule</option>
+                          </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <div className="flex items-center justify-center gap-x-2">
@@ -776,15 +801,17 @@ const ApplicantsPage = () => {
                         onChange={(e) =>
                           handleStatusUpdate(
                             selectedApplicant.id,
-                            e.target.value
+                            e.target.value  
                           )
                         }
                       >
-                        {statusOptions.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
+                        <option value="Applied">Applied ✓</option>
+                        <option value="interview-schedule">Interview Schedule ✓</option>
+                        <option value="Screening">Screening</option>
+                        <option value="Interviewing">Interviewing</option>
+                        <option value="Offered">Offered</option>
+                        <option value="Hired">Hired</option>
+                        <option value="Rejected">Rejected</option>
                       </select>
                     </dd>
                   </div>
@@ -1060,11 +1087,8 @@ const ApplicantsPage = () => {
                         value={formData.status}
                         onChange={handleInputChange}
                       >
-                        {statusOptions.map((s) => (
-                          <option key={s.value} value={s.value}>
-                            {s.label}
-                          </option>
-                        ))}
+                        <option value="Applied">Applied ✓</option>
+                        <option value="interview-schedule">Interview Schedule ✓</option>
                       </select>
                       {formErrors.status && (
                         <p className="text-red-500 text-xs mt-1">
