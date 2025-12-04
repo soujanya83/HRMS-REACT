@@ -15,7 +15,7 @@ import {
   getFinalCandidates,
   getApplicantsForJob,
   getJobOfferById,
-  updateApplicantStatus  // ADDED for applicant status updates
+  updateApplicantStatus
 } from '../../services/recruitmentService';
 
 // Main Page Component
@@ -79,7 +79,7 @@ const SelectionAndOffersPage = () => {
         candidatesRes = await getFinalCandidates(jobId);
         console.log('🎯 Final candidates:', candidatesRes.data);
       } catch (finalCandidatesError) {
-        console.log('🔄 Final candidates endpoint not available, using applicants fallback',finalCandidatesError);
+        console.log('🔄 Final candidates endpoint not available, using applicants fallback', finalCandidatesError);
         // Fallback to regular applicants with interview status
         candidatesRes = await getApplicantsForJob(jobId, {
           status: 'interview_completed'
@@ -191,7 +191,7 @@ const SelectionAndOffersPage = () => {
         offer_date: formatDateForAPI(new Date()),
         expiry_date: formatDateForAPI(offerData.expiration_date),
         joining_date: formatDateForAPI(offerData.start_date),
-        status: 'Sent' // Use exact case as in your successful example
+        status: 'sent' // Use lowercase 'sent'
       };
 
       console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
@@ -226,7 +226,7 @@ const SelectionAndOffersPage = () => {
     }
   };
 
-  // UPDATED: Handle applicant status updates
+  // Handle applicant status updates
   const handleUpdateOfferStatus = async (offerId, newStatus) => {
     try {
       console.log('🔄 Updating applicant status:', { offerId, newStatus });
@@ -243,7 +243,7 @@ const SelectionAndOffersPage = () => {
       const applicantId = offerData.applicant_id;
       console.log('📋 Found applicant ID:', applicantId);
       
-      // Define ONLY the 4 statuses you want
+      // Define the statuses you want
       const validApplicantStatuses = ['applied', 'interview_schedule', 'shortlisted', 'hired'];
       
       // Check if the requested status is valid
@@ -312,26 +312,13 @@ const SelectionAndOffersPage = () => {
     }
   };
 
-  const offerStatusClasses = {
-    Applied: 'bg-blue-100 text-blue-800',
-    'Interview Schedule': 'bg-purple-100 text-purple-800',
-    Shortlisted: 'bg-yellow-100 text-yellow-800',
-    Hired: 'bg-green-100 text-green-800',
-    // Keep these for backward compatibility
-    Sent: 'bg-blue-100 text-blue-800',
-    Accepted: 'bg-green-100 text-green-800',
-    Rejected: 'bg-red-100 text-red-800',
-    Expired: 'bg-orange-100 text-orange-800',
-    Withdrawn: 'bg-gray-100 text-gray-800'
-  };
-
+  // Status display mapping
   const getStatusDisplay = (status) => {
     const statusMap = {
       applied: 'Applied',
       interview_schedule: 'Interview Schedule',
       shortlisted: 'Shortlisted',
       hired: 'Hired',
-      // Keep these for backward compatibility
       sent: 'Sent',
       accepted: 'Accepted',
       rejected: 'Rejected',
@@ -339,6 +326,28 @@ const SelectionAndOffersPage = () => {
       withdrawn: 'Withdrawn'
     };
     return statusMap[status] || status;
+  };
+
+  // Get applicant status from offer
+  const getApplicantStatus = (offer) => {
+    if (offer.applicant?.status) {
+      return offer.applicant.status;
+    }
+    // Fallback to job offer status
+    return offer.status;
+  };
+
+  // Status classes for different applicant statuses
+  const applicantStatusClasses = {
+    Applied: 'bg-blue-100 text-blue-800',
+    'Interview Schedule': 'bg-purple-100 text-purple-800',
+    Shortlisted: 'bg-yellow-100 text-yellow-800',
+    Hired: 'bg-green-100 text-green-800',
+    Sent: 'bg-blue-100 text-blue-800',
+    Accepted: 'bg-green-100 text-green-800',
+    Rejected: 'bg-red-100 text-red-800',
+    Expired: 'bg-orange-100 text-orange-800',
+    Withdrawn: 'bg-gray-100 text-gray-800'
   };
 
   if (isLoading) {
@@ -458,8 +467,9 @@ const SelectionAndOffersPage = () => {
                         offer={offer}
                         onUpdateStatus={handleUpdateOfferStatus}
                         onDownloadLetter={handleDownloadOfferLetter}
-                        statusClasses={offerStatusClasses}
+                        getApplicantStatus={getApplicantStatus}
                         getStatusDisplay={getStatusDisplay}
+                        statusClasses={applicantStatusClasses}
                       />
                     ))}
                   </tbody>
@@ -542,8 +552,8 @@ const CandidateCard = ({ candidate, onMakeOffer }) => {
   );
 };
 
-// Offer Row Component - FIXED WITH STABLE DROPDOWNS
-const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getStatusDisplay }) => {
+// Offer Row Component - FIXED WITH APPLICANT STATUS
+const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus, getStatusDisplay, statusClasses }) => {
   const [showActions, setShowActions] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
@@ -584,7 +594,11 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
     return 'Unknown Position';
   };
 
-  // UPDATED: Use ONLY the 4 applicant statuses
+  // Get the applicant status
+  const applicantStatus = getApplicantStatus(offer);
+  const displayStatus = getStatusDisplay(applicantStatus);
+
+  // Status options - only applicant statuses
   const statusOptions = [
     { value: 'applied', label: 'Applied' },
     { value: 'interview_schedule', label: 'Interview Schedule' },
@@ -626,7 +640,7 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
     } else if (type === 'actions') {
       if (!showActions) {
         const rect = actionBtnRef.current.getBoundingClientRect();
-       setDropdownPos({ top: rect.bottom + 5, left: rect.right - 250 });
+        setDropdownPos({ top: rect.bottom + 5, left: rect.right - 250 });
         
         setShowActions(true);
         setShowStatusDropdown(false);
@@ -669,10 +683,10 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
             ref={statusBtnRef}
             onClick={(e) => toggleDropdown(e, 'status')}
             className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-              statusClasses[getStatusDisplay(offer.status)] || 'bg-gray-100 text-gray-800'
+              statusClasses[displayStatus] || 'bg-gray-100 text-gray-800'
             } hover:opacity-90 transition-opacity flex items-center gap-1`}
           >
-            {getStatusDisplay(offer.status)}
+            {displayStatus}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -699,7 +713,7 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
                       setShowStatusDropdown(false);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                      offer.status === option.value 
+                      applicantStatus === option.value 
                         ? 'bg-brand-blue text-white hover:bg-brand-blue' 
                         : 'text-gray-700'
                     }`}
@@ -732,7 +746,7 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, statusClasses, getS
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 a1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
             <span className="absolute -top-1 -right-1 bg-brand-blue text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              6
+              4
             </span>
           </button>
           

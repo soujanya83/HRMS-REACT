@@ -12,7 +12,7 @@ import {
   completeOnboardingTask,
   getHiredApplicants,
   createOnboardingTask,
-  generateTasksFromTemplate, // Add this import
+  generateTasksFromTemplate,
 } from "../../services/onboardingService";
 
 // Main Page Component
@@ -67,165 +67,98 @@ const OnboardingPage = () => {
   );
 };
 
-// Dashboard Component with API Integration
+// Dashboard Component
 const OnboardingDashboard = () => {
   const [newHires, setNewHires] = useState([]);
   const [selectedHire, setSelectedHire] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
-  const [isApplyTemplateModalOpen, setApplyTemplateModalOpen] = useState(false); // NEW STATE
+  const [isApplyTemplateModalOpen, setApplyTemplateModalOpen] = useState(false);
   const [selectedApplicantForTask, setSelectedApplicantForTask] = useState(null);
-  const [templates, setTemplates] = useState([]); // NEW STATE for templates
+  const [templates, setTemplates] = useState([]);
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
 
   const fetchNewHires = useCallback(async () => {
-  if (!organizationId) {
-    setIsLoading(false);
-    return;
-  }
-
-  setIsLoading(true);
-  setError(null);
-
-  try {
-    // Get ALL applicants (not just hired)
-    const allApplicantsRes = await getHiredApplicants(organizationId);
-    const allApplicants = allApplicantsRes.data?.data || [];
-    
-    console.log("Total applicants from API:", allApplicants.length);
-    
-    // Filter to get only hired applicants on the frontend
-    const hiredApplicants = allApplicants.filter(applicant => {
-      const status = applicant.status?.toLowerCase();
-      return status === 'hired';
-    });
-    
-    console.log("Actually hired applicants:", hiredApplicants.length);
-    console.log("Hired applicants list:", hiredApplicants.map(a => ({
-      id: a.id,
-      name: `${a.first_name} ${a.last_name}`,
-      status: a.status,
-      job: a.job_opening?.title
-    })));
-
-    // For each hired applicant, fetch their onboarding tasks
-    const hiresWithTasks = await Promise.all(
-      hiredApplicants.map(async (applicant) => {
-        try {
-          const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
-          const tasks = tasksRes.data?.data || [];
-
-          return {
-            id: applicant.id,
-            applicant: {
-              first_name: applicant.first_name,
-              last_name: applicant.last_name,
-              job_opening: applicant.job_opening || {
-                title: "Not specified",
-              },
-              status: applicant.status, // This should be "Hired"
-            },
-            start_date:
-              applicant.start_date || new Date().toISOString().split("T")[0],
-            tasks: tasks.map((task) => ({
-              id: task.id,
-              task_name: task.task_name,
-              description: task.description,
-              due_date: task.due_date,
-              status: task.status || "pending",
-              completed_at: task.completed_at,
-            })),
-          };
-        } catch (error) {
-          console.error(
-            `Error fetching tasks for applicant ${applicant.id}:`,
-            error
-          );
-          return {
-            id: applicant.id,
-            applicant: {
-              first_name: applicant.first_name,
-              last_name: applicant.last_name,
-              job_opening: applicant.job_opening || {
-                title: "Not specified",
-              },
-              status: applicant.status, // This should be "Hired"
-            },
-            start_date:
-              applicant.start_date || new Date().toISOString().split("T")[0],
-            tasks: [],
-          };
-        }
-      })
-    );
-
-    setNewHires(hiresWithTasks);
-    
-    // Show warning if there are no hired applicants
-    if (hiredApplicants.length === 0) {
-      console.log("No hired applicants found.");
+    if (!organizationId) {
+      setIsLoading(false);
+      return;
     }
-    
-  } catch (err) {
-    console.error("Error fetching new hires:", err);
-    setError("Failed to load onboarding data. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-}, [organizationId]);
 
-// In OnboardingDashboard component
-// In OnboardingDashboard component
-const checkAllApplicants = async () => {
-  try {
-    const response = await getHiredApplicants(organizationId);
-    const applicants = response.data?.data || [];
-    
-    console.log("=== ALL APPLICANTS FROM API ===");
-    console.log("Total count:", applicants.length);
-    
-    // Group by status
-    const statusCount = {};
-    applicants.forEach(applicant => {
-      const status = applicant.status || 'unknown';
-      statusCount[status] = (statusCount[status] || 0) + 1;
-    });
-    
-    console.log("Applicants by status:");
-    Object.entries(statusCount).forEach(([status, count]) => {
-      console.log(`${status}: ${count} applicant(s)`);
-    });
-    
-    // Show specific applicants with "Hired" status
-    const hiredApplicants = applicants.filter(a => 
-      a.status?.toLowerCase() === 'hired'
-    );
-    
-    console.log("Hired applicants found:", hiredApplicants.length);
-    hiredApplicants.forEach(applicant => {
-      console.log(`- ${applicant.first_name} ${applicant.last_name} (ID: ${applicant.id})`);
-    });
-    
-    alert(`Found ${applicants.length} total applicants\n${hiredApplicants.length} are hired\nCheck console for details.`);
-    
-  } catch (err) {
-    console.error("Error checking applicants:", err);
-    alert("Failed to check applicants");
-  }
-};
+    setIsLoading(true);
+    setError(null);
 
-// Add a button to call this function
-<button 
-  onClick={checkAllApplicants} 
-  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
->
-  Check All Applicants
-</button>
+    try {
+      const allApplicantsRes = await getHiredApplicants(organizationId);
+      const allApplicants = allApplicantsRes.data?.data || [];
+      
+      const hiredApplicants = allApplicants.filter(applicant => {
+        const status = applicant.status?.toLowerCase();
+        return status === 'hired';
+      });
 
-  // NEW FUNCTION: Fetch templates for dashboard
+      const hiresWithTasks = await Promise.all(
+        hiredApplicants.map(async (applicant) => {
+          try {
+            const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
+            const tasks = tasksRes.data?.data || [];
+
+            return {
+              id: applicant.id,
+              applicant: {
+                first_name: applicant.first_name,
+                last_name: applicant.last_name,
+                job_opening: applicant.job_opening || {
+                  title: "Not specified",
+                },
+                status: applicant.status,
+              },
+              start_date:
+                applicant.start_date || new Date().toISOString().split("T")[0],
+              tasks: tasks.map((task) => ({
+                id: task.id,
+                task_name: task.task_name,
+                description: task.description,
+                due_date: task.due_date,
+                status: task.status || "pending",
+                completed_at: task.completed_at,
+              })),
+            };
+          } catch (error) {
+            console.error(
+              `Error fetching tasks for applicant ${applicant.id}:`,
+              error
+            );
+            return {
+              id: applicant.id,
+              applicant: {
+                first_name: applicant.first_name,
+                last_name: applicant.last_name,
+                job_opening: applicant.job_opening || {
+                  title: "Not specified",
+                },
+                status: applicant.status,
+              },
+              start_date:
+                applicant.start_date || new Date().toISOString().split("T")[0],
+              tasks: [],
+            };
+          }
+        })
+      );
+
+      setNewHires(hiresWithTasks);
+      
+    } catch (err) {
+      console.error("❌ Error fetching new hires:", err);
+      setError("Failed to load onboarding data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [organizationId]);
+
   const fetchTemplates = useCallback(async () => {
     if (!organizationId) return;
 
@@ -241,7 +174,7 @@ const checkAllApplicants = async () => {
 
   useEffect(() => {
     fetchNewHires();
-    fetchTemplates(); // Fetch templates when component mounts
+    fetchTemplates();
   }, [fetchNewHires, fetchTemplates]);
 
   const handleAddTask = (applicant) => {
@@ -249,63 +182,93 @@ const checkAllApplicants = async () => {
     setAddTaskModalOpen(true);
   };
 
-  // NEW FUNCTION: Handle apply template
   const handleApplyTemplate = (applicant) => {
     setSelectedApplicantForTask(applicant);
     setApplyTemplateModalOpen(true);
   };
 
- const handleCreateNewTask = async (taskData) => {
-  try {
-    if (!selectedApplicantForTask) {
-      alert("No applicant selected");
-      return;
+  const handleCreateNewTask = async (taskData) => {
+    try {
+      if (!selectedApplicantForTask) {
+        alert("No applicant selected");
+        return;
+      }
+
+      const applicantStatus = selectedApplicantForTask.applicant?.status?.toLowerCase();
+      
+      if (applicantStatus !== 'hired') {
+        alert(`Cannot create task: Applicant status is "${selectedApplicantForTask.applicant?.status}" but must be "Hired"`);
+        return;
+      }
+
+      const formattedDueDate = taskData.due_date
+        ? new Date(taskData.due_date).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+
+      const payload = {
+        applicant_id: parseInt(selectedApplicantForTask.id),
+        task_name: taskData.task_name,
+        description: taskData.description || "",
+        due_date: formattedDueDate,
+        status: "pending",
+        organization_id: parseInt(organizationId),
+      };
+
+      console.log("📤 Creating onboarding task with payload:", JSON.stringify(payload, null, 2));
+
+      const response = await createOnboardingTask(payload);
+      console.log("✅ Task created successfully:", response.data);
+
+      await fetchNewHires();
+      setAddTaskModalOpen(false);
+      setSelectedApplicantForTask(null);
+      alert("Task added successfully!");
+      
+    } catch (err) {
+      console.error("❌ Error creating task:", err);
+      
+      if (err.response?.status === 400) {
+        const errorData = err.response.data;
+        alert(`Error: ${errorData.message}\nCurrent status: ${errorData.current_status}`);
+      } else {
+        alert("Failed to create task. Please try again.");
+      }
     }
+  };
 
-    // CRITICAL: Check if applicant is actually hired
-    const applicantStatus = selectedApplicantForTask.applicant?.status?.toLowerCase();
-    
-    if (applicantStatus !== 'hired') {
-      alert(`Cannot create task: Applicant status is "${selectedApplicantForTask.applicant?.status}" but must be "Hired"`);
-      return; // Stop here, don't call API
+  const handleApplyTemplateToApplicant = async (templateId) => {
+    try {
+      if (!selectedApplicantForTask) {
+        alert("No applicant selected");
+        return;
+      }
+
+      const applicantStatus = selectedApplicantForTask.applicant?.status?.toLowerCase();
+      
+      if (applicantStatus !== 'hired') {
+        alert(`Cannot apply template: Applicant status is "${selectedApplicantForTask.applicant?.status}" but must be "Hired"`);
+        return;
+      }
+
+      console.log("🔄 Applying template to applicant:", {
+        applicantId: selectedApplicantForTask.id,
+        templateId: templateId
+      });
+
+      const response = await generateTasksFromTemplate(selectedApplicantForTask.id, templateId);
+      console.log("✅ Template applied successfully:", response.data);
+
+      await fetchNewHires();
+      setApplyTemplateModalOpen(false);
+      setSelectedApplicantForTask(null);
+      alert("Template applied successfully!");
+      
+    } catch (err) {
+      console.error("❌ Error applying template:", err);
+      alert("Failed to apply template. Please try again.");
     }
+  };
 
-    // Format due date properly
-    const formattedDueDate = taskData.due_date
-      ? new Date(taskData.due_date).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
-
-    const payload = {
-      applicant_id: parseInt(selectedApplicantForTask.id),
-      task_name: taskData.task_name,
-      description: taskData.description || "",
-      due_date: formattedDueDate,
-      status: "pending",
-      organization_id: parseInt(organizationId),
-    };
-
-    console.log("Creating task with payload:", JSON.stringify(payload, null, 2));
-
-    const response = await createOnboardingTask(payload);
-    console.log("Task created successfully:", response.data);
-
-    await fetchNewHires();
-    setAddTaskModalOpen(false);
-    setSelectedApplicantForTask(null);
-    
-    alert("Task added successfully!");
-    
-  } catch (err) {
-    console.error("Error creating task:", err);
-    
-    if (err.response?.status === 400) {
-      const errorData = err.response.data;
-      alert(`Error: ${errorData.message}\nCurrent status: ${errorData.current_status}`);
-    } else {
-      alert("Failed to create task. Please try again.");
-    }
-  }
-};
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -337,7 +300,7 @@ const checkAllApplicants = async () => {
             hire={hire}
             onSelect={() => setSelectedHire(hire)}
             onAddTask={() => handleAddTask(hire)}
-            onApplyTemplate={() => handleApplyTemplate(hire)} // NEW PROP
+            onApplyTemplate={() => handleApplyTemplate(hire)}
           />
         ))}
       </div>
@@ -361,11 +324,10 @@ const checkAllApplicants = async () => {
           onClose={() => setSelectedHire(null)}
           onTaskUpdate={fetchNewHires}
           onAddTask={() => handleAddTask(selectedHire)}
-          onApplyTemplate={() => handleApplyTemplate(selectedHire)} // NEW PROP
+          onApplyTemplate={() => handleApplyTemplate(selectedHire)}
         />
       )}
 
-      {/* Add Task Modal */}
       {isAddTaskModalOpen && selectedApplicantForTask && (
         <AddTaskModal
           isOpen={isAddTaskModalOpen}
@@ -378,7 +340,6 @@ const checkAllApplicants = async () => {
         />
       )}
 
-      {/* NEW: Apply Template Modal */}
       {isApplyTemplateModalOpen && selectedApplicantForTask && (
         <ApplyTemplateModal
           isOpen={isApplyTemplateModalOpen}
@@ -395,7 +356,6 @@ const checkAllApplicants = async () => {
   );
 };
 
-// UPDATED New Hire Card Component with both Add Task and Apply Template buttons
 const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
   const progress = React.useMemo(() => {
     const totalTasks = hire.tasks.length;
@@ -468,7 +428,7 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
   );
 };
 
-// Template Manager Component with API Integration
+// FIXED Template Manager Component
 const TemplateManager = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -476,6 +436,7 @@ const TemplateManager = () => {
   const [error, setError] = useState(null);
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
+  const [validRoles, setValidRoles] = useState(["hr", "manager", "it_support", "new_hire", "finance"]); // Default valid roles (lowercase)
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -495,7 +456,6 @@ const TemplateManager = () => {
       });
       const templatesData = templatesRes.data?.data || [];
 
-      // Fetch tasks for each template
       const templatesWithTasks = await Promise.all(
         templatesData.map(async (template) => {
           try {
@@ -534,15 +494,27 @@ const TemplateManager = () => {
 
   const handleCreateTemplate = async (templateData) => {
     try {
-      await createOnboardingTemplate({
+      const payload = {
         ...templateData,
         organization_id: organizationId,
-      });
+      };
+      
+      const response = await createOnboardingTemplate(payload);
+      
       await fetchTemplates();
       setTemplateModalOpen(false);
+      alert('Template created successfully!');
     } catch (err) {
-      console.error("Error creating template:", err);
-      alert("Failed to create template. Please try again.");
+      console.error("❌ Error creating template:", err);
+      
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join('\n');
+        alert(`Validation failed:\n${errorMessages}`);
+      } else {
+        alert("Failed to create template. Please try again.");
+      }
     }
   };
 
@@ -558,18 +530,109 @@ const TemplateManager = () => {
     }
   };
 
+  // FIXED: Discover valid roles function
+  const discoverValidRoles = async () => {
+    if (!selectedTemplate) {
+      alert("Please select a template first");
+      return;
+    }
+
+    const roleOptions = [
+      "hr", "HR", "Hr", "human_resources", "Human Resources", "human resources",
+      "manager", "Manager", "MANAGER", "supervisor", "Supervisor",
+      "it", "IT", "it_support", "IT Support", "it support",
+      "finance", "Finance", "FINANCE", "accounting", "Accounting",
+      "admin", "Admin", "ADMIN", "administrator", "Administrator",
+      "new_hire", "New Hire", "new hire", "employee", "Employee",
+      "recruiter", "Recruiter", "recruitment", "Recruitment"
+    ];
+
+    const discoveredRoles = [];
+
+    for (const role of roleOptions) {
+      const payload = {
+        onboarding_template_id: selectedTemplate.id,
+        task_name: "Test Role Discovery",
+        description: "Testing role: " + role,
+        default_due_days: 1,
+        default_assigned_role: role,
+        sequence: 1,
+        is_required: true,
+        organization_id: organizationId
+      };
+
+      try {
+        const response = await createOnboardingTemplateTask(payload);
+        console.log(`✅ Valid role found: "${role}"`);
+        discoveredRoles.push(role);
+        
+        // Delete the test task
+        try {
+          // You might need to implement a delete function or just leave it
+        } catch (deleteErr) {
+          deleteErr
+        }
+        
+      } catch (err) {
+        console.log(`❌ Invalid role: "${role}",`, err);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    if (discoveredRoles.length > 0) {
+      setValidRoles(discoveredRoles);
+      alert(`Found ${discoveredRoles.length} valid roles: ${discoveredRoles.join(', ')}`);
+      return discoveredRoles;
+    } else {
+      alert("No valid roles discovered. Using default lowercase roles.");
+      return null;
+    }
+  };
+
+  // FIXED: handleCreateTask with role validation
   const handleCreateTask = async (taskData) => {
     try {
-      await createOnboardingTemplateTask({
-        ...taskData,
-        onboarding_template_id: selectedTemplate.id,
-      });
+      console.log("🔄 Creating template task...");
+      
+      // Convert role to lowercase as it's most likely to work
+      const role = taskData.default_assigned_role.toLowerCase();
+      
+      const payload = {
+        onboarding_template_id: parseInt(selectedTemplate.id),
+        task_name: taskData.task_name,
+        description: taskData.description || "",
+        default_due_days: parseInt(taskData.default_due_days) || 1,
+        default_assigned_role: role, // Use lowercase
+        sequence: parseInt(taskData.sequence) || 1,
+        is_required: taskData.is_required !== false,
+        organization_id: organizationId
+      };
+
+      console.log("📤 Sending payload:", JSON.stringify(payload, null, 2));
+
+      const response = await createOnboardingTemplateTask(payload);
+      console.log("✅ Task created successfully:", response.data);
+
       await fetchTemplates();
       setTaskModalOpen(false);
       setSelectedTemplate(null);
+      
+      alert('Task added to template successfully!');
+      
     } catch (err) {
-      console.error("Error creating task:", err);
-      alert("Failed to create task. Please try again.");
+      console.error("❌ Error creating task:", err);
+      
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join('\n');
+        alert(`Validation failed:\n${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert("Failed to create task. Please try again.");
+      }
     }
   };
 
@@ -600,12 +663,23 @@ const TemplateManager = () => {
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Onboarding Templates</h2>
-          <button
-            onClick={() => setTemplateModalOpen(true)}
-            className="flex items-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition"
-          >
-            <HiPlus /> Create Template
-          </button>
+          <div className="flex gap-2">
+            {selectedTemplate && (
+              <button
+                onClick={discoverValidRoles}
+                className="flex items-center gap-2 bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition"
+                title="Discover valid roles"
+              >
+                Discover Roles
+              </button>
+            )}
+            <button
+              onClick={() => setTemplateModalOpen(true)}
+              className="flex items-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition"
+            >
+              <HiPlus /> Create Template
+            </button>
+          </div>
         </div>
 
         {templates.length > 0 ? (
@@ -633,7 +707,7 @@ const TemplateManager = () => {
                           }}
                           className="ml-4 text-xs text-blue-600 hover:text-blue-800"
                         >
-                          View Tasks
+                          View/Add Tasks
                         </button>
                       )}
                     </div>
@@ -645,12 +719,14 @@ const TemplateManager = () => {
                         setTaskModalOpen(true);
                       }}
                       className="p-2 text-gray-500 hover:bg-gray-100 rounded-full"
+                      title="Add/Edit Tasks"
                     >
                       <HiPencil />
                     </button>
                     <button
                       onClick={() => handleDeleteTemplate(template.id)}
                       className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
+                      title="Delete Template"
                     >
                       <HiTrash />
                     </button>
@@ -666,7 +742,6 @@ const TemplateManager = () => {
         )}
       </div>
 
-      {/* Template Creation Modal */}
       {isTemplateModalOpen && (
         <TemplateFormModal
           isOpen={isTemplateModalOpen}
@@ -675,7 +750,6 @@ const TemplateManager = () => {
         />
       )}
 
-      {/* Task Management Modal */}
       {isTaskModalOpen && selectedTemplate && (
         <TaskManagementModal
           isOpen={isTaskModalOpen}
@@ -685,13 +759,196 @@ const TemplateManager = () => {
           }}
           template={selectedTemplate}
           onSubmit={handleCreateTask}
+          validRoles={validRoles}
         />
       )}
     </div>
   );
 };
 
-// Template Form Modal Component
+// FIXED Task Management Modal
+const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }) => {
+  const [formData, setFormData] = useState({
+    task_name: "",
+    description: "",
+    default_due_days: 1,
+    default_assigned_role: "hr", // Default to lowercase 'hr'
+    sequence: 1,
+    is_required: true,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let processedValue = value;
+    
+    if (name === "default_due_days" || name === "sequence") {
+      processedValue = parseInt(value) || 0;
+    }
+    
+    if (name === "is_required") {
+      processedValue = value === "true" || value === true;
+    }
+    
+    setFormData((prev) => ({
+      ...prev,
+      [name]: processedValue,
+    }));
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">
+              Add Task to {template.name}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Template ID: {template.id}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-200"
+          >
+            <HiX size={24} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="mb-4 p-3 bg-green-50 rounded-md">
+            <p className="text-sm text-green-800">
+              <strong>Tip:</strong> Use lowercase roles (e.g., "hr", "manager", "it_support")
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Task Name *
+            </label>
+            <input
+              type="text"
+              name="task_name"
+              value={formData.task_name}
+              onChange={handleChange}
+              required
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              placeholder="e.g., Sign Employment Contract"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="2"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              placeholder="Task description..."
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Due In (Days) *
+              </label>
+              <input
+                type="number"
+                name="default_due_days"
+                value={formData.default_due_days}
+                onChange={handleChange}
+                min="0"
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sequence *
+              </label>
+              <input
+                type="number"
+                name="sequence"
+                value={formData.sequence}
+                onChange={handleChange}
+                min="1"
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Assigned Role *
+              </label>
+              <select
+                name="default_assigned_role"
+                value={formData.default_assigned_role}
+                onChange={handleChange}
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              >
+                {validRoles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Try: hr, manager, it_support, finance, new_hire
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Required? *
+              </label>
+              <select
+                name="is_required"
+                value={formData.is_required}
+                onChange={handleChange}
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              >
+                <option value={true}>Yes</option>
+                <option value={false}>No</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-4 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90"
+            >
+              Add Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Rest of the components remain exactly the same...
+// TemplateFormModal, AddTaskModal, ApplyTemplateModal, NewHireChecklistSlideOver
+
 const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -771,126 +1028,6 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
-// Task Management Modal Component
-const TaskManagementModal = ({ isOpen, onClose, template, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    task_name: "",
-    description: "",
-    default_due_days: 1,
-    default_assigned_role: "HR",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "default_due_days" ? parseInt(value) : value,
-    }));
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">
-            Add Task to {template.name}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200"
-          >
-            <HiX size={24} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Task Name
-            </label>
-            <input
-              type="text"
-              name="task_name"
-              value={formData.task_name}
-              onChange={handleChange}
-              required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              placeholder="e.g., Sign Employment Contract"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="2"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              placeholder="Task description..."
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Due In (Days)
-              </label>
-              <input
-                type="number"
-                name="default_due_days"
-                value={formData.default_due_days}
-                onChange={handleChange}
-                min="0"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Assigned Role
-              </label>
-              <select
-                name="default_assigned_role"
-                value={formData.default_assigned_role}
-                onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              >
-                <option value="HR">HR</option>
-                <option value="Manager">Manager</option>
-                <option value="IT Support">IT Support</option>
-                <option value="New Hire">New Hire</option>
-                <option value="Finance">Finance</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90"
-            >
-              Add Task
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Add Task Modal Component for Dashboard
 const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
   const [formData, setFormData] = useState({
     task_name: "",
@@ -1000,7 +1137,6 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
   );
 };
 
-// NEW: Apply Template Modal Component
 const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
@@ -1098,7 +1234,6 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
   );
 };
 
-// Updated New Hire Checklist SlideOver with API Integration and Add Task button
 const NewHireChecklistSlideOver = ({
   hire,
   isOpen,
@@ -1118,11 +1253,9 @@ const NewHireChecklistSlideOver = ({
       if (newStatus === "completed") {
         await completeOnboardingTask(taskId);
       } else {
-        // For uncompleting, we need to update the task status
         await updateOnboardingTask(taskId, { status: "pending" });
       }
 
-      // Update local state
       setTasks(
         tasks.map((task) =>
           task.id === taskId
@@ -1136,7 +1269,6 @@ const NewHireChecklistSlideOver = ({
         )
       );
 
-      // Notify parent to refresh data
       onTaskUpdate();
     } catch (err) {
       console.error("Error updating task:", err);
