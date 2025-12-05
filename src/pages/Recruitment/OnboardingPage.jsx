@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { HiPlus, HiPencil, HiTrash, HiCheckCircle, HiX, HiTemplate } from "react-icons/hi";
+import { 
+  HiPlus, 
+  HiPencil, 
+  HiTrash, 
+  HiCheckCircle, 
+  HiX, 
+  HiTemplate,
+  HiOutlineClock,
+  HiCheck,
+  HiOutlineEye 
+} from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
   getOnboardingTemplates,
@@ -67,6 +77,22 @@ const OnboardingPage = () => {
   );
 };
 
+// Helper function to calculate days left
+const calculateDaysLeft = (dueDate) => {
+  if (!dueDate) return null;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  
+  const diffTime = due - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+};
+
 // Dashboard Component
 const OnboardingDashboard = () => {
   const [newHires, setNewHires] = useState([]);
@@ -105,6 +131,19 @@ const OnboardingDashboard = () => {
             const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
             const tasks = tasksRes.data?.data || [];
 
+            const tasksWithDaysLeft = tasks.map((task) => ({
+              id: task.id,
+              task_name: task.task_name,
+              description: task.description,
+              due_date: task.due_date,
+              status: task.status || "pending",
+              completed_at: task.completed_at,
+              days_left: calculateDaysLeft(task.due_date)
+            }));
+
+            // Calculate completed tasks count
+            const completedTasks = tasksWithDaysLeft.filter(t => t.status === "completed").length;
+
             return {
               id: applicant.id,
               applicant: {
@@ -117,14 +156,9 @@ const OnboardingDashboard = () => {
               },
               start_date:
                 applicant.start_date || new Date().toISOString().split("T")[0],
-              tasks: tasks.map((task) => ({
-                id: task.id,
-                task_name: task.task_name,
-                description: task.description,
-                due_date: task.due_date,
-                status: task.status || "pending",
-                completed_at: task.completed_at,
-              })),
+              tasks: tasksWithDaysLeft,
+              completedTasks: completedTasks,
+              totalTasks: tasksWithDaysLeft.length
             };
           } catch (error) {
             console.error(
@@ -144,6 +178,8 @@ const OnboardingDashboard = () => {
               start_date:
                 applicant.start_date || new Date().toISOString().split("T")[0],
               tasks: [],
+              completedTasks: 0,
+              totalTasks: 0
             };
           }
         })
@@ -403,11 +439,17 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
         </p>
       </div>
       <div className="mt-4 flex flex-col gap-2">
+        {/* Updated View Tasks button with task count */}
         <button
           onClick={onSelect}
-          className="w-full py-2 px-4 bg-brand-blue text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors"
+          className="w-full py-2 px-4 bg-brand-blue text-white text-sm font-medium rounded-lg hover:opacity-90 transition-colors flex items-center justify-center gap-2"
         >
-          View Tasks
+          <span>View Tasks</span>
+          {hire.totalTasks > 0 && (
+            <span className="bg-white text-brand-blue text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {hire.completedTasks}/{hire.totalTasks}
+            </span>
+          )}
         </button>
         <div className="flex gap-2">
           <button
@@ -420,7 +462,7 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
             onClick={onApplyTemplate}
             className="flex-1 py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
           >
-            <HiTemplate className="mr-1" /> Template
+            <HiTemplate className="mr-1" />Add Template
           </button>
         </div>
       </div>
@@ -436,7 +478,8 @@ const TemplateManager = () => {
   const [error, setError] = useState(null);
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
-  const [validRoles, setValidRoles] = useState(["hr", "manager", "it_support", "new_hire", "finance"]); // Default valid roles (lowercase)
+  const [validRoles, setValidRoles] = useState(["hr", "manager", "it_support", "new_hire", "finance"]);
+  const [expandedTemplates, setExpandedTemplates] = useState({});
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -492,6 +535,13 @@ const TemplateManager = () => {
     fetchTemplates();
   }, [fetchTemplates]);
 
+  const toggleTemplateTasks = (templateId) => {
+    setExpandedTemplates(prev => ({
+      ...prev,
+      [templateId]: !prev[templateId]
+    }));
+  };
+
   const handleCreateTemplate = async (templateData) => {
     try {
       const payload = {
@@ -530,7 +580,6 @@ const TemplateManager = () => {
     }
   };
 
-  // FIXED: Discover valid roles function
   const discoverValidRoles = async () => {
     if (!selectedTemplate) {
       alert("Please select a template first");
@@ -566,13 +615,6 @@ const TemplateManager = () => {
         console.log(`✅ Valid role found: "${role}"`);
         discoveredRoles.push(role);
         
-        // Delete the test task
-        try {
-          // You might need to implement a delete function or just leave it
-        } catch (deleteErr) {
-          deleteErr
-        }
-        
       } catch (err) {
         console.log(`❌ Invalid role: "${role}",`, err);
       }
@@ -590,12 +632,10 @@ const TemplateManager = () => {
     }
   };
 
-  // FIXED: handleCreateTask with role validation
   const handleCreateTask = async (taskData) => {
     try {
       console.log("🔄 Creating template task...");
       
-      // Convert role to lowercase as it's most likely to work
       const role = taskData.default_assigned_role.toLowerCase();
       
       const payload = {
@@ -603,7 +643,7 @@ const TemplateManager = () => {
         task_name: taskData.task_name,
         description: taskData.description || "",
         default_due_days: parseInt(taskData.default_due_days) || 1,
-        default_assigned_role: role, // Use lowercase
+        default_assigned_role: role,
         sequence: parseInt(taskData.sequence) || 1,
         is_required: taskData.is_required !== false,
         organization_id: organizationId
@@ -688,41 +728,53 @@ const TemplateManager = () => {
               <li key={template.id} className="py-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">
-                      {template.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900">
+                        {template.name}
+                      </p>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                        {template.tasks.length} tasks
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-500 mt-1">
                       {template.description}
                     </p>
-                    <div className="mt-2">
-                      <span className="text-xs text-gray-500">
-                        {template.tasks.length} task
-                        {template.tasks.length !== 1 ? "s" : ""}
-                      </span>
-                      {template.tasks.length > 0 && (
-                        <button
-                          onClick={() => {
-                            setSelectedTemplate(template);
-                            setTaskModalOpen(true);
-                          }}
-                          className="ml-4 text-xs text-blue-600 hover:text-blue-800"
-                        >
-                          View/Add Tasks
-                        </button>
-                      )}
-                    </div>
                   </div>
                   <div className="flex gap-2">
+                    {/* View Tasks button */}
+                    <button
+                      onClick={() => toggleTemplateTasks(template.id)}
+                      className="p-2 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-full"
+                      title="View Tasks"
+                    >
+                      <HiOutlineEye />
+                    </button>
+                    
+                    {/* Add Task button */}
+                    <button
+                      onClick={() => {
+                        setSelectedTemplate(template);
+                        setTaskModalOpen(true);
+                      }}
+                      className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full"
+                      title="Add Task"
+                    >
+                      <HiPlus />
+                    </button>
+                    
+                    {/* Edit button */}
                     <button
                       onClick={() => {
                         setSelectedTemplate(template);
                         setTaskModalOpen(true);
                       }}
                       className="p-2 text-gray-500 hover:bg-gray-100 rounded-full"
-                      title="Add/Edit Tasks"
+                      title="Edit Template"
                     >
                       <HiPencil />
                     </button>
+                    
+                    {/* Delete button */}
                     <button
                       onClick={() => handleDeleteTemplate(template.id)}
                       className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
@@ -732,6 +784,39 @@ const TemplateManager = () => {
                     </button>
                   </div>
                 </div>
+                
+                {/* Expandable tasks section */}
+                {expandedTemplates[template.id] && template.tasks.length > 0 && (
+                  <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Template Tasks:</h4>
+                    <ul className="space-y-2">
+                      {template.tasks.map((task, index) => (
+                        <li key={task.id || index} className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{task.task_name}</span>
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              {task.default_assigned_role}
+                            </span>
+                          </div>
+                          {task.description && (
+                            <p className="mt-1 text-gray-500">{task.description}</p>
+                          )}
+                          <div className="flex gap-4 mt-2 text-xs">
+                            <span>Due: {task.default_due_days} days</span>
+                            <span>Sequence: {task.sequence}</span>
+                            <span>Required: {task.is_required ? 'Yes' : 'No'}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {expandedTemplates[template.id] && template.tasks.length === 0 && (
+                  <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                    <p className="text-sm text-gray-500 italic">No tasks in this template yet.</p>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -766,13 +851,13 @@ const TemplateManager = () => {
   );
 };
 
-// FIXED Task Management Modal
+// Task Management Modal
 const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }) => {
   const [formData, setFormData] = useState({
     task_name: "",
     description: "",
     default_due_days: 1,
-    default_assigned_role: "hr", // Default to lowercase 'hr'
+    default_assigned_role: "hr",
     sequence: 1,
     is_required: true,
   });
@@ -946,8 +1031,202 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
   );
 };
 
-// Rest of the components remain exactly the same...
-// TemplateFormModal, AddTaskModal, ApplyTemplateModal, NewHireChecklistSlideOver
+const NewHireChecklistSlideOver = ({
+  hire,
+  isOpen,
+  onClose,
+  onTaskUpdate,
+  onAddTask,
+}) => {
+  const [tasks, setTasks] = useState(hire.tasks);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleToggleTask = async (taskId, currentStatus) => {
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+
+    try {
+      setIsLoading(true);
+
+      if (newStatus === "completed") {
+        await completeOnboardingTask(taskId);
+      } else {
+        await updateOnboardingTask(taskId, { status: "pending" });
+      }
+
+      setTasks(
+        tasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                status: newStatus,
+                completed_at:
+                  newStatus === "completed" ? new Date().toISOString() : null,
+              }
+            : task
+        )
+      );
+
+      onTaskUpdate();
+    } catch (err) {
+      console.error("Error updating task:", err);
+      alert("Failed to update task status. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 overflow-hidden z-30 ${
+        isOpen ? "block" : "hidden"
+      }`}
+    >
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        ></div>
+        <section className="absolute inset-y-0 right-0 pl-10 max-w-full flex">
+          <div className="w-screen max-w-md">
+            <div className="h-full flex flex-col bg-white shadow-xl">
+              <div className="p-6 bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900">
+                      {hire.applicant.first_name}'s Onboarding
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Due by {new Date(hire.start_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {hire.applicant.job_opening.title}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        Tasks: {hire.completedTasks || 0}/{hire.totalTasks || 0}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-3 h-7 flex items-center">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="bg-white rounded-md text-gray-400 hover:text-gray-500"
+                      disabled={isLoading}
+                    >
+                      <HiX className="h-6 w-6" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="mb-4">
+                  <button
+                    onClick={onAddTask}
+                    className="w-full py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                  >
+                    <HiPlus className="mr-2" /> Add New Task
+                  </button>
+                </div>
+
+                {tasks.length > 0 ? (
+                  tasks.map((task) => (
+                    <div key={task.id} className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <button
+                        onClick={() => handleToggleTask(task.id, task.status)}
+                        disabled={isLoading}
+                        className="mt-1 flex-shrink-0"
+                      >
+                        {task.status === "completed" ? (
+                          <HiCheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <div className="h-5 w-5 border-2 border-gray-300 rounded-full"></div>
+                        )}
+                      </button>
+                      <div className="ml-3 flex-1">
+                        <div className="flex justify-between items-start">
+                          <span className={`text-sm font-medium ${
+                            task.status === "completed"
+                              ? "text-gray-500 line-through"
+                              : "text-gray-800"
+                          }`}>
+                            {task.task_name}
+                          </span>
+                          {task.status === "completed" ? (
+                            <HiCheck className="h-4 w-4 text-green-500" />
+                          ) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
+                            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                              {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
+                            </span>
+                          ) : null}
+                        </div>
+                        
+                        {task.description && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {task.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center gap-3 mt-2">
+                          {task.due_date && task.status !== "completed" && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <HiOutlineClock className="h-3 w-3 mr-1" />
+                              <span>
+                                {task.days_left !== null ? (
+                                  task.days_left < 0 ? (
+                                    <span className="text-red-600">Overdue by {-task.days_left} days</span>
+                                  ) : task.days_left === 0 ? (
+                                    <span className="text-orange-600">Due today</span>
+                                  ) : (
+                                    <span>{task.days_left} days left</span>
+                                  )
+                                ) : (
+                                  <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {task.status === "completed" && task.completed_at && (
+                            <div className="text-xs text-green-600">
+                              Completed on {new Date(task.completed_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    No onboarding tasks assigned yet.
+                    <button
+                      onClick={onAddTask}
+                      className="mt-4 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <HiPlus className="inline mr-1" /> Add Your First Task
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex-shrink-0 px-4 py-4 flex justify-end gap-4 border-t">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  disabled={isLoading}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
 
 const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -1229,164 +1508,6 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-};
-
-const NewHireChecklistSlideOver = ({
-  hire,
-  isOpen,
-  onClose,
-  onTaskUpdate,
-  onAddTask,
-}) => {
-  const [tasks, setTasks] = useState(hire.tasks);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleToggleTask = async (taskId, currentStatus) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
-
-    try {
-      setIsLoading(true);
-
-      if (newStatus === "completed") {
-        await completeOnboardingTask(taskId);
-      } else {
-        await updateOnboardingTask(taskId, { status: "pending" });
-      }
-
-      setTasks(
-        tasks.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                status: newStatus,
-                completed_at:
-                  newStatus === "completed" ? new Date().toISOString() : null,
-              }
-            : task
-        )
-      );
-
-      onTaskUpdate();
-    } catch (err) {
-      console.error("Error updating task:", err);
-      alert("Failed to update task status. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      className={`fixed inset-0 overflow-hidden z-30 ${
-        isOpen ? "block" : "hidden"
-      }`}
-    >
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={onClose}
-        ></div>
-        <section className="absolute inset-y-0 right-0 pl-10 max-w-full flex">
-          <div className="w-screen max-w-md">
-            <div className="h-full flex flex-col bg-white shadow-xl">
-              <div className="p-6 bg-gray-50">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-lg font-medium text-gray-900">
-                      {hire.applicant.first_name}'s Onboarding
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Due by {new Date(hire.start_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {hire.applicant.job_opening.title}
-                    </p>
-                  </div>
-                  <div className="ml-3 h-7 flex items-center">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="bg-white rounded-md text-gray-400 hover:text-gray-500"
-                      disabled={isLoading}
-                    >
-                      <HiX className="h-6 w-6" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                <div className="mb-4">
-                  <button
-                    onClick={onAddTask}
-                    className="w-full py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                  >
-                    <HiPlus className="mr-2" /> Add New Task
-                  </button>
-                </div>
-
-                {tasks.length > 0 ? (
-                  tasks.map((task) => (
-                    <div key={task.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`task-${task.id}`}
-                        checked={task.status === "completed"}
-                        onChange={() => handleToggleTask(task.id, task.status)}
-                        disabled={isLoading}
-                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <label
-                        htmlFor={`task-${task.id}`}
-                        className={`ml-3 text-sm ${
-                          task.status === "completed"
-                            ? "text-gray-500 line-through"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        <div className="font-medium">{task.task_name}</div>
-                        {task.description && (
-                          <div className="text-gray-500 text-xs mt-1">
-                            {task.description}
-                          </div>
-                        )}
-                        {task.due_date && (
-                          <div className="text-gray-400 text-xs mt-1">
-                            Due: {new Date(task.due_date).toLocaleDateString()}
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    No onboarding tasks assigned yet.
-                    <button
-                      onClick={onAddTask}
-                      className="mt-4 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <HiPlus className="inline mr-1" /> Add Your First Task
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex-shrink-0 px-4 py-4 flex justify-end gap-4 border-t">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  disabled={isLoading}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );
