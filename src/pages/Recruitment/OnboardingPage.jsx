@@ -8,7 +8,8 @@ import {
   HiTemplate,
   HiOutlineClock,
   HiCheck,
-  HiOutlineEye 
+  HiOutlineEye,
+  HiOutlineExclamationCircle
 } from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
@@ -103,6 +104,7 @@ const OnboardingDashboard = () => {
   const [isApplyTemplateModalOpen, setApplyTemplateModalOpen] = useState(false);
   const [selectedApplicantForTask, setSelectedApplicantForTask] = useState(null);
   const [templates, setTemplates] = useState([]);
+  const [templateError, setTemplateError] = useState(null);
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -196,8 +198,10 @@ const OnboardingDashboard = () => {
         organization_id: organizationId,
       });
       setTemplates(templatesRes.data?.data || []);
+      setTemplateError(null);
     } catch (err) {
       console.error("Error fetching templates:", err);
+      setTemplateError("Failed to load templates. They may not be available.");
     }
   }, [organizationId]);
 
@@ -274,14 +278,81 @@ const OnboardingDashboard = () => {
         return;
       }
 
-      await generateTasksFromTemplate(selectedApplicantForTask.id, templateId);
+      console.log("Applying template with data:", {
+        applicantId: selectedApplicantForTask.id,
+        templateId: templateId,
+        organizationId: organizationId
+      });
+
+      // First try with the basic call
+      try {
+        await generateTasksFromTemplate(selectedApplicantForTask.id, templateId);
+        alert("Template applied successfully!");
+      } catch (apiErr) {
+        console.error("API error details:", apiErr.response?.data);
+        
+        // If API fails, try to create tasks manually from template
+        const selectedTemplate = templates.find(t => t.id == templateId);
+        if (selectedTemplate && selectedTemplate.tasks.length > 0) {
+          if (confirm(`The template API failed. Would you like to manually create ${selectedTemplate.tasks.length} tasks from the template?`)) {
+            await createTasksFromTemplateManually(selectedTemplate);
+            alert(`Successfully created ${selectedTemplate.tasks.length} tasks manually!`);
+          } else {
+            throw apiErr;
+          }
+        } else {
+          throw apiErr;
+        }
+      }
+
       await fetchNewHires();
       setApplyTemplateModalOpen(false);
       setSelectedApplicantForTask(null);
-      alert("Template applied successfully!");
+      
     } catch (err) {
       console.error("Error applying template:", err);
-      alert("Failed to apply template. Please try again.");
+      
+      if (err.response?.status === 400) {
+        const errorData = err.response.data;
+        let errorMessage = "Failed to apply template.";
+        
+        if (errorData.message) {
+          errorMessage += ` Error: ${errorData.message}`;
+        }
+        
+        if (errorData.errors) {
+          errorMessage += ` Details: ${JSON.stringify(errorData.errors)}`;
+        }
+        
+        alert(errorMessage);
+      } else {
+        alert("Failed to apply template. Please try again.");
+      }
+    }
+  };
+
+  // Fallback function to create tasks manually if API fails
+  const createTasksFromTemplateManually = async (template) => {
+    const tasksToCreate = template.tasks;
+    
+    for (const templateTask of tasksToCreate) {
+      try {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + (templateTask.default_due_days || 1));
+        
+        const payload = {
+          applicant_id: parseInt(selectedApplicantForTask.id),
+          task_name: templateTask.task_name,
+          description: templateTask.description || "",
+          due_date: dueDate.toISOString().split('T')[0],
+          status: "pending",
+          organization_id: parseInt(organizationId),
+        };
+        
+        await createOnboardingTask(payload);
+      } catch (taskErr) {
+        console.error(`Error creating task "${templateTask.task_name}":`, taskErr);
+      }
     }
   };
 
@@ -366,6 +437,7 @@ const OnboardingDashboard = () => {
           onSubmit={handleApplyTemplateToApplicant}
           applicant={selectedApplicantForTask}
           templates={templates}
+          templateError={templateError}
         />
       )}
     </>
@@ -517,8 +589,10 @@ const TemplateManager = () => {
     try {
       const payload = {
         ...templateData,
-        organization_id: organizationId,
+        organization_id: parseInt(organizationId),
       };
+      
+      console.log("Creating template with payload:", payload);
       
       await createOnboardingTemplate(payload);
       await fetchTemplates();
@@ -532,6 +606,8 @@ const TemplateManager = () => {
           .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
           .join('\n');
         alert(`Validation failed:\n${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
       } else {
         alert("Failed to create template. Please try again.");
       }
@@ -552,6 +628,11 @@ const TemplateManager = () => {
 
   const handleCreateTask = async (taskData) => {
     try {
+      if (!selectedTemplate) {
+        alert("No template selected");
+        return;
+      }
+
       const role = taskData.default_assigned_role.toLowerCase();
       
       const payload = {
@@ -560,10 +641,10 @@ const TemplateManager = () => {
         description: taskData.description || "",
         default_due_days: parseInt(taskData.default_due_days) || 1,
         default_assigned_role: role,
-        sequence: parseInt(taskData.sequence) || 1,
-        is_required: taskData.is_required !== false,
-        organization_id: organizationId
+        organization_id: parseInt(organizationId)
       };
+
+      console.log("Creating template task with payload:", payload);
 
       await createOnboardingTemplateTask(payload);
       await fetchTemplates();
@@ -675,7 +756,18 @@ const TemplateManager = () => {
                 
                 {expandedTemplates[template.id] && template.tasks.length > 0 && (
                   <div className="mt-4 pl-4 border-l-2 border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Template Tasks:</h4>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium text-gray-700">Template Tasks:</h4>
+                      <button
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setTaskModalOpen(true);
+                        }}
+                        className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                      >
+                        <HiPlus className="h-3 w-3" /> Add Task
+                      </button>
+                    </div>
                     <ul className="space-y-2">
                       {template.tasks.map((task) => (
                         <li key={task.id} className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
@@ -690,8 +782,6 @@ const TemplateManager = () => {
                           )}
                           <div className="flex gap-4 mt-2 text-xs">
                             <span>Due: {task.default_due_days} days</span>
-                            <span>Sequence: {task.sequence}</span>
-                            <span>Required: {task.is_required ? 'Yes' : 'No'}</span>
                           </div>
                         </li>
                       ))}
@@ -701,7 +791,18 @@ const TemplateManager = () => {
                 
                 {expandedTemplates[template.id] && template.tasks.length === 0 && (
                   <div className="mt-4 pl-4 border-l-2 border-gray-200">
-                    <p className="text-sm text-gray-500 italic">No tasks in this template yet.</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-500 italic">No tasks in this template yet.</p>
+                      <button
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setTaskModalOpen(true);
+                        }}
+                        className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                      >
+                        <HiPlus className="h-3 w-3" /> Add First Task
+                      </button>
+                    </div>
                   </div>
                 )}
               </li>
@@ -709,7 +810,14 @@ const TemplateManager = () => {
           </ul>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No templates found. Create your first template to get started.
+            <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p className="mb-4">No templates found. Create your first template to get started.</p>
+            <button
+              onClick={() => setTemplateModalOpen(true)}
+              className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
+            >
+              <HiPlus /> Create Template
+            </button>
           </div>
         )}
       </div>
@@ -745,8 +853,6 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
     description: "",
     default_due_days: 1,
     default_assigned_role: "hr",
-    sequence: 1,
-    is_required: true,
   });
 
   const handleSubmit = (e) => {
@@ -755,16 +861,12 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     
     let processedValue = value;
     
-    if (name === "default_due_days" || name === "sequence") {
+    if (name === "default_due_days") {
       processedValue = parseInt(value) || 0;
-    }
-    
-    if (name === "is_required") {
-      processedValue = value === "true" || value === true;
     }
     
     setFormData((prev) => ({
@@ -850,24 +952,6 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
               />
             </div>
             <div>
-              <label htmlFor="sequence" className="block text-sm font-medium text-gray-700 mb-1">
-                Sequence *
-              </label>
-              <input
-                type="number"
-                id="sequence"
-                name="sequence"
-                value={formData.sequence}
-                onChange={handleChange}
-                min="1"
-                required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
               <label htmlFor="default_assigned_role" className="block text-sm font-medium text-gray-700 mb-1">
                 Assigned Role *
               </label>
@@ -886,22 +970,6 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
               <p className="text-xs text-gray-500 mt-1">
                 Try: hr, manager, it_support, finance, new_hire
               </p>
-            </div>
-            <div>
-              <label htmlFor="is_required" className="block text-sm font-medium text-gray-700 mb-1">
-                Required? *
-              </label>
-              <select
-                id="is_required"
-                name="is_required"
-                value={formData.is_required}
-                onChange={handleChange}
-                required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-              >
-                <option value={true}>Yes</option>
-                <option value={false}>No</option>
-              </select>
             </div>
           </div>
           
@@ -932,15 +1000,17 @@ const NewHireChecklistSlideOver = ({
   onClose,
   onTaskUpdate,
   onAddTask,
+  onApplyTemplate
 }) => {
   const [tasks, setTasks] = useState(hire.tasks);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCompletingTask, setIsCompletingTask] = useState(null);
 
   const handleToggleTask = async (taskId, currentStatus) => {
     const newStatus = currentStatus === "completed" ? "pending" : "completed";
 
     try {
-      setIsLoading(true);
+      setIsCompletingTask(taskId);
 
       if (newStatus === "completed") {
         await completeOnboardingTask(taskId);
@@ -965,7 +1035,7 @@ const NewHireChecklistSlideOver = ({
       console.error("Error updating task:", err);
       alert("Failed to update task status. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsCompletingTask(null);
     }
   };
 
@@ -988,7 +1058,7 @@ const NewHireChecklistSlideOver = ({
                       {hire.applicant.first_name}'s Onboarding
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Due by {new Date(hire.start_date).toLocaleDateString()}
+                      Start Date: {new Date(hire.start_date).toLocaleDateString()}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
                       {hire.applicant.job_opening.title}
@@ -1013,12 +1083,18 @@ const NewHireChecklistSlideOver = ({
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                <div className="mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   <button
                     onClick={onAddTask}
-                    className="w-full py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                    className="py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                   >
-                    <HiPlus className="mr-2" /> Add New Task
+                    <HiPlus className="mr-2" /> Add Task
+                  </button>
+                  <button
+                    onClick={onApplyTemplate}
+                    className="py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
+                  >
+                    <HiTemplate className="mr-2" /> Add Template
                   </button>
                 </div>
 
@@ -1027,14 +1103,14 @@ const NewHireChecklistSlideOver = ({
                     <div key={task.id} className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <button
                         onClick={() => handleToggleTask(task.id, task.status)}
-                        disabled={isLoading}
+                        disabled={isCompletingTask === task.id}
                         className="mt-1 flex-shrink-0 focus:outline-none"
                         aria-label={task.status === "completed" ? "Mark task as pending" : "Mark task as completed"}
                       >
                         {task.status === "completed" ? (
                           <HiCheckCircle className="h-5 w-5 text-green-500" />
                         ) : (
-                          <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                          <div className={`h-5 w-5 border-2 ${isCompletingTask === task.id ? 'border-gray-400' : 'border-gray-300'} rounded-full`} />
                         )}
                       </button>
                       <div className="ml-3 flex-1">
@@ -1045,11 +1121,21 @@ const NewHireChecklistSlideOver = ({
                               : "text-gray-800"
                           }`}>
                             {task.task_name}
+                            {isCompletingTask === task.id && (
+                              <span className="ml-2 text-xs text-gray-500">Updating...</span>
+                            )}
                           </span>
                           {task.status === "completed" ? (
-                            <HiCheck className="h-4 w-4 text-green-500" />
+                            <div className="flex items-center">
+                              <HiCheck className="h-4 w-4 text-green-500 mr-1" />
+                              <span className="text-xs text-green-600">Completed</span>
+                            </div>
                           ) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
-                            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              task.days_left === 0 
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
                               {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
                             </span>
                           ) : null}
@@ -1092,13 +1178,22 @@ const NewHireChecklistSlideOver = ({
                   ))
                 ) : (
                   <div className="text-center text-gray-500 py-8">
-                    No onboarding tasks assigned yet.
-                    <button
-                      onClick={onAddTask}
-                      className="mt-4 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <HiPlus className="inline mr-1" /> Add Your First Task
-                    </button>
+                    <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                    <p className="mb-4">No onboarding tasks assigned yet.</p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button
+                        onClick={onAddTask}
+                        className="py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <HiPlus className="inline mr-1" /> Add Your First Task
+                      </button>
+                      <button
+                        onClick={onApplyTemplate}
+                        className="py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <HiTemplate className="inline mr-1" /> Apply Template
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1125,10 +1220,23 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
     name: "",
     description: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.name.trim()) {
+      alert("Template name is required");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } catch (err) {
+      console.error("Error in form submission:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -1147,14 +1255,21 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 transition-colors"
             aria-label="Close modal"
+            disabled={isSubmitting}
           >
             <HiX size={24} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="mb-4 p-3 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Templates help you quickly apply pre-defined task lists to new hires.
+            </p>
+          </div>
+
           <div>
             <label htmlFor="template-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Template Name
+              Template Name *
             </label>
             <input
               type="text"
@@ -1163,7 +1278,8 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="e.g., New Developer Checklist"
             />
           </div>
@@ -1177,7 +1293,8 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
               value={formData.description}
               onChange={handleChange}
               rows="3"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Describe the purpose of this template..."
             />
           </div>
@@ -1185,15 +1302,24 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Create Template
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Template'
+              )}
             </button>
           </div>
         </form>
@@ -1208,10 +1334,23 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
     description: "",
     due_date: new Date().toISOString().split("T")[0],
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.task_name.trim()) {
+      alert("Task name is required");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } catch (err) {
+      console.error("Error in form submission:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -1233,6 +1372,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 transition-colors"
             aria-label="Close modal"
+            disabled={isSubmitting}
           >
             <HiX size={24} />
           </button>
@@ -1259,7 +1399,8 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
               value={formData.task_name}
               onChange={handleChange}
               required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="e.g., Complete Documentation"
             />
           </div>
@@ -1274,7 +1415,8 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
               value={formData.description}
               onChange={handleChange}
               rows="3"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Task details and instructions..."
             />
           </div>
@@ -1290,7 +1432,8 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
               value={formData.due_date}
               onChange={handleChange}
               required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -1298,15 +1441,24 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Add Task
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                'Add Task'
+              )}
             </button>
           </div>
         </form>
@@ -1315,16 +1467,25 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
   );
 };
 
-const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates }) => {
+const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates, templateError }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedTemplateId) {
       alert("Please select a template");
       return;
     }
-    onSubmit(selectedTemplateId);
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit(selectedTemplateId);
+    } catch (err) {
+      console.error("Error in form submission:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -1345,6 +1506,7 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 transition-colors"
             aria-label="Close modal"
+            disabled={isSubmitting}
           >
             <HiX size={24} />
           </button>
@@ -1360,6 +1522,15 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
             </p>
           </div>
 
+          {templateError && (
+            <div className="mb-4 p-3 bg-yellow-50 rounded-md">
+              <p className="text-sm text-yellow-800">
+                <HiOutlineExclamationCircle className="inline mr-1" />
+                <strong>Note:</strong> {templateError}
+              </p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-1">
               Select Template *
@@ -1370,7 +1541,8 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
               value={selectedTemplateId}
               onChange={handleChange}
               required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
+              disabled={isSubmitting || templates.length === 0}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">Choose a template...</option>
               {templates.map((template) => (
@@ -1379,6 +1551,11 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
                 </option>
               ))}
             </select>
+            {templates.length === 0 && (
+              <p className="text-xs text-red-500 mt-1">
+                No templates available. Please create a template first.
+              </p>
+            )}
           </div>
 
           {selectedTemplateId && (
@@ -1390,6 +1567,12 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
               <p className="text-sm text-gray-600 mt-1">
                 This will create {templates.find(t => t.id == selectedTemplateId)?.tasks.length} tasks for the applicant.
               </p>
+              <div className="mt-2 p-2 bg-blue-50 rounded">
+                <p className="text-xs text-blue-800">
+                  <HiOutlineExclamationCircle className="inline mr-1" />
+                  If the template application fails, you can manually create tasks from the template.
+                </p>
+              </div>
             </div>
           )}
 
@@ -1397,15 +1580,26 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates })
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+              disabled={isSubmitting || !selectedTemplateId || templates.length === 0}
+              className="py-2 px-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              <HiTemplate className="mr-1" /> Apply Template
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <HiTemplate className="mr-1" /> Apply Template
+                </>
+              )}
             </button>
           </div>
         </form>

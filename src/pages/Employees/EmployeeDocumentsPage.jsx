@@ -6,8 +6,8 @@ const EmployeeDocumentsPage = () => {
   const { id } = useParams();
   
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Employee Documents</h1>
         <EmployeeDocuments employeeId={id} />
       </div>
