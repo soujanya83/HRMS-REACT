@@ -87,6 +87,7 @@ const AttendanceTracking = () => {
 
       console.log('Employees data:', employeesData);
       console.log('Attendance data:', attendanceData);
+      
 
       setEmployees(employeesData);
       setAttendanceData(attendanceData);

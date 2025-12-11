@@ -3,8 +3,10 @@ import {
   FaHistory, FaFilter, FaCalendar, FaUser,
   FaArrowUp, FaExchangeAlt, FaEdit, FaTrash,
   FaPlus, FaSearch, FaEye, FaFileContract,
-  FaUserCheck, FaUserTimes, FaBriefcase, FaBuilding
+  FaUserCheck, FaUserTimes, FaBriefcase, FaBuilding,
+  FaTimes, FaRedoAlt, FaChartLine, FaDownload
 } from 'react-icons/fa';
+import { HiOutlineRefresh } from 'react-icons/hi';
 import {
   getEmploymentHistory,
   createEmploymentHistory,
@@ -12,6 +14,7 @@ import {
   deleteEmploymentHistory
 } from '../../services/employmentHistoryService';
 
+// History Event Component
 const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
   const getEventIcon = (type) => {
     switch (type) {
@@ -38,41 +41,59 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gray-50 rounded-lg">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-gray-50 rounded-lg">
             {getEventIcon(event.event_type)}
           </div>
-          <div>
-            <h4 className="font-medium text-gray-800">{event.event_type}</h4>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <FaCalendar className="h-3 w-3" />
-              {new Date(event.event_date).toLocaleDateString()}
-              <span className="mx-1">•</span>
-              <FaUser className="h-3 w-3" />
-              {event.employee_name || `Employee ${event.employee_id}`}
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+              <h4 className="font-semibold text-gray-800">{event.event_type}</h4>
+              <span className={`text-xs px-3 py-1 rounded-full border ${getEventColor(event.event_type)}`}>
+                {event.event_type}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <FaCalendar className="h-3.5 w-3.5" />
+                {new Date(event.event_date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <FaUser className="h-3.5 w-3.5" />
+                {event.employee_name || `Employee ${event.employee_id}`}
+              </span>
+              {event.changed_by && (
+                <span className="text-xs text-gray-400">
+                  By: {event.changed_by}
+                </span>
+              )}
             </div>
           </div>
         </div>
-        <div className="flex gap-1">
+        
+        <div className="flex gap-1 self-start sm:self-center">
           <button
             onClick={() => onView(event)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+            className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             title="View Details"
           >
             <FaEye className="h-4 w-4" />
           </button>
           <button
             onClick={() => onEdit(event)}
-            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+            className="p-2.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
             title="Edit"
           >
             <FaEdit className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(event)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+            className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Delete"
           >
             <FaTrash className="h-4 w-4" />
@@ -80,39 +101,33 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
         </div>
       </div>
 
-      <div className="mb-3">
-        <p className="text-sm text-gray-700">{event.details}</p>
+      <div className="mb-4">
+        <p className="text-sm text-gray-700 leading-relaxed">{event.details}</p>
       </div>
 
       {(event.previous_data || event.new_data) && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          {event.previous_data && (
-            <div className="mb-2">
-              <span className="text-xs font-medium text-gray-500">Before:</span>
-              <p className="text-sm text-gray-700">{event.previous_data}</p>
-            </div>
-          )}
-          {event.new_data && (
-            <div>
-              <span className="text-xs font-medium text-gray-500">After:</span>
-              <p className="text-sm text-gray-700">{event.new_data}</p>
-            </div>
-          )}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {event.previous_data && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <span className="text-xs font-medium text-gray-500 mb-1 block">Before:</span>
+                <p className="text-sm text-gray-700">{event.previous_data}</p>
+              </div>
+            )}
+            {event.new_data && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <span className="text-xs font-medium text-blue-500 mb-1 block">After:</span>
+                <p className="text-sm text-gray-700">{event.new_data}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
-
-      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-        <span className={`text-xs px-2 py-1 rounded-full border ${getEventColor(event.event_type)}`}>
-          {event.event_type}
-        </span>
-        <span className="text-xs text-gray-500">
-          By: {event.changed_by || 'System'}
-        </span>
-      </div>
     </div>
   );
 };
 
+// Event Form Modal Component
 const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -183,16 +198,28 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">
-            {event ? 'Edit Event' : 'Add New Event'}
-          </h2>
+        <div className="sticky top-0 bg-white p-6 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">
+              {event ? 'Edit Event' : 'Add New Event'}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {event ? 'Update employee history event' : 'Create a new employee history event'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Close"
+          >
+            <FaTimes className="h-5 w-5 text-gray-500" />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Employee *
               </label>
               <select
@@ -200,7 +227,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 value={formData.employee_id}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select Employee</option>
                 {employees.map(emp => (
@@ -212,7 +239,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Event Type *
               </label>
               <select
@@ -220,7 +247,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 value={formData.event_type}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select Event Type</option>
                 {eventTypes.map(type => (
@@ -230,7 +257,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Event Date *
               </label>
               <input
@@ -239,12 +266,12 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 value={formData.event_date}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Changed By
               </label>
               <input
@@ -253,13 +280,13 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 value={formData.changed_by}
                 onChange={handleChange}
                 placeholder="Name of person who made changes"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Details *
             </label>
             <textarea
@@ -267,55 +294,55 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
               value={formData.details}
               onChange={handleChange}
               required
-              rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="4"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Describe the event in detail..."
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Previous Data (Optional)
               </label>
               <textarea
                 name="previous_data"
                 value={formData.previous_data}
                 onChange={handleChange}
-                rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Previous state or value..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Data (Optional)
               </label>
               <textarea
                 name="new_data"
                 value={formData.new_data}
                 onChange={handleChange}
-                rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="New state or value..."
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
             >
-              {event ? 'Update Event' : 'Add Event'}
+              {event ? 'Update Event' : 'Create Event'}
             </button>
           </div>
         </form>
@@ -324,6 +351,32 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
   );
 };
 
+// Stats Card Component
+const StatCard = ({ icon, label, value, color = 'blue', description }) => {
+  const colors = {
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    purple: 'bg-purple-50 text-purple-600',
+    red: 'bg-red-50 text-red-600'
+  };
+  
+  return (
+    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-3 rounded-lg ${colors[color]}`}>
+          {icon}
+        </div>
+        <span className="text-2xl font-bold text-gray-800">{value}</span>
+      </div>
+      <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+      {description && (
+        <p className="text-xs text-gray-500">{description}</p>
+      )}
+    </div>
+  );
+};
+
+// Main Employment History Component
 const EmploymentHistory = () => {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
@@ -345,8 +398,9 @@ const EmploymentHistory = () => {
     try {
       // Fetch events
       const eventsResponse = await getEmploymentHistory();
-      setEvents(eventsResponse.data?.data || []);
-      setFilteredEvents(eventsResponse.data?.data || []);
+      const eventsData = eventsResponse.data?.data || [];
+      setEvents(eventsData);
+      setFilteredEvents(eventsData);
 
       // Fetch employees for dropdown
       // You would need to implement getEmployees here
@@ -356,7 +410,9 @@ const EmploymentHistory = () => {
       // Mock employees for now
       setEmployees([
         { id: 1, first_name: 'John', last_name: 'Doe', employee_code: 'EMP-001' },
-        { id: 2, first_name: 'Jane', last_name: 'Smith', employee_code: 'EMP-002' }
+        { id: 2, first_name: 'Jane', last_name: 'Smith', employee_code: 'EMP-002' },
+        { id: 3, first_name: 'Robert', last_name: 'Johnson', employee_code: 'EMP-003' },
+        { id: 4, first_name: 'Sarah', last_name: 'Williams', employee_code: 'EMP-004' }
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -431,8 +487,26 @@ const EmploymentHistory = () => {
   };
 
   const handleView = (event) => {
-    // Show detailed view - you can implement a modal for this
-    alert(`Event Details:\n\nType: ${event.event_type}\nDate: ${new Date(event.event_date).toLocaleDateString()}\nEmployee: ${event.employee_name}\nDetails: ${event.details}`);
+    const modalContent = `
+      Event Details:
+      
+      Type: ${event.event_type}
+      Date: ${new Date(event.event_date).toLocaleDateString()}
+      Employee: ${event.employee_name || `Employee ${event.employee_id}`}
+      Changed By: ${event.changed_by || 'System'}
+      
+      Details: ${event.details}
+      
+      ${event.previous_data ? `Before: ${event.previous_data}` : ''}
+      ${event.new_data ? `After: ${event.new_data}` : ''}
+    `;
+    alert(modalContent);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setEventTypeFilter('all');
+    setDateRange({ start: '', end: '' });
   };
 
   const eventTypes = [...new Set(events.map(event => event.event_type))];
@@ -446,11 +520,12 @@ const EmploymentHistory = () => {
       return new Date(e.event_date) > weekAgo;
     }).length,
     promotions: events.filter(e => e.event_type === 'Promotion').length,
-    terminations: events.filter(e => e.event_type === 'Termination').length
+    terminations: events.filter(e => e.event_type === 'Termination').length,
+    latest: events.length > 0 ? new Date(events[0].event_date).toLocaleDateString() : 'No events'
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
       <EventFormModal
         isOpen={showForm}
         onClose={() => {
@@ -463,150 +538,230 @@ const EmploymentHistory = () => {
       />
 
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Employment History</h2>
-            <p className="text-gray-600 mt-1">Track all employee lifecycle events and changes</p>
-          </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            <FaPlus /> Add New Event
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Bar */}
-      <div className="bg-gray-50 p-4 border-b border-gray-200">
-        <div className="flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <FaHistory className="text-gray-500" />
-            <div>
-              <div className="text-sm font-medium text-gray-700">Total Events</div>
-              <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaCalendar className="text-blue-500" />
-            <div>
-              <div className="text-sm font-medium text-gray-700">Last 30 Days</div>
-              <div className="text-2xl font-bold text-gray-800">{stats.recent}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaArrowUp className="text-green-500" />
-            <div>
-              <div className="text-sm font-medium text-gray-700">Promotions</div>
-              <div className="text-2xl font-bold text-gray-800">{stats.promotions}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaUserTimes className="text-red-500" />
-            <div>
-              <div className="text-sm font-medium text-gray-700">Terminations</div>
-              <div className="text-2xl font-bold text-gray-800">{stats.terminations}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search events..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <select
-            value={eventTypeFilter}
-            onChange={(e) => setEventTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Event Types</option>
-            {eventTypes.map(type => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-          
-          <input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-            placeholder="Start Date"
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          
-          <input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-            placeholder="End Date"
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-500">Loading employment history...</p>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <FaHistory className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-700 mb-2">
-              {searchTerm || eventTypeFilter !== 'all' ? 'No events found' : 'No events recorded'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {searchTerm || eventTypeFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Start tracking employee lifecycle events'}
+            <h1 className="text-3xl font-bold text-gray-800">Employment History</h1>
+            <p className="text-gray-600 mt-2">
+              Track all employee lifecycle events and organizational changes
             </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              <FaPlus className="inline mr-2" />
-              Add First Event
+              <FaPlus className="h-4 w-4" /> Add New Event
+            </button>
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              <FaRedoAlt className="h-4 w-4" /> Refresh
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredEvents.map((event) => (
-              <HistoryEvent
-                key={event.id}
-                event={event}
-                onEdit={() => handleEdit(event)}
-                onDelete={() => handleDelete(event)}
-                onView={() => handleView(event)}
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            icon={<FaHistory className="h-6 w-6" />}
+            label="Total Events"
+            value={stats.total}
+            color="blue"
+            description="All recorded events"
+          />
+          <StatCard
+            icon={<FaCalendar className="h-6 w-6" />}
+            label="Recent Events"
+            value={stats.recent}
+            color="green"
+            description="Last 30 days"
+          />
+          <StatCard
+            icon={<FaArrowUp className="h-6 w-6" />}
+            label="Promotions"
+            value={stats.promotions}
+            color="purple"
+            description="Career advancements"
+          />
+          <StatCard
+            icon={<FaUserTimes className="h-6 w-6" />}
+            label="Terminations"
+            value={stats.terminations}
+            color="red"
+            description="Employment endings"
+          />
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+        {/* Filters Section */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Event History</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {filteredEvents.length} of {events.length} events shown
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                <FaTimes className="h-4 w-4" />
+                Clear Filters
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            ))}
+            </div>
+            
+            <select
+              value={eventTypeFilter}
+              onChange={(e) => setEventTypeFilter(e.target.value)}
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Event Types</option>
+              {eventTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+            
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+              placeholder="Start Date"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+              placeholder="End Date"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-500">Loading employment history...</p>
+            </div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="mx-auto mb-6">
+                <div className="relative">
+                  <FaHistory className="h-20 w-20 text-gray-200 mx-auto" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FaSearch className="h-8 w-8 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
+                {searchTerm || eventTypeFilter !== 'all' ? 'No events found' : 'No events recorded yet'}
+              </h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                {searchTerm || eventTypeFilter !== 'all'
+                  ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                  : 'Start tracking employee lifecycle events by adding your first event.'}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                >
+                  <FaPlus className="inline mr-2" />
+                  Add First Event
+                </button>
+                {searchTerm || eventTypeFilter !== 'all' && (
+                  <button
+                    onClick={clearFilters}
+                    className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredEvents.map((event) => (
+                <HistoryEvent
+                  key={event.id}
+                  event={event}
+                  onEdit={() => handleEdit(event)}
+                  onDelete={() => handleDelete(event)}
+                  onView={() => handleView(event)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {filteredEvents.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-gray-600">
+                Showing <span className="font-semibold">{filteredEvents.length}</span> of{' '}
+                <span className="font-semibold">{events.length}</span> events
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    // Export functionality
+                    alert('Export feature coming soon!');
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  <FaDownload className="h-4 w-4" />
+                  Export
+                </button>
+                <div className="text-sm text-gray-500">
+                  Updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Footer */}
+      {/* Quick Actions Bar */}
       {filteredEvents.length > 0 && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              Showing {filteredEvents.length} of {events.length} events
-            </div>
-            <div className="text-sm text-gray-500">
-              Last updated: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
+        <div className="mt-6 flex flex-wrap gap-3 justify-center">
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+          >
+            <FaPlus className="inline mr-2" />
+            Add Another Event
+          </button>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+          >
+            <FaRedoAlt className="inline mr-2" />
+            Refresh Data
+          </button>
         </div>
       )}
     </div>
