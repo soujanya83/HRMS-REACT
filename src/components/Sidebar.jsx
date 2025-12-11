@@ -37,8 +37,8 @@ const navLinks = [
  { 
     name: "Employee", icon: HiOutlineUsers, 
     children: [
-        { name: "Employee Directory", path: "/dashboard/employees", icon: HiOutlineCollection },
         { name: "Add / Manage Profiles", path: "/dashboard/employees/manage", icon: HiOutlineUserCircle },
+        { name: "Employee Directory", path: "/dashboard/employees", icon: HiOutlineCollection },
         { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
         { name: "Probation / Confirmation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
         { name: "Exit / Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },

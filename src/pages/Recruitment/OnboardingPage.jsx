@@ -109,86 +109,90 @@ const OnboardingDashboard = () => {
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
 
-  const fetchNewHires = useCallback(async () => {
-    if (!organizationId) {
-      setIsLoading(false);
-      return;
-    }
+ const fetchNewHires = useCallback(async () => {
+  if (!organizationId) {
+    setIsLoading(false);
+    return;
+  }
 
-    setIsLoading(true);
-    setError(null);
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      const allApplicantsRes = await getHiredApplicants(organizationId);
-      const allApplicants = allApplicantsRes.data?.data || [];
-      
-      const hiredApplicants = allApplicants.filter(applicant => {
-        const status = applicant.status?.toLowerCase();
-        return status === 'hired';
-      });
+  try {
+    const allApplicantsRes = await getHiredApplicants(organizationId);
+    const allApplicants = allApplicantsRes.data?.data || [];
+    
+    const hiredApplicants = allApplicants.filter(applicant => {
+      const status = applicant.status?.toLowerCase();
+      return status === 'hired';
+    });
 
-      const hiresWithTasks = await Promise.all(
-        hiredApplicants.map(async (applicant) => {
-          try {
-            const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
-            const tasks = tasksRes.data?.data || [];
+    const hiresWithTasks = await Promise.all(
+      hiredApplicants.map(async (applicant) => {
+        try {
+          const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
+          const tasks = tasksRes.data?.data || [];
 
-            const tasksWithDaysLeft = tasks.map((task) => ({
-              id: task.id,
-              task_name: task.task_name,
-              description: task.description,
-              due_date: task.due_date,
-              status: task.status || "pending",
-              completed_at: task.completed_at,
-              days_left: calculateDaysLeft(task.due_date)
-            }));
+          // Normalize all task statuses to lowercase for consistent comparison
+          const tasksWithDaysLeft = tasks.map((task) => ({
+            id: task.id,
+            task_name: task.task_name,
+            description: task.description,
+            due_date: task.due_date,
+            // Normalize status to lowercase
+            status: task.status?.toLowerCase() || "pending",
+            // Use correct field name from API
+            completed_at: task.completed_at,
+            days_left: calculateDaysLeft(task.due_date)
+          }));
 
-            const completedTasks = tasksWithDaysLeft.filter(t => t.status === "completed").length;
+          // Count completed tasks (lowercase comparison)
+          const CompletedTasks = tasksWithDaysLeft.filter(t => t.status === "completed").length;
 
-            return {
-              id: applicant.id,
-              applicant: {
-                first_name: applicant.first_name,
-                last_name: applicant.last_name,
-                job_opening: applicant.job_opening || {
-                  title: "Not specified",
-                },
-                status: applicant.status,
+          return {
+            id: applicant.id,
+            applicant: {
+              first_name: applicant.first_name,
+              last_name: applicant.last_name,
+              job_opening: applicant.job_opening || {
+                title: "Not specified",
               },
-              start_date: applicant.start_date || new Date().toISOString().split("T")[0],
-              tasks: tasksWithDaysLeft,
-              completedTasks: completedTasks,
-              totalTasks: tasksWithDaysLeft.length
-            };
-          } catch (error) {
-            console.error(`Error fetching tasks for applicant ${applicant.id}:`, error);
-            return {
-              id: applicant.id,
-              applicant: {
-                first_name: applicant.first_name,
-                last_name: applicant.last_name,
-                job_opening: applicant.job_opening || {
-                  title: "Not specified",
-                },
-                status: applicant.status,
+              status: applicant.status,
+            },
+            start_date: applicant.start_date || new Date().toISOString().split("T")[0],
+            tasks: tasksWithDaysLeft,
+            CompletedTasks: CompletedTasks,
+            totalTasks: tasksWithDaysLeft.length
+          };
+        } catch (error) {
+          console.error(`Error fetching tasks for applicant ${applicant.id}:`, error);
+          return {
+            id: applicant.id,
+            applicant: {
+              first_name: applicant.first_name,
+              last_name: applicant.last_name,
+              job_opening: applicant.job_opening || {
+                title: "Not specified",
               },
-              start_date: applicant.start_date || new Date().toISOString().split("T")[0],
-              tasks: [],
-              completedTasks: 0,
-              totalTasks: 0
-            };
-          }
-        })
-      );
+              status: applicant.status,
+            },
+            start_date: applicant.start_date || new Date().toISOString().split("T")[0],
+            tasks: [],
+            CompletedTasks: 0,
+            totalTasks: 0
+          };
+        }
+      })
+    );
 
-      setNewHires(hiresWithTasks);
-    } catch (err) {
-      console.error("Error fetching new hires:", err);
-      setError("Failed to load onboarding data. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [organizationId]);
+    setNewHires(hiresWithTasks);
+  } catch (err) {
+    console.error("Error fetching new hires:", err);
+    setError("Failed to load onboarding data. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+}, [organizationId]);
 
   const fetchTemplates = useCallback(async () => {
     if (!organizationId) return;
@@ -448,8 +452,9 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
   const progress = useMemo(() => {
     const totalTasks = hire.tasks.length;
     if (totalTasks === 0) return 0;
-    const completedTasks = hire.tasks.filter((t) => t.status === "completed").length;
-    return Math.round((completedTasks / totalTasks) * 100);
+    // FIX: Compare lowercase 'completed'
+    const CompletedTasks = hire.tasks.filter((t) => t.status === "completed").length;
+    return Math.round((CompletedTasks / totalTasks) * 100);
   }, [hire.tasks]);
 
   return (
@@ -495,7 +500,7 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
           <span>View Tasks</span>
           {hire.totalTasks > 0 && (
             <span className="bg-white text-brand-blue text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              {hire.completedTasks}/{hire.totalTasks}
+              {hire.CompletedTasks}/{hire.totalTasks}
             </span>
           )}
         </button>
@@ -1007,37 +1012,40 @@ const NewHireChecklistSlideOver = ({
   const [isCompletingTask, setIsCompletingTask] = useState(null);
 
   const handleToggleTask = async (taskId, currentStatus) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+  // Normalize current status to handle case variations
+  const normalizedCurrentStatus = currentStatus?.toLowerCase() || "pending";
+  const newStatus = normalizedCurrentStatus === "completed" ? "pending" : "completed";
 
-    try {
-      setIsCompletingTask(taskId);
+  try {
+    setIsCompletingTask(taskId);
 
-      if (newStatus === "completed") {
-        await completeOnboardingTask(taskId);
-      } else {
-        await updateOnboardingTask(taskId, { status: "pending" });
-      }
-
-      setTasks(
-        tasks.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                status: newStatus,
-                completed_at: newStatus === "completed" ? new Date().toISOString() : null,
-              }
-            : task
-        )
-      );
-
-      onTaskUpdate();
-    } catch (err) {
-      console.error("Error updating task:", err);
-      alert("Failed to update task status. Please try again.");
-    } finally {
-      setIsCompletingTask(null);
+    if (newStatus === "completed") {
+      await completeOnboardingTask(taskId);
+    } else {
+      await updateOnboardingTask(taskId, { status: "pending" });
     }
-  };
+
+    setTasks(
+      tasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: newStatus,
+              // FIX: Use correct field name
+              completed_at: newStatus === "completed" ? new Date().toISOString() : null,
+            }
+          : task
+      )
+    );
+
+    onTaskUpdate();
+  } catch (err) {
+    console.error("Error updating task:", err);
+    alert("Failed to update task status. Please try again.");
+  } finally {
+    setIsCompletingTask(null);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -1065,7 +1073,7 @@ const NewHireChecklistSlideOver = ({
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">
-                        Tasks: {hire.completedTasks || 0}/{hire.totalTasks || 0}
+                        Tasks: {hire.CompletedTasks || 0}/{hire.totalTasks || 0}
                       </span>
                     </div>
                   </div>
@@ -1105,18 +1113,18 @@ const NewHireChecklistSlideOver = ({
                         onClick={() => handleToggleTask(task.id, task.status)}
                         disabled={isCompletingTask === task.id}
                         className="mt-1 flex-shrink-0 focus:outline-none"
-                        aria-label={task.status === "completed" ? "Mark task as pending" : "Mark task as completed"}
+                        aria-label={task.status === "Completed" ? "Mark task as pending" : "Mark task as Completed"}
                       >
-                        {task.status === "completed" ? (
-                          <HiCheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <div className={`h-5 w-5 border-2 ${isCompletingTask === task.id ? 'border-gray-400' : 'border-gray-300'} rounded-full`} />
-                        )}
+                      {task.status === "completed" ? (
+  <HiCheckCircle className="h-5 w-5 text-green-500" />
+) : (
+  <div className={`h-5 w-5 border-2 ${isCompletingTask === task.id ? 'border-gray-400' : 'border-gray-300'} rounded-full`} />
+)}
                       </button>
                       <div className="ml-3 flex-1">
                         <div className="flex justify-between items-start">
                           <span className={`text-sm font-medium ${
-                            task.status === "completed"
+                            task.status === "Completed"
                               ? "text-gray-500 line-through"
                               : "text-gray-800"
                           }`}>
@@ -1126,19 +1134,19 @@ const NewHireChecklistSlideOver = ({
                             )}
                           </span>
                           {task.status === "completed" ? (
-                            <div className="flex items-center">
-                              <HiCheck className="h-4 w-4 text-green-500 mr-1" />
-                              <span className="text-xs text-green-600">Completed</span>
-                            </div>
-                          ) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              task.days_left === 0 
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
-                            </span>
-                          ) : null}
+  <div className="flex items-center">
+    <HiCheck className="h-4 w-4 text-green-500 mr-1" />
+    <span className="text-xs text-green-600">Completed</span>
+  </div>
+) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
+  <span className={`text-xs px-2 py-1 rounded ${
+    task.days_left === 0 
+      ? 'bg-orange-100 text-orange-800'
+      : 'bg-red-100 text-red-800'
+  }`}>
+    {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
+  </span>
+) : null}
                         </div>
                         
                         {task.description && (
@@ -1148,7 +1156,7 @@ const NewHireChecklistSlideOver = ({
                         )}
                         
                         <div className="flex items-center gap-3 mt-2">
-                          {task.due_date && task.status !== "completed" && (
+                          {task.due_date && task.status !== "Completed" && (
                             <div className="flex items-center text-xs text-gray-500">
                               <HiOutlineClock className="h-3 w-3 mr-1" />
                               <span>
@@ -1167,11 +1175,11 @@ const NewHireChecklistSlideOver = ({
                             </div>
                           )}
                           
-                          {task.status === "completed" && task.completed_at && (
-                            <div className="text-xs text-green-600">
-                              Completed on {new Date(task.completed_at).toLocaleDateString()}
-                            </div>
-                          )}
+                         {task.status === "completed" && task.completed_at && (
+  <div className="text-xs text-green-600">
+    Completed on {new Date(task.completed_at).toLocaleDateString()}
+  </div>
+)}
                         </div>
                       </div>
                     </div>
