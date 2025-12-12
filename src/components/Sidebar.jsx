@@ -34,16 +34,16 @@ const navLinks = [
             { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd },
         ]
     },
- { 
-    name: "Employee", icon: HiOutlineUsers, 
-    children: [
-        { name: "Add / Manage Profiles", path: "/dashboard/employees/manage", icon: HiOutlineUserCircle },
-        { name: "Employee Directory", path: "/dashboard/employees", icon: HiOutlineCollection },
-        { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
-        { name: "Probation / Confirmation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
-        { name: "Exit / Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
-    ] 
-},
+    { 
+        name: "Employee", icon: HiOutlineUsers, 
+        children: [
+            { name: "Add / Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
+            { name: "Employee Directory", path: "/dashboard/employees/manage", icon: HiOutlineUserCircle },
+            { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
+            { name: "Probation / Confirmation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
+            { name: "Exit / Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
+        ] 
+    },
     { 
         name: "Attendance", icon: HiOutlineClipboardList, 
         children: [
@@ -92,7 +92,7 @@ const navLinks = [
             { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
         ],
     },
-     {
+    {
         name: "Settings", icon: HiOutlineCog,
         children: [
             { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck }
@@ -104,12 +104,30 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
 
-     useEffect(() => {
-        const currentParent = navLinks.find(link =>
-            link.children?.some(child => location.pathname.startsWith(child.path))
-        );
+    useEffect(() => {
+        // Find the parent menu that should be open based on current path
+        const currentParent = navLinks.find(link => {
+            if (!link.children) return false;
+            
+            // Check if any child path matches the current location
+            return link.children.some(child => {
+                if (child.exact) {
+                    return location.pathname === child.path;
+                }
+                // For Employee Directory path, check for exact match or starts with
+                if (child.path === "/dashboard/employees/manage") {
+                    return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
+                }
+                // For other paths, check if location starts with child path
+                return location.pathname.startsWith(child.path);
+            });
+        });
+        
         if (currentParent) {
             setOpenMenu(currentParent.name);
+        } else {
+            // If no parent found, close all menus
+            setOpenMenu(null);
         }
     }, [location.pathname]);
 
@@ -119,7 +137,7 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
 
     const handleMenuClick = (menuName) => {
         if (!isCollapsed) {
-             setOpenMenu(openMenu === menuName ? null : menuName);
+            setOpenMenu(openMenu === menuName ? null : menuName);
         }
     };
 
@@ -133,10 +151,21 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
             : `${linkStyle} text-gray-300 font-semibold hover:bg-white hover:text-black ${collapsedClass}`;
     };
 
-    const getSubNavLinkClass = ({ isActive }) => {
-        return isActive
-            ? `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm bg-brand-blue text-white font-semibold`
-            : `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm text-gray-400 hover:bg-white hover:text-black`;
+    const getSubNavLinkClass = (child) => ({ isActive }) => {
+        // Special handling for Employee module paths
+        if (child.path === "/dashboard/employees") {
+            // For "Add / Manage Profiles", only active if exact match
+            const isExactMatch = location.pathname === "/dashboard/employees";
+            return `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm ${isExactMatch ? 'bg-brand-blue text-white font-semibold' : 'text-gray-400 hover:bg-white hover:text-black'}`;
+        } else if (child.path === "/dashboard/employees/manage") {
+            // For "Employee Directory", active if exact match OR starts with the path
+            const isActivePath = location.pathname === "/dashboard/employees/manage" || 
+                                location.pathname.startsWith("/dashboard/employees/manage/");
+            return `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm ${isActivePath ? 'bg-brand-blue text-white font-semibold' : 'text-gray-400 hover:bg-white hover:text-black'}`;
+        }
+        
+        // Default behavior for other paths
+        return `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm ${isActive ? 'bg-brand-blue text-white font-semibold' : 'text-gray-400 hover:bg-white hover:text-black'}`;
     };
 
     return (
@@ -195,7 +224,13 @@ const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCo
                                                 <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? 'max-h-screen' : 'max-h-0'}`}>
                                                     <div className="py-2 pl-4">
                                                         {link.children.map((child) => (
-                                                            <NavLink key={child.name} to={child.path} className={getSubNavLinkClass} onClick={() => setSidebarOpen(false)}>
+                                                            <NavLink 
+                                                                key={child.name} 
+                                                                to={child.path} 
+                                                                className={getSubNavLinkClass(child)} 
+                                                                onClick={() => setSidebarOpen(false)}
+                                                                end={child.exact || false}
+                                                            >
                                                                 <child.icon size={18} className="mr-3 flex-shrink-0" />
                                                                 {child.name}
                                                             </NavLink>
