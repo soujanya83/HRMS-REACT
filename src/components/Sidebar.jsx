@@ -45,6 +45,15 @@ const navLinks = [
         ] 
     },
     { 
+        name: "Rostering", icon: HiOutlineCalendar, 
+        children: [
+            { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
+            { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
+            { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid },
+            { name: "Notifications", path: "/dashboard/rostering/notifications", icon: HiOutlineBell },
+        ] 
+    },
+    { 
         name: "Attendance", icon: HiOutlineClipboardList, 
         children: [
             { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint },
@@ -63,15 +72,7 @@ const navLinks = [
             { name: "Reports", path: "/dashboard/timesheet/reports", icon: HiOutlineDocumentText },
         ] 
     },
-    { 
-        name: "Rostering", icon: HiOutlineCalendar, 
-        children: [
-            { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
-            { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
-            { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid },
-            { name: "Notifications", path: "/dashboard/rostering/notifications", icon: HiOutlineBell },
-        ] 
-    },
+    
     { 
         name: "Payroll", icon: HiOutlineCreditCard, 
         children: [
