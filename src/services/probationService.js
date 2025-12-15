@@ -12,14 +12,33 @@ export const getProbationPeriodById = (id) => {
   return axiosClient.get(`/probation-periods/${id}`);
 };
 
+
 // Create a new probation period
 export const createProbationPeriod = (probationData) => {
-  return axiosClient.post("/probation-periods", probationData);
-};
+  // Map frontend fields to backend API expected fields
+  const apiData = {
+    employee_id: probationData.employee_id,
+    start_date: probationData.start_date,
+    end_date: probationData.end_date,
+    status: probationData.status, // Make sure this matches backend values: "Extended", "Active", "Completed"
+    feedback: probationData.notes || "", // Map 'notes' to 'feedback'
+    confirmation_date: probationData.confirmation_date || null
+  };
+  return axiosClient.post("/probation-periods", apiData);
+};  
 
 // Update an existing probation period
 export const updateProbationPeriod = (id, probationData) => {
-  return axiosClient.put(`/probation-periods/${id}`, probationData);
+  // IMPORTANT: Backend expects employee_id even for updates
+  const apiData = {
+    employee_id: probationData.employee_id, // Must include this!
+    start_date: probationData.start_date,
+    end_date: probationData.end_date,
+    status: probationData.status,
+    feedback: probationData.notes || "", // Map 'notes' to 'feedback'
+    confirmation_date: probationData.confirmation_date || null
+  };
+  return axiosClient.put(`/probation-periods/${id}`, apiData);
 };
 
 // Delete a probation period

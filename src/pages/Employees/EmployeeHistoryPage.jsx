@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axiosClient from "../../../src/axiosClient.js";
 import {
   FaHistory, FaFilter, FaCalendar, FaUser,
   FaArrowUp, FaExchangeAlt, FaEdit, FaTrash,
@@ -6,16 +7,33 @@ import {
   FaUserCheck, FaUserTimes, FaBriefcase, FaBuilding,
   FaTimes, FaRedoAlt, FaChartLine, FaDownload
 } from 'react-icons/fa';
-import { HiOutlineRefresh } from 'react-icons/hi';
-import {
-  getEmploymentHistory,
-  createEmploymentHistory,
-  updateEmploymentHistory,
-  deleteEmploymentHistory
-} from '../../services/employmentHistoryService';
+
+// Import only the functions that actually work
+import { 
+  getEmploymentHistory, 
+  createEmploymentHistory, 
+  updateEmploymentHistory, 
+  deleteEmploymentHistory,
+  getEmployeesList  // This one works
+} from "../../services/employmentHistoryService";
 
 // History Event Component
 const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
+  const getEventType = (eventData) => {
+    if (!eventData.reason_for_change) return 'Change';
+    
+    const reason = eventData.reason_for_change.toLowerCase();
+    if (reason.includes('promotion')) return 'Promotion';
+    if (reason.includes('transfer')) return 'Transfer';
+    if (reason.includes('salary')) return 'Salary Update';
+    if (reason.includes('terminat')) return 'Termination';
+    if (reason.includes('join')) return 'Joining';
+    if (reason.includes('designation')) return 'Designation Change';
+    return 'Change';
+  };
+
+  const eventType = getEventType(event);
+
   const getEventIcon = (type) => {
     switch (type) {
       case 'Promotion': return <FaArrowUp className="h-5 w-5 text-green-600" />;
@@ -40,38 +58,67 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
     }
   };
 
+  const getEmployeeName = () => {
+    if (event.employee?.first_name && event.employee?.last_name) {
+      return `${event.employee.first_name} ${event.employee.last_name}`;
+    }
+    if (event.employee_name) {
+      return event.employee_name;
+    }
+    return `Employee ${event.employee_id || 'Unknown'}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString;
+    }
+  };
+
+  // Extract department name from event
+  const getDepartmentName = () => {
+    if (event.department?.name) return event.department.name;
+    if (event.department_id) return `Department ${event.department_id}`;
+    return 'N/A';
+  };
+
+  // Extract designation title from event
+  const getDesignationTitle = () => {
+    if (event.designation?.title) return event.designation.title;
+    if (event.designation_id) return `Designation ${event.designation_id}`;
+    return 'N/A';
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-gray-50 rounded-lg">
-            {getEventIcon(event.event_type)}
+            {getEventIcon(eventType)}
           </div>
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-              <h4 className="font-semibold text-gray-800">{event.event_type}</h4>
-              <span className={`text-xs px-3 py-1 rounded-full border ${getEventColor(event.event_type)}`}>
-                {event.event_type}
+              <h4 className="font-semibold text-gray-800">{eventType}</h4>
+              <span className={`text-xs px-3 py-1 rounded-full border ${getEventColor(eventType)}`}>
+                {eventType}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
               <span className="flex items-center gap-1.5">
                 <FaCalendar className="h-3.5 w-3.5" />
-                {new Date(event.event_date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric'
-                })}
+                {formatDate(event.start_date)}
               </span>
               <span className="flex items-center gap-1.5">
                 <FaUser className="h-3.5 w-3.5" />
-                {event.employee_name || `Employee ${event.employee_id}`}
+                {getEmployeeName()}
               </span>
-              {event.changed_by && (
-                <span className="text-xs text-gray-400">
-                  By: {event.changed_by}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -102,27 +149,26 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
       </div>
 
       <div className="mb-4">
-        <p className="text-sm text-gray-700 leading-relaxed">{event.details}</p>
-      </div>
-
-      {(event.previous_data || event.new_data) && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {event.previous_data && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <span className="text-xs font-medium text-gray-500 mb-1 block">Before:</span>
-                <p className="text-sm text-gray-700">{event.previous_data}</p>
-              </div>
-            )}
-            {event.new_data && (
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <span className="text-xs font-medium text-blue-500 mb-1 block">After:</span>
-                <p className="text-sm text-gray-700">{event.new_data}</p>
-              </div>
-            )}
-          </div>
+        <p className="text-sm text-gray-700 leading-relaxed">
+          <strong>Reason:</strong> {event.reason_for_change || 'No reason provided'}
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+          <span><strong>Department:</strong> {getDepartmentName()}</span>
+          <span><strong>Designation:</strong> {getDesignationTitle()}</span>
+          {event.employment_type && (
+            <span><strong>Type:</strong> {event.employment_type}</span>
+          )}
+          {event.location && (
+            <span><strong>Location:</strong> {event.location}</span>
+          )}
+          {event.end_date && (
+            <span><strong>End Date:</strong> {formatDate(event.end_date)}</span>
+          )}
+          {event.salary && (
+            <span><strong>Salary:</strong> ${parseFloat(event.salary).toLocaleString()}</span>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -131,66 +177,103 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
 const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
   const [formData, setFormData] = useState({
     employee_id: '',
-    event_type: '',
-    event_date: new Date().toISOString().split('T')[0],
-    details: '',
-    previous_data: '',
-    new_data: '',
-    changed_by: ''
+    department_id: '',
+    designation_id: '',
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
+    reason_for_change: '',
+    job_title: '',
+    employment_type: '',
+    salary: '',
+    location: '',
+    notes: ''
   });
+
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (event) {
       setFormData({
         employee_id: event.employee_id || '',
-        event_type: event.event_type || '',
-        event_date: event.event_date ? event.event_date.split('T')[0] : new Date().toISOString().split('T')[0],
-        details: event.details || '',
-        previous_data: event.previous_data || '',
-        new_data: event.new_data || '',
-        changed_by: event.changed_by || ''
+        department_id: event.department_id || '',
+        designation_id: event.designation_id || '',
+        start_date: event.start_date ? event.start_date.split('T')[0] : new Date().toISOString().split('T')[0],
+        end_date: event.end_date ? event.end_date.split('T')[0] : '',
+        reason_for_change: event.reason_for_change || '',
+        job_title: event.job_title || '',
+        employment_type: event.employment_type || '',
+        salary: event.salary || '',
+        location: event.location || '',
+        notes: event.notes || ''
       });
     } else {
       setFormData({
         employee_id: '',
-        event_type: '',
-        event_date: new Date().toISOString().split('T')[0],
-        details: '',
-        previous_data: '',
-        new_data: '',
-        changed_by: ''
+        department_id: '',
+        designation_id: '',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: '',
+        reason_for_change: '',
+        job_title: '',
+        employment_type: '',
+        salary: '',
+        location: '',
+        notes: ''
       });
     }
+    setErrors({});
   }, [event]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setErrors({});
+    
+    const validationErrors = {};
+    if (!formData.employee_id) validationErrors.employee_id = 'Employee is required';
+    if (!formData.start_date) validationErrors.start_date = 'Start date is required';
+    if (!formData.reason_for_change) validationErrors.reason_for_change = 'Reason for change is required';
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    const apiData = {
+      employee_id: parseInt(formData.employee_id),
+      department_id: formData.department_id ? parseInt(formData.department_id) : null,
+      designation_id: formData.designation_id ? parseInt(formData.designation_id) : null,
+      start_date: formData.start_date,
+      end_date: formData.end_date || null,
+      reason_for_change: formData.reason_for_change,
+      job_title: formData.job_title || null,
+      employment_type: formData.employment_type || null,
+      salary: formData.salary ? parseFloat(formData.salary) : null,
+      location: formData.location || null,
+      notes: formData.notes || null
+    };
+    
+    onSubmit(apiData);
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const eventTypes = [
-    'Joining',
-    'Promotion',
-    'Transfer',
-    'Designation Change',
-    'Salary Update',
-    'Department Change',
-    'Status Change',
-    'Leave Start',
-    'Leave End',
-    'Termination',
-    'Resignation',
-    'Contract Renewal',
-    'Training Completed',
-    'Award Received',
-    'Disciplinary Action'
+  const employmentTypes = [
+    'Full-time',
+    'Part-time',
+    'Contract',
+    'Temporary',
+    'Internship',
+    'Freelance',
+    'Probation'
   ];
 
   if (!isOpen) return null;
@@ -201,10 +284,10 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
         <div className="sticky top-0 bg-white p-6 border-b border-gray-200 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-gray-800">
-              {event ? 'Edit Event' : 'Add New Event'}
+              {event ? 'Edit Employment History' : 'Add New Employment History'}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {event ? 'Update employee history event' : 'Create a new employee history event'}
+              {event ? 'Update employee employment history' : 'Add a new employment record'}
             </p>
           </div>
           <button
@@ -217,6 +300,17 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {Object.keys(errors).length > 0 && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 font-medium">Please fix the following errors:</p>
+              <ul className="mt-1 text-red-600 text-sm">
+                {Object.entries(errors).map(([field, error]) => (
+                  error && <li key={field}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -227,30 +321,70 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 value={formData.employee_id}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.employee_id ? 'border-red-500' : 'border-gray-300'
+                }`}
               >
                 <option value="">Select Employee</option>
                 {employees.map(emp => (
                   <option key={emp.id} value={emp.id}>
-                    {emp.first_name} {emp.last_name} ({emp.employee_code})
+                    {emp.first_name} {emp.last_name} ({emp.employee_code || emp.id})
                   </option>
                 ))}
               </select>
+              {errors.employee_id && (
+                <p className="mt-1 text-sm text-red-600">{errors.employee_id}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Event Type *
+                Department ID
+              </label>
+              <input
+                type="number"
+                name="department_id"
+                value={formData.department_id}
+                onChange={handleChange}
+                placeholder="Enter Department ID"
+                min="0"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the department ID number
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Designation ID
+              </label>
+              <input
+                type="number"
+                name="designation_id"
+                value={formData.designation_id}
+                onChange={handleChange}
+                placeholder="Enter Designation ID"
+                min="0"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the designation ID number
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employment Type
               </label>
               <select
-                name="event_type"
-                value={formData.event_type}
+                name="employment_type"
+                value={formData.employment_type}
                 onChange={handleChange}
-                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Select Event Type</option>
-                {eventTypes.map(type => (
+                <option value="">Select Type</option>
+                {employmentTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
@@ -258,28 +392,76 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Event Date *
+                Start Date *
               </label>
               <input
                 type="date"
-                name="event_date"
-                value={formData.event_date}
+                name="start_date"
+                value={formData.start_date}
                 onChange={handleChange}
                 required
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.start_date ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.start_date && (
+                <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Date
+              </label>
+              <input
+                type="date"
+                name="end_date"
+                value={formData.end_date}
+                onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Changed By
+                Job Title
               </label>
               <input
                 type="text"
-                name="changed_by"
-                value={formData.changed_by}
+                name="job_title"
+                value={formData.job_title}
                 onChange={handleChange}
-                placeholder="Name of person who made changes"
+                placeholder="e.g., Senior Software Engineer"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Salary
+              </label>
+              <input
+                type="number"
+                name="salary"
+                value={formData.salary}
+                onChange={handleChange}
+                placeholder="e.g., 50000"
+                step="0.01"
+                min="0"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Location
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g., Sydney Office"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -287,47 +469,36 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Details *
+              Reason for Change *
             </label>
             <textarea
-              name="details"
-              value={formData.details}
+              name="reason_for_change"
+              value={formData.reason_for_change}
               onChange={handleChange}
               required
-              rows="4"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Describe the event in detail..."
+              rows="3"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.reason_for_change ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Describe the reason for this employment change..."
             />
+            {errors.reason_for_change && (
+              <p className="mt-1 text-sm text-red-600">{errors.reason_for_change}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Previous Data (Optional)
-              </label>
-              <textarea
-                name="previous_data"
-                value={formData.previous_data}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Previous state or value..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Data (Optional)
-              </label>
-              <textarea
-                name="new_data"
-                value={formData.new_data}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="New state or value..."
-              />
-            </div>
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Notes
+            </label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows="3"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Any additional notes or comments..."
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -342,7 +513,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
               type="submit"
               className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
             >
-              {event ? 'Update Event' : 'Create Event'}
+              {event ? 'Update History' : 'Add History'}
             </button>
           </div>
         </form>
@@ -387,6 +558,9 @@ const EmploymentHistory = () => {
   const [eventTypeFilter, setEventTypeFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [apiError, setApiError] = useState('');
 
   // Fetch data
   useEffect(() => {
@@ -395,29 +569,70 @@ const EmploymentHistory = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setApiError('');
+    
     try {
-      // Fetch events
-      const eventsResponse = await getEmploymentHistory();
-      const eventsData = eventsResponse.data?.data || [];
-      setEvents(eventsData);
-      setFilteredEvents(eventsData);
-
-      // Fetch employees for dropdown
-      // You would need to implement getEmployees here
-      // const employeesResponse = await getEmployees();
-      // setEmployees(employeesResponse.data?.data || []);
+      // Fetch employment history
+      const historyResponse = await getEmploymentHistory();
+      console.log('Employment History response:', historyResponse.data);
       
-      // Mock employees for now
-      setEmployees([
-        { id: 1, first_name: 'John', last_name: 'Doe', employee_code: 'EMP-001' },
-        { id: 2, first_name: 'Jane', last_name: 'Smith', employee_code: 'EMP-002' },
-        { id: 3, first_name: 'Robert', last_name: 'Johnson', employee_code: 'EMP-003' },
-        { id: 4, first_name: 'Sarah', last_name: 'Williams', employee_code: 'EMP-004' }
-      ]);
+      // Handle different response formats
+      let historyData = [];
+      if (historyResponse.data?.data) {
+        historyData = historyResponse.data.data;
+      } else if (Array.isArray(historyResponse.data)) {
+        historyData = historyResponse.data;
+      }
+      
+      setEvents(historyData);
+      setFilteredEvents(historyData);
+
+      // Fetch employees list
+      const employeesResponse = await getEmployeesList();
+      let employeesData = [];
+      if (employeesResponse.data?.data) {
+        employeesData = employeesResponse.data.data;
+      } else if (Array.isArray(employeesResponse.data)) {
+        employeesData = employeesResponse.data;
+      }
+      setEmployees(employeesData);
+      
+      // Try to fetch departments with fallback
+      try {
+        const departmentsResponse = await axiosClient.get("/departments");
+        if (departmentsResponse.data?.data) {
+          setDepartments(departmentsResponse.data.data);
+        } else if (Array.isArray(departmentsResponse.data)) {
+          setDepartments(departmentsResponse.data);
+        }
+      } catch (deptError) {
+        console.warn('Departments endpoint not available, using empty list');
+        setDepartments([]);
+      }
+
+      // Try to fetch designations with fallback
+      try {
+        const designationsResponse = await axiosClient.get("/designations");
+        if (designationsResponse.data?.data) {
+          setDesignations(designationsResponse.data.data);
+        } else if (Array.isArray(designationsResponse.data)) {
+          setDesignations(designationsResponse.data);
+        }
+      } catch (desigError) {
+        console.warn('Designations endpoint not available, using empty list');
+        setDesignations([]);
+      }
+      
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching main data:', error);
+      setApiError(`Failed to load data: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      
+      // Initialize empty arrays on error
       setEvents([]);
       setFilteredEvents([]);
+      setEmployees([]);
+      setDepartments([]);
+      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -428,23 +643,51 @@ const EmploymentHistory = () => {
     let filtered = events;
     
     if (searchTerm) {
-      filtered = filtered.filter(event =>
-        event.details?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.event_type?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(event => {
+        const employeeName = event.employee 
+          ? `${event.employee.first_name || ''} ${event.employee.last_name || ''}`.toLowerCase()
+          : '';
+        
+        return (
+          (event.reason_for_change?.toLowerCase().includes(searchLower)) ||
+          employeeName.includes(searchLower) ||
+          (event.location?.toLowerCase().includes(searchLower)) ||
+          (event.job_title?.toLowerCase().includes(searchLower))
+        );
+      });
     }
     
     if (eventTypeFilter !== 'all') {
-      filtered = filtered.filter(event => event.event_type === eventTypeFilter);
+      filtered = filtered.filter(event => {
+        const reason = (event.reason_for_change || '').toLowerCase();
+        switch (eventTypeFilter) {
+          case 'Promotion': return reason.includes('promotion');
+          case 'Transfer': return reason.includes('transfer');
+          case 'Termination': return reason.includes('terminat');
+          case 'Joining': return reason.includes('join') || reason.includes('hired');
+          case 'Designation Change': return reason.includes('designation');
+          default: return true;
+        }
+      });
     }
     
     if (dateRange.start) {
-      filtered = filtered.filter(event => new Date(event.event_date) >= new Date(dateRange.start));
+      filtered = filtered.filter(event => {
+        if (!event.start_date) return false;
+        const eventDate = new Date(event.start_date);
+        const startDate = new Date(dateRange.start);
+        return eventDate >= startDate;
+      });
     }
     
     if (dateRange.end) {
-      filtered = filtered.filter(event => new Date(event.event_date) <= new Date(dateRange.end));
+      filtered = filtered.filter(event => {
+        if (!event.start_date) return false;
+        const eventDate = new Date(event.start_date);
+        const endDate = new Date(dateRange.end);
+        return eventDate <= endDate;
+      });
     }
     
     setFilteredEvents(filtered);
@@ -452,32 +695,56 @@ const EmploymentHistory = () => {
 
   const handleSubmit = async (formData) => {
     try {
+      console.log('Submitting form data:', formData);
+      
+      // Format the data
+      const formattedData = {
+        ...formData,
+        employee_id: parseInt(formData.employee_id),
+        department_id: formData.department_id ? parseInt(formData.department_id) : null,
+        designation_id: formData.designation_id ? parseInt(formData.designation_id) : null,
+        salary: formData.salary ? parseFloat(formData.salary) : null
+      };
+
       if (selectedEvent) {
-        await updateEmploymentHistory(selectedEvent.id, formData);
-        alert('Event updated successfully!');
+        await updateEmploymentHistory(selectedEvent.id, formattedData);
+        alert('Employment history updated successfully!');
       } else {
-        await createEmploymentHistory(formData);
-        alert('Event created successfully!');
+        await createEmploymentHistory(formattedData);
+        alert('Employment history created successfully!');
       }
+      
       setShowForm(false);
       setSelectedEvent(null);
       fetchData();
+      
     } catch (error) {
-      console.error('Error saving event:', error);
-      alert('Failed to save event');
+      console.error('Error saving employment history:', error);
+      
+      let errorMessage = 'Failed to save employment history.';
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        errorMessage = `Failed to save: ${errorMessages}`;
+      } else if (error.response?.data?.message) {
+        errorMessage = `Failed to save: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     }
   };
 
   const handleDelete = async (event) => {
-    if (!window.confirm(`Are you sure you want to delete this event: "${event.event_type}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete this employment record?\n\nEmployee: ${event.employee?.first_name || 'Unknown'} ${event.employee?.last_name || ''}\nReason: ${event.reason_for_change}`)) return;
     
     try {
       await deleteEmploymentHistory(event.id);
-      alert('Event deleted successfully!');
+      alert('Employment record deleted successfully!');
       fetchData();
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event');
+      alert('Failed to delete employment record: ' + (error.response?.data?.message || error.message || 'Unknown error'));
     }
   };
 
@@ -487,18 +754,31 @@ const EmploymentHistory = () => {
   };
 
   const handleView = (event) => {
+    // Find department and designation names if available
+    const departmentName = departments.find(d => d.id === event.department_id)?.name || 
+                          event.department?.name || 
+                          `Department ${event.department_id || 'N/A'}`;
+    
+    const designationTitle = designations.find(d => d.id === event.designation_id)?.title || 
+                           event.designation?.title || 
+                           `Designation ${event.designation_id || 'N/A'}`;
+    
     const modalContent = `
-      Event Details:
+      Employment History Details:
       
-      Type: ${event.event_type}
-      Date: ${new Date(event.event_date).toLocaleDateString()}
-      Employee: ${event.employee_name || `Employee ${event.employee_id}`}
-      Changed By: ${event.changed_by || 'System'}
+      Employee: ${event.employee?.first_name || 'Unknown'} ${event.employee?.last_name || ''}
+      Start Date: ${event.start_date || 'Not specified'}
+      ${event.end_date ? `End Date: ${event.end_date}` : 'Ongoing'}
       
-      Details: ${event.details}
+      Department: ${departmentName}
+      Designation: ${designationTitle}
+      Employment Type: ${event.employment_type || 'N/A'}
+      Location: ${event.location || 'N/A'}
+      ${event.salary ? `Salary: $${parseFloat(event.salary).toLocaleString()}` : 'Salary: N/A'}
       
-      ${event.previous_data ? `Before: ${event.previous_data}` : ''}
-      ${event.new_data ? `After: ${event.new_data}` : ''}
+      Reason for Change: ${event.reason_for_change || 'Not specified'}
+      
+      Notes: ${event.notes || 'No additional notes'}
     `;
     alert(modalContent);
   };
@@ -509,19 +789,26 @@ const EmploymentHistory = () => {
     setDateRange({ start: '', end: '' });
   };
 
-  const eventTypes = [...new Set(events.map(event => event.event_type))];
+  const eventTypes = ['Promotion', 'Transfer', 'Termination', 'Joining', 'Designation Change'];
 
   // Calculate statistics
   const stats = {
     total: events.length,
     recent: events.filter(e => {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 30);
-      return new Date(e.event_date) > weekAgo;
+      if (!e.start_date) return false;
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      try {
+        return new Date(e.start_date) > monthAgo;
+      } catch {
+        return false;
+      }
     }).length,
-    promotions: events.filter(e => e.event_type === 'Promotion').length,
-    terminations: events.filter(e => e.event_type === 'Termination').length,
-    latest: events.length > 0 ? new Date(events[0].event_date).toLocaleDateString() : 'No events'
+    promotions: events.filter(e => e.reason_for_change?.toLowerCase().includes('promotion')).length,
+    terminations: events.filter(e => e.reason_for_change?.toLowerCase().includes('terminat')).length,
+    latest: events.length > 0 && events[0].start_date 
+      ? new Date(events[0].start_date).toLocaleDateString() 
+      : 'No records'
   };
 
   return (
@@ -543,7 +830,7 @@ const EmploymentHistory = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Employment History</h1>
             <p className="text-gray-600 mt-2">
-              Track all employee lifecycle events and organizational changes
+              Track all employee employment history and organizational changes
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -551,7 +838,7 @@ const EmploymentHistory = () => {
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              <FaPlus className="h-4 w-4" /> Add New Event
+              <FaPlus className="h-4 w-4" /> Add New Record
             </button>
             <button
               onClick={fetchData}
@@ -562,18 +849,34 @@ const EmploymentHistory = () => {
           </div>
         </div>
 
+        {/* Error Display */}
+        {apiError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <FaTimes className="h-5 w-5 text-red-500 mr-2" />
+              <p className="text-red-600">{apiError}</p>
+            </div>
+            <button
+              onClick={fetchData}
+              className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={<FaHistory className="h-6 w-6" />}
-            label="Total Events"
+            label="Total Records"
             value={stats.total}
             color="blue"
-            description="All recorded events"
+            description="All recorded history"
           />
           <StatCard
             icon={<FaCalendar className="h-6 w-6" />}
-            label="Recent Events"
+            label="Recent Records"
             value={stats.recent}
             color="green"
             description="Last 30 days"
@@ -601,16 +904,16 @@ const EmploymentHistory = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Event History</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Employment History</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {filteredEvents.length} of {events.length} events shown
+                {filteredEvents.length} of {events.length} records shown
               </p>
             </div>
             
             <div className="flex items-center gap-3">
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <FaTimes className="h-4 w-4" />
                 Clear Filters
@@ -623,7 +926,7 @@ const EmploymentHistory = () => {
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search events..."
+                placeholder="Search by employee, reason, or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -635,7 +938,7 @@ const EmploymentHistory = () => {
               onChange={(e) => setEventTypeFilter(e.target.value)}
               className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All Event Types</option>
+              <option value="all">All Types</option>
               {eventTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
@@ -677,12 +980,14 @@ const EmploymentHistory = () => {
                 </div>
               </div>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
-                {searchTerm || eventTypeFilter !== 'all' ? 'No events found' : 'No events recorded yet'}
+                {searchTerm || eventTypeFilter !== 'all' || dateRange.start || dateRange.end 
+                  ? 'No matching records found' 
+                  : 'No employment history recorded yet'}
               </h3>
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                {searchTerm || eventTypeFilter !== 'all'
+                {searchTerm || eventTypeFilter !== 'all' || dateRange.start || dateRange.end
                   ? 'Try adjusting your search or filters to find what you\'re looking for.'
-                  : 'Start tracking employee lifecycle events by adding your first event.'}
+                  : 'Start tracking employee employment history by adding your first record.'}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
@@ -690,9 +995,9 @@ const EmploymentHistory = () => {
                   className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
                 >
                   <FaPlus className="inline mr-2" />
-                  Add First Event
+                  Add First Record
                 </button>
-                {searchTerm || eventTypeFilter !== 'all' && (
+                {(searchTerm || eventTypeFilter !== 'all' || dateRange.start || dateRange.end) && (
                   <button
                     onClick={clearFilters}
                     className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
@@ -704,9 +1009,9 @@ const EmploymentHistory = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredEvents.map((event) => (
+              {filteredEvents.map((event, index) => (
                 <HistoryEvent
-                  key={event.id}
+                  key={event.id || index}
                   event={event}
                   onEdit={() => handleEdit(event)}
                   onDelete={() => handleDelete(event)}
@@ -723,18 +1028,50 @@ const EmploymentHistory = () => {
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="text-sm text-gray-600">
                 Showing <span className="font-semibold">{filteredEvents.length}</span> of{' '}
-                <span className="font-semibold">{events.length}</span> events
+                <span className="font-semibold">{events.length}</span> records
               </div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => {
                     // Export functionality
-                    alert('Export feature coming soon!');
+                    const exportData = filteredEvents.map(event => ({
+                      'Employee': `${event.employee?.first_name || ''} ${event.employee?.last_name || ''}`,
+                      'Employee ID': event.employee_id,
+                      'Start Date': event.start_date,
+                      'End Date': event.end_date || 'Ongoing',
+                      'Reason': event.reason_for_change,
+                      'Department ID': event.department_id || '',
+                      'Designation ID': event.designation_id || '',
+                      'Job Title': event.job_title || '',
+                      'Employment Type': event.employment_type || '',
+                      'Location': event.location || '',
+                      'Salary': event.salary || '',
+                      'Notes': event.notes || ''
+                    }));
+                    
+                    const csvContent = [
+                      Object.keys(exportData[0]).join(','),
+                      ...exportData.map(row => Object.values(row).map(value => 
+                        `"${String(value).replace(/"/g, '""')}"`
+                      ).join(','))
+                    ].join('\n');
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `employment-history-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    alert('Data exported to CSV successfully!');
                   }}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <FaDownload className="h-4 w-4" />
-                  Export
+                  Export CSV
                 </button>
                 <div className="text-sm text-gray-500">
                   Updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -753,7 +1090,7 @@ const EmploymentHistory = () => {
             className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
           >
             <FaPlus className="inline mr-2" />
-            Add Another Event
+            Add Another Record
           </button>
           <button
             onClick={fetchData}
