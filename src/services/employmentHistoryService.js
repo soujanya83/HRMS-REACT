@@ -28,7 +28,7 @@ export const getEmploymentHistoryByEmployee = (employeeId, params = {}) => {
 export const getDepartments = () => {
   return axiosClient.get("/departments");
 };
-
+  
 export const getDesignations = () => {
   return axiosClient.get("/designations");
 };

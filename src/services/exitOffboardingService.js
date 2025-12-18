@@ -36,6 +36,13 @@ export const getOffboardingTaskById = (id) => {
 };
 
 export const createOffboardingTask = (taskData) => {
+  console.log("📤 [SERVICE] Sending to /offboarding-tasks:", {
+    url: "/offboarding-tasks",
+    data: taskData,
+    dataType: typeof taskData,
+    stringified: JSON.stringify(taskData)
+  });
+  
   return axiosClient.post("/offboarding-tasks", taskData);
 };
 
@@ -104,3 +111,4 @@ export const deleteOffboardingTemplateTask = (id) => {
 export const getTemplateTasksByTemplate = (templateId) => {
   return axiosClient.get(`/offboarding-template-tasks/template/${templateId}`);
 };
+

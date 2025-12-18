@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   HiPlus,
-  HiPencil,
   HiTrash,
   HiCheckCircle,
   HiX,
@@ -13,8 +12,6 @@ import {
   HiUserRemove,
   HiDocumentText,
   HiCalendar,
-  HiArrowRight,
-  HiArrowLeft,
 } from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
@@ -102,7 +99,7 @@ const OffboardingPage = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              {/* Exit Reports */}
+              Exit Reports
             </button>
           </nav>
         </div>
@@ -189,16 +186,17 @@ const OffboardingDashboard = () => {
             const tasksWithDaysLeft = tasks.map((task) => ({
               id: task.id,
               task_name: task.task_name,
-              description: task.description,
+              description: task.description || "",
               due_date: task.due_date,
               status: task.status?.toLowerCase() || "pending",
               completed_at: task.completed_at,
               days_left: calculateDaysLeft(task.due_date),
               assigned_to: task.assigned_to,
+              assigned_user: task.assigned_user,
             }));
 
             // Count completed tasks
-            const CompletedTasks = tasksWithDaysLeft.filter(
+            const completedTasks = tasksWithDaysLeft.filter(
               (t) => t.status === "completed"
             ).length;
 
@@ -206,13 +204,11 @@ const OffboardingDashboard = () => {
               ...exit,
               employee: exit.employee || {},
               tasks: tasksWithDaysLeft,
-              CompletedTasks: CompletedTasks,
+              completedTasks: completedTasks,
               totalTasks: tasksWithDaysLeft.length,
               progress:
                 tasksWithDaysLeft.length > 0
-                  ? Math.round(
-                      (CompletedTasks / tasksWithDaysLeft.length) * 100
-                    )
+                  ? Math.round((completedTasks / tasksWithDaysLeft.length) * 100)
                   : 0,
             };
           } catch (error) {
@@ -221,7 +217,7 @@ const OffboardingDashboard = () => {
               ...exit,
               employee: exit.employee || {},
               tasks: [],
-              CompletedTasks: 0,
+              completedTasks: 0,
               totalTasks: 0,
               progress: 0,
             };
@@ -287,16 +283,20 @@ const OffboardingDashboard = () => {
 
   const handleSubmitExit = async (exitData) => {
     try {
-      // 1. Create employee exit record
-      const exitResponse = await createEmployeeExit({
+      // Prepare exit data with organization_id
+      const exitPayload = {
         employee_id: exitData.employee_id,
         resignation_date: exitData.resignation_date,
         last_working_day: exitData.last_working_day,
         reason_for_leaving: exitData.reason_for_leaving,
         exit_interview_feedback: exitData.exit_interview_feedback,
         is_eligible_for_rehire: exitData.is_eligible_for_rehire,
-      });
+        handover_to: exitData.handover_to || null,
+        organization_id: parseInt(organizationId),
+      };
 
+      // 1. Create employee exit record
+      const exitResponse = await createEmployeeExit(exitPayload);
       const exitId = exitResponse.data.data.id;
 
       // 2. Update employee status to Terminated
@@ -320,8 +320,9 @@ const OffboardingDashboard = () => {
             task_name: templateTask.task_name,
             description: templateTask.description || "",
             due_date: dueDate.toISOString().split("T")[0],
-            status: "pending",
-            assigned_to: exitData.handover_to || null,
+            status: "Pending", // API expects "Pending" with capital P
+            assigned_to: 4, // Default user ID from your API response
+            organization_id: parseInt(organizationId),
           });
         });
 
@@ -369,10 +370,12 @@ const OffboardingDashboard = () => {
         task_name: taskData.task_name,
         description: taskData.description || "",
         due_date: formattedDueDate,
-        status: "pending",
-        assigned_to: taskData.assigned_to || null,
+        status: "Pending", // API expects "Pending" with capital P
+        assigned_to: parseInt(taskData.assigned_to) || 4, // Use provided user ID or default to 4
+        organization_id: parseInt(organizationId),
       };
 
+      console.log("Creating task with payload:", payload);
       await createOffboardingTask(payload);
       await fetchExits();
       setAddTaskModalOpen(false);
@@ -417,8 +420,9 @@ const OffboardingDashboard = () => {
           task_name: templateTask.task_name,
           description: templateTask.description || "",
           due_date: dueDate.toISOString().split("T")[0],
-          status: "pending",
-          assigned_to: templateTask.default_assigned_to || null,
+          status: "Pending", // API expects "Pending" with capital P
+          assigned_to: 4, // Default user ID from your API
+          organization_id: parseInt(organizationId),
         });
       });
 
@@ -672,7 +676,7 @@ const OffboardingDashboard = () => {
                       <div className="flex justify-between text-sm text-gray-600 mb-1">
                         <span>Progress</span>
                         <span>
-                          {exit.CompletedTasks}/{exit.totalTasks} tasks
+                          {exit.completedTasks}/{exit.totalTasks} tasks
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
@@ -688,7 +692,7 @@ const OffboardingDashboard = () => {
                         onClick={() => setSelectedExit(exit)}
                         className="flex-1 py-2 px-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
-                        <HiOutlineEye className="mr-1" /> View Details
+                        <HiOutlineEye className="mr-1" /> View Tasks
                       </button>
                       <button
                         onClick={() => handleAddTask(exit)}
@@ -765,20 +769,22 @@ const OffboardingDashboard = () => {
           isOpen={!!selectedExit}
           onClose={() => setSelectedExit(null)}
           onTaskUpdate={fetchExits}
-          onDeleteExit={handleDeleteExit}
+          onAddTask={() => handleAddTask(selectedExit)}
+          onApplyTemplate={() => handleApplyTemplate(selectedExit)}
         />
       )}
     </>
   );
 };
 
-// Exit Detail Modal Component
+// Exit Detail Modal Component with radio button logic from onboarding
 const ExitDetailModal = ({
   exit,
   isOpen,
   onClose,
   onTaskUpdate,
-  onDeleteExit,
+  onAddTask,
+  onApplyTemplate,
 }) => {
   const [tasks, setTasks] = useState(exit.tasks);
   const [isLoading, setIsLoading] = useState(false);
@@ -788,6 +794,7 @@ const ExitDetailModal = ({
     setTasks(exit.tasks);
   }, [exit.tasks]);
 
+  // Radio button toggle logic from onboarding page
   const handleToggleTask = async (taskId, currentStatus) => {
     const normalizedCurrentStatus = currentStatus?.toLowerCase() || "pending";
     const newStatus =
@@ -799,7 +806,7 @@ const ExitDetailModal = ({
       if (newStatus === "completed") {
         await completeOffboardingTask(taskId);
       } else {
-        await updateOffboardingTask(taskId, { status: "pending" });
+        await updateOffboardingTask(taskId, { status: "Pending" }); // API expects "Pending" with capital P
       }
 
       setTasks(
@@ -983,13 +990,27 @@ const ExitDetailModal = ({
             </div>
           </div>
 
-          {/* Tasks List */}
+          {/* Tasks List with Radio Button Logic */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                 <HiCheckCircle className="mr-2 text-blue-500" />
                 Offboarding Tasks ({tasks.length})
               </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={onAddTask}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                >
+                  <HiPlus className="h-4 w-4" /> Add Task
+                </button>
+                <button
+                  onClick={onApplyTemplate}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
+                >
+                  <HiTemplate className="h-4 w-4" /> Apply Template
+                </button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -1004,6 +1025,7 @@ const ExitDetailModal = ({
                     key={task.id}
                     className="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                   >
+                    {/* Radio button for task completion */}
                     <button
                       onClick={() => handleToggleTask(task.id, task.status)}
                       disabled={isCompletingTask === task.id}
@@ -1133,12 +1155,6 @@ const ExitDetailModal = ({
           {/* Actions */}
           <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between">
             <button
-              onClick={() => onDeleteExit(exit)}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Delete Exit Record
-            </button>
-            <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
             >
@@ -1234,6 +1250,8 @@ const OffboardingTemplateManager = () => {
         organization_id: parseInt(organizationId),
       };
 
+      console.log("Creating template with payload:", payload);
+      
       await createOffboardingTemplate(payload);
       await fetchTemplates();
       setTemplateModalOpen(false);
@@ -1274,15 +1292,24 @@ const OffboardingTemplateManager = () => {
         return;
       }
 
-      const role = taskData.default_assigned_role.toLowerCase();
+      const role = taskData.default_assigned_role.toLowerCase().trim();
+      
+      // Validate role
+      if (!validRoles.includes(role)) {
+        alert(`Invalid role "${role}". Must be one of: ${validRoles.join(", ")}`);
+        return;
+      }
 
       const payload = {
         offboarding_template_id: parseInt(selectedTemplate.id),
-        task_name: taskData.task_name,
-        description: taskData.description || "",
+        task_name: taskData.task_name.trim(),
+        description: (taskData.description || "").trim(),
         due_before_days: parseInt(taskData.due_before_days) || 1,
         default_assigned_role: role,
+        organization_id: parseInt(organizationId),
       };
+
+      console.log("Creating template task with payload:", payload);
 
       await createOffboardingTemplateTask(payload);
       await fetchTemplates();
@@ -1505,6 +1532,7 @@ const OffboardingTemplateManager = () => {
           isOpen={isTemplateModalOpen}
           onClose={() => setTemplateModalOpen(false)}
           onSubmit={handleCreateTemplate}
+          organizationId={organizationId}
         />
       )}
 
@@ -1524,7 +1552,7 @@ const OffboardingTemplateManager = () => {
   );
 };
 
-// Task Management Modal
+// Task Management Modal with improved validation
 const TaskManagementModal = ({
   isOpen,
   onClose,
@@ -1538,9 +1566,29 @@ const TaskManagementModal = ({
     due_before_days: 1,
     default_assigned_role: "hr",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.task_name.trim()) {
+      alert("Task name is required");
+      return;
+    }
+    
+    if (formData.due_before_days < 0) {
+      alert("Due before days must be 0 or more");
+      return;
+    }
+    
+    const role = formData.default_assigned_role.toLowerCase().trim();
+    if (!validRoles.includes(role)) {
+      alert(`Invalid role. Must be one of: ${validRoles.join(", ")}`);
+      return;
+    }
+    
+    setIsSubmitting(true);
     onSubmit(formData);
   };
 
@@ -1550,7 +1598,7 @@ const TaskManagementModal = ({
     let processedValue = value;
 
     if (name === "due_before_days") {
-      processedValue = parseInt(value) || 0;
+      processedValue = Math.max(0, parseInt(value) || 0);
     }
 
     setFormData((prev) => ({
@@ -1603,7 +1651,8 @@ const TaskManagementModal = ({
               value={formData.task_name}
               onChange={handleChange}
               required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100"
               placeholder="e.g., Return Company Laptop"
             />
           </div>
@@ -1621,7 +1670,8 @@ const TaskManagementModal = ({
               value={formData.description}
               onChange={handleChange}
               rows="2"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+              disabled={isSubmitting}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100"
               placeholder="Task description..."
             />
           </div>
@@ -1642,8 +1692,12 @@ const TaskManagementModal = ({
                 onChange={handleChange}
                 min="0"
                 required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                disabled={isSubmitting}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                0 = Due on last working day
+              </p>
             </div>
             <div>
               <label
@@ -1658,11 +1712,12 @@ const TaskManagementModal = ({
                 value={formData.default_assigned_role}
                 onChange={handleChange}
                 required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                disabled={isSubmitting}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100"
               >
                 {validRoles.map((role) => (
                   <option key={role} value={role}>
-                    {role}
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
                   </option>
                 ))}
               </select>
@@ -1673,15 +1728,24 @@ const TaskManagementModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+              disabled={isSubmitting}
+              className="py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
             >
-              Add Task
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                "Add Task"
+              )}
             </button>
           </div>
         </form>
@@ -2070,7 +2134,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, exit }) => {
     task_name: "",
     description: "",
     due_date: "",
-    assigned_to: "",
+    assigned_to: "4", // Default to user ID 4 (Nextgen from your API)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -2080,11 +2144,12 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, exit }) => {
       const defaultDueDate = exit.last_working_day
         ? exit.last_working_day
         : new Date().toISOString().split("T")[0];
+      
       setFormData({
         task_name: "",
         description: "",
         due_date: defaultDueDate,
-        assigned_to: "",
+        assigned_to: "4", // Default user ID
       });
     }
   }, [exit, isOpen]);
@@ -2206,18 +2271,23 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, exit }) => {
               htmlFor="assigned_to"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Assigned To (Optional)
+              Assigned To (User ID) *
             </label>
             <input
-              type="text"
+              type="number"
               id="assigned_to"
               name="assigned_to"
               value={formData.assigned_to}
               onChange={handleChange}
+              required
               disabled={isSubmitting}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-              placeholder="Person or department responsible"
+              placeholder="Enter user ID"
+              min="1"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter the user ID who will be assigned this task (e.g., 4 for Nextgen)
+            </p>
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
@@ -2411,8 +2481,8 @@ const ApplyTemplateModal = ({
   );
 };
 
-// Template Form Modal (reuse with red theme)
-const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
+// Template Form Modal with organization_id
+const TemplateFormModal = ({ isOpen, onClose, onSubmit, organizationId }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -2428,7 +2498,12 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Add organization_id to payload
+      const payload = {
+        ...formData,
+        organization_id: parseInt(organizationId),
+      };
+      await onSubmit(payload);
     } catch (err) {
       console.error("Error in form submission:", err);
     } finally {
