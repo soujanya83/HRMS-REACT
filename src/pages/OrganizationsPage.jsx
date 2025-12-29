@@ -526,7 +526,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
               >
                 <HiPencil />
               </button>
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(organization);
@@ -535,7 +535,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
                 title="Delete Organization"
               >
                 <HiTrash />
-              </button>
+              </button> */}
             </div>
             
             <button
