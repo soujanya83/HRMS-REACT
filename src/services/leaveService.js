@@ -1,43 +1,59 @@
-import axiosClient from "../axiosClient";
+// src/services/leaveService.js
+import axiosClient from '../../src/axiosClient';
 
-// --- Leave Requests CRUD Operations ---
+export const leaveService = {
+  // Get all leave requests
+  getLeaves: (params = {}) => {
+    return axiosClient.get('/leave', { params });
+  },
 
-// Get all leave requests
-export const getLeaveRequests = (params = {}) => {
-  return axiosClient.get("/leave-requests", { params });
-};
+  // Create leave request
+  createLeave: (employeeId, data) => {
+    return axiosClient.post(`/leave/store/${employeeId}`, data);
+  },
 
-// Get a single leave request by ID
-export const getLeaveRequestById = (id) => {
-  return axiosClient.get(`/leave-requests/${id}`);
-};
+  // Approve/reject leave request
+  approveLeave: (leaveId, data) => {
+    return axiosClient.put(`/leave/approve-leave/${leaveId}`, data);
+  },
 
-// Create a new leave request
-export const createLeaveRequest = (leaveData) => {
-  return axiosClient.post("/leave-requests", leaveData);
-};
+  // Get single leave request
+  getLeave: (leaveId) => {
+    return axiosClient.get(`/leave/show/${leaveId}`);
+  },
 
-// Update an existing leave request
-export const updateLeaveRequest = (id, leaveData) => {
-  return axiosClient.put(`/leave-requests/${id}`, leaveData);
-};
+  // Delete leave request
+  deleteLeave: (leaveId) => {
+    return axiosClient.delete(`/leave/destroy/${leaveId}`);
+  },
 
-// Delete a leave request
-export const deleteLeaveRequest = (id) => {
-  return axiosClient.delete(`/leave-requests/${id}`);
-};
+  // Get leave balance
+  getLeaveBalance: (organizationId) => {
+    return axiosClient.get(`/leave/leaveBalance?organization_id=${organizationId}`);
+  },
 
-// Get leave requests by employee ID
-export const getLeaveRequestsByEmployee = (employeeId, params = {}) => {
-  return axiosClient.get(`/leave-requests/by-employee/${employeeId}`, { params });
-};
+  // Get leave summary
+  getLeavesSummary: () => {
+    return axiosClient.get('/leave/leaves-summary');
+  },
 
-// Approve leave request
-export const approveLeaveRequest = (id) => {
-  return axiosClient.patch(`/leave-requests/${id}/approve`);
-};
+  // Get organization leave types
+  getLeaveTypes: () => {
+    return axiosClient.get('/organization-leaves');
+  },
 
-// Reject leave request
-export const rejectLeaveRequest = (id) => {
-  return axiosClient.patch(`/leave-requests/${id}/reject`);
+  // Create organization leave type
+  createLeaveType: (data) => {
+    return axiosClient.post('/organization-leaves', data);
+  },
+
+  // Update organization leave type
+  updateLeaveType: (id, data) => {
+    return axiosClient.post(`/organization-leaves/${id}`, data);
+  },
+
+  // Delete organization leave type
+  deleteLeaveType: (id) => {
+    return axiosClient.delete(`/organization-leaves/${id}`);
+  }
 };

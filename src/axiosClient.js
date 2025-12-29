@@ -11,7 +11,7 @@
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // ADD DEBUGGING HERE
+    // ADD DEBUGGING HER
     console.log('🚀 Making API Request:', {
       method: config.method?.toUpperCase(),
       url: config.url,

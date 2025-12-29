@@ -7,6 +7,9 @@ export const attendanceService = {
   getAttendance: (params = {}) => {
     return axiosClient.get('/attendance', { params });
   },
+    getDepartmentsByOrgId: (orgId) => {
+    return axiosClient.get(`/organizations/${orgId}/departments`);
+  },
 
   // Clock in
   clockIn: (data) => {
@@ -23,7 +26,7 @@ export const attendanceService = {
     return axiosClient.post('/attendance/store', data);
   },
 
-  // Update attendance record
+  // Update attendance record (for manual adjustments)
   updateAttendance: (data) => {
     return axiosClient.post('/attendance/update', data);
   },
@@ -46,6 +49,34 @@ export const attendanceService = {
   // Get work on holiday requests
   getWorkOnHoliday: () => {
     return axiosClient.get('/attendance/work-on-holiday');
+  },
+
+  // ===== NEW ENDPOINTS =====
+  
+  // Get attendance of employee for specific date to modify
+  getAttendanceForModification: (employeeId, date) => {
+    return axiosClient.get(`/attendance/get-attendance/${employeeId}/${date}`);
+  },
+
+  // Approve or reject manual correction in attendance
+  approveRejectAttendanceChange: (adjustmentId, data) => {
+    return axiosClient.post(`/attendance/approve-or-reject-employee-attendance-change/${adjustmentId}`, data);
+  },
+
+  // Get all manual adjustment requests (if separate endpoint exists)
+  getManualAdjustments: (params = {}) => {
+    return axiosClient.get('/attendance', { params }); // Fallback to regular attendance
+  },
+
+  // Get employees (you might need to check your employee service endpoint)
+  getEmployees: (params = {}) => {
+    // Common employee endpoints - adjust based on your API
+    return axiosClient.get('/employees', { params });
+  },
+
+  // Get departments
+  getDepartments: () => {
+    return axiosClient.get('/departments');
   }
 };
 
@@ -124,4 +155,58 @@ export const leaveService = {
   getLeaveBalance: () => {
     return axiosClient.get('/leave/leaveBalance');
   }
+};
+
+// Employee service (if you need a separate employee service)
+export const employeeService = {
+  getAllEmployees: (params = {}) => {
+    return axiosClient.get('/employees', { params });
+  },
+
+  getEmployee: (id) => {
+    return axiosClient.get(`/employees/${id}`);
+  },
+
+  createEmployee: (data) => {
+    return axiosClient.post('/employees', data);
+  },
+
+  updateEmployee: (id, data) => {
+    return axiosClient.put(`/employees/${id}`, data);
+  },
+
+  deleteEmployee: (id) => {
+    return axiosClient.delete(`/employees/${id}`);
+  },
+
+  getEmployeeAttendance: (employeeId, params = {}) => {
+    return axiosClient.get(`/employees/${employeeId}/attendance`, { params });
+  }
+};
+
+// Department service
+export const departmentService = {
+  getAllDepartments: () => {
+    return axiosClient.get('/departments');
+  },
+
+  getDepartment: (id) => {
+    return axiosClient.get(`/departments/${id}`);
+  },
+
+  createDepartment: (data) => {
+    return axiosClient.post('/departments', data);
+  },
+
+  updateDepartment: (id, data) => {
+    return axiosClient.put(`/departments/${id}`, data);
+  },
+
+  deleteDepartment: (id) => {
+    return axiosClient.delete(`/departments/${id}`);
+  }
+};
+
+export const getDepartmentsByOrgId = (orgId) => {
+  return axiosClient.get(`/organizations/${orgId}/departments`);
 };

@@ -24,15 +24,8 @@ export const getEmploymentHistoryByEmployee = (employeeId, params = {}) => {
   return axiosClient.get(`/employment-history/by-employee/${employeeId}`, { params });
 };
 
-// Add these new functions for related data
-export const getDepartments = () => {
-  return axiosClient.get("/departments");
-};
-  
-export const getDesignations = () => {
-  return axiosClient.get("/designations");
-};
+// REMOVED: getDepartments and getDesignations since endpoints don't exist
 
 export const getEmployeesList = () => {
-  return axiosClient.get("/employees", { params: { limit: 100 } }); // Adjust limit as needed
-};
+  return axiosClient.get("/employees", { params: { limit: 100 } });
+};  

@@ -36,7 +36,7 @@ const FormInput = ({ label, name, error, ...props }) => (
       {...props}
       className={`mt-1 block w-full px-3 py-2 bg-white border ${
         error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}
+      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     />
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -53,7 +53,7 @@ const FormSelect = ({ label, name, error, children, ...props }) => (
       {...props}
       className={`mt-1 block w-full px-3 py-2 bg-white border ${
         error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}
+      } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     >
       {children}
     </select>
@@ -72,7 +72,7 @@ const FormTextarea = ({ label, name, error, ...props }) => (
       {...props}
       className={`mt-1 block w-full px-3 py-2 bg-white border ${
         error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm`}
+      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     ></textarea>
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -100,52 +100,142 @@ function OrganizationsPage() {
   const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
 
+  // Fetch organizations with proper response handling
   const fetchOrganizations = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await getOrganizations();
-      setOrganizations(response.data?.data || []);
-    } catch (err) {
-      setError("Failed to fetch organizations.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  setError(null);
+  
+  console.log('🔄 Starting to fetch organizations...');
+  
+  try {
+    const response = await getOrganizations();
+    console.log('📥 Raw GET response:', response);
+    
+    // THIS IS THE CRITICAL PART - Check what your response structure actually is:
+    console.log('🔍 Response structure check:', {
+      hasSuccess: 'success' in response,
+      successValue: response?.success,
+      hasData: 'data' in response,
+      dataIsObject: typeof response?.data === 'object',
+      dataHasData: response?.data?.data !== undefined,
+      dataDataIsArray: Array.isArray(response?.data?.data)
+    });
+    
+    let organizationsData = [];
+    
+    // Your API returns: {success: true, data: {data: [...], pagination...}}
+    if (response && response.success === true) {
+      console.log('✅ API returned success');
+      
+      // Check if we have the nested data structure
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        organizationsData = response.data.data;
+        console.log(`🎯 Found ${organizationsData.length} organizations in response.data.data`);
+      } 
+      // Check for direct array in data
+      else if (response.data && Array.isArray(response.data)) {
+        organizationsData = response.data;
+        console.log(`🎯 Found ${organizationsData.length} organizations in response.data`);
+      }
+      // Check for array at root level (unlikely but possible)
+      else if (Array.isArray(response)) {
+        organizationsData = response;
+        console.log(`🎯 Found ${organizationsData.length} organizations in direct response`);
+      }
     }
-  }, []);
+    
+    console.log(`📊 Setting ${organizationsData.length} organizations to state`);
+    console.log('Organization names:', organizationsData.map(org => org.name));
+    
+    // Update the state
+    setOrganizations(organizationsData);
+    
+    // Log the state AFTER update (using a setTimeout to see it after the render)
+    setTimeout(() => {
+      console.log('📝 Current organizations in state:', organizations);
+    }, 100);
+    
+  } catch (err) {
+    console.error('💥 Error fetching organizations:', err);
+    setError(err.response?.data?.message || "Failed to fetch organizations.");
+    setOrganizations([]);
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  const handleOpenEditModal = (org) => {
-    setEditingOrg(org);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenAddModal = () => {
-    setEditingOrg(null);
-    setIsModalOpen(true);
-  };
-
+  // Handle save organization - FIXED VERSION
   const handleSave = async (orgData) => {
     setIsSubmitting(true);
+    console.log('🔧 handleSave called with data:', orgData);
+
     try {
+      let apiResponse;
+      
       if (editingOrg) {
-        const response = await updateOrganization(editingOrg.id, orgData);
-        if (selectedOrg && selectedOrg.id === editingOrg.id) {
-          setSelectedOrg(
-            response?.data?.data || { ...selectedOrg, ...orgData }
-          );
-        }
+        console.log(`📝 Editing organization ID: ${editingOrg.id}`);
+        apiResponse = await updateOrganization(editingOrg.id, orgData);
       } else {
-        await createOrganization(orgData);
+        console.log('➕ Creating new organization');
+        apiResponse = await createOrganization(orgData);
       }
+      
+      console.log('🎉 Service returned:', apiResponse);
+      
+      // Check if API returned success
+      if (apiResponse.success !== true) {
+        throw new Error(apiResponse.message || 'API returned unsuccessful');
+      }
+      
+      console.log('✅ API success confirmed');
+      
+      // Refresh the organizations list
       await fetchOrganizations();
+      
+      // Update selected org if we're editing it
+      if (selectedOrg && editingOrg && selectedOrg.id === editingOrg.id) {
+        const updatedOrgData = apiResponse.data;
+        console.log('🔄 Updating selected org with:', updatedOrgData);
+        setSelectedOrg(updatedOrgData);
+      }
+      
+      // Close modal and reset
       setIsModalOpen(false);
       setEditingOrg(null);
+      
+      // Show success message
+      alert(apiResponse.message || (editingOrg ? 'Organization updated successfully!' : 'Organization created successfully!'));
+      
     } catch (err) {
-      console.error("Failed to save organization:", err);
+      console.error('💥 ERROR in handleSave:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      let errorMessage = 'Failed to save organization. ';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+        localStorage.removeItem('ACCESS_TOKEN');
+        setTimeout(() => window.location.href = '/login', 1000);
+      } else if (err.response?.status === 422) {
+        const errors = err.response?.data?.errors;
+        errorMessage = 'Validation errors:\n' + 
+          (errors ? Object.entries(errors).map(([field, msgs]) => 
+            `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`
+          ).join('\n') : 'Invalid data provided.');
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -160,14 +250,20 @@ function OrganizationsPage() {
     if (orgToDelete) {
       try {
         await deleteOrganization(orgToDelete.id);
+        
         if (selectedOrg && selectedOrg.id === orgToDelete.id) {
           setSelectedOrg(null);
         }
+        
         await fetchOrganizations();
+        alert('Organization deleted successfully!');
+        
+      } catch (err) {
+        console.error('Failed to delete organization:', err);
+        alert(err.response?.data?.message || 'Failed to delete organization');
+      } finally {
         setIsConfirmOpen(false);
         setOrgToDelete(null);
-      } catch (err) {
-        console.error("Failed to delete organization:", err);
       }
     }
   };
@@ -188,15 +284,22 @@ function OrganizationsPage() {
   const handleSaveDesignation = async (designationData) => {
     setIsSubmitting(true);
     try {
+      let response;
       if (editingDesignation) {
-        await updateDesignation(editingDesignation.id, designationData);
+        response = await updateDesignation(editingDesignation.id, designationData);
       } else {
-        await createDesignation(currentDepartmentId, designationData);
+        response = await createDesignation(currentDepartmentId, designationData);
       }
-      handleCloseDesignationModal();
-      // You might want to refresh the designations list here
+      
+      if (response.success === true) {
+        handleCloseDesignationModal();
+        alert(response.message || 'Designation saved successfully!');
+      } else {
+        throw new Error(response.message || 'Failed to save designation');
+      }
     } catch (err) {
-      console.error("Failed to save designation:", err);
+      console.error('Failed to save designation:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to save designation');
     } finally {
       setIsSubmitting(false);
     }
@@ -213,8 +316,10 @@ function OrganizationsPage() {
         await deleteDesignation(designationToDelete.id);
         setIsDesignationConfirmOpen(false);
         setDesignationToDelete(null);
+        alert('Designation deleted successfully!');
       } catch (err) {
-        console.error("Failed to delete designation:", err);
+        console.error('Failed to delete designation:', err);
+        alert(err.response?.data?.message || 'Failed to delete designation');
       }
     }
   };
@@ -235,20 +340,30 @@ function OrganizationsPage() {
               error={error}
               organizations={organizations}
               onSelectOrg={setSelectedOrg}
-              onAdd={handleOpenAddModal}
-              onEdit={handleOpenEditModal}
+              onAdd={() => {
+                setEditingOrg(null);
+                setIsModalOpen(true);
+              }}
+              onEdit={(org) => {
+                setEditingOrg(org);
+                setIsModalOpen(true);
+              }}
               onDelete={handleDeleteClick}
             />
           ) : (
             <OrganizationDetailView
               organization={selectedOrg}
               onBack={() => setSelectedOrg(null)}
-              onEdit={handleOpenEditModal} 
+              onEdit={(org) => {
+                setEditingOrg(org);
+                setIsModalOpen(true);
+              }}
             />
           )}
         </div>
       </div>
 
+      {/* Organization Modal */}
       <OrganizationModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -271,7 +386,7 @@ function OrganizationsPage() {
         message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
       />
 
-      {/* Designation Modal - Rendered at top level */}
+      {/* Designation Modal */}
       <DesignationModal
         isOpen={isDesignationModalOpen}
         onClose={handleCloseDesignationModal}
@@ -294,6 +409,8 @@ function OrganizationsPage() {
   );
 }
 
+// ============ Sub-Components ============
+
 function OrganizationListView({
   isLoading,
   error,
@@ -309,7 +426,7 @@ function OrganizationListView({
         <h1 className="text-3xl font-bold text-gray-800">Organizations</h1>
         <button
           onClick={onAdd}
-          className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
+          className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
         >
           <HiPlus /> Add Workspace
         </button>
@@ -317,13 +434,21 @@ function OrganizationListView({
 
       {isLoading && (
         <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading organizations...</span>
         </div>
       )}
       
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-red-600 font-medium">Error:</p>
           <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-red-700 hover:text-red-900"
+          >
+            Click to retry
+          </button>
         </div>
       )}
 
@@ -350,6 +475,12 @@ function OrganizationListView({
             <p className="mt-1 text-sm text-gray-500">
               Get started by adding a new organization.
             </p>
+            <button
+              onClick={onAdd}
+              className="mt-4 inline-flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition"
+            >
+              <HiPlus /> Add Your First Organization
+            </button>
           </div>
         )
       )}
@@ -360,31 +491,46 @@ function OrganizationListView({
 function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
+      <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
       
       <div className="p-6 pl-8">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-2 truncate cursor-pointer hover:text-brand-blue transition">
+            <h2 
+              onClick={() => onSelectOrg(organization)}
+              className="text-xl font-bold text-gray-900 mb-2 truncate cursor-pointer hover:text-blue-600 transition"
+            >
               {organization.name}
             </h2>
-            <p className="text-gray-600 mb-1 text-sm">{organization.registration_number}</p>
+            <p className="text-gray-600 mb-1 text-sm">
+              <span className="font-medium">ID:</span> {organization.id}
+              {organization.registration_number && ` • ${organization.registration_number}`}
+            </p>
             <p className="text-sm text-gray-500 truncate">
               {organization.contact_email}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Created: {new Date(organization.created_at).toLocaleDateString()}
             </p>
           </div>
           
           <div className="flex flex-col items-end gap-3 self-start sm:self-center flex-shrink-0">
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                onClick={() => onEdit(organization)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(organization);
+                }}
                 className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors"
                 title="Edit Organization"
               >
                 <HiPencil />
               </button>
               <button
-                onClick={() => onDelete(organization)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(organization);
+                }}
                 className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
                 title="Delete Organization"
               >
@@ -394,7 +540,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
             
             <button
               onClick={() => onSelectOrg(organization)}
-              className="text-sm font-semibold text-brand-blue hover:underline transition-colors"
+              className="text-sm font-semibold text-blue-600 hover:underline transition-colors"
             >
               View Details &rarr;
             </button>
@@ -410,13 +556,13 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
     <div>
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-brand-blue hover:underline mb-6 font-semibold"
+        className="flex items-center gap-2 text-blue-600 hover:underline mb-6 font-semibold"
       >
         <HiArrowLeft /> Back to Organizations
       </button>
 
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8 relative">
-        <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
+        <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
         
         <div className="pl-6">
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
@@ -424,12 +570,43 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
               <h1 className="text-3xl font-bold text-gray-800">
                 {organization.name}
               </h1>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4 text-gray-600">
-                <p><strong>Reg. Number:</strong> {organization.registration_number || 'Not specified'}</p>
-                <p><strong>Email:</strong> {organization.contact_email || 'Not specified'}</p>
-                <p><strong>Phone:</strong> {organization.contact_phone || 'Not specified'}</p>
-                <p><strong>Industry:</strong> {organization.industry_type || 'Not specified'}</p>
-                <p className="md:col-span-2"><strong>Address:</strong> {organization.address || 'Not specified'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div>
+                  <p className="text-sm text-gray-500">Registration Number</p>
+                  <p className="font-medium">{organization.registration_number || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-medium">{organization.contact_email || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Phone</p>
+                  <p className="font-medium">{organization.contact_phone || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Industry</p>
+                  <p className="font-medium">{organization.industry_type || 'Not specified'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500">Address</p>
+                  <p className="font-medium">{organization.address || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Timezone</p>
+                  <p className="font-medium">{organization.timezone || 'Asia/Kolkata'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Created Date</p>
+                  <p className="font-medium">
+                    {new Date(organization.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
             <button
@@ -450,6 +627,7 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
 function DepartmentsManager({ orgId }) {
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deptError, setDeptError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -458,11 +636,28 @@ function DepartmentsManager({ orgId }) {
 
   const fetchDepts = useCallback(async () => {
     setIsLoading(true);
+    setDeptError(null);
+    
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      setDepartments(response.data?.data || []);
+      console.log('Departments response:', response);
+      
+      let departmentsData = [];
+      
+      if (response && response.success === true) {
+        if (response.data && response.data.data) {
+          departmentsData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          departmentsData = response.data;
+        }
+      } else if (Array.isArray(response)) {
+        departmentsData = response;
+      }
+      
+      setDepartments(departmentsData);
     } catch (error) {
       console.error("Failed to fetch departments", error);
+      setDeptError(error.response?.data?.message || "Failed to load departments");
       setDepartments([]);
     } finally {
       setIsLoading(false);
@@ -476,16 +671,24 @@ function DepartmentsManager({ orgId }) {
   const handleSave = async (deptData) => {
     setIsSubmitting(true);
     try {
+      let response;
       if (editingDept) {
-        await updateDepartment(editingDept.id, deptData);
+        response = await updateDepartment(editingDept.id, deptData);
       } else {
-        await createDepartment(orgId, deptData);
+        response = await createDepartment(orgId, deptData);
       }
-      await fetchDepts();
-      setIsModalOpen(false);
-      setEditingDept(null);
+      
+      if (response.success === true) {
+        await fetchDepts();
+        setIsModalOpen(false);
+        setEditingDept(null);
+        alert(response.message || 'Department saved successfully!');
+      } else {
+        throw new Error(response.message || 'Failed to save department');
+      }
     } catch (error) {
       console.error("Failed to save department", error);
+      alert(error.response?.data?.message || error.message || 'Failed to save department');
     } finally {
       setIsSubmitting(false);
     }
@@ -498,8 +701,10 @@ function DepartmentsManager({ orgId }) {
         await fetchDepts();
         setIsConfirmOpen(false);
         setDeptToDelete(null);
+        alert('Department deleted successfully!');
       } catch (error) {
         console.error("Failed to delete department", error);
+        alert(error.response?.data?.message || 'Failed to delete department');
       }
     }
   };
@@ -513,15 +718,22 @@ function DepartmentsManager({ orgId }) {
             setEditingDept(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+          className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
         >
           <HiPlus /> Add Department
         </button>
       </div>
 
+      {deptError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-red-600">{deptError}</p>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-blue"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading departments...</span>
         </div>
       ) : (
         <div className="space-y-4">
@@ -572,7 +784,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
+      <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
       
       <div className="p-6 pl-8">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
@@ -619,15 +831,33 @@ function DepartmentItem({ department, onEdit, onDelete }) {
 function DesignationsList({ departmentId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [desigError, setDesigError] = useState(null);
   const designationModalContext = React.useContext(DesignationModalContext);
 
   const fetchDesigs = useCallback(async () => {
     setIsLoading(true);
+    setDesigError(null);
+    
     try {
       const response = await getDesignationsByDeptId(departmentId);
-      setDesignations(response.data?.data || []);
+      console.log('Designations response:', response);
+      
+      let designationsData = [];
+      
+      if (response && response.success === true) {
+        if (response.data && response.data.data) {
+          designationsData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          designationsData = response.data;
+        }
+      } else if (Array.isArray(response)) {
+        designationsData = response;
+      }
+      
+      setDesignations(designationsData);
     } catch (error) {
       console.error("Failed to fetch designations", error);
+      setDesigError(error.response?.data?.message || "Failed to load designations");
       setDesignations([]);
     } finally {
       setIsLoading(false);
@@ -644,15 +874,22 @@ function DesignationsList({ departmentId }) {
         <h4 className="text-md font-semibold text-gray-700">Designations</h4>
         <button
           onClick={() => designationModalContext.openDesignationModal(departmentId)}
-          className="flex items-center gap-1 text-sm bg-brand-blue text-white font-semibold py-1 px-3 rounded-full hover:opacity-90 transition"
+          className="flex items-center gap-1 text-sm bg-blue-600 text-white font-semibold py-1 px-3 rounded-full hover:opacity-90 transition"
         >
           <HiPlus /> Add Designation
         </button>
       </div>
 
+      {desigError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
+          <p className="text-red-600 text-xs">{desigError}</p>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-sm text-gray-600">Loading...</span>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -694,9 +931,12 @@ function DesignationsList({ departmentId }) {
   );
 }
 
-// Modal Components (keep the same as before)
+// ============ Modal Components ============
+
 function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting }) {
   const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
   
   useEffect(() => {
     setFormData(
@@ -710,14 +950,31 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
         timezone: "Asia/Kolkata",
       }
     );
+    setErrors({});
+    setSubmitError('');
   }, [organization, isOpen]);
 
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    setSubmitError('');
+    setErrors({});
+    
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('Modal submission error:', error);
+      
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else if (error.response?.data?.message) {
+        setSubmitError(error.response.data.message);
+      } else {
+        setSubmitError('Failed to save organization. Please try again.');
+      }
+    }
   };
 
   if (!isOpen) return null;
@@ -737,17 +994,24 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
           </button>
         </div>
         
+        {submitError && (
+          <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 font-medium">Error: {submitError}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="sm:col-span-2">
                 <FormInput
-                  label="Organization Name"
+                  label="Organization Name *"
                   name="name"
                   value={formData.name || ""}
                   onChange={handleChange}
                   placeholder="Enter organization name"
                   required
+                  error={errors.name}
                 />
               </div>
               
@@ -757,6 +1021,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 value={formData.registration_number || ""}
                 onChange={handleChange}
                 placeholder="Enter registration number"
+                error={errors.registration_number}
               />
               
               <FormInput
@@ -765,16 +1030,18 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 value={formData.industry_type || ""}
                 onChange={handleChange}
                 placeholder="Enter industry type"
+                error={errors.industry_type}
               />
               
               <FormInput
                 type="email"
-                label="Contact Email"
+                label="Contact Email *"
                 name="contact_email"
                 value={formData.contact_email || ""}
                 onChange={handleChange}
                 placeholder="Enter contact email"
                 required
+                error={errors.contact_email}
               />
               
               <FormInput
@@ -783,6 +1050,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 value={formData.contact_phone || ""}
                 onChange={handleChange}
                 placeholder="Enter contact phone"
+                error={errors.contact_phone}
               />
               
               <FormInput
@@ -791,6 +1059,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 value={formData.timezone || "Asia/Kolkata"}
                 onChange={handleChange}
                 placeholder="Enter timezone"
+                error={errors.timezone}
               />
               
               <div className="sm:col-span-2">
@@ -801,6 +1070,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                   onChange={handleChange}
                   placeholder="Enter full address"
                   rows="3"
+                  error={errors.address}
                 />
               </div>
             </div>
@@ -818,7 +1088,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
             <button
               type="submit"
               disabled={isSubmitting}
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition"
+              className="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
             >
               {isSubmitting
                 ? organization
@@ -837,17 +1107,25 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
 
 function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) {
   const [formData, setFormData] = useState({});
+  const [error, setError] = useState('');
   
   useEffect(() => {
     setFormData(department || { name: "", description: "" });
+    setError('');
   }, [department, isOpen]);
   
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    setError('');
+    
+    try {
+      await onSave(formData);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to save department');
+    }
   };
   
   if (!isOpen) return null;
@@ -867,11 +1145,17 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
           </button>
         </div>
         
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="space-y-4">
               <FormInput
-                label="Department Name"
+                label="Department Name *"
                 name="name"
                 value={formData.name || ""}
                 onChange={handleChange}
@@ -902,7 +1186,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition"
+              className="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:opacity-90 transition"
             >
               {isSubmitting
                 ? department
@@ -921,17 +1205,25 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
 
 function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }) {
   const [formData, setFormData] = useState({});
+  const [error, setError] = useState('');
   
   useEffect(() => {
     setFormData(designation || { title: "", level: "Junior" });
+    setError('');
   }, [designation, isOpen]);
   
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    setError('');
+    
+    try {
+      await onSave(formData);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to save designation');
+    }
   };
   
   if (!isOpen) return null;
@@ -951,11 +1243,17 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
           </button>
         </div>
         
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="space-y-4">
               <FormInput
-                label="Designation Title"
+                label="Designation Title *"
                 name="title"
                 value={formData.title || ""}
                 onChange={handleChange}
@@ -991,7 +1289,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
             <button
               type="submit"
               disabled={isSubmitting}
-              className="py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+              className="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
             >
               {isSubmitting
                 ? designation

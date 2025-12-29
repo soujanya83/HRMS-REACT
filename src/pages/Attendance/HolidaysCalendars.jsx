@@ -12,16 +12,22 @@ import {
   FaSync,
   FaCalendarCheck,
   FaFlag,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaTimes,
+  FaCheck
 } from 'react-icons/fa';
-import { holidayService } from '../../services/attendanceService';
-import { employeeService } from '../../services/employeeService';
-import { useOrganizations } from '../../contexts/OrganizationContext';
+import axios from 'axios';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: 'https://api.chrispp.com/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 const HolidaysCalendars = () => {
   const [holidays, setHolidays] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showHolidayForm, setShowHolidayForm] = useState(false);
@@ -55,7 +61,8 @@ const HolidaysCalendars = () => {
     upcomingHolidays: 0
   });
 
-  const { selectedOrganization } = useOrganizations();
+  // Static departments - in a real app, you'd fetch these from API
+  const departments = ['All', 'Engineering', 'Marketing', 'Sales', 'HR', 'Design', 'Finance', 'Operations'];
 
   const holidayTypes = [
     'Public Holiday',
@@ -70,50 +77,146 @@ const HolidaysCalendars = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  // Fetch holidays from API
   useEffect(() => {
-    if (selectedOrganization) {
-      fetchInitialData();
-    }
-  }, [selectedOrganization]);
+    fetchHolidays();
+  }, []);
 
-  const fetchInitialData = async () => {
+  const fetchHolidays = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const [holidaysResponse, employeesResponse] = await Promise.all([
-        holidayService.getHolidays(),
-        employeeService.getEmployees({ organization_id: selectedOrganization.id })
-      ]);
-
-      const holidaysData = holidaysResponse.data?.data || holidaysResponse.data || [];
-      const employeesData = employeesResponse.data?.data || employeesResponse.data || [];
-
-      setHolidays(holidaysData);
-      setEmployees(employeesData);
       
-      // Extract departments from employees
-      const uniqueDepartments = [...new Set(employeesData
-        .map(emp => emp.department)
-        .filter(Boolean)
-      )];
-      setDepartments(['All', ...uniqueDepartments]);
-
-      calculateStats(holidaysData);
-
+      const response = await api.get('/organization-holiday');
+      console.log('API Response:', response.data);
+      
+      if (response.data.status && response.data.data) {
+        const holidaysData = Array.isArray(response.data.data) ? response.data.data : [];
+        setHolidays(holidaysData);
+        calculateStats(holidaysData);
+      } else if (response.data.data) {
+        setHolidays(response.data.data);
+        calculateStats(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        setHolidays(response.data);
+        calculateStats(response.data);
+      } else {
+        setHolidays([]);
+        calculateStats([]);
+      }
+      
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching holidays:', err);
+      
+      // Load static data as fallback
+      const staticHolidays = getStaticHolidays();
+      setHolidays(staticHolidays);
+      calculateStats(staticHolidays);
       
       if (err.response?.status === 401) {
-        return;
+        setError('Session expired. Please login again.');
       } else if (err.response?.status === 404) {
-        setError('API endpoint not found. Please contact administrator.');
+        console.log('No holidays found. Using static data.');
       } else {
-        setError('Failed to load data. Please try again.');
+        setError('Failed to load holidays. Using static data.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Static data fallback
+  const getStaticHolidays = () => {
+    return [
+      {
+        id: 1,
+        name: 'New Year\'s Day',
+        date: '2024-01-01',
+        type: 'Public Holiday',
+        description: 'Celebration of the new year',
+        location: 'National',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 2,
+        name: 'Australia Day',
+        date: '2024-01-26',
+        type: 'Public Holiday',
+        description: 'National day of Australia',
+        location: 'Australia',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 3,
+        name: 'Good Friday',
+        date: '2024-03-29',
+        type: 'Public Holiday',
+        description: 'Christian holiday',
+        location: 'National',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 4,
+        name: 'Easter Monday',
+        date: '2024-04-01',
+        type: 'Public Holiday',
+        description: 'Day after Easter Sunday',
+        location: 'National',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 5,
+        name: 'Company Picnic',
+        date: '2024-06-15',
+        type: 'Company Event',
+        description: 'Annual company picnic',
+        location: 'Central Park',
+        is_recurring: true,
+        half_day: true,
+        applicable_departments: ['All']
+      },
+      {
+        id: 6,
+        name: 'Christmas Day',
+        date: '2024-12-25',
+        type: 'Public Holiday',
+        description: 'Christmas celebration',
+        location: 'National',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 7,
+        name: 'Boxing Day',
+        date: '2024-12-26',
+        type: 'Public Holiday',
+        description: 'Day after Christmas',
+        location: 'National',
+        is_recurring: true,
+        half_day: false,
+        applicable_departments: ['All']
+      },
+      {
+        id: 8,
+        name: 'Team Building',
+        date: '2024-09-20',
+        type: 'Company Event',
+        description: 'Team building activities',
+        location: 'Office',
+        is_recurring: true,
+        half_day: true,
+        applicable_departments: ['Engineering', 'Design']
+      }
+    ];
   };
 
   const calculateStats = (data) => {
@@ -161,7 +264,15 @@ const HolidaysCalendars = () => {
         ? prev.applicable_departments.filter(d => d !== department)
         : [...prev.applicable_departments, department];
       
-      return { ...prev, applicable_departments: departments };
+      // If "All" is selected, clear other selections
+      if (department === 'All') {
+        return { ...prev, applicable_departments: ['All'] };
+      }
+      
+      // If another department is selected, remove "All"
+      const filteredDepartments = departments.filter(d => d !== 'All');
+      
+      return { ...prev, applicable_departments: filteredDepartments.length > 0 ? filteredDepartments : ['All'] };
     });
   };
 
@@ -170,31 +281,44 @@ const HolidaysCalendars = () => {
     try {
       setError(null);
       
+      // Prepare the data
+      const holidayData = {
+        name: newHoliday.name,
+        date: newHoliday.date,
+        type: newHoliday.type,
+        description: newHoliday.description,
+        location: newHoliday.location,
+        is_recurring: newHoliday.is_recurring,
+        half_day: newHoliday.half_day,
+        applicable_departments: newHoliday.applicable_departments
+      };
+      
       let result;
       if (editingHoliday) {
-        result = await holidayService.updateHoliday(editingHoliday.id, newHoliday);
+        // Update holiday
+        result = await api.post(`/organization-holiday/${editingHoliday.id}`, holidayData);
       } else {
-        result = await holidayService.createHoliday(newHoliday);
+        // Create new holiday
+        result = await api.post('/organization-holiday', holidayData);
       }
       
-      await fetchInitialData();
-      
-      setShowHolidayForm(false);
-      setEditingHoliday(null);
-      setNewHoliday({
-        name: '',
-        date: '',
-        type: 'Public Holiday',
-        description: '',
-        is_recurring: true,
-        location: 'National',
-        half_day: false,
-        applicable_departments: ['All']
-      });
+      if (result.data.status) {
+        alert(result.data.message || 'Holiday saved successfully!');
+        
+        // Refresh the list
+        await fetchHolidays();
+        
+        // Close form and reset
+        setShowHolidayForm(false);
+        setEditingHoliday(null);
+        resetForm();
+      } else {
+        throw new Error(result.data.message || 'Failed to save holiday');
+      }
       
     } catch (err) {
       console.error('Error saving holiday:', err);
-      setError('Failed to save holiday. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Failed to save holiday. Please try again.');
     }
   };
 
@@ -202,7 +326,7 @@ const HolidaysCalendars = () => {
     setEditingHoliday(holiday);
     setNewHoliday({
       name: holiday.name || '',
-      date: holiday.date || '',
+      date: holiday.date ? holiday.date.split('T')[0] : '',
       type: holiday.type || 'Public Holiday',
       description: holiday.description || '',
       is_recurring: holiday.is_recurring !== undefined ? holiday.is_recurring : true,
@@ -218,21 +342,27 @@ const HolidaysCalendars = () => {
     
     try {
       setError(null);
-      await holidayService.deleteHoliday(id);
-      await fetchInitialData();
+      const result = await api.delete(`/organization-holiday/${id}`);
+      
+      if (result.data.status) {
+        alert(result.data.message || 'Holiday deleted successfully!');
+        await fetchHolidays();
+      } else {
+        throw new Error(result.data.message || 'Failed to delete holiday');
+      }
     } catch (err) {
       console.error('Error deleting holiday:', err);
-      setError('Failed to delete holiday. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Failed to delete holiday. Please try again.');
     }
   };
 
   const handleRefresh = async () => {
-    await fetchInitialData();
+    await fetchHolidays();
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     try {
-      const csvContent = convertToCSV(holidays);
+      const csvContent = convertToCSV(filteredHolidays);
       downloadCSV(csvContent, `holidays-${new Date().toISOString().split('T')[0]}.csv`);
     } catch (err) {
       console.error('Error exporting data:', err);
@@ -261,7 +391,7 @@ const HolidaysCalendars = () => {
   };
 
   const downloadCSV = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/csv' });
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -270,20 +400,33 @@ const HolidaysCalendars = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const resetForm = () => {
+    setNewHoliday({
+      name: '',
+      date: '',
+      type: 'Public Holiday',
+      description: '',
+      is_recurring: true,
+      location: 'National',
+      half_day: false,
+      applicable_departments: ['All']
+    });
+  };
+
   const getHolidayIcon = (type) => {
     const typeLower = type?.toLowerCase() || '';
     switch (typeLower) {
       case 'public holiday':
       case 'public_holiday':
-        return <FaFlag className="text-red-500 text-sm" />;
+        return <FaFlag className="text-red-500" />;
       case 'company event':
       case 'company_event':
-        return <FaUsers className="text-blue-500 text-sm" />;
+        return <FaUsers className="text-blue-500" />;
       case 'regional holiday':
       case 'regional_holiday':
-        return <FaMapMarkerAlt className="text-green-500 text-sm" />;
+        return <FaMapMarkerAlt className="text-green-500" />;
       default: 
-        return <FaCalendarAlt className="text-gray-500 text-sm" />;
+        return <FaCalendarAlt className="text-gray-500" />;
     }
   };
 
@@ -309,7 +452,10 @@ const HolidaysCalendars = () => {
       const dateString = currentDate.toISOString().split('T')[0];
       const dayHolidays = holidays.filter(holiday => {
         try {
-          return new Date(holiday.date).toISOString().split('T')[0] === dateString;
+          const holidayDate = new Date(holiday.date);
+          return holidayDate.getDate() === day && 
+                 holidayDate.getMonth() === currentMonth && 
+                 holidayDate.getFullYear() === currentYear;
         } catch {
           return false;
         }
@@ -336,8 +482,8 @@ const HolidaysCalendars = () => {
               <div
                 key={holiday.id}
                 className={`text-xs p-0.5 rounded truncate ${
-                  holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                  holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                  holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                  holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                   'bg-green-100 text-green-800 border border-green-200'
                 }`}
                 title={holiday.name}
@@ -386,8 +532,7 @@ const HolidaysCalendars = () => {
       holiday.type === filters.type;
     
     const matchesYear = !filters.year || 
-      (holiday.year && holiday.year.toString() === filters.year.toString()) ||
-      (holiday.date && holiday.date.startsWith(filters.year.toString()));
+      (holiday.date && new Date(holiday.date).getFullYear().toString() === filters.year.toString());
 
     const matchesMonth = filters.month === 'all' || 
       (holiday.date && new Date(holiday.date).getMonth().toString() === filters.month);
@@ -439,22 +584,45 @@ const HolidaysCalendars = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Holidays', value: stats.totalHolidays, icon: FaCalendarAlt, color: 'blue' },
-            { label: 'Public Holidays', value: stats.publicHolidays, icon: FaFlag, color: 'red' },
-            { label: 'Company Events', value: stats.companyEvents, icon: FaUsers, color: 'green' },
-            { label: 'Upcoming', value: stats.upcomingHolidays, icon: FaCalendarCheck, color: 'orange' }
-          ].map((stat, index) => (
-            <div key={index} className={`bg-white p-6 rounded-xl shadow-sm border-l-4 border-${stat.color}-500 hover:shadow-md transition-shadow`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
-                </div>
-                <stat.icon className={`text-${stat.color}-500 text-xl`} />
+          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Holidays</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.totalHolidays}</p>
               </div>
+              <FaCalendarAlt className="text-blue-500 text-xl" />
             </div>
-          ))}
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Public Holidays</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.publicHolidays}</p>
+              </div>
+              <FaFlag className="text-red-500 text-xl" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Company Events</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.companyEvents}</p>
+              </div>
+              <FaUsers className="text-green-500 text-xl" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Upcoming</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.upcomingHolidays}</p>
+              </div>
+              <FaCalendarCheck className="text-orange-500 text-xl" />
+            </div>
+          </div>
         </div>
 
         {/* View Toggle and Actions */}
@@ -557,11 +725,21 @@ const HolidaysCalendars = () => {
         {/* Holiday Form Modal */}
         {showHolidayForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">
                   {editingHoliday ? 'Edit Holiday' : 'Add New Holiday'}
                 </h2>
+                <button
+                  onClick={() => {
+                    setShowHolidayForm(false);
+                    setEditingHoliday(null);
+                    resetForm();
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FaTimes className="text-gray-500" />
+                </button>
               </div>
               <form onSubmit={handleSubmitHoliday} className="p-6">
                 <div className="space-y-4">
@@ -690,16 +868,7 @@ const HolidaysCalendars = () => {
                     onClick={() => {
                       setShowHolidayForm(false);
                       setEditingHoliday(null);
-                      setNewHoliday({
-                        name: '',
-                        date: '',
-                        type: 'Public Holiday',
-                        description: '',
-                        is_recurring: true,
-                        location: 'National',
-                        half_day: false,
-                        applicable_departments: ['All']
-                      });
+                      resetForm();
                     }}
                     className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
                   >
@@ -775,8 +944,8 @@ const HolidaysCalendars = () => {
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                            holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                            holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                            holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                             'bg-green-100 text-green-800 border border-green-200'
                           }`}>
                             {holiday.type}
@@ -870,12 +1039,19 @@ const HolidaysCalendars = () => {
 
         {/* Upcoming Holidays */}
         <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Holidays</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Upcoming Holidays</h3>
+            <span className="text-sm text-gray-500">Next 30 days</span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {holidays
               .filter(holiday => {
                 try {
-                  return new Date(holiday.date) >= new Date();
+                  const holidayDate = new Date(holiday.date);
+                  const today = new Date();
+                  const thirtyDaysLater = new Date();
+                  thirtyDaysLater.setDate(today.getDate() + 30);
+                  return holidayDate >= today && holidayDate <= thirtyDaysLater;
                 } catch {
                   return false;
                 }
@@ -890,8 +1066,8 @@ const HolidaysCalendars = () => {
                       <h4 className="font-semibold text-gray-800 text-sm">{holiday.name}</h4>
                     </div>
                     <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                      holiday.type === 'Public Holiday' || holiday.type === 'public_holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                      holiday.type === 'Company Event' || holiday.type === 'company_event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                      holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                       'bg-green-100 text-green-800 border border-green-200'
                     }`}>
                       {holiday.type}

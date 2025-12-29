@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axiosClient from "../../../src/axiosClient.js";
 import {
   FaHistory,
   FaFilter,
@@ -12,24 +11,21 @@ import {
   FaPlus,
   FaSearch,
   FaEye,
-  FaFileContract,
   FaUserCheck,
   FaUserTimes,
   FaBriefcase,
   FaBuilding,
   FaTimes,
   FaRedoAlt,
-  FaChartLine,
   FaDownload,
 } from "react-icons/fa";
-
-// Import only the functions that actually work
+import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
   getEmploymentHistory,
   createEmploymentHistory,
   updateEmploymentHistory,
   deleteEmploymentHistory,
-  getEmployeesList, // This one works
+  getEmployeesList,
 } from "../../services/employmentHistoryService";
 
 // History Event Component
@@ -111,20 +107,6 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
     }
   };
 
-  // Extract department name from event
-  const getDepartmentName = () => {
-    if (event.department?.name) return event.department.name;
-    if (event.department_id) return `Department ${event.department_id}`;
-    return "N/A";
-  };
-
-  // Extract designation title from event
-  const getDesignationTitle = () => {
-    if (event.designation?.title) return event.designation.title;
-    if (event.designation_id) return `Designation ${event.designation_id}`;
-    return "N/A";
-  };
-
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
@@ -187,12 +169,16 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
           {event.reason_for_change || "No reason provided"}
         </p>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-          <span>
-            <strong>Department:</strong> {getDepartmentName()}
-          </span>
-          <span>
-            <strong>Designation:</strong> {getDesignationTitle()}
-          </span>
+          {event.department_id && (
+            <span>
+              <strong>Department ID:</strong> {event.department_id}
+            </span>
+          )}
+          {event.designation_id && (
+            <span>
+              <strong>Designation ID:</strong> {event.designation_id}
+            </span>
+          )}
           {event.employment_type && (
             <span>
               <strong>Type:</strong> {event.employment_type}
@@ -414,7 +400,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter the department ID number
+                Enter department ID (if available)
               </p>
             </div>
 
@@ -432,7 +418,7 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter the designation ID number
+                Enter designation ID (if available)
               </p>
             </div>
 
@@ -621,25 +607,33 @@ const EmploymentHistory = () => {
   const [eventTypeFilter, setEventTypeFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
   const [apiError, setApiError] = useState("");
+  const [organizationInfo, setOrganizationInfo] = useState("");
+
+  const { selectedOrganization, organizations, isLoading: orgLoading } = useOrganizations();
 
   // Fetch data
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedOrganization) {
+      setOrganizationInfo(`Organization: ${selectedOrganization.name}`);
+    }
+  }, [selectedOrganization]);
+
   const fetchData = async () => {
     setLoading(true);
     setApiError("");
 
     try {
-      // Fetch employment history
-      const historyResponse = await getEmploymentHistory();
-      console.log("Employment History response:", historyResponse.data);
+      console.log("🔄 Fetching employment history data...");
 
-      // Handle different response formats
+      // 1. Fetch employment history
+      const historyResponse = await getEmploymentHistory();
+      console.log("Employment History response:", historyResponse);
+
       let historyData = [];
       if (historyResponse.data?.data) {
         historyData = historyResponse.data.data;
@@ -647,10 +641,11 @@ const EmploymentHistory = () => {
         historyData = historyResponse.data;
       }
 
+      console.log(`✅ Loaded ${historyData.length} employment records`);
       setEvents(historyData);
       setFilteredEvents(historyData);
 
-      // Fetch employees list
+      // 2. Fetch employees
       const employeesResponse = await getEmployeesList();
       let employeesData = [];
       if (employeesResponse.data?.data) {
@@ -658,53 +653,22 @@ const EmploymentHistory = () => {
       } else if (Array.isArray(employeesResponse.data)) {
         employeesData = employeesResponse.data;
       }
+
+      console.log(`✅ Loaded ${employeesData.length} employees`);
       setEmployees(employeesData);
 
-      // Try to fetch departments with fallback
-      try {
-        const departmentsResponse = await axiosClient.get("/departments");
-        if (departmentsResponse.data?.data) {
-          setDepartments(departmentsResponse.data.data);
-        } else if (Array.isArray(departmentsResponse.data)) {
-          setDepartments(departmentsResponse.data);
-        }
-      } catch (deptError) {
-        console.warn(
-          "Departments endpoint not available, using empty list",
-          deptError
-        );
-        setDepartments([]);
-      }
-
-      // Try to fetch designations with fallback
-      try {
-        const designationsResponse = await axiosClient.get("/designations");
-        if (designationsResponse.data?.data) {
-          setDesignations(designationsResponse.data.data);
-        } else if (Array.isArray(designationsResponse.data)) {
-          setDesignations(designationsResponse.data);
-        }
-      } catch (desigError) {
-        console.warn(
-          "Designations endpoint not available, using empty list",
-          desigError
-        );
-        setDesignations([]);
-      }
     } catch (error) {
-      console.error("Error fetching main data:", error);
+      console.error("❌ Error fetching data:", error);
       setApiError(
         `Failed to load data: ${
           error.response?.data?.message || error.message || "Unknown error"
         }`
       );
 
-      // Initialize empty arrays on error
+      // Initialize empty arrays
       setEvents([]);
       setFilteredEvents([]);
       setEmployees([]);
-      setDepartments([]);
-      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -775,10 +739,10 @@ const EmploymentHistory = () => {
 
   const handleSubmit = async (formData) => {
     try {
-      console.log("Submitting form data:", formData);
+      console.log("📝 Submitting form data:", formData);
 
-      // Format the data
-      const formattedData = {
+      // Add organization_id if available
+      const submitData = {
         ...formData,
         employee_id: parseInt(formData.employee_id),
         department_id: formData.department_id
@@ -788,21 +752,22 @@ const EmploymentHistory = () => {
           ? parseInt(formData.designation_id)
           : null,
         salary: formData.salary ? parseFloat(formData.salary) : null,
+        ...(selectedOrganization?.id && { organization_id: selectedOrganization.id }),
       };
 
       if (selectedEvent) {
-        await updateEmploymentHistory(selectedEvent.id, formattedData);
-        alert("Employment history updated successfully!");
+        await updateEmploymentHistory(selectedEvent.id, submitData);
+        alert("✅ Employment history updated successfully!");
       } else {
-        await createEmploymentHistory(formattedData);
-        alert("Employment history created successfully!");
+        await createEmploymentHistory(submitData);
+        alert("✅ Employment history created successfully!");
       }
 
       setShowForm(false);
       setSelectedEvent(null);
       fetchData();
     } catch (error) {
-      console.error("Error saving employment history:", error);
+      console.error("❌ Error saving employment history:", error);
 
       let errorMessage = "Failed to save employment history.";
       if (error.response?.data?.errors) {
@@ -834,10 +799,10 @@ const EmploymentHistory = () => {
 
     try {
       await deleteEmploymentHistory(event.id);
-      alert("Employment record deleted successfully!");
+      alert("✅ Employment record deleted successfully!");
       fetchData();
     } catch (error) {
-      console.error("Error deleting event:", error);
+      console.error("❌ Error deleting event:", error);
       alert(
         "Failed to delete employment record: " +
           (error.response?.data?.message || error.message || "Unknown error")
@@ -851,39 +816,28 @@ const EmploymentHistory = () => {
   };
 
   const handleView = (event) => {
-    // Find department and designation names if available
-    const departmentName =
-      departments.find((d) => d.id === event.department_id)?.name ||
-      event.department?.name ||
-      `Department ${event.department_id || "N/A"}`;
-
-    const designationTitle =
-      designations.find((d) => d.id === event.designation_id)?.title ||
-      event.designation?.title ||
-      `Designation ${event.designation_id || "N/A"}`;
-
     const modalContent = `
-      Employment History Details:
+      📋 Employment History Details:
       
-      Employee: ${event.employee?.first_name || "Unknown"} ${
+      👤 Employee: ${event.employee?.first_name || "Unknown"} ${
       event.employee?.last_name || ""
     }
-      Start Date: ${event.start_date || "Not specified"}
-      ${event.end_date ? `End Date: ${event.end_date}` : "Ongoing"}
+      📅 Start Date: ${event.start_date || "Not specified"}
+      ${event.end_date ? `📅 End Date: ${event.end_date}` : "⏳ Ongoing"}
       
-      Department: ${departmentName}
-      Designation: ${designationTitle}
-      Employment Type: ${event.employment_type || "N/A"}
-      Location: ${event.location || "N/A"}
+      🏢 Department ID: ${event.department_id || "N/A"}
+      📋 Designation ID: ${event.designation_id || "N/A"}
+      📝 Employment Type: ${event.employment_type || "N/A"}
+      📍 Location: ${event.location || "N/A"}
       ${
         event.salary
-          ? `Salary: $${parseFloat(event.salary).toLocaleString()}`
-          : "Salary: N/A"
+          ? `💰 Salary: $${parseFloat(event.salary).toLocaleString()}`
+          : "💰 Salary: N/A"
       }
       
-      Reason for Change: ${event.reason_for_change || "Not specified"}
+      📝 Reason for Change: ${event.reason_for_change || "Not specified"}
       
-      Notes: ${event.notes || "No additional notes"}
+      📝 Notes: ${event.notes || "No additional notes"}
     `;
     alert(modalContent);
   };
@@ -921,11 +875,18 @@ const EmploymentHistory = () => {
     terminations: events.filter((e) =>
       e.reason_for_change?.toLowerCase().includes("terminat")
     ).length,
-    latest:
-      events.length > 0 && events[0].start_date
-        ? new Date(events[0].start_date).toLocaleDateString()
-        : "No records",
   };
+
+  if (orgLoading) {
+    return (
+      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading organization data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
@@ -949,7 +910,30 @@ const EmploymentHistory = () => {
             </h1>
             <p className="text-gray-600 mt-2">
               Track all employee employment history and organizational changes
+              {organizationInfo && ` • ${organizationInfo}`}
             </p>
+            {organizations.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                <FaBuilding className="h-4 w-4" />
+                <select
+                  value={selectedOrganization?.id || ""}
+                  onChange={(e) => {
+                    const newOrgId = parseInt(e.target.value);
+                    if (newOrgId) {
+                      localStorage.setItem('selectedOrgId', newOrgId);
+                      window.location.reload();
+                    }
+                  }}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-3">
             <button
@@ -1023,7 +1007,7 @@ const EmploymentHistory = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">
-                Employment History
+                Employment Records
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 {filteredEvents.length} of {events.length} records shown
@@ -1215,7 +1199,7 @@ const EmploymentHistory = () => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
 
-                    alert("Data exported to CSV successfully!");
+                    alert("✅ Data exported to CSV successfully!");
                   }}
                   className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 >
