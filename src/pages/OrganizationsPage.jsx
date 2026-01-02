@@ -805,7 +805,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
                 <HiPencil />
               </button>
               <button
-                onClick={(e) => {
+                onClick={(e) => {j
                   e.stopPropagation();
                   onDelete();
                 }}
