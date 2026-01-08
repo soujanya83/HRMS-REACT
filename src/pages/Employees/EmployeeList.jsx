@@ -25,6 +25,10 @@ import {
   FaChartBar,
   FaRedoAlt,
   FaFileDownload,
+  FaSync,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaLink,
 } from "react-icons/fa";
 import {
   HiOutlineArchive,
@@ -40,6 +44,7 @@ import {
   forceDeleteEmployee,
   updateEmployeeStatus,
 } from "../../services/employeeService";
+import { syncEmployeeToXero } from "../../services/xeroService"; // You'll need to create this service
 
 // Confirmation Modal Component
 const ConfirmationModal = ({
@@ -95,6 +100,120 @@ const ConfirmationModal = ({
             className={`px-5 py-2.5 text-white rounded-lg transition-colors font-medium ${buttonColors[type]}`}
           >
             Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Xero Status Badge Component
+const XeroStatusBadge = ({ employee, onClick, syncing }) => {
+  if (syncing) {
+    return (
+      <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Syncing...
+      </div>
+    );
+  }
+
+  if (employee.xero_employee_id) {
+    return (
+      <div 
+        className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full cursor-pointer hover:bg-green-200 transition-colors"
+        title="Already linked to Xero. Click to view details."
+        onClick={() => onClick(employee)}
+      >
+        <FaCheckCircle className="h-3 w-3" />
+        Linked
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => onClick(employee)}
+      disabled={syncing}
+      className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Sync to Xero"
+    >
+      <FaSync className="h-3 w-3" />
+      Sync to Xero
+    </button>
+  );
+};
+
+// Xero Details Modal Component
+const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
+  if (!isOpen || !employee) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-full bg-green-100 text-green-600">
+              <FaLink className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Xero Integration</h2>
+              <p className="text-sm text-gray-500">Employee linked with Xero</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Employee</p>
+            <p className="text-gray-900">{employee.first_name} {employee.last_name}</p>
+            <p className="text-sm text-gray-500">{employee.employee_code}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Xero Employee ID</p>
+            <div className="flex items-center gap-2">
+              <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono break-all">
+                {employee.xero_employee_id}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(employee.xero_employee_id);
+                  alert('Copied to clipboard!');
+                }}
+                className="text-blue-600 hover:text-blue-800"
+                title="Copy to clipboard"
+              >
+                <FaCopy className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <FaCheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-green-800 text-sm">
+                This employee is successfully linked with Xero payroll system.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Close
           </button>
         </div>
       </div>
@@ -208,6 +327,13 @@ export default function EmployeeList() {
     type: "delete",
     employeeId: null,
     employeeName: "",
+  });
+
+  // Xero states
+  const [syncingEmployees, setSyncingEmployees] = useState({});
+  const [xeroDetailsModal, setXeroDetailsModal] = useState({
+    isOpen: false,
+    employee: null,
   });
 
   const quickActions = [
@@ -426,6 +552,61 @@ export default function EmployeeList() {
     }
   };
 
+  // Handle sync to Xero
+  const handleSyncToXero = async (employee) => {
+    // If already linked, show details
+    if (employee.xero_employee_id) {
+      setXeroDetailsModal({
+        isOpen: true,
+        employee: employee
+      });
+      return;
+    }
+
+    // Set syncing state for this employee
+    setSyncingEmployees((prev) => ({ ...prev, [employee.id]: true }));
+    
+    try {
+      // Call the Xero sync API
+      const response = await syncEmployeeToXero(employee.id);
+      
+      if (response.status === true) {
+        // Update the employee in state with Xero ID
+        setEmployees(prev => prev.map(emp => 
+          emp.id === employee.id 
+            ? { ...emp, xero_employee_id: response.xero_employee_id }
+            : emp
+        ));
+        
+        // Show success message
+        if (response.message === "Employee already linked with Xero.") {
+          alert(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${response.xero_employee_id})`);
+        } else {
+          alert(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${response.xero_employee_id}`);
+        }
+        
+        // Refresh the employee list
+        fetchEmployees();
+      } else {
+        throw new Error(response.message || 'Failed to sync with Xero');
+      }
+    } catch (error) {
+      console.error("Failed to sync to Xero:", error);
+      alert(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.message}`);
+    } finally {
+      // Clear syncing state
+      setSyncingEmployees((prev) => ({ ...prev, [employee.id]: false }));
+    }
+  };
+
+  // Close Xero details modal
+  const closeXeroDetailsModal = () => {
+    setXeroDetailsModal({
+      isOpen: false,
+      employee: null,
+    });
+  };
+
   // Export employee list
   const exportEmployeeList = () => {
     const csvContent = [
@@ -438,6 +619,7 @@ export default function EmployeeList() {
         "Designation",
         "Status",
         "Joining Date",
+        "Xero Employee ID",
       ],
       ...filteredEmployees.map((emp) => [
         `${emp.first_name} ${emp.last_name}`,
@@ -448,6 +630,7 @@ export default function EmployeeList() {
         emp.designation?.title || "N/A",
         emp.status || "N/A",
         emp.joining_date || "N/A",
+        emp.xero_employee_id || "Not linked",
       ]),
     ]
       .map((row) => row.join(","))
@@ -488,6 +671,12 @@ export default function EmployeeList() {
         type={modalState.type}
       />
 
+      <XeroDetailsModal
+        isOpen={xeroDetailsModal.isOpen}
+        onClose={closeXeroDetailsModal}
+        employee={xeroDetailsModal.employee}
+      />
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -505,14 +694,14 @@ export default function EmployeeList() {
               )}
             </p>
           </div>
-<div className="flex flex-wrap gap-3 mr-8 mt-10">
-  <button
-    onClick={() => navigate("/dashboard/employees/new")}
-    className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-  >
-    <FaPlus className="h-4 w-4" /> Add New Employee
-  </button>
-</div>
+          <div className="flex flex-wrap gap-3 mr-8 mt-10">
+            <button
+              onClick={() => navigate("/dashboard/employees/new")}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <FaPlus className="h-4 w-4" /> Add New Employee
+            </button>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -651,6 +840,9 @@ export default function EmployeeList() {
                   Role & Department
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Xero Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -664,7 +856,7 @@ export default function EmployeeList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     </div>
@@ -673,7 +865,7 @@ export default function EmployeeList() {
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="text-gray-400 mb-4">
                       <FaUser className="h-12 w-12 mx-auto" />
                     </div>
@@ -750,6 +942,15 @@ export default function EmployeeList() {
                       </div>
                     </td>
 
+                    {/* Xero Status */}
+                    <td className="px-6 py-4">
+                      <XeroStatusBadge 
+                        employee={employee}
+                        onClick={() => handleSyncToXero(employee)}
+                        syncing={syncingEmployees[employee.id]}
+                      />
+                    </td>
+
                     {/* Status */}
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-2">
@@ -816,6 +1017,7 @@ export default function EmployeeList() {
                             >
                               <FaFileAlt className="h-4 w-4" />
                             </Link>
+                            
                             <button
                               onClick={() => handleDelete(employee)}
                               className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"

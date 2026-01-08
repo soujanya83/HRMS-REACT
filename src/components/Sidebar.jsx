@@ -93,12 +93,13 @@ const navLinks = [
             { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
         ],
     },
-    {
-        name: "Settings", icon: HiOutlineCog,
-        children: [
-            { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck }
-        ]
-    }
+   {
+    name: "Settings", icon: HiOutlineCog,
+    children: [
+        { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck },
+        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal } // Add this line
+    ]
+}
 ];
 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
