@@ -93,11 +93,12 @@ const navLinks = [
             { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
         ],
     },
-   {
+ {
     name: "Settings", icon: HiOutlineCog,
     children: [
+        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
         { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck },
-        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal } // Add this line
+        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal }
     ]
 }
 ];

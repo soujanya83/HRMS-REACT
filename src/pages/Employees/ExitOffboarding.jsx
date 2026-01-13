@@ -441,6 +441,7 @@ const OffboardingDashboard = () => {
   };
 
   const handleDeleteExit = async (exit) => {
+    
     if (
       !window.confirm(
         "Are you sure you want to delete this exit record? The employee status will be reverted to Active."
@@ -450,7 +451,8 @@ const OffboardingDashboard = () => {
 
     try {
       await deleteEmployeeExit(exit.id);
-
+  
+      
       // Update employee status back to Active
       if (exit.employee_id) {
         await updateEmployeeStatus(exit.employee_id, "Active");
@@ -460,7 +462,7 @@ const OffboardingDashboard = () => {
       fetchEmployees();
       fetchExits();
     } catch (error) {
-      console.error("Error deleting exit:", error);
+      console.error("Error deleting exit:", error, );
       alert("Failed to delete exit record");
     }
   };
@@ -789,7 +791,7 @@ const ExitDetailModal = ({
   const [tasks, setTasks] = useState(exit.tasks);
   const [isLoading, setIsLoading] = useState(false);
   const [isCompletingTask, setIsCompletingTask] = useState(null);
-
+console.log(setIsLoading)
   useEffect(() => {
     setTasks(exit.tasks);
   }, [exit.tasks]);
