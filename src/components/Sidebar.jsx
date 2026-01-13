@@ -18,7 +18,8 @@ import {
     HiOutlineChartPie, HiOutlineAnnotation, HiOutlineSpeakerphone,
     HiChevronDoubleLeft,
     HiChevronDoubleRight,
-    HiOutlineShieldCheck
+    HiOutlineShieldCheck,
+    HiOutlineKey 
 } from "react-icons/hi";
 
 const navLinks = [
@@ -93,14 +94,14 @@ const navLinks = [
             { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
         ],
     },
- {
-    name: "Settings", icon: HiOutlineCog,
-    children: [
-        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
-        { name: "Manage Permission", path: "/dashboard/settings/permission", icon: HiOutlineShieldCheck },
-        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal }
-    ]
-}
+{
+        name: "Settings", icon: HiOutlineCog,
+        children: [
+            { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
+            { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey },
+            { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal }
+        ]
+    }
 ];
 
 const Sidebar = ({ isSidebarOpen, setSidebarOpen, onLogout, isCollapsed, setIsCollapsed }) => {
