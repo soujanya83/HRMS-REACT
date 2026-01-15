@@ -2,14 +2,10 @@ import React, { useState, useEffect } from "react";
 import {
   FaKey,
   FaLock,
-  FaUnlock,
-  FaEye,
-  FaEyeSlash,
   FaEdit,
   FaTrash,
   FaPlus,
   FaSearch,
-  FaFilter,
   FaSave,
   FaTimes,
   FaCopy,
@@ -17,183 +13,42 @@ import {
   FaUsers,
   FaUserShield,
   FaShieldAlt,
-  FaUserCog,
-  FaUserTie,
-  FaUserMd,
   FaChartBar,
   FaCog,
   FaMoneyBill,
   FaCalendar,
   FaFileAlt,
-  FaHistory,
-  FaBuilding,
   FaClipboardList,
   FaRegClock,
-  FaRegCalendarAlt,
-  FaRegChartBar,
-  FaRegUser,
-  FaRegBuilding,
-  FaRegMoneyBillAlt,
-  FaRegFileAlt,
-  FaRegCalendarCheck,
-  FaRegClipboard,
-  FaLink,
-  FaUnlink,
   FaSort,
   FaSortUp,
   FaSortDown,
-  FaDownload,
-  FaUpload,
+  FaSpinner,
+  FaInfoCircle,
+  FaChevronRight,
+  FaExclamationTriangle,
   FaSync,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
-// Add these to your imports in the PermissionManagementPage.jsx file:
-import { FaInfoCircle, FaChevronRight } from "react-icons/fa";
+import permissionService from "../../services/permissionService";
+import roleService from "../../services/roleService";
 
-// Permission Categories with Icons and Descriptions
+// Permission Categories configuration
 const permissionCategories = [
-  {
-    id: "dashboard",
-    name: "Dashboard",
-    icon: <FaChartBar className="h-5 w-5" />,
-    color: "bg-blue-100 text-blue-600",
-    description: "Dashboard access and reporting",
-    permissions: [
-      {
-        id: "view_dashboard",
-        name: "View Dashboard",
-        description: "Access to main dashboard with analytics",
-        category: "Dashboard",
-        type: "read",
-        default: true,
-        roles: ["super_admin", "admin", "hr_manager", "department_head", "employee"],
-      },
-      {
-        id: "export_reports",
-        name: "Export Reports",
-        description: "Export dashboard reports to PDF/Excel",
-        category: "Dashboard",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
-  },
   {
     id: "employees",
     name: "Employees",
     icon: <FaUsers className="h-5 w-5" />,
     color: "bg-green-100 text-green-600",
     description: "Employee management and records",
-    permissions: [
-      {
-        id: "view_employees",
-        name: "View Employees",
-        description: "View employee list and profiles",
-        category: "Employees",
-        type: "read",
-        default: true,
-        roles: ["super_admin", "admin", "hr_manager", "department_head", "employee"],
-      },
-      {
-        id: "add_employees",
-        name: "Add Employees",
-        description: "Create new employee records",
-        category: "Employees",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "edit_employees",
-        name: "Edit Employees",
-        description: "Modify existing employee information",
-        category: "Employees",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager", "department_head"],
-      },
-      {
-        id: "delete_employees",
-        name: "Delete Employees",
-        description: "Remove employee records",
-        category: "Employees",
-        type: "delete",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "view_salaries",
-        name: "View Salaries",
-        description: "Access to salary information",
-        category: "Employees",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "manage_documents",
-        name: "Manage Documents",
-        description: "Upload and manage employee documents",
-        category: "Employees",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
   },
   {
     id: "recruitment",
     name: "Recruitment",
-    icon: <FaUserTie className="h-5 w-5" />,
+    icon: <FaUsers className="h-5 w-5" />,
     color: "bg-purple-100 text-purple-600",
     description: "Recruitment and hiring process",
-    permissions: [
-      {
-        id: "view_jobs",
-        name: "View Job Openings",
-        description: "View available job positions",
-        category: "Recruitment",
-        type: "read",
-        default: true,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "post_jobs",
-        name: "Post Jobs",
-        description: "Create new job postings",
-        category: "Recruitment",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "review_applicants",
-        name: "Review Applicants",
-        description: "Review and process job applications",
-        category: "Recruitment",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "schedule_interviews",
-        name: "Schedule Interviews",
-        description: "Schedule and manage interviews",
-        category: "Recruitment",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "make_offers",
-        name: "Make Offers",
-        description: "Send job offers to candidates",
-        category: "Recruitment",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
   },
   {
     id: "attendance",
@@ -201,53 +56,6 @@ const permissionCategories = [
     icon: <FaCalendar className="h-5 w-5" />,
     color: "bg-yellow-100 text-yellow-600",
     description: "Attendance and leave management",
-    permissions: [
-      {
-        id: "view_attendance",
-        name: "View Attendance",
-        description: "View attendance records",
-        category: "Attendance",
-        type: "read",
-        default: true,
-        roles: ["super_admin", "admin", "hr_manager", "department_head", "employee"],
-      },
-      {
-        id: "mark_attendance",
-        name: "Mark Attendance",
-        description: "Record attendance for employees",
-        category: "Attendance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "approve_leave",
-        name: "Approve Leave",
-        description: "Approve or reject leave requests",
-        category: "Attendance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager", "department_head"],
-      },
-      {
-        id: "manage_holidays",
-        name: "Manage Holidays",
-        description: "Add and manage holiday calendar",
-        category: "Attendance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "view_reports",
-        name: "View Reports",
-        description: "Access attendance reports",
-        category: "Attendance",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
   },
   {
     id: "payroll",
@@ -255,290 +63,161 @@ const permissionCategories = [
     icon: <FaMoneyBill className="h-5 w-5" />,
     color: "bg-red-100 text-red-600",
     description: "Payroll processing and management",
-    permissions: [
-      {
-        id: "process_payroll",
-        name: "Process Payroll",
-        description: "Run payroll calculations",
-        category: "Payroll",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "view_salary",
-        name: "View Salary",
-        description: "View salary information",
-        category: "Payroll",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "manage_deductions",
-        name: "Manage Deductions",
-        description: "Set up and manage deductions",
-        category: "Payroll",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "generate_payslips",
-        name: "Generate Payslips",
-        description: "Create and distribute payslips",
-        category: "Payroll",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "approve_bonus",
-        name: "Approve Bonus",
-        description: "Approve bonus payments",
-        category: "Payroll",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
+  },
+  {
+    id: "timesheet",
+    name: "Timesheet",
+    icon: <FaRegClock className="h-5 w-5" />,
+    color: "bg-blue-100 text-blue-600",
+    description: "Timesheet management",
+  },
+  {
+    id: "roster",
+    name: "Roster",
+    icon: <FaClipboardList className="h-5 w-5" />,
+    color: "bg-indigo-100 text-indigo-600",
+    description: "Roster management",
   },
   {
     id: "performance",
     name: "Performance",
     icon: <FaChartBar className="h-5 w-5" />,
-    color: "bg-indigo-100 text-indigo-600",
-    description: "Performance management and reviews",
-    permissions: [
-      {
-        id: "set_goals",
-        name: "Set Goals",
-        description: "Set performance goals for employees",
-        category: "Performance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager", "department_head"],
-      },
-      {
-        id: "conduct_reviews",
-        name: "Conduct Reviews",
-        description: "Conduct performance reviews",
-        category: "Performance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager", "department_head"],
-      },
-      {
-        id: "view_performance",
-        name: "View Performance",
-        description: "View performance data",
-        category: "Performance",
-        type: "read",
-        default: true,
-        roles: ["super_admin", "admin", "hr_manager", "department_head", "employee"],
-      },
-      {
-        id: "manage_appraisals",
-        name: "Manage Appraisals",
-        description: "Manage appraisal cycles",
-        category: "Performance",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-    ],
-  },
-  {
-    id: "settings",
-    name: "Settings",
-    icon: <FaCog className="h-5 w-5" />,
-    color: "bg-gray-100 text-gray-600",
-    description: "System configuration and settings",
-    permissions: [
-      {
-        id: "manage_roles",
-        name: "Manage Roles",
-        description: "Create and manage user roles",
-        category: "Settings",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "manage_permissions",
-        name: "Manage Permissions",
-        description: "Configure system permissions",
-        category: "Settings",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        id: "configure_system",
-        name: "Configure System",
-        description: "Change system settings",
-        category: "Settings",
-        type: "write",
-        default: false,
-        roles: ["super_admin"],
-      },
-      {
-        id: "view_audit_logs",
-        name: "View Audit Logs",
-        description: "Access system audit logs",
-        category: "Settings",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-    ],
-  },
-  {
-    id: "reports",
-    name: "Reports",
-    icon: <FaFileAlt className="h-5 w-5" />,
     color: "bg-pink-100 text-pink-600",
-    description: "Reporting and analytics",
-    permissions: [
-      {
-        id: "view_all_reports",
-        name: "View All Reports",
-        description: "Access all system reports",
-        category: "Reports",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "generate_reports",
-        name: "Generate Reports",
-        description: "Create custom reports",
-        category: "Reports",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "export_data",
-        name: "Export Data",
-        description: "Export data to external formats",
-        category: "Reports",
-        type: "write",
-        default: false,
-        roles: ["super_admin", "admin", "hr_manager"],
-      },
-      {
-        id: "view_analytics",
-        name: "View Analytics",
-        description: "Access advanced analytics",
-        category: "Reports",
-        type: "read",
-        default: false,
-        roles: ["super_admin", "admin"],
-      },
-    ],
+    description: "Performance management",
   },
 ];
 
-// Role mapping for display
-const roleMapping = {
-  super_admin: { name: "Super Admin", color: "bg-purple-100 text-purple-800" },
-  admin: { name: "Administrator", color: "bg-blue-100 text-blue-800" },
-  hr_manager: { name: "HR Manager", color: "bg-green-100 text-green-800" },
-  department_head: { name: "Department Head", color: "bg-orange-100 text-orange-800" },
-  employee: { name: "Employee", color: "bg-gray-100 text-gray-800" },
+// Parse permission name to get category and action
+const parsePermissionName = (name) => {
+  const parts = name.split('.');
+  if (parts.length === 2) {
+    return {
+      category: parts[0],
+      action: parts[1],
+      displayName: `${parts[0]} ${parts[1]}`.replace(/\b\w/g, l => l.toUpperCase()),
+    };
+  }
+  return {
+    category: 'other',
+    action: name,
+    displayName: name.replace(/\b\w/g, l => l.toUpperCase()),
+  };
+};
+
+// Get category details by ID
+const getCategoryDetails = (categoryId) => {
+  return permissionCategories.find(cat => cat.id === categoryId) || {
+    id: categoryId,
+    name: categoryId.charAt(0).toUpperCase() + categoryId.slice(1),
+    icon: <FaKey className="h-5 w-5" />,
+    color: "bg-gray-100 text-gray-600",
+    description: `${categoryId} permissions`,
+  };
 };
 
 // Permission Type Badge
-const PermissionTypeBadge = ({ type }) => {
+const PermissionTypeBadge = ({ action }) => {
   const typeConfig = {
-    read: { color: "bg-blue-100 text-blue-800", icon: <FaEye className="h-3 w-3" /> },
-    write: { color: "bg-green-100 text-green-800", icon: <FaEdit className="h-3 w-3" /> },
-    delete: { color: "bg-red-100 text-red-800", icon: <FaTrash className="h-3 w-3" /> },
+    view: { color: "bg-blue-100 text-blue-800", icon: <FaEye className="h-3 w-3" />, label: "View" },
+    create: { color: "bg-green-100 text-green-800", icon: <FaPlus className="h-3 w-3" />, label: "Create" },
+    add: { color: "bg-green-100 text-green-800", icon: <FaPlus className="h-3 w-3" />, label: "Add" },
+    edit: { color: "bg-yellow-100 text-yellow-800", icon: <FaEdit className="h-3 w-3" />, label: "Edit" },
+    delete: { color: "bg-red-100 text-red-800", icon: <FaTrash className="h-3 w-3" />, label: "Delete" },
+    manage: { color: "bg-purple-100 text-purple-800", icon: <FaCog className="h-3 w-3" />, label: "Manage" },
+    run: { color: "bg-indigo-100 text-indigo-800", icon: <FaSync className="h-3 w-3" />, label: "Run" },
   };
 
-  const config = typeConfig[type] || { color: "bg-gray-100 text-gray-800", icon: <FaLock className="h-3 w-3" /> };
+  const config = typeConfig[action] || { 
+    color: "bg-gray-100 text-gray-800", 
+    icon: <FaLock className="h-3 w-3" />,
+    label: action.charAt(0).toUpperCase() + action.slice(1)
+  };
 
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
       {config.icon}
-      {type.charAt(0).toUpperCase() + type.slice(1)}
+      {config.label}
     </span>
   );
 };
 
 // Permission Card Component
-const PermissionCard = ({ permission, onEdit, onDelete, onClone }) => {
+const PermissionCard = ({ permission, onEdit, onDelete, onClone, loading }) => {
+  const parsed = parsePermissionName(permission.name);
+  const category = getCategoryDetails(parsed.category);
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-lg ${permissionCategory?.color || 'bg-gray-100'}`}>
-            <FaLock className="h-5 w-5 text-gray-600" />
+          <div className={`p-2.5 rounded-lg ${category.color}`}>
+            {category.icon}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-800 text-lg">{permission.name}</h3>
-            <p className="text-sm text-gray-500 mt-1">{permission.description}</p>
+            <h3 className="font-semibold text-gray-800 text-lg">{parsed.displayName}</h3>
+            <p className="text-sm text-gray-500 mt-1">{category.description}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                {permission.name}
+              </code>
+              <span className="text-xs text-gray-500">ID: {permission.id}</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <PermissionTypeBadge type={permission.type} />
-          {permission.default && (
-            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-              Default
-            </span>
-          )}
+          <PermissionTypeBadge action={parsed.action} />
+          <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+            {permission.guard_name}
+          </span>
         </div>
       </div>
 
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">Assigned Roles</span>
-          <span className="text-xs text-gray-500">
-            {permission.roles.length} of {Object.keys(roleMapping).length} roles
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {permission.roles.map(roleId => {
-            const role = roleMapping[roleId];
-            if (!role) return null;
-            return (
-              <span key={roleId} className={`px-2 py-1 text-xs font-medium rounded-full ${role.color}`}>
-                {role.name}
-              </span>
-            );
-          })}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500">Created:</span>
+            <span className="ml-2 text-gray-800">
+              {new Date(permission.created_at).toLocaleDateString()}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-500">Updated:</span>
+            <span className="ml-2 text-gray-800">
+              {new Date(permission.updated_at).toLocaleDateString()}
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="flex justify-between items-center pt-4 border-t border-gray-100">
         <div className="text-sm text-gray-500">
-          Category: <span className="font-medium text-gray-700">{permission.category}</span>
+          Category: <span className="font-medium text-gray-700">{category.name}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onEdit(permission)}
-            className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+            disabled={loading}
+            className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg disabled:opacity-50"
             title="Edit Permission"
           >
             <FaEdit className="h-4 w-4" />
           </button>
           <button
             onClick={() => onClone(permission)}
-            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
+            disabled={loading}
+            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
             title="Clone Permission"
           >
             <FaCopy className="h-4 w-4" />
           </button>
-          {!permission.default && (
-            <button
-              onClick={() => onDelete(permission)}
-              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-              title="Delete Permission"
-            >
-              <FaTrash className="h-4 w-4" />
-            </button>
-          )}
+          <button
+            onClick={() => onDelete(permission)}
+            disabled={loading}
+            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+            title="Delete Permission"
+          >
+            <FaTrash className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>
@@ -546,66 +225,75 @@ const PermissionCard = ({ permission, onEdit, onDelete, onClone }) => {
 };
 
 // Permission Form Modal
-const PermissionFormModal = ({ isOpen, onClose, permission, categories, onSave }) => {
+const PermissionFormModal = ({ isOpen, onClose, permission, onSave, loading }) => {
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    category: "",
-    type: "read",
-    default: false,
-    roles: [],
+    guard_name: "web",
   });
+
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (permission) {
       setFormData({
         name: permission.name,
-        description: permission.description,
-        category: permission.category,
-        type: permission.type,
-        default: permission.default,
-        roles: [...permission.roles],
+        guard_name: permission.guard_name || "web",
       });
     } else {
       setFormData({
         name: "",
-        description: "",
-        category: categories[0]?.id || "",
-        type: "read",
-        default: false,
-        roles: [],
+        guard_name: "web",
       });
     }
-  }, [permission, categories, isOpen]);
+    setErrors({});
+  }, [permission, isOpen]);
 
-  const handleRoleToggle = (roleId) => {
-    setFormData(prev => ({
-      ...prev,
-      roles: prev.roles.includes(roleId)
-        ? prev.roles.filter(id => id !== roleId)
-        : [...prev.roles, roleId],
-    }));
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = "Permission name is required";
+    } else if (!formData.name.includes('.')) {
+      newErrors.name = "Permission name must follow format: category.action (e.g., employees.view)";
+    } else if (formData.name.split('.').length !== 2) {
+      newErrors.name = "Permission name must have exactly one dot (.) separating category and action";
+    }
+    
+    return newErrors;
   };
 
-  const handleSelectAllRoles = () => {
-    const allRoles = Object.keys(roleMapping);
-    setFormData(prev => ({
-      ...prev,
-      roles: prev.roles.length === allRoles.length ? [] : allRoles,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setErrors({ 
+          general: error.response?.data?.message || "Failed to save permission. Please try again." 
+        });
+      }
+    }
   };
 
   if (!isOpen) return null;
 
+  const parsed = parsePermissionName(formData.name);
+  const category = getCategoryDetails(parsed.category);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -614,174 +302,117 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, onSave }
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  {permission ? `Edit ${permission.name}` : "Create New Permission"}
+                  {permission ? `Edit Permission` : "Create New Permission"}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Define permission details and role assignments
+                  Define permission name and guard
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              disabled={loading}
+              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50"
             >
               <FaTimes className="h-5 w-5 text-gray-500" />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 max-h-[80vh] overflow-y-auto">
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Permission Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., View Employees"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Describe what this permission allows"
-                    rows={2}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
-                    </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type *
-                    </label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="read">Read</option>
-                      <option value="write">Write</option>
-                      <option value="delete">Delete</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="default"
-                    checked={formData.default}
-                    onChange={(e) => setFormData(prev => ({ ...prev, default: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="default" className="text-sm text-gray-700">
-                    Set as default permission (automatically assigned to all roles)
-                  </label>
-                </div>
+        <form onSubmit={handleSubmit} className="p-6">
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+              <div className="flex items-center gap-2">
+                <FaExclamationTriangle className="h-4 w-4" />
+                {errors.general}
               </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Permission Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.name ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="e.g., employees.view"
+                disabled={loading}
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Format: category.action (e.g., employees.view, recruitment.manage)
+              </p>
             </div>
 
-            {/* Role Assignment */}
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Role Assignment</h3>
-                <button
-                  type="button"
-                  onClick={handleSelectAllRoles}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {formData.roles.length === Object.keys(roleMapping).length
-                    ? "Deselect All"
-                    : "Select All"}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {Object.entries(roleMapping).map(([roleId, role]) => (
-                  <div
-                    key={roleId}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                      formData.roles.includes(roleId)
-                        ? "bg-blue-50 border-blue-200"
-                        : "bg-white border-gray-200 hover:bg-gray-50"
-                    }`}
-                    onClick={() => handleRoleToggle(roleId)}
-                  >
-                    <div className={`h-6 w-6 rounded-lg flex items-center justify-center ${
-                      formData.roles.includes(roleId)
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-400"
-                    }`}>
-                      {formData.roles.includes(roleId) ? (
-                        <FaCheck className="h-3 w-3" />
-                      ) : (
-                        <div className="h-2 w-2 rounded-full bg-gray-300" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-800">{role.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Guard Name
+              </label>
+              <select
+                value={formData.guard_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, guard_name: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
+              >
+                <option value="web">Web</option>
+                <option value="sanctum">Sanctum</option>
+                <option value="api">API</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Authentication guard for this permission
+              </p>
             </div>
 
-            {/* Summary */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-center gap-3">
-                <FaInfoCircle className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h4 className="font-semibold text-blue-800">Permission Summary</h4>
-                  <p className="text-blue-700 text-sm mt-1">
-                    This permission will be assigned to {formData.roles.length} roles
-                    {formData.default && " and set as default for all new roles"}
-                  </p>
+            {/* Preview Section */}
+            {formData.name && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Preview</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Category:</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded ${category.color}`}>
+                        {category.icon}
+                      </div>
+                      <span className="font-medium">{category.name}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Action:</span>
+                    <PermissionTypeBadge action={parsed.action} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Display Name:</span>
+                    <span className="font-medium">{parsed.displayName}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+              disabled={loading}
+              className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              disabled={loading}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
             >
+              {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
               {permission ? "Update Permission" : "Create Permission"}
             </button>
           </div>
@@ -792,9 +423,12 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, onSave }
 };
 
 // Category Card Component
-const CategoryCard = ({ category, onClick, isExpanded }) => {
-  const totalPermissions = category.permissions.length;
-  const defaultPermissions = category.permissions.filter(p => p.default).length;
+const CategoryCard = ({ category, permissions, onClick, isExpanded }) => {
+  const categoryPermissions = permissions.filter(p => 
+    parsePermissionName(p.name).category === category.id
+  );
+
+  if (categoryPermissions.length === 0) return null;
 
   return (
     <div 
@@ -815,7 +449,7 @@ const CategoryCard = ({ category, onClick, isExpanded }) => {
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-            {totalPermissions} permissions
+            {categoryPermissions.length} permissions
           </span>
           <FaChevronRight className={`h-4 w-4 text-gray-400 transition-transform ${
             isExpanded ? 'rotate-90' : ''
@@ -826,22 +460,23 @@ const CategoryCard = ({ category, onClick, isExpanded }) => {
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {category.permissions.map(permission => (
-              <div key={permission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium text-gray-800">{permission.name}</span>
-                  <p className="text-xs text-gray-500 mt-1">{permission.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PermissionTypeBadge type={permission.type} />
-                  {permission.default && (
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                      Default
+            {categoryPermissions.map(permission => {
+              const parsed = parsePermissionName(permission.name);
+              return (
+                <div key={permission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="font-medium text-gray-800">{parsed.displayName}</span>
+                    <p className="text-xs text-gray-500 mt-1">{permission.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PermissionTypeBadge action={parsed.action} />
+                    <span className="text-xs text-gray-500">
+                      ID: {permission.id}
                     </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -851,17 +486,12 @@ const CategoryCard = ({ category, onClick, isExpanded }) => {
 
 // Main Permission Management Component
 export default function PermissionManagementPage() {
-  const [view, setView] = useState("categories"); // "categories" or "permissions"
+  const [view, setView] = useState("categories");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [filteredPermissions, setFilteredPermissions] = useState([]);
-  const [permissions, setPermissions] = useState(
-    permissionCategories.flatMap(cat => cat.permissions.map(p => ({
-      ...p,
-      categoryId: cat.id,
-      category: cat.name,
-    })))
-  );
+  const [permissions, setPermissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [modalState, setModalState] = useState({
     form: false,
     confirm: false,
@@ -869,37 +499,100 @@ export default function PermissionManagementPage() {
     type: "delete",
   });
   const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [rolePermissions, setRolePermissions] = useState({});
+
+  // Fetch permissions and roles on component mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [permissionsData, rolesData] = await Promise.all([
+        permissionService.getPermissions(),
+        roleService.getRoles()
+      ]);
+      
+      setPermissions(permissionsData);
+      setRoles(rolesData);
+      
+      // Fetch permissions for each role
+      const rolePerms = {};
+      for (const role of rolesData) {
+        try {
+          const rolePermData = await roleService.getRolePermissions(role.id);
+          rolePerms[role.id] = rolePermData.permissions;
+        } catch (err) {
+          console.error(`Error fetching permissions for role ${role.id}:`, err);
+          rolePerms[role.id] = [];
+        }
+      }
+      setRolePermissions(rolePerms);
+      
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter permissions based on search and category
-  useEffect(() => {
+  const filteredPermissions = React.useMemo(() => {
     let filtered = [...permissions];
 
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(permission =>
         permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        permission.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        permission.category.toLowerCase().includes(searchTerm.toLowerCase())
+        parsePermissionName(permission.name).displayName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply category filter
     if (selectedCategory && view === "permissions") {
-      filtered = filtered.filter(permission => permission.categoryId === selectedCategory);
+      filtered = filtered.filter(permission => 
+        parsePermissionName(permission.name).category === selectedCategory
+      );
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
+      let aValue, bValue;
+
+      switch (sortConfig.key) {
+        case "name":
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case "category":
+          aValue = parsePermissionName(a.name).category;
+          bValue = parsePermissionName(b.name).category;
+          break;
+        case "created_at":
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        default:
+          aValue = a[sortConfig.key];
+          bValue = b[sortConfig.key];
+      }
+
+      if (aValue < bValue) {
         return sortConfig.direction === "asc" ? -1 : 1;
       }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
+      if (aValue > bValue) {
         return sortConfig.direction === "asc" ? 1 : -1;
       }
       return 0;
     });
 
-    setFilteredPermissions(filtered);
+    return filtered;
   }, [searchTerm, selectedCategory, view, permissions, sortConfig]);
 
   const handleSort = (key) => {
@@ -907,6 +600,13 @@ export default function PermissionManagementPage() {
       key,
       direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return <FaSort className="h-3 w-3 text-gray-400" />;
+    return sortConfig.direction === "asc" 
+      ? <FaSortUp className="h-3 w-3 text-blue-600" />
+      : <FaSortDown className="h-3 w-3 text-blue-600" />;
   };
 
   const handleOpenForm = (permission = null) => {
@@ -925,59 +625,132 @@ export default function PermissionManagementPage() {
     setModalState(prev => ({ ...prev, confirm: false, permission: null, type: "delete" }));
   };
 
-  const handleSavePermission = (formData) => {
-    if (modalState.permission) {
-      // Update existing permission
-      setPermissions(prev => prev.map(p =>
-        p.id === modalState.permission.id
-          ? { ...p, ...formData, categoryId: formData.category }
-          : p
-      ));
-    } else {
-      // Create new permission
-      const newPermission = {
-        id: `perm_${Date.now()}`,
-        ...formData,
-        categoryId: formData.category,
-        category: permissionCategories.find(c => c.id === formData.category)?.name || formData.category,
-      };
-      setPermissions(prev => [...prev, newPermission]);
+  const handleSavePermission = async (formData) => {
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      let savedPermission;
+      
+      if (modalState.permission) {
+        // Update existing permission
+        savedPermission = await permissionService.updatePermission(
+          modalState.permission.id, 
+          formData
+        );
+        setPermissions(prev => prev.map(p => 
+          p.id === modalState.permission.id ? savedPermission : p
+        ));
+        setSuccessMessage(`Permission "${savedPermission.name}" updated successfully!`);
+      } else {
+        // Create new permission
+        savedPermission = await permissionService.createPermission(formData);
+        setPermissions(prev => [...prev, savedPermission]);
+        setSuccessMessage(`Permission "${savedPermission.name}" created successfully!`);
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+      
+    } catch (err) {
+      console.error('Error saving permission:', err);
+      throw err;
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeletePermission = () => {
-    if (modalState.permission) {
+  const handleDeletePermission = async () => {
+    if (!modalState.permission) return;
+    
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await permissionService.deletePermission(modalState.permission.id);
       setPermissions(prev => prev.filter(p => p.id !== modalState.permission.id));
+      setSuccessMessage(`Permission "${modalState.permission.name}" deleted successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
+    } catch (err) {
+      console.error('Error deleting permission:', err);
+      setError('Failed to delete permission. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleClonePermission = (permission) => {
-    const clonedPermission = {
-      ...permission,
-      id: `${permission.id}_clone_${Date.now()}`,
-      name: `${permission.name} (Copy)`,
-    };
-    setPermissions(prev => [...prev, clonedPermission]);
-    handleCloseConfirm();
+  const handleClonePermission = async (permission) => {
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      // Create a new permission based on the existing one
+      const newPermissionData = {
+        name: `${permission.name}.copy`,
+        guard_name: permission.guard_name
+      };
+      
+      const savedPermission = await permissionService.createPermission(newPermissionData);
+      setPermissions(prev => [...prev, savedPermission]);
+      setSuccessMessage(`Permission "${savedPermission.name}" cloned successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+      handleCloseConfirm();
+    } catch (err) {
+      console.error('Error cloning permission:', err);
+      setError('Failed to clone permission. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <FaSort className="h-3 w-3 text-gray-400" />;
-    return sortConfig.direction === "asc" 
-      ? <FaSortUp className="h-3 w-3 text-blue-600" />
-      : <FaSortDown className="h-3 w-3 text-blue-600" />;
+  // Get which roles have this permission
+  const getRolesWithPermission = (permissionId) => {
+    const rolesWithPerm = [];
+    Object.entries(rolePermissions).forEach(([roleId, perms]) => {
+      if (perms.some(p => p.id === permissionId)) {
+        const role = roles.find(r => r.id === parseInt(roleId));
+        if (role) rolesWithPerm.push(role);
+      }
+    });
+    return rolesWithPerm;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <FaCheck className="h-5 w-5 text-green-600" />
+              <p className="text-green-800 font-medium">{successMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Permission Management</h1>
             <p className="text-gray-600 mt-2">
-              Manage system permissions, assign roles, and control access levels
+              Manage system permissions, assign to roles, and control access levels
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -987,11 +760,24 @@ export default function PermissionManagementPage() {
             >
               <FaPlus className="h-4 w-4" /> Create Permission
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
-              <FaDownload className="h-4 w-4" /> Export
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            >
+              <FaSync className="h-4 w-4" /> Refresh
             </button>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <FaExclamationTriangle className="h-5 w-5 text-red-600" />
+              <p className="text-red-800">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -1009,22 +795,20 @@ export default function PermissionManagementPage() {
               <div className="p-3 rounded-lg bg-green-50">
                 <FaLock className="h-6 w-6 text-green-600" />
               </div>
-              <span className="text-lg font-bold text-gray-800">
-                {permissions.filter(p => p.default).length}
-              </span>
+              <span className="text-lg font-bold text-gray-800">{roles.length}</span>
             </div>
-            <p className="text-sm text-gray-600">Default Permissions</p>
+            <p className="text-sm text-gray-600">Roles</p>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-purple-50">
-                <FaUsers className="h-6 w-6 text-purple-600" />
+                <FaUserShield className="h-6 w-6 text-purple-600" />
               </div>
               <span className="text-lg font-bold text-gray-800">
-                {Object.keys(roleMapping).length}
+                {permissionCategories.length}
               </span>
             </div>
-            <p className="text-sm text-gray-600">Roles</p>
+            <p className="text-sm text-gray-600">Categories</p>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
@@ -1032,10 +816,10 @@ export default function PermissionManagementPage() {
                 <FaShieldAlt className="h-6 w-6 text-orange-600" />
               </div>
               <span className="text-lg font-bold text-gray-800">
-                {permissionCategories.length}
+                {Object.values(rolePermissions).flat().length}
               </span>
             </div>
-            <p className="text-sm text-gray-600">Categories</p>
+            <p className="text-sm text-gray-600">Role Assignments</p>
           </div>
         </div>
       </div>
@@ -1075,45 +859,20 @@ export default function PermissionManagementPage() {
               </button>
             </div>
 
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <div className="relative flex-grow min-w-[250px]">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder={
-                    view === "categories" 
-                      ? "Search categories..." 
-                      : "Search permissions..."
-                  }
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
-              </div>
-
-              {view === "permissions" && (
-                <div className="flex gap-2">
-                  <select
-                    value={selectedCategory || ""}
-                    onChange={(e) => setSelectedCategory(e.target.value || null)}
-                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]"
-                  >
-                    <option value="">All Categories</option>
-                    {permissionCategories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]">
-                    <option value="all">All Types</option>
-                    <option value="read">Read Only</option>
-                    <option value="write">Write</option>
-                    <option value="delete">Delete</option>
-                  </select>
-                </div>
-              )}
+            {/* Search */}
+            <div className="relative flex-grow min-w-[250px]">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder={
+                  view === "categories" 
+                    ? "Search categories..." 
+                    : "Search permissions..."
+                }
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
             </div>
           </div>
         </div>
@@ -1123,166 +882,65 @@ export default function PermissionManagementPage() {
           {view === "categories" ? (
             /* Categories View */
             <div className="space-y-6">
-              {permissionCategories.map(category => (
-                <CategoryCard
-                  key={category.id}
-                  category={category}
-                  onClick={() => {
-                    setView("permissions");
-                    setSelectedCategory(category.id);
-                  }}
-                  isExpanded={selectedCategory === category.id && view === "permissions"}
-                />
-              ))}
+              {permissionCategories.map(category => {
+                const categoryPermissions = permissions.filter(p => 
+                  parsePermissionName(p.name).category === category.id
+                );
+                
+                if (categoryPermissions.length === 0) return null;
+                
+                return (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    permissions={categoryPermissions}
+                    onClick={() => {
+                      setView("permissions");
+                      setSelectedCategory(category.id);
+                    }}
+                    isExpanded={selectedCategory === category.id && view === "permissions"}
+                  />
+                );
+              })}
             </div>
           ) : (
-            /* Permissions View */
+            /* Permissions View - Grid Layout */
             <>
-              {/* Table Header */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("name")}
-                      >
-                        <div className="flex items-center gap-1">
-                          Permission
-                          {getSortIcon("name")}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("category")}
-                      >
-                        <div className="flex items-center gap-1">
-                          Category
-                          {getSortIcon("category")}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort("type")}
-                      >
-                        <div className="flex items-center gap-1">
-                          Type
-                          {getSortIcon("type")}
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Assigned Roles
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPermissions.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-12 text-center">
-                          <div className="text-gray-400 mb-4">
-                            <FaKey className="h-12 w-12 mx-auto" />
-                          </div>
-                          <h3 className="text-lg font-medium text-gray-700 mb-2">No permissions found</h3>
-                          <p className="text-gray-500 mb-4">
-                            {searchTerm || selectedCategory ? "Try adjusting your search or filters" : "Create your first permission"}
-                          </p>
-                          {!searchTerm && !selectedCategory && (
-                            <button
-                              onClick={() => handleOpenForm()}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                            >
-                              <FaPlus className="inline mr-2" />
-                              Create First Permission
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPermissions.map(permission => (
-                        <tr key={permission.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <div>
-                              <div className="font-medium text-gray-900">{permission.name}</div>
-                              <div className="text-sm text-gray-500">{permission.description}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              {permissionCategories.find(c => c.id === permission.categoryId)?.icon}
-                              <span className="text-sm text-gray-900">{permission.category}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <PermissionTypeBadge type={permission.type} />
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-1">
-                              {permission.roles.slice(0, 3).map(roleId => {
-                                const role = roleMapping[roleId];
-                                if (!role) return null;
-                                return (
-                                  <span key={roleId} className={`px-2 py-1 text-xs font-medium rounded-full ${role.color}`}>
-                                    {role.name}
-                                  </span>
-                                );
-                              })}
-                              {permission.roles.length > 3 && (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                  +{permission.roles.length - 3} more
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {permission.default ? (
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                                Default
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
-                                Custom
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleOpenForm(permission)}
-                                className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                                title="Edit"
-                              >
-                                <FaEdit className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleClonePermission(permission)}
-                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
-                                title="Clone"
-                              >
-                                <FaCopy className="h-4 w-4" />
-                              </button>
-                              {!permission.default && (
-                                <button
-                                  onClick={() => handleOpenConfirm(permission, "delete")}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                                  title="Delete"
-                                >
-                                  <FaTrash className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {filteredPermissions.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <FaKey className="h-16 w-16 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">
+                    {searchTerm ? "No permissions found" : "No permissions available"}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {searchTerm ? "Try adjusting your search" : "Create your first permission to get started"}
+                  </p>
+                  {!searchTerm && (
+                    <button
+                      onClick={() => handleOpenForm()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    >
+                      <FaPlus className="inline mr-2" />
+                      Create First Permission
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredPermissions.map(permission => (
+                    <PermissionCard
+                      key={permission.id}
+                      permission={permission}
+                      onEdit={() => handleOpenForm(permission)}
+                      onDelete={() => handleOpenConfirm(permission, "delete")}
+                      onClone={() => handleOpenConfirm(permission, "clone")}
+                      loading={saving}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1295,14 +953,8 @@ export default function PermissionManagementPage() {
                 Showing <span className="font-semibold">{filteredPermissions.length}</span> of{" "}
                 <span className="font-semibold">{permissions.length}</span> permissions
               </div>
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
-                  <FaSync className="h-4 w-4" />
-                  Refresh
-                </button>
-                <div className="text-sm text-gray-500">
-                  Last updated: {new Date().toLocaleDateString()}
-                </div>
+              <div className="text-sm text-gray-500">
+                Last updated: {new Date().toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -1314,8 +966,8 @@ export default function PermissionManagementPage() {
         isOpen={modalState.form}
         onClose={handleCloseForm}
         permission={modalState.permission}
-        categories={permissionCategories}
         onSave={handleSavePermission}
+        loading={saving}
       />
 
       {/* Confirmation Modal */}
@@ -1351,18 +1003,21 @@ export default function PermissionManagementPage() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCloseConfirm}
-                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                disabled={saving}
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={modalState.type === "delete" ? handleDeletePermission : () => handleClonePermission(modalState.permission)}
-                className={`px-5 py-2.5 text-white rounded-lg font-medium ${
+                disabled={saving}
+                className={`px-5 py-2.5 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2 ${
                   modalState.type === "delete" 
                     ? "bg-red-600 hover:bg-red-700" 
                     : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
+                {saving && <FaSpinner className="h-4 w-4 animate-spin" />}
                 {modalState.type === "delete" ? "Delete" : "Clone"}
               </button>
             </div>
