@@ -329,7 +329,7 @@ const RoleFormModal = ({ isOpen, onClose, role, permissions, onSave, loading }) 
                       <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                     )}
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Guard Name
                     </label>
@@ -342,7 +342,7 @@ const RoleFormModal = ({ isOpen, onClose, role, permissions, onSave, loading }) 
                       <option value="sanctum">Sanctum</option>
                       <option value="api">API</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -562,12 +562,12 @@ const RoleDetailsModal = ({ isOpen, onClose, role, permissions, userCount }) => 
                 {Object.keys(permissionCounts).length}
               </div>
             </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
+            {/* <div className="bg-orange-50 p-4 rounded-lg">
               <div className="text-sm text-orange-600 font-medium mb-1">Guard</div>
               <div className="text-2xl font-bold text-gray-800">
                 {role.guard_name || 'web'}
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Permissions by Category */}
