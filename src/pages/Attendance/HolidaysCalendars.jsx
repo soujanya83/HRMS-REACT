@@ -1,3 +1,4 @@
+// HolidaysCalendars.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   FaCalendarAlt, 
@@ -14,17 +15,13 @@ import {
   FaFlag,
   FaExclamationTriangle,
   FaTimes,
-  FaCheck
+  FaCheck,
+  FaSpinner
 } from 'react-icons/fa';
-import axios from 'axios';
+import axiosClient from '../../axiosClient.js'; // Import your axiosClient
 
-// Create axios instance
-const api = axios.create({
-  baseURL: 'https://api.chrispp.com/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Or better, use the holidayService from attendanceService
+import { holidayService } from '../../services/attendanceService';
 
 const HolidaysCalendars = () => {
   const [holidays, setHolidays] = useState([]);
@@ -87,38 +84,51 @@ const HolidaysCalendars = () => {
       setLoading(true);
       setError(null);
       
-      const response = await api.get('/organization-holiday');
+      // Method 1: Using the holidayService (recommended)
+      const response = await holidayService.getHolidays();
+      
+      // Method 2: Direct axiosClient call (if you prefer)
+      // const response = await axiosClient.get('/organization-holiday');
+      
       console.log('API Response:', response.data);
       
-      if (response.data.status && response.data.data) {
-        const holidaysData = Array.isArray(response.data.data) ? response.data.data : [];
-        setHolidays(holidaysData);
-        calculateStats(holidaysData);
-      } else if (response.data.data) {
-        setHolidays(response.data.data);
-        calculateStats(response.data.data);
-      } else if (Array.isArray(response.data)) {
-        setHolidays(response.data);
-        calculateStats(response.data);
-      } else {
-        setHolidays([]);
-        calculateStats([]);
+      // Handle different response formats
+      let holidaysData = [];
+      
+      if (response.data && response.data.success === true) {
+        // Format: { success: true, data: [...] }
+        holidaysData = response.data.data || [];
+      } else if (response.data && Array.isArray(response.data)) {
+        // Format: [...]
+        holidaysData = response.data;
+      } else if (response.data && response.data.data) {
+        // Format: { data: [...] }
+        holidaysData = response.data.data;
       }
+      
+      setHolidays(holidaysData);
+      calculateStats(holidaysData);
       
     } catch (err) {
       console.error('Error fetching holidays:', err);
       
-      // Load static data as fallback
-      const staticHolidays = getStaticHolidays();
-      setHolidays(staticHolidays);
-      calculateStats(staticHolidays);
-      
+      // Check if it's a 401 error
       if (err.response?.status === 401) {
-        setError('Session expired. Please login again.');
-      } else if (err.response?.status === 404) {
-        console.log('No holidays found. Using static data.');
+        setError('Your session has expired. Please login again.');
+        // Redirect will be handled by axiosClient interceptor
+        return;
+      }
+      
+      if (err.response?.status === 404) {
+        setError('No holidays found. You can add your first holiday.');
+        setHolidays([]);
+        calculateStats([]);
       } else {
-        setError('Failed to load holidays. Using static data.');
+        setError('Failed to load holidays. Please try again.');
+        // Load static data as fallback
+        const staticHolidays = getStaticHolidays();
+        setHolidays(staticHolidays);
+        calculateStats(staticHolidays);
       }
     } finally {
       setLoading(false);
@@ -220,18 +230,33 @@ const HolidaysCalendars = () => {
   };
 
   const calculateStats = (data) => {
-    const publicHolidays = data.filter(holiday => 
-      holiday.type === 'Public Holiday' || holiday.type === 'public_holiday'
-    ).length;
+    if (!data || !Array.isArray(data)) {
+      setStats({
+        totalHolidays: 0,
+        publicHolidays: 0,
+        companyEvents: 0,
+        upcomingHolidays: 0
+      });
+      return;
+    }
+
+    const publicHolidays = data.filter(holiday => {
+      const type = holiday.type?.toLowerCase() || '';
+      return type.includes('public') || type === 'public holiday';
+    }).length;
     
-    const companyEvents = data.filter(holiday => 
-      holiday.type === 'Company Event' || holiday.type === 'company_event'
-    ).length;
+    const companyEvents = data.filter(holiday => {
+      const type = holiday.type?.toLowerCase() || '';
+      return type.includes('company') || type.includes('event');
+    }).length;
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+    
     const upcomingHolidays = data.filter(holiday => {
       try {
         const holidayDate = new Date(holiday.date);
+        holidayDate.setHours(0, 0, 0, 0);
         return holidayDate >= today;
       } catch {
         return false;
@@ -272,7 +297,10 @@ const HolidaysCalendars = () => {
       // If another department is selected, remove "All"
       const filteredDepartments = departments.filter(d => d !== 'All');
       
-      return { ...prev, applicable_departments: filteredDepartments.length > 0 ? filteredDepartments : ['All'] };
+      return { 
+        ...prev, 
+        applicable_departments: filteredDepartments.length > 0 ? filteredDepartments : ['All'] 
+      };
     });
   };
 
@@ -290,19 +318,20 @@ const HolidaysCalendars = () => {
         location: newHoliday.location,
         is_recurring: newHoliday.is_recurring,
         half_day: newHoliday.half_day,
-        applicable_departments: newHoliday.applicable_departments
+        applicable_departments: newHoliday.applicable_departments,
+        organization_id: localStorage.getItem('organization_id') || 15 // Adjust as needed
       };
       
       let result;
       if (editingHoliday) {
         // Update holiday
-        result = await api.post(`/organization-holiday/${editingHoliday.id}`, holidayData);
+        result = await holidayService.updateHoliday(editingHoliday.id, holidayData);
       } else {
         // Create new holiday
-        result = await api.post('/organization-holiday', holidayData);
+        result = await holidayService.createHoliday(holidayData);
       }
       
-      if (result.data.status) {
+      if (result.data && result.data.success) {
         alert(result.data.message || 'Holiday saved successfully!');
         
         // Refresh the list
@@ -313,7 +342,7 @@ const HolidaysCalendars = () => {
         setEditingHoliday(null);
         resetForm();
       } else {
-        throw new Error(result.data.message || 'Failed to save holiday');
+        throw new Error(result.data?.message || 'Failed to save holiday');
       }
       
     } catch (err) {
@@ -342,13 +371,13 @@ const HolidaysCalendars = () => {
     
     try {
       setError(null);
-      const result = await api.delete(`/organization-holiday/${id}`);
+      const result = await holidayService.deleteHoliday(id);
       
-      if (result.data.status) {
+      if (result.data && result.data.success) {
         alert(result.data.message || 'Holiday deleted successfully!');
         await fetchHolidays();
       } else {
-        throw new Error(result.data.message || 'Failed to delete holiday');
+        throw new Error(result.data?.message || 'Failed to delete holiday');
       }
     } catch (err) {
       console.error('Error deleting holiday:', err);
@@ -371,7 +400,7 @@ const HolidaysCalendars = () => {
   };
 
   const convertToCSV = (data) => {
-    if (!data.length) return '';
+    if (!data || !data.length) return '';
     
     const headers = ['Name', 'Date', 'Type', 'Location', 'Description', 'Recurring', 'Half Day', 'Departments'];
     const rows = data.map(holiday => [
@@ -542,21 +571,14 @@ const HolidaysCalendars = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-300 rounded"></div>
-              ))}
-            </div>
-            <div className="h-64 bg-gray-300 rounded"></div>
-          </div>
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading holidays data...</p>
         </div>
       </div>
     );
-  }fz
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">

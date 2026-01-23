@@ -84,7 +84,7 @@ const calculateProgress = (current, target) => {
     return Math.min(Math.max(progress, 0), 100);
 };
 
-const getPerformanceStatus = (current, target, thresholdMin, thresholdMax) => {
+const getPerformanceStatus = (current, target, thresholdMin) => {
     if (current >= target) return 'exceeding';
     if (current >= thresholdMin && current < target) return 'on_track';
     if (current < thresholdMin) return 'at_risk';
@@ -720,14 +720,13 @@ const KPIDetailModal = ({
     const progress = calculateProgress(kpi.current_value, kpi.target_value);
     const performance = getPerformanceStatus(
         kpi.current_value,
-        kpi.target_value,
         kpi.threshold_min,
         kpi.threshold_max
     );
     const TrendIcon = getTrendIcon(kpi.trend);
 
     const getDisplayValue = (value, type) => {
-        if (kpi.unit?.toLowerCase() === '%') {
+        if (kpi.unit?.toLowerCase() === '%',type) {
             return formatNumber(value, 'percentage');
         }
         if (kpi.unit?.includes('$') || kpi.unit?.includes('₹')) {
