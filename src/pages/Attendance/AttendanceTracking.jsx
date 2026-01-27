@@ -13,6 +13,7 @@ import {
   FaExclamationTriangle,
   FaFingerprint,
   FaUsers,
+  FaSpinner,
 } from "react-icons/fa";
 import { attendanceService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
@@ -414,61 +415,46 @@ const AttendanceTracking = () => {
 
   if (loading && attendanceData.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded-lg"></div>
-              ))}
-            </div>
-            <div className="h-64 bg-gray-300 rounded-lg"></div>
-          </div>
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading attendance data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+    <div className="p-6 bg-gray-50 min-h-screen font-sans">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
             Attendance Tracking
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600">
             Monitor and manage employee attendance in real-time
           </p>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards - Redesigned */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        {/* Stats Cards - Redesigned to match holiday page */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statusCards.map((stat, index) => (
             <div
               key={index}
-              className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${stat.borderColor}`}
+              className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow"
             >
-              <div className="p-4">
-                <div className="flex items-center">
-                  <div
-                    className={`flex-shrink-0 rounded-md p-2 bg-${stat.color}-100`}
-                  >
-                    <stat.icon className={`h-5 w-5 text-${stat.color}-600`} />
-                  </div>
-                  <div className="ml-3 w-0 flex-1">
-                    <dl>
-                      <dt className="text-xs font-medium text-gray-500 truncate">
-                        {stat.label}
-                      </dt>
-                      <dd className="text-xl font-bold text-gray-900">
-                        {stat.value}
-                      </dd>
-                    </dl>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.label}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className={`text-${stat.color}-500 text-xl`}>
+                  <stat.icon />
                 </div>
               </div>
             </div>
@@ -482,144 +468,174 @@ const AttendanceTracking = () => {
             <span className="text-red-700 flex-1">{error}</span>
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors shadow-sm"
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Filters Section */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-            {/* Search */}
-            <div className="md:col-span-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="h-5 w-5 text-gray-400" />
+        {/* Action Buttons - Aligned like holiday page */}
+        <div className="mb-6 flex justify-end">
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaSync className={loading ? "animate-spin" : ""} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+            >
+              <FaDownload /> Export
+            </button>
+          </div>
+        </div>
+
+        {/* Filters Section - IMPROVED to match holiday page style */}
+        <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
+          <div className="space-y-4">
+            {/* Search bar - matching holiday page style */}
+            <div className="relative max-w-md">
+              <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search employees by name or ID..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
+                className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              />
+            </div>
+
+            {/* Filter controls - improved grid layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Start Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 ">
+                  Start Date
+                </label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="date"
+                    value={filters.start_date}
+                    onChange={(e) =>
+                      handleFilterChange("start_date", e.target.value)
+                    }
+                    className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search employees..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
               </div>
-            </div>
 
-            {/* Start Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={filters.start_date}
-                onChange={(e) =>
-                  handleFilterChange("start_date", e.target.value)
-                }
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3"
-              />
-            </div>
+              {/* End Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 ">
+                  End Date
+                </label>
+                <div className="relative">
+                  <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="date"
+                    value={filters.end_date}
+                    onChange={(e) =>
+                      handleFilterChange("end_date", e.target.value)
+                    }
+                    className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  />
+                </div>
+              </div>
 
-            {/* End Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={filters.end_date}
-                onChange={(e) => handleFilterChange("end_date", e.target.value)}
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3"
-              />
-            </div>
+              {/* Employee Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employee
+                </label>
+                <select
+                  value={filters.employee_id}
+                  onChange={(e) =>
+                    handleFilterChange("employee_id", e.target.value)
+                  }
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                >
+                  <option value="all">All Employees</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name || emp.employee_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Employee Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Employee
-              </label>
-              <select
-                value={filters.employee_id}
-                onChange={(e) =>
-                  handleFilterChange("employee_id", e.target.value)
-                }
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 bg-white"
-              >
-                <option value="all">All Employees</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name || emp.employee_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {/* Department Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <select
+                  value={filters.department}
+                  onChange={(e) =>
+                    handleFilterChange("department", e.target.value)
+                  }
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                >
+                  <option value="all">All Departments</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 bg-white"
-              >
-                <option value="all">All Status</option>
-                <option value="present">Present</option>
-                <option value="absent">Absent</option>
-                <option value="late">Late</option>
-                <option value="on_leave">On Leave</option>
-              </select>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1"
-              >
-                <FaSync className={loading ? "animate-spin" : ""} />
-                {loading ? "Loading..." : "Refresh"}
-              </button>
-              <button
-                onClick={handleExport}
-                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all flex-1"
-              >
-                <FaDownload /> Export
-              </button>
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange("status", e.target.value)}
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                >
+                  <option value="all">All Status</option>
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                  <option value="late">Late</option>
+                  <option value="on_leave">On Leave</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Attendance Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Check In/Out
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Hours
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Location/Device
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -656,7 +672,7 @@ const AttendanceTracking = () => {
                             </span>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-semibold text-gray-900">
                               {record.employee_name}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -731,7 +747,7 @@ const AttendanceTracking = () => {
                           {!record.check_in && (
                             <button
                               onClick={() => handleClockIn(record.employee_id)}
-                              className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm"
+                              className="px-4 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
                             >
                               Clock In
                             </button>
@@ -739,13 +755,13 @@ const AttendanceTracking = () => {
                           {record.check_in && !record.check_out && (
                             <button
                               onClick={() => handleClockOut(record.employee_id)}
-                              className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors shadow-sm"
+                              className="px-4 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap"
                             >
                               Clock Out
                             </button>
                           )}
                           {record.check_in && record.check_out && (
-                            <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-md">
+                            <span className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg whitespace-nowrap">
                               Completed
                             </span>
                           )}
@@ -760,11 +776,11 @@ const AttendanceTracking = () => {
         </div>
 
         {/* Summary Section */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
+        <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Summary ({filters.start_date} to {filters.end_date})
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 label: "Employees Present",
@@ -812,7 +828,7 @@ const AttendanceTracking = () => {
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

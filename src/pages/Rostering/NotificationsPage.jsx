@@ -37,7 +37,7 @@ const NotificationsPage = () => {
 
     const statusTypes = ['all', 'unread', 'read', 'archived'];
 
-    // Sample notifications data
+    // Sample notifications data (unchanged)
     const sampleNotifications = [
         {
             id: 1,
@@ -222,7 +222,7 @@ const NotificationsPage = () => {
     if (loading) {
         return (
             <div className="p-6 bg-gray-100 min-h-screen">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-6xl mx-auto"> {/* Reduced width */}
                     <div className="animate-pulse">
                         <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -239,78 +239,87 @@ const NotificationsPage = () => {
 
     return (
         <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-            <div className="max-w-7xl mx-auto">
+            {/* Main container with reduced width */}
+            <div className="max-w-6xl mx-auto px-2 md:px-4"> {/* Reduced max-width and added horizontal padding */}
                 
-                {/* Header */}
+                {/* Header - Better aligned */}
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                        <FaBell className="mr-3 text-blue-600" />
-                        Rostering Notifications
-                    </h1>
-                    <p className="text-gray-600">Manage and respond to rostering-related notifications</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                            <FaBell className="mr-3 text-blue-600" />
+                            Rostering Notifications
+                        </h1>
+                        <button 
+                            onClick={handleMarkAllAsRead}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                        >
+                            <FaCheck /> Mark All as Read
+                        </button>
+                    </div>
+                    <p className="text-gray-600 text-sm md:text-base">Manage and respond to rostering-related notifications</p>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+                {/* Stats Cards - Better spacing */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"> {/* Reduced gap */}
+                    <div className="bg-white p-3 md:p-4 rounded-lg shadow border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Notifications</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                                <p className="text-xs md:text-sm text-gray-600">Total Notifications</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <FaBell className="text-blue-500 text-xl" />
+                            <FaBell className="text-blue-500 text-lg md:text-xl" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                    <div className="bg-white p-3 md:p-4 rounded-lg shadow border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Unread</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.unread}</p>
+                                <p className="text-xs md:text-sm text-gray-600">Unread</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.unread}</p>
                             </div>
-                            <FaEnvelope className="text-yellow-500 text-xl" />
+                            <FaEnvelope className="text-yellow-500 text-lg md:text-xl" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
+                    <div className="bg-white p-3 md:p-4 rounded-lg shadow border-l-4 border-red-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Action Required</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.action_required}</p>
+                                <p className="text-xs md:text-sm text-gray-600">Action Required</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.action_required}</p>
                             </div>
-                            <FaExclamationTriangle className="text-red-500 text-xl" />
+                            <FaExclamationTriangle className="text-red-500 text-lg md:text-xl" />
                         </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
+                    <div className="bg-white p-3 md:p-4 rounded-lg shadow border-l-4 border-purple-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">High Priority</p>
-                                <p className="text-2xl font-bold text-gray-800">{stats.high_priority}</p>
+                                <p className="text-xs md:text-sm text-gray-600">High Priority</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.high_priority}</p>
                             </div>
-                            <FaClock className="text-purple-500 text-xl" />
+                            <FaClock className="text-purple-500 text-lg md:text-xl" />
                         </div>
                     </div>
                 </div>
 
-                {/* Filters and Actions */}
-                <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <div className="relative">
+                {/* Filters and Actions - Better alignment */}
+                <div className="mb-6 p-4 bg-white shadow rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-4 relative">
                             <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
                             <input 
                                 type="text"
                                 placeholder="Search notifications..."
                                 value={filters.search}
                                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
                         </div>
                         
                         <select 
                             value={filters.type}
                             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="md:col-span-3 border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             <option value="all">All Types</option>
                             {Object.entries(notificationTypes).map(([key, type]) => (
@@ -321,7 +330,7 @@ const NotificationsPage = () => {
                         <select 
                             value={filters.status}
                             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="md:col-span-3 border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             {statusTypes.map(type => (
                                 <option key={type} value={type}>
@@ -330,22 +339,17 @@ const NotificationsPage = () => {
                             ))}
                         </select>
 
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={handleMarkAllAsRead}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
-                            >
-                                <FaCheck /> Mark All Read
-                            </button>
-                            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                        <div className="md:col-span-2 flex gap-2">
+                            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors w-full text-sm">
                                 <FaFilter />
+                                Filter
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Notifications List */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Notifications List - Better alignment */}
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="divide-y divide-gray-200">
                         {filteredNotifications.length > 0 ? (
                             filteredNotifications.map((notification) => {
@@ -360,37 +364,41 @@ const NotificationsPage = () => {
                                         }`}
                                     >
                                         <div className="flex items-start justify-between">
-                                            <div className="flex items-start space-x-4 flex-1">
-                                                <div className={`p-3 rounded-lg ${typeConfig.color}`}>
-                                                    <IconComponent className="text-lg" />
+                                            <div className="flex items-start space-x-3 md:space-x-4 flex-1">
+                                                <div className={`p-2 md:p-3 rounded-lg ${typeConfig.color} flex-shrink-0`}>
+                                                    <IconComponent className="text-base md:text-lg" />
                                                 </div>
                                                 
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <h3 className="font-semibold text-gray-900 text-lg">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                                        <h3 className="font-semibold text-gray-900 text-base md:text-lg truncate">
                                                             {notification.title}
                                                         </h3>
-                                                        {getPriorityBadge(notification.priority)}
-                                                        {notification.action_required && (
-                                                            <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
-                                                                Action Required
-                                                            </span>
-                                                        )}
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {getPriorityBadge(notification.priority)}
+                                                            {notification.action_required && (
+                                                                <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full whitespace-nowrap">
+                                                                    Action Required
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     
-                                                    <p className="text-gray-600 mb-3">
+                                                    <p className="text-gray-600 text-sm md:text-base mb-3">
                                                         {notification.message}
                                                     </p>
                                                     
-                                                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                    <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-gray-500">
                                                         <span className="flex items-center gap-1">
-                                                            <FaUser size={12} />
+                                                            <FaUser size={10} />
                                                             From: {notification.sender}
                                                         </span>
+                                                        <span className="hidden sm:inline">•</span>
                                                         <span>
                                                             {getTimeAgo(notification.timestamp)}
                                                         </span>
-                                                        <span className={`px-2 py-1 rounded-full text-xs ${
+                                                        <span className="hidden sm:inline">•</span>
+                                                        <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${
                                                             notification.status === 'unread' 
                                                                 ? 'bg-blue-100 text-blue-800' 
                                                                 : 'bg-gray-100 text-gray-800'
@@ -402,25 +410,25 @@ const NotificationsPage = () => {
                                                     {/* Notification Metadata */}
                                                     {notification.metadata && (
                                                         <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm">
                                                                 {Object.entries(notification.metadata).map(([key, value]) => (
                                                                     <div key={key} className="flex">
-                                                                        <span className="font-medium text-gray-700 capitalize">
+                                                                        <span className="font-medium text-gray-700 capitalize min-w-[120px]">
                                                                             {key.replace('_', ' ')}:
                                                                         </span>
-                                                                        <span className="ml-2 text-gray-600">{value}</span>
+                                                                        <span className="ml-2 text-gray-600 break-words">{value}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         </div>
                                                     )}
 
-                                                    {/* Action Buttons */}
-                                                    <div className="flex gap-3 mt-4">
+                                                    {/* Action Buttons - Better aligned */}
+                                                    <div className="flex flex-wrap gap-2 mt-4">
                                                         {notification.action_required && (
                                                             <button
                                                                 onClick={() => handleAction(notification)}
-                                                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                                                className="px-3 py-1.5 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                                                             >
                                                                 Take Action
                                                             </button>
@@ -428,20 +436,20 @@ const NotificationsPage = () => {
                                                         {notification.status === 'unread' && (
                                                             <button
                                                                 onClick={() => handleMarkAsRead(notification.id)}
-                                                                className="px-4 py-2 bg-gray-200 text-gray-800 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                                                                className="px-3 py-1.5 bg-gray-200 text-gray-800 text-xs md:text-sm rounded-lg hover:bg-gray-300 transition-colors whitespace-nowrap"
                                                             >
                                                                 Mark as Read
                                                             </button>
                                                         )}
                                                         <button
                                                             onClick={() => handleArchive(notification.id)}
-                                                            className="px-4 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors"
+                                                            className="px-3 py-1.5 bg-yellow-600 text-white text-xs md:text-sm rounded-lg hover:bg-yellow-700 transition-colors whitespace-nowrap"
                                                         >
                                                             Archive
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(notification.id)}
-                                                            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                                                            className="px-3 py-1.5 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
                                                         >
                                                             Delete
                                                         </button>
@@ -464,14 +472,16 @@ const NotificationsPage = () => {
 
                 {/* Summary Footer */}
                 {filteredNotifications.length > 0 && (
-                    <div className="mt-6 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
+                    <div className="mt-4 bg-gray-50 px-4 md:px-6 py-3 border-t border-gray-200 rounded-lg">
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                            <div className="text-xs md:text-sm text-gray-600">
                                 Showing {filteredNotifications.length} of {notifications.length} notifications
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
+                            <div className="text-xs md:text-sm font-semibold text-gray-800">
                                 {stats.unread > 0 && (
-                                    <span className="text-blue-600">{stats.unread} unread notifications</span>
+                                    <span className="text-blue-600">
+                                        {stats.unread} unread notification{stats.unread !== 1 ? 's' : ''}
+                                    </span>
                                 )}
                             </div>
                         </div>
