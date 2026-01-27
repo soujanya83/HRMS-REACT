@@ -260,7 +260,7 @@ const navLinks = [
       },
     ],
   },
-  {
+   {
     name: "Settings",
     icon: HiOutlineCog,
     children: [
@@ -269,6 +269,11 @@ const navLinks = [
         path: "/dashboard/settings/roles",
         icon: HiOutlineShieldCheck,
       },
+      {
+        name: "Assign Role to User",  // Add this line
+        path: "/dashboard/settings/assign-role",  // Add this line
+        icon: HiOutlineUserAdd,  // Add this line
+      },  // Add this line
       {
         name: "Permission Management",
         path: "/dashboard/settings/permissions",
@@ -282,6 +287,7 @@ const navLinks = [
     ],
   },
 ];
+
 
 const Sidebar = ({
   isSidebarOpen,

@@ -65,6 +65,7 @@ import { OrganizationProvider } from "./contexts/OrganizationContext";
 import XeroIntegrationPage from "./pages/setting /XeroIntegrationPage";
 import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
+import AssignRolePage from "./pages/setting /AssignRolePage";
 
 // --- Placeholder Pages (for routes that are not yet built) ---
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
@@ -198,11 +199,12 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-{ 
+{
   path: "settings/*", 
   children: [
     { path: "roles", element: <RoleManagementPage /> },
-    { path: "permissions", element: <PermissionManagementPage /> }, // Add this line
+    { path: "assign-role", element: <AssignRolePage /> }, // Add this line
+    { path: "permissions", element: <PermissionManagementPage /> },
     { path: "xero", element: <XeroIntegrationPage /> },
     { index: true, element: <Navigate to="roles" replace /> }
   ]
