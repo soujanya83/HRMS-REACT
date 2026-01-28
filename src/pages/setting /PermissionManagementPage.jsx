@@ -66,6 +66,10 @@ import {
   FaDownload,
   FaUpload,
   FaPlay,
+  FaBook,
+  FaSitemap,
+  FaLayerGroup,
+  FaBox,
 } from "react-icons/fa";
 import permissionService from "../../services/permissionService";
 import roleService from "../../services/roleService";
@@ -73,15 +77,16 @@ import roleService from "../../services/roleService";
 // Extended Permission Categories with more icons
 const getCategoryIcon = (categoryName) => {
   const iconMap = {
-    employees: <FaUsers className="h-5 w-5" />,
     recruitment: <FaUserTie className="h-5 w-5" />,
+    employee: <FaUsers className="h-5 w-5" />,
+    rostering: <FaClipboardList className="h-5 w-5" />,
     attendance: <FaCalendar className="h-5 w-5" />,
-    payroll: <FaMoneyBill className="h-5 w-5" />,
     timesheet: <FaRegClock className="h-5 w-5" />,
-    roster: <FaClipboardList className="h-5 w-5" />,
+    payroll: <FaMoneyBill className="h-5 w-5" />,
     performance: <FaChartBar className="h-5 w-5" />,
     settings: <FaCog className="h-5 w-5" />,
     organization: <FaBuilding className="h-5 w-5" />,
+    organizations: <FaBuilding className="h-5 w-5" />,
     reports: <FaChartLine className="h-5 w-5" />,
     notifications: <FaBell className="h-5 w-5" />,
     finance: <FaCreditCard className="h-5 w-5" />,
@@ -110,6 +115,9 @@ const getCategoryIcon = (categoryName) => {
     editor: <FaUserEdit className="h-5 w-5" />,
     viewer: <FaUserMinus className="h-5 w-5" />,
     creator: <FaUserPlus className="h-5 w-5" />,
+    module: <FaBox className="h-5 w-5" />,
+    page: <FaBook className="h-5 w-5" />,
+    menu: <FaSitemap className="h-5 w-5" />,
   };
   
   return iconMap[categoryName] || <FaFolder className="h-5 w-5" />;
@@ -117,15 +125,16 @@ const getCategoryIcon = (categoryName) => {
 
 const getCategoryColor = (categoryName) => {
   const colorMap = {
-    employees: "bg-green-100 text-green-600",
     recruitment: "bg-purple-100 text-purple-600",
+    employee: "bg-green-100 text-green-600",
+    rostering: "bg-indigo-100 text-indigo-600",
     attendance: "bg-yellow-100 text-yellow-600",
-    payroll: "bg-red-100 text-red-600",
     timesheet: "bg-blue-100 text-blue-600",
-    roster: "bg-indigo-100 text-indigo-600",
+    payroll: "bg-red-100 text-red-600",
     performance: "bg-pink-100 text-pink-600",
     settings: "bg-gray-100 text-gray-600",
     organization: "bg-teal-100 text-teal-600",
+    organizations: "bg-teal-100 text-teal-600",
     reports: "bg-cyan-100 text-cyan-600",
     notifications: "bg-amber-100 text-amber-600",
     finance: "bg-emerald-100 text-emerald-600",
@@ -133,38 +142,26 @@ const getCategoryColor = (categoryName) => {
     admin: "bg-purple-100 text-purple-600",
     superadmin: "bg-red-100 text-red-600",
     manager: "bg-blue-100 text-blue-600",
+    module: "bg-blue-100 text-blue-600",
+    page: "bg-green-100 text-green-600",
   };
   
   return colorMap[categoryName] || "bg-gray-100 text-gray-600";
 };
 
-// Parse permission name to get category and action
+// Parse permission name to get category and action - UPDATED for module.page.action
 const parsePermissionName = (name) => {
-  const parts = name.split('.');
-  if (parts.length >= 2) {
-    return {
-      category: parts[0],
-      action: parts[1],
-      displayName: `${parts[0]} ${parts[1]}`.replace(/\b\w/g, l => l.toUpperCase()),
-      fullName: name,
-    };
-  }
-  return {
-    category: 'other',
-    action: name,
-    displayName: name.replace(/\b\w/g, l => l.toUpperCase()),
-    fullName: name,
-  };
+  return permissionService.parsePermissionName(name);
 };
 
 // Get category details by ID
 const getCategoryDetails = (categoryId) => {
   return {
     id: categoryId,
-    name: categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace(/([A-Z])/g, ' $1'),
+    name: categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace(/_/g, ' '),
     icon: getCategoryIcon(categoryId),
     color: getCategoryColor(categoryId),
-    description: `${categoryId} permissions`,
+    description: `${categoryId.replace(/_/g, ' ')} permissions`,
   };
 };
 
@@ -203,34 +200,32 @@ const PermissionTypeBadge = ({ action }) => {
   );
 };
 
-// Category Management Modal
-const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, onEditCategory, onDeleteCategory, loading }) => {
+// Module Management Modal
+const ModuleManagementModal = ({ isOpen, onClose, modules, onAddModule, onEditModule, onDeleteModule, loading }) => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [categoryForm, setCategoryForm] = useState({
+  const [moduleForm, setModuleForm] = useState({
     name: "",
     description: "",
   });
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingModule, setEditingModule] = useState(null);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (editingCategory) {
-      setCategoryForm({
-        name: editingCategory.name,
-        description: editingCategory.description || "",
+    if (editingModule) {
+      setModuleForm({
+        name: editingModule.name,
+        description: editingModule.description || "",
       });
       setShowAddForm(true);
     }
-  }, [editingCategory]);
+  }, [editingModule]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     const newErrors = {};
-    if (!categoryForm.name.trim()) {
-      newErrors.name = "Category name is required";
-    } else if (!/^[a-z]+$/.test(categoryForm.name)) {
-      newErrors.name = "Category name must be lowercase letters only (no spaces or special characters)";
+    if (!moduleForm.name.trim()) {
+      newErrors.name = "Module name is required";
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -239,20 +234,20 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
     }
 
     try {
-      if (editingCategory) {
-        await onEditCategory(editingCategory.id, categoryForm);
+      if (editingModule) {
+        await onEditModule(editingModule.id, moduleForm);
       } else {
-        await onAddCategory(categoryForm);
+        await onAddModule(moduleForm);
       }
       
       // Reset form
-      setCategoryForm({ name: "", description: "" });
-      setEditingCategory(null);
+      setModuleForm({ name: "", description: "" });
+      setEditingModule(null);
       setShowAddForm(false);
       setErrors({});
     } catch (error) {
-      console.error('Error saving category:', error);
-      setErrors({ general: error.message || "Failed to save category" });
+      console.error('Error saving module:', error);
+      setErrors({ general: error.message || "Failed to save module" });
     }
   };
 
@@ -265,11 +260,11 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-blue-100 rounded-lg">
-                <FaFolder className="h-6 w-6 text-blue-600" />
+                <FaBox className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Manage Categories</h2>
-                <p className="text-sm text-gray-500">Add, edit, or delete permission categories</p>
+                <h2 className="text-xl font-bold text-gray-800">Manage Modules</h2>
+                <p className="text-sm text-gray-500">Add, edit, or delete modules</p>
               </div>
             </div>
             <button
@@ -282,7 +277,7 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
         </div>
 
         <div className="flex flex-col h-[calc(90vh-120px)]">
-          {/* Categories List */}
+          {/* Modules List */}
           <div className="flex-1 overflow-y-auto p-6">
             {errors.general && (
               <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -295,55 +290,53 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
 
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Existing Categories</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Existing Modules</h3>
                 <button
                   onClick={() => {
                     setShowAddForm(true);
-                    setEditingCategory(null);
-                    setCategoryForm({ name: "", description: "" });
+                    setEditingModule(null);
+                    setModuleForm({ name: "", description: "" });
                   }}
                   className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 >
-                  <FaFolderPlus className="h-4 w-4" /> Add New Category
+                  <FaPlus className="h-4 w-4" /> Add New Module
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {categories.map(category => {
-                  const details = getCategoryDetails(category.id);
+                {modules.map(module => {
+                  const details = getCategoryDetails(module.name.toLowerCase());
                   return (
-                    <div key={category.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div key={module.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg ${details.color}`}>
                             {details.icon}
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-800">{details.name}</h4>
-                            <p className="text-xs text-gray-500">{category.count || 0} permissions</p>
+                            <h4 className="font-semibold text-gray-800">{module.name}</h4>
+                            <p className="text-xs text-gray-500">ID: {module.id}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => {
-                              setEditingCategory(category);
+                              setEditingModule(module);
                               setShowAddForm(true);
                             }}
                             className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                            title="Edit Category"
+                            title="Edit Module"
                           >
                             <FaEdit className="h-3 w-3" />
                           </button>
-                          {category.count === 0 && (
-                            <button
-                              onClick={() => onDeleteCategory(category.id)}
-                              disabled={loading}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                              title="Delete Category"
-                            >
-                              <FaTrash className="h-3 w-3" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => onDeleteModule(module.id)}
+                            disabled={loading}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Delete Module"
+                          >
+                            <FaTrash className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -352,34 +345,31 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
               </div>
             </div>
 
-            {/* Add/Edit Category Form */}
+            {/* Add/Edit Module Form */}
             {showAddForm && (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  {editingCategory ? `Edit ${editingCategory.name}` : "Add New Category"}
+                  {editingModule ? `Edit ${editingModule.name}` : "Add New Module"}
                 </h3>
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category Name *
+                      Module Name *
                     </label>
                     <input
                       type="text"
-                      value={categoryForm.name}
-                      onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value.toLowerCase() }))}
+                      value={moduleForm.name}
+                      onChange={(e) => setModuleForm(prev => ({ ...prev, name: e.target.value }))}
                       className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.name ? 'border-red-300' : 'border-gray-300'
                       }`}
-                      placeholder="e.g., organization"
-                      disabled={loading || !!editingCategory}
+                      placeholder="e.g., Employee Management"
+                      disabled={loading}
                     />
                     {errors.name && (
                       <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
-                      Use lowercase letters only, no spaces or special characters
-                    </p>
                   </div>
 
                   <div>
@@ -387,10 +377,10 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
                       Description (Optional)
                     </label>
                     <textarea
-                      value={categoryForm.description}
-                      onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
+                      value={moduleForm.description}
+                      onChange={(e) => setModuleForm(prev => ({ ...prev, description: e.target.value }))}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Describe what this category includes"
+                      placeholder="Describe what this module includes"
                       rows={2}
                     />
                   </div>
@@ -400,8 +390,8 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
                       type="button"
                       onClick={() => {
                         setShowAddForm(false);
-                        setEditingCategory(null);
-                        setCategoryForm({ name: "", description: "" });
+                        setEditingModule(null);
+                        setModuleForm({ name: "", description: "" });
                         setErrors({});
                       }}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
@@ -414,7 +404,7 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
                     >
                       {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
-                      {editingCategory ? "Update Category" : "Create Category"}
+                      {editingModule ? "Update Module" : "Create Module"}
                     </button>
                   </div>
                 </form>
@@ -427,16 +417,106 @@ const CategoryManagementModal = ({ isOpen, onClose, categories, onAddCategory, o
   );
 };
 
+// Module Details Modal
+const ModuleDetailsModal = ({ isOpen, onClose, module, pages, loading }) => {
+  if (!isOpen || !module) return null;
+
+  const moduleDetails = getCategoryDetails(module.name.toLowerCase());
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-lg ${moduleDetails.color}`}>
+                {moduleDetails.icon}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">{module.name} Module</h2>
+                <p className="text-sm text-gray-500">Module ID: {module.id}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <FaTimes className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col h-[calc(90vh-120px)]">
+          <div className="flex-1 overflow-y-auto p-6">
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <FaSpinner className="h-8 w-8 text-blue-600 animate-spin" />
+                <span className="ml-3 text-gray-600">Loading pages...</span>
+              </div>
+            ) : (
+              <>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Pages in this Module</h3>
+                  {pages.length === 0 ? (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                      <FaBook className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600">No pages found in this module</p>
+                      <p className="text-sm text-gray-500 mt-1">Add pages to this module to enable permissions</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {pages.map(page => (
+                        <div key={page.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-800">{page.name}</h4>
+                              <p className="text-sm text-gray-600 mt-1">Slug: {page.slug}</p>
+                              <p className="text-xs text-gray-500 mt-2">Page ID: {page.id}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                Page
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <FaInfoCircle className="h-5 w-5" />
+                    About Module Pages
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    Each page in a module can have permissions associated with it. 
+                    The system automatically generates permissions in the format: 
+                    <code className="bg-blue-100 px-2 py-1 rounded mx-1 font-mono">{`module.page.action`}</code>
+                    For example: <code className="bg-blue-100 px-2 py-1 rounded mx-1 font-mono">{`${module.name.toLowerCase()}.${pages[0]?.slug || 'page'}.view`}</code>
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Permission Form Modal with Quick Add
-const PermissionFormModal = ({ isOpen, onClose, permission, categories, standardActions, onSave, loading, onQuickAdd }) => {
+const PermissionFormModal = ({ isOpen, onClose, permission, modules, standardActions, onSave, loading, onQuickAdd }) => {
   const [formData, setFormData] = useState({
     name: "",
     guard_name: "web",
   });
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedActions, setSelectedActions] = useState([]);
+  const [selectedModule, setSelectedModule] = useState("");
+  const [selectedPage, setSelectedPage] = useState("");
+  const [selectedAction, setSelectedAction] = useState("");
   const [customAction, setCustomAction] = useState("");
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [permissionType, setPermissionType] = useState("page"); // "page" or "module"
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -446,69 +526,78 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
         guard_name: permission.guard_name || "web",
       });
       const parsed = parsePermissionName(permission.name);
-      setSelectedCategory(parsed.category);
-      setSelectedActions([parsed.action]);
+      setSelectedModule(parsed.module);
+      setSelectedPage(parsed.page || "");
+      setSelectedAction(parsed.action);
+      setPermissionType(parsed.page ? "page" : "module");
     } else {
       setFormData({
         name: "",
         guard_name: "web",
       });
-      setSelectedCategory("");
-      setSelectedActions([]);
+      setSelectedModule("");
+      setSelectedPage("");
+      setSelectedAction("");
       setCustomAction("");
+      setPermissionType("page");
     }
     setErrors({});
   }, [permission, isOpen]);
 
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-    if (customAction) {
-      setFormData(prev => ({
-        ...prev,
-        name: `${category}.${customAction}`
-      }));
-    } else if (selectedActions.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        name: `${category}.${selectedActions[0]}`
-      }));
-    }
+  const handleModuleChange = (moduleName) => {
+    setSelectedModule(moduleName.toLowerCase());
+    setSelectedPage("");
+    updatePermissionName();
   };
 
-  const handleActionSelect = (action) => {
-    if (selectedActions.includes(action)) {
-      setSelectedActions(prev => prev.filter(a => a !== action));
-    } else {
-      setSelectedActions(prev => [...prev, action]);
-    }
-    
-    if (selectedCategory && action && !showQuickAdd) {
-      setFormData(prev => ({
-        ...prev,
-        name: `${selectedCategory}.${action}`
-      }));
-    }
+  const handlePageChange = (pageSlug) => {
+    setSelectedPage(pageSlug);
+    updatePermissionName();
+  };
+
+  const handleActionChange = (action) => {
+    setSelectedAction(action);
+    setCustomAction("");
+    updatePermissionName();
   };
 
   const handleCustomActionChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.toLowerCase().replace(/\s+/g, '_');
     setCustomAction(value);
-    setSelectedActions([]);
-    if (selectedCategory && value) {
-      setFormData(prev => ({
-        ...prev,
-        name: `${selectedCategory}.${value}`
-      }));
+    setSelectedAction("");
+    updatePermissionName();
+  };
+
+  const handlePermissionTypeChange = (type) => {
+    setPermissionType(type);
+    setSelectedPage("");
+    updatePermissionName();
+  };
+
+  const updatePermissionName = () => {
+    let permissionName = "";
+    
+    if (permissionType === "page" && selectedModule && selectedPage && (selectedAction || customAction)) {
+      const action = selectedAction || customAction;
+      permissionName = `${selectedModule}.${selectedPage}.${action}`;
+    } else if (permissionType === "module" && selectedModule && (selectedAction || customAction)) {
+      const action = selectedAction || customAction;
+      permissionName = `${selectedModule}.${action}`;
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      name: permissionName
+    }));
   };
 
   const validateForm = () => {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = "Permission name is required";
+      newErrors.general = "Please complete all required fields";
     } else if (!formData.name.includes('.')) {
-      newErrors.name = "Permission name must follow format: category.action";
+      newErrors.general = "Permission name must follow format: module.action or module.page.action";
     }
     
     return newErrors;
@@ -528,29 +617,8 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
       onClose();
     } catch (error) {
       console.error('Save error:', error);
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setErrors({ 
-          general: error.response?.data?.message || "Failed to save permission. Please try again." 
-        });
-      }
-    }
-  };
-
-  const handleQuickAddSubmit = async () => {
-    if (!selectedCategory || selectedActions.length === 0) {
-      setErrors({ general: "Please select a category and at least one action" });
-      return;
-    }
-
-    try {
-      await onQuickAdd(selectedCategory, selectedActions);
-      onClose();
-    } catch (error) {
-      console.error('Quick add error:', error);
       setErrors({ 
-        general: error.response?.data?.message || "Failed to add permissions. Please try again." 
+        general: error.response?.data?.message || "Failed to save permission. Please try again." 
       });
     }
   };
@@ -558,7 +626,7 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
   if (!isOpen) return null;
 
   const parsed = parsePermissionName(formData.name);
-  const categoryDetails = getCategoryDetails(parsed.category);
+  const moduleDetails = getCategoryDetails(selectedModule || parsed.module);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -574,7 +642,7 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
                   {permission ? `Edit Permission` : "Create Permission"}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {showQuickAdd ? "Quick add multiple permissions" : "Create a single permission"}
+                  Create permissions in format: module.page.action
                 </p>
               </div>
             </div>
@@ -599,228 +667,153 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
               </div>
             )}
 
-            {/* Toggle between single and quick add */}
-            <div className="flex gap-2 mb-6">
-              <button
-                type="button"
-                onClick={() => setShowQuickAdd(false)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${!showQuickAdd ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
-              >
-                Single Permission
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowQuickAdd(true)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${showQuickAdd ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
-              >
-                Quick Add Multiple
-              </button>
-            </div>
-
-            {showQuickAdd ? (
-              // Quick Add Multiple Permissions
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Add Permissions</h3>
-                  <p className="text-gray-600 mb-4">
-                    Select a category and choose standard actions to create multiple permissions at once.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Category *
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {categories.map(category => {
-                      const details = getCategoryDetails(category.id);
-                      return (
-                        <button
-                          key={category.id}
-                          type="button"
-                          onClick={() => handleCategoryChange(category.id)}
-                          className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                            selectedCategory === category.id
-                              ? "bg-blue-50 border-blue-200 ring-2 ring-blue-500"
-                              : "bg-white border-gray-200 hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className={`p-2 rounded-lg ${details.color}`}>
-                            {details.icon}
-                          </div>
-                          <div className="text-left">
-                            <div className="font-medium text-gray-800">{details.name}</div>
-                            <div className="text-xs text-gray-500">{category.count} permissions</div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedCategory && (
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Select Actions *
-                      </label>
-                      <div className="text-xs text-gray-500">
-                        {selectedActions.length} selected
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {standardActions.map(action => (
-                        <div key={action.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
-                          <input
-                            type="checkbox"
-                            id={`action-${action.id}`}
-                            checked={selectedActions.includes(action.id)}
-                            onChange={() => handleActionSelect(action.id)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <label htmlFor={`action-${action.id}`} className="text-sm text-gray-700 cursor-pointer flex-1">
-                            {action.name}
-                          </label>
-                          <PermissionTypeBadge action={action.id} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">Preview</h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedCategory && selectedActions.length > 0 ? (
-                      selectedActions.map(action => (
-                        <div key={action} className="flex items-center justify-between p-2 bg-white rounded">
-                          <code className="text-sm px-2 py-1 rounded bg-gray-100">
-                            {selectedCategory}.{action}
-                          </code>
-                          <PermissionTypeBadge action={action} />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-blue-600 text-sm">Select a category and actions to preview permissions</p>
-                    )}
-                  </div>
+            <div className="space-y-6">
+              {/* Permission Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Permission Type *
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePermissionTypeChange("page")}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${permissionType === "page" ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
+                  >
+                    <FaBook className="inline mr-2" /> Page Permission
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePermissionTypeChange("module")}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${permissionType === "module" ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
+                  >
+                    <FaBox className="inline mr-2" /> Module Permission
+                  </button>
                 </div>
               </div>
-            ) : (
-              // Single Permission Form
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Category *
-                    </label>
+
+              {/* Module Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Module *
+                </label>
+                <select
+                  value={selectedModule}
+                  onChange={(e) => handleModuleChange(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={loading}
+                >
+                  <option value="">Choose a module</option>
+                  {modules.map(module => (
+                    <option key={module.id} value={module.name.toLowerCase()}>
+                      {module.name} (ID: {module.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Page Selection (only for page permissions) */}
+              {permissionType === "page" && selectedModule && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Page Slug *
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedPage}
+                    onChange={(e) => handlePageChange(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., add_manage_profiles"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use lowercase letters with underscores (e.g., "add_manage_profiles", "employment_history")
+                  </p>
+                </div>
+              )}
+
+              {/* Action Selection */}
+              {(selectedModule && (permissionType === "module" || (permissionType === "page" && selectedPage))) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Action *
+                  </label>
+                  <div className="space-y-2">
                     <select
-                      value={selectedCategory}
-                      onChange={(e) => handleCategoryChange(e.target.value)}
+                      value={selectedAction}
+                      onChange={(e) => handleActionChange(e.target.value)}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       disabled={loading}
                     >
-                      <option value="">Choose a category</option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {getCategoryDetails(category.id).name}
+                      <option value="">Select standard action</option>
+                      {standardActions.map(action => (
+                        <option key={action.id} value={action.id}>
+                          {action.name}
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Action Type *
-                    </label>
-                    <div className="space-y-2">
-                      <select
-                        value={selectedActions[0] || ""}
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleActionSelect(e.target.value);
-                          }
-                        }}
+                    
+                    <div className="text-center text-gray-400 text-sm">OR</div>
+                    
+                    <div>
+                      <input
+                        type="text"
+                        value={customAction}
+                        onChange={handleCustomActionChange}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        disabled={loading || !selectedCategory}
-                      >
-                        <option value="">Select standard action</option>
-                        {standardActions.map(action => (
-                          <option key={action.id} value={action.id}>
-                            {action.name}
-                          </option>
-                        ))}
-                      </select>
-                      
-                      <div className="text-center text-gray-400 text-sm">OR</div>
-                      
-                      <div>
-                        <input
-                          type="text"
-                          value={customAction}
-                          onChange={handleCustomActionChange}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter custom action"
-                          disabled={loading || !selectedCategory}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Use lowercase letters, no spaces (e.g., "approve", "generate_report")
-                        </p>
-                      </div>
+                        placeholder="Enter custom action"
+                        disabled={loading}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use lowercase letters, no spaces (e.g., "approve", "generate_report")
+                      </p>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Preview Section */}
-                {formData.name && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Preview</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Permission Name:</span>
-                        <code className="text-sm bg-white px-2 py-1 rounded font-mono">
-                          {formData.name}
-                        </code>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Category:</span>
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded ${categoryDetails.color}`}>
-                            {categoryDetails.icon}
-                          </div>
-                          <span className="font-medium">{categoryDetails.name}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Action:</span>
-                        <PermissionTypeBadge action={parsed.action} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Display Name:</span>
-                        <span className="font-medium">{parsed.displayName}</span>
-                      </div>
+              {/* Preview Section */}
+              {formData.name && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Preview</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Permission Name:</span>
+                      <code className="text-sm bg-white px-2 py-1 rounded font-mono">
+                        {formData.name}
+                      </code>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Type:</span>
+                      <span className="font-medium">
+                        {permissionType === "page" ? "Page Permission" : "Module Permission"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Action:</span>
+                      <PermissionTypeBadge action={selectedAction || customAction} />
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <FaInfoCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-yellow-800">Permission Naming Convention</h4>
-                      <p className="text-sm text-yellow-700 mt-1">
-                        Permissions follow the format: <code className="bg-yellow-100 px-1 py-0.5 rounded">category.action</code>
-                      </p>
-                      <ul className="text-xs text-yellow-700 mt-2 space-y-1">
-                        <li>• Category: Lowercase, singular noun (e.g., "employees", "organization")</li>
-                        <li>• Action: Lowercase verb describing the operation (e.g., "view", "create", "manage")</li>
-                        <li>• Examples: "employees.view", "organization.manage", "payroll.run"</li>
-                      </ul>
-                    </div>
+              {/* Help Text */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <FaInfoCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-yellow-800">Permission Naming Convention</h4>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Permissions follow these formats:
+                    </p>
+                    <ul className="text-xs text-yellow-700 mt-2 space-y-1">
+                      <li>• <strong>Page Permission:</strong> <code className="bg-yellow-100 px-1 py-0.5 rounded">module.page.action</code></li>
+                      <li>• <strong>Module Permission:</strong> <code className="bg-yellow-100 px-1 py-0.5 rounded">module.action</code></li>
+                      <li>• <strong>Examples:</strong> "employee.add_manage_profiles.view", "payroll.manage", "settings.edit"</li>
+                    </ul>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="p-6 border-t border-gray-200 bg-gray-50">
@@ -833,27 +826,15 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
               >
                 Cancel
               </button>
-              {showQuickAdd ? (
-                <button
-                  type="button"
-                  onClick={handleQuickAddSubmit}
-                  disabled={loading || !selectedCategory || selectedActions.length === 0}
-                  className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 flex items-center gap-2"
-                >
-                  {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
-                  Add {selectedActions.length} Permission{selectedActions.length !== 1 ? 's' : ''}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading || !formData.name}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
-                >
-                  {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
-                  {permission ? "Update Permission" : "Create Permission"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || !formData.name}
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
+                {permission ? "Update Permission" : "Create Permission"}
+              </button>
             </div>
           </div>
         </div>
@@ -865,24 +846,30 @@ const PermissionFormModal = ({ isOpen, onClose, permission, categories, standard
 // Permission Card Component
 const PermissionCard = ({ permission, onEdit, onDelete, onClone, loading }) => {
   const parsed = parsePermissionName(permission.name);
-  const category = getCategoryDetails(parsed.category);
+  const module = getCategoryDetails(parsed.module);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-lg ${category.color}`}>
-            {category.icon}
+          <div className={`p-2.5 rounded-lg ${module.color}`}>
+            {module.icon}
           </div>
           <div>
             <h3 className="font-semibold text-gray-800 text-lg">{parsed.displayName}</h3>
-            <p className="text-sm text-gray-500 mt-1">{category.description}</p>
+            <p className="text-sm text-gray-500 mt-1">{module.description}</p>
             <div className="flex items-center gap-2 mt-2">
               <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
                 {permission.name}
               </code>
               <span className="text-xs text-gray-500">ID: {permission.id}</span>
             </div>
+            {parsed.page && (
+              <div className="mt-2 flex items-center gap-2">
+                <FaBook className="h-3 w-3 text-gray-400" />
+                <span className="text-xs text-gray-600">Page: {parsed.page.replace(/_/g, ' ')}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -912,7 +899,9 @@ const PermissionCard = ({ permission, onEdit, onDelete, onClone, loading }) => {
 
       <div className="flex justify-between items-center pt-4 border-t border-gray-100">
         <div className="text-sm text-gray-500">
-          Category: <span className="font-medium text-gray-700">{category.name}</span>
+          Type: <span className="font-medium text-gray-700">
+            {parsed.type === 'page_permission' ? 'Page Permission' : 'Module Permission'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -945,15 +934,13 @@ const PermissionCard = ({ permission, onEdit, onDelete, onClone, loading }) => {
   );
 };
 
-// Category Card Component
-const CategoryCard = ({ category, permissions, onClick, isExpanded, onManageCategories }) => {
-  const categoryPermissions = permissions.filter(p => 
-    parsePermissionName(p.name).category === category.id
+// Module Card Component
+const ModuleCard = ({ module, permissions, onClick, isExpanded, onManageModules, onViewPages }) => {
+  const modulePermissions = permissions.filter(p => 
+    parsePermissionName(p.name).module === module.name.toLowerCase()
   );
 
-  if (categoryPermissions.length === 0) return null;
-
-  const categoryDetails = getCategoryDetails(category.id);
+  const moduleDetails = getCategoryDetails(module.name.toLowerCase());
 
   return (
     <div 
@@ -962,22 +949,24 @@ const CategoryCard = ({ category, permissions, onClick, isExpanded, onManageCate
       }`}
     >
       <div className="flex items-center justify-between mb-4">
-        <div 
-          className="flex items-center gap-3 cursor-pointer flex-1"
-          onClick={onClick}
-        >
-          <div className={`p-3 rounded-lg ${categoryDetails.color}`}>
-            {categoryDetails.icon}
+        <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={onClick}>
+          <div className={`p-3 rounded-lg ${moduleDetails.color}`}>
+            {moduleDetails.icon}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-800 text-lg">{categoryDetails.name}</h3>
-            <p className="text-sm text-gray-500">{categoryDetails.description}</p>
+            <h3 className="font-semibold text-gray-800 text-lg">{module.name}</h3>
+            <p className="text-sm text-gray-500">Module ID: {module.id}</p>
+            <p className="text-sm text-gray-500">{modulePermissions.length} permissions</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-            {categoryPermissions.length} permissions
-          </span>
+          <button
+            onClick={() => onViewPages(module)}
+            className="px-3 py-1.5 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 flex items-center gap-2"
+            title="View Pages"
+          >
+            <FaBook className="h-3 w-3" /> Pages
+          </button>
           <FaChevronRight className={`h-4 w-4 text-gray-400 transition-transform cursor-pointer ${
             isExpanded ? 'rotate-90' : ''
           }`} 
@@ -989,7 +978,7 @@ const CategoryCard = ({ category, permissions, onClick, isExpanded, onManageCate
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {categoryPermissions.map(permission => {
+            {modulePermissions.map(permission => {
               const parsed = parsePermissionName(permission.name);
               return (
                 <div key={permission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -1020,7 +1009,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
   const buttonColors = {
     delete: "bg-red-600 hover:bg-red-700",
     clone: "bg-blue-600 hover:bg-blue-700",
-    category_delete: "bg-red-600 hover:bg-red-700",
+    module_delete: "bg-red-600 hover:bg-red-700",
   };
 
   return (
@@ -1072,19 +1061,21 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
 
 // Main Permission Management Component
 export default function PermissionManagementPage() {
-  const [view, setView] = useState("categories");
+  const [view, setView] = useState("modules");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedModule, setSelectedModule] = useState(null);
   const [permissions, setPermissions] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalState, setModalState] = useState({
     form: false,
     confirm: false,
-    categoryManagement: false,
+    moduleManagement: false,
+    moduleDetails: false,
     permission: null,
-    category: null,
+    module: null,
     type: "delete",
   });
   const [error, setError] = useState(null);
@@ -1102,32 +1093,16 @@ export default function PermissionManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      const [permissionsData, rolesData] = await Promise.all([
+      // Fetch modules, permissions, and roles
+      const [modulesResponse, permissionsData, rolesData] = await Promise.all([
+        permissionService.getModules(),
         permissionService.getPermissions(),
         roleService.getRoles()
       ]);
       
+      setModules(modulesResponse);
       setPermissions(permissionsData);
       setRoles(rolesData);
-      
-      // Extract categories from permissions
-      const categoryMap = new Map();
-      permissionsData.forEach(permission => {
-        const category = permission.name.split('.')[0];
-        if (categoryMap.has(category)) {
-          categoryMap.set(category, categoryMap.get(category) + 1);
-        } else {
-          categoryMap.set(category, 1);
-        }
-      });
-      
-      const categoriesData = Array.from(categoryMap.entries()).map(([id, count]) => ({
-        id,
-        name: id.charAt(0).toUpperCase() + id.slice(1),
-        count
-      }));
-      
-      setCategories(categoriesData);
       
       // Get standard actions
       const actions = permissionService.getStandardActions();
@@ -1154,7 +1129,7 @@ export default function PermissionManagementPage() {
     }
   };
 
-  // Filter permissions based on search and category
+  // Filter permissions based on search and module
   const filteredPermissions = React.useMemo(() => {
     let filtered = [...permissions];
 
@@ -1166,15 +1141,15 @@ export default function PermissionManagementPage() {
       );
     }
 
-    // Apply category filter
-    if (selectedCategory && view === "permissions") {
+    // Apply module filter
+    if (selectedModule && view === "permissions") {
       filtered = filtered.filter(permission => 
-        parsePermissionName(permission.name).category === selectedCategory
+        parsePermissionName(permission.name).module === selectedModule.name.toLowerCase()
       );
     }
 
     return filtered;
-  }, [searchTerm, selectedCategory, view, permissions]);
+  }, [searchTerm, selectedModule, view, permissions]);
 
   const handleOpenForm = (permission = null) => {
     setModalState(prev => ({ ...prev, form: true, permission }));
@@ -1184,24 +1159,42 @@ export default function PermissionManagementPage() {
     setModalState(prev => ({ ...prev, form: false, permission: null }));
   };
 
-  const handleOpenCategoryManagement = () => {
-    setModalState(prev => ({ ...prev, categoryManagement: true }));
+  const handleOpenModuleManagement = () => {
+    setModalState(prev => ({ ...prev, moduleManagement: true }));
   };
 
-  const handleCloseCategoryManagement = () => {
-    setModalState(prev => ({ ...prev, categoryManagement: false }));
+  const handleCloseModuleManagement = () => {
+    setModalState(prev => ({ ...prev, moduleManagement: false }));
+  };
+
+  const handleOpenModuleDetails = async (module) => {
+    try {
+      setLoading(true);
+      const modulePages = await permissionService.getModulePages(module.id);
+      setPages(modulePages);
+      setModalState(prev => ({ ...prev, moduleDetails: true, module }));
+    } catch (err) {
+      setError('Failed to load module pages');
+      console.error('Error loading module pages:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseModuleDetails = () => {
+    setModalState(prev => ({ ...prev, moduleDetails: false, module: null }));
   };
 
   const handleOpenConfirm = (permission, type = "delete") => {
     setModalState(prev => ({ ...prev, confirm: true, permission, type }));
   };
 
-  const handleOpenCategoryConfirm = (category, type = "category_delete") => {
-    setModalState(prev => ({ ...prev, confirm: true, category, type }));
+  const handleOpenModuleConfirm = (module, type = "module_delete") => {
+    setModalState(prev => ({ ...prev, confirm: true, module, type }));
   };
 
   const handleCloseConfirm = () => {
-    setModalState(prev => ({ ...prev, confirm: false, permission: null, category: null, type: "delete" }));
+    setModalState(prev => ({ ...prev, confirm: false, permission: null, module: null, type: "delete" }));
   };
 
   const handleSavePermission = async (formData) => {
@@ -1226,18 +1219,6 @@ export default function PermissionManagementPage() {
         // Create new permission
         savedPermission = await permissionService.createPermission(formData);
         setPermissions(prev => [...prev, savedPermission]);
-        
-        // Update categories
-        const category = formData.name.split('.')[0];
-        const categoryExists = categories.find(c => c.id === category);
-        if (!categoryExists) {
-          setCategories(prev => [...prev, { id: category, name: category, count: 1 }]);
-        } else {
-          setCategories(prev => prev.map(c => 
-            c.id === category ? { ...c, count: c.count + 1 } : c
-          ));
-        }
-        
         setSuccessMessage(`Permission "${savedPermission.name}" created successfully!`);
       }
       
@@ -1247,45 +1228,6 @@ export default function PermissionManagementPage() {
     } catch (err) {
       console.error('Error saving permission:', err);
       setError(err.response?.data?.message || 'Failed to save permission. Please try again.');
-      throw err;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleQuickAddPermissions = async (category, actions) => {
-    setSaving(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      // Create permissions for each action
-      const createPromises = actions.map(action => 
-        permissionService.createPermission({
-          name: `${category}.${action}`,
-          guard_name: 'web'
-        })
-      );
-
-      const savedPermissions = await Promise.all(createPromises);
-      setPermissions(prev => [...prev, ...savedPermissions]);
-      
-      // Update category count
-      const categoryExists = categories.find(c => c.id === category);
-      if (!categoryExists) {
-        setCategories(prev => [...prev, { id: category, name: category, count: actions.length }]);
-      } else {
-        setCategories(prev => prev.map(c => 
-          c.id === category ? { ...c, count: c.count + actions.length } : c
-        ));
-      }
-      
-      setSuccessMessage(`${actions.length} permissions created successfully for ${category}!`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-      
-    } catch (err) {
-      console.error('Error quick adding permissions:', err);
-      setError(err.response?.data?.message || 'Failed to create permissions. Please try again.');
       throw err;
     } finally {
       setSaving(false);
@@ -1304,16 +1246,6 @@ export default function PermissionManagementPage() {
       
       // Update permissions list
       setPermissions(prev => prev.filter(p => p.id !== modalState.permission.id));
-      
-      // Update category count
-      const category = modalState.permission.name.split('.')[0];
-      setCategories(prev => {
-        const updated = prev.map(c => 
-          c.id === category ? { ...c, count: Math.max(0, c.count - 1) } : c
-        );
-        // Remove category if count is 0
-        return updated.filter(c => c.count > 0);
-      });
       
       setSuccessMessage(`Permission "${modalState.permission.name}" deleted successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -1341,12 +1273,6 @@ export default function PermissionManagementPage() {
       const savedPermission = await permissionService.createPermission(newPermissionData);
       setPermissions(prev => [...prev, savedPermission]);
       
-      // Update category count
-      const category = savedPermission.name.split('.')[0];
-      setCategories(prev => prev.map(c => 
-        c.id === category ? { ...c, count: c.count + 1 } : c
-      ));
-      
       setSuccessMessage(`Permission "${savedPermission.name}" cloned successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
@@ -1358,124 +1284,73 @@ export default function PermissionManagementPage() {
     }
   };
 
-  const handleAddCategory = async (categoryData) => {
+  const handleAddModule = async (moduleData) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      // Create a default view permission for the new category
-      const newPermission = await permissionService.createPermission({
-        name: `${categoryData.name}.view`,
-        guard_name: 'web'
-      });
-      
-      // Add to permissions list
-      setPermissions(prev => [...prev, newPermission]);
-      
-      // Add to categories list
-      const newCategory = {
-        id: categoryData.name,
-        name: categoryData.name.charAt(0).toUpperCase() + categoryData.name.slice(1),
-        count: 1,
-        description: categoryData.description
+      // For now, we'll just add it locally
+      const newModule = {
+        id: modules.length + 1,
+        name: moduleData.name,
+        description: moduleData.description
       };
       
-      setCategories(prev => [...prev, newCategory]);
+      setModules(prev => [...prev, newModule]);
       
-      setSuccessMessage(`Category "${categoryData.name}" created successfully with a default view permission!`);
+      setSuccessMessage(`Module "${moduleData.name}" created successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       
     } catch (err) {
-      console.error('Error adding category:', err);
-      setError('Failed to add category. Please try again.');
+      console.error('Error adding module:', err);
+      setError('Failed to add module. Please try again.');
       throw err;
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEditCategory = async (oldCategoryName, categoryData) => {
+  const handleEditModule = async (oldModuleId, moduleData) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      // Update all permissions in this category
-      const categoryPermissions = permissions.filter(p => 
-        p.name.startsWith(`${oldCategoryName}.`)
-      );
-      
-      const updatePromises = categoryPermissions.map(permission => {
-        const newName = permission.name.replace(`${oldCategoryName}.`, `${categoryData.name}.`);
-        return permissionService.updatePermission(permission.id, {
-          name: newName,
-          guard_name: permission.guard_name
-        });
-      });
-      
-      await Promise.all(updatePromises);
-      
-      // Update permissions list
-      setPermissions(prev => prev.map(p => {
-        if (p.name.startsWith(`${oldCategoryName}.`)) {
-          return {
-            ...p,
-            name: p.name.replace(`${oldCategoryName}.`, `${categoryData.name}.`)
-          };
-        }
-        return p;
-      }));
-      
-      // Update categories list
-      setCategories(prev => prev.map(c => 
-        c.id === oldCategoryName 
-          ? { ...c, id: categoryData.name, name: categoryData.name, description: categoryData.description }
-          : c
+      setModules(prev => prev.map(m => 
+        m.id === oldModuleId 
+          ? { ...m, name: moduleData.name, description: moduleData.description }
+          : m
       ));
       
-      setSuccessMessage(`Category updated from "${oldCategoryName}" to "${categoryData.name}" successfully!`);
+      setSuccessMessage(`Module updated successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       
     } catch (err) {
-      console.error('Error editing category:', err);
-      setError('Failed to edit category. Please try again.');
+      console.error('Error editing module:', err);
+      setError('Failed to edit module. Please try again.');
       throw err;
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteCategory = async (categoryName) => {
+  const handleDeleteModule = async (moduleId) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      // Delete all permissions in this category
-      const categoryPermissions = permissions.filter(p => 
-        p.name.startsWith(`${categoryName}.`)
-      );
+      // Remove from modules list
+      setModules(prev => prev.filter(m => m.id !== moduleId));
       
-      const deletePromises = categoryPermissions.map(permission => 
-        permissionService.deletePermission(permission.id)
-      );
-      
-      await Promise.all(deletePromises);
-      
-      // Remove from permissions list
-      setPermissions(prev => prev.filter(p => !p.name.startsWith(`${categoryName}.`)));
-      
-      // Remove from categories list
-      setCategories(prev => prev.filter(c => c.id !== categoryName));
-      
-      setSuccessMessage(`Category "${categoryName}" and all its permissions deleted successfully!`);
+      setSuccessMessage(`Module deleted successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
       
     } catch (err) {
-      console.error('Error deleting category:', err);
-      setError('Failed to delete category. Please try again.');
+      console.error('Error deleting module:', err);
+      setError('Failed to delete module. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -1512,7 +1387,7 @@ export default function PermissionManagementPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Permission Management</h1>
             <p className="text-gray-600 mt-2">
-              Manage system permissions, assign to roles, and control access levels
+              Manage system permissions using module.page.action format
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -1523,30 +1398,13 @@ export default function PermissionManagementPage() {
               >
                 <FaPlus className="h-4 w-4" /> Create Permission
               </button>
-              <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg mt-1 z-10 w-48">
-                <button
-                  onClick={() => handleOpenForm()}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg flex items-center gap-2"
-                >
-                  <FaPlus className="h-4 w-4" /> Single Permission
-                </button>
-                <button
-                  onClick={() => {
-                    handleOpenForm();
-                    // The form modal will handle showing quick add
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <FaPlus className="h-4 w-4" /> Multiple Permissions
-                </button>
-                <button
-                  onClick={handleOpenCategoryManagement}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg flex items-center gap-2"
-                >
-                  <FaFolderPlus className="h-4 w-4" /> Manage Categories
-                </button>
-              </div>
             </div>
+            <button
+              onClick={handleOpenModuleManagement}
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              <FaBox className="h-4 w-4" /> Manage Modules
+            </button>
             <button
               onClick={fetchData}
               className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
@@ -1589,13 +1447,13 @@ export default function PermissionManagementPage() {
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-purple-50">
-                <FaUserShield className="h-6 w-6 text-purple-600" />
+                <FaBox className="h-6 w-6 text-purple-600" />
               </div>
               <span className="text-lg font-bold text-gray-800">
-                {categories.length}
+                {modules.length}
               </span>
             </div>
-            <p className="text-sm text-gray-600">Categories</p>
+            <p className="text-sm text-gray-600">Modules</p>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
@@ -1620,21 +1478,21 @@ export default function PermissionManagementPage() {
             <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => {
-                  setView("categories");
-                  setSelectedCategory(null);
+                  setView("modules");
+                  setSelectedModule(null);
                 }}
                 className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  view === "categories"
+                  view === "modules"
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                <FaFolder className="inline mr-2" /> Categories View
+                <FaBox className="inline mr-2" /> Modules View
               </button>
               <button
                 onClick={() => {
                   setView("permissions");
-                  setSelectedCategory(null);
+                  setSelectedModule(null);
                 }}
                 className={`px-4 py-2 rounded-md font-medium transition-all ${
                   view === "permissions"
@@ -1652,8 +1510,8 @@ export default function PermissionManagementPage() {
               <input
                 type="text"
                 placeholder={
-                  view === "categories" 
-                    ? "Search categories..." 
+                  view === "modules" 
+                    ? "Search modules..." 
                     : "Search permissions..."
                 }
                 value={searchTerm}
@@ -1666,27 +1524,26 @@ export default function PermissionManagementPage() {
 
         {/* Content */}
         <div className="p-6">
-          {view === "categories" ? (
-            /* Categories View */
+          {view === "modules" ? (
+            /* Modules View */
             <div className="space-y-6">
-              {categories.map(category => {
-                const categoryPermissions = permissions.filter(p => 
-                  parsePermissionName(p.name).category === category.id
+              {modules.map(module => {
+                const modulePermissions = permissions.filter(p => 
+                  parsePermissionName(p.name).module === module.name.toLowerCase()
                 );
                 
-                if (categoryPermissions.length === 0) return null;
-                
                 return (
-                  <CategoryCard
-                    key={category.id}
-                    category={category}
-                    permissions={categoryPermissions}
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    permissions={modulePermissions}
                     onClick={() => {
                       setView("permissions");
-                      setSelectedCategory(category.id);
+                      setSelectedModule(module);
                     }}
-                    isExpanded={selectedCategory === category.id && view === "permissions"}
-                    onManageCategories={handleOpenCategoryManagement}
+                    isExpanded={selectedModule?.id === module.id && view === "permissions"}
+                    onManageModules={handleOpenModuleManagement}
+                    onViewPages={() => handleOpenModuleDetails(module)}
                   />
                 );
               })}
@@ -1715,11 +1572,11 @@ export default function PermissionManagementPage() {
                         Create Permission
                       </button>
                       <button
-                        onClick={handleOpenCategoryManagement}
+                        onClick={handleOpenModuleManagement}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
                       >
-                        <FaFolderPlus className="inline mr-2" />
-                        Manage Categories
+                        <FaBox className="inline mr-2" />
+                        Manage Modules
                       </button>
                     </div>
                   )}
@@ -1749,9 +1606,9 @@ export default function PermissionManagementPage() {
               <div className="text-sm text-gray-600">
                 Showing <span className="font-semibold">{filteredPermissions.length}</span> of{" "}
                 <span className="font-semibold">{permissions.length}</span> permissions
-                {selectedCategory && (
+                {selectedModule && (
                   <span className="ml-2">
-                    in <span className="font-semibold">{getCategoryDetails(selectedCategory).name}</span> category
+                    in <span className="font-semibold">{selectedModule.name}</span> module
                   </span>
                 )}
               </div>
@@ -1768,21 +1625,28 @@ export default function PermissionManagementPage() {
         isOpen={modalState.form}
         onClose={handleCloseForm}
         permission={modalState.permission}
-        categories={categories}
+        modules={modules}
         standardActions={standardActions}
         onSave={handleSavePermission}
-        onQuickAdd={handleQuickAddPermissions}
         loading={saving}
       />
 
-      <CategoryManagementModal
-        isOpen={modalState.categoryManagement}
-        onClose={handleCloseCategoryManagement}
-        categories={categories}
-        onAddCategory={handleAddCategory}
-        onEditCategory={handleEditCategory}
-        onDeleteCategory={(categoryName) => handleOpenCategoryConfirm({ id: categoryName, name: categoryName }, "category_delete")}
+      <ModuleManagementModal
+        isOpen={modalState.moduleManagement}
+        onClose={handleCloseModuleManagement}
+        modules={modules}
+        onAddModule={handleAddModule}
+        onEditModule={handleEditModule}
+        onDeleteModule={(moduleId) => handleOpenModuleConfirm({ id: moduleId, name: modules.find(m => m.id === moduleId)?.name }, "module_delete")}
         loading={saving}
+      />
+
+      <ModuleDetailsModal
+        isOpen={modalState.moduleDetails}
+        onClose={handleCloseModuleDetails}
+        module={modalState.module}
+        pages={pages}
+        loading={loading}
       />
 
       <ConfirmationModal
@@ -1792,21 +1656,21 @@ export default function PermissionManagementPage() {
           ? handleDeletePermission 
           : modalState.type === "clone" 
             ? () => handleClonePermission(modalState.permission)
-            : () => handleDeleteCategory(modalState.category.id)
+            : () => handleDeleteModule(modalState.module.id)
         }
         title={
           modalState.type === "delete" 
             ? "Delete Permission" 
             : modalState.type === "clone" 
               ? "Clone Permission" 
-              : "Delete Category"
+              : "Delete Module"
         }
         message={
           modalState.type === "delete"
             ? `Are you sure you want to delete "${modalState.permission?.name}"?`
             : modalState.type === "clone"
               ? `Create a copy of "${modalState.permission?.name}"?`
-              : `Are you sure you want to delete the "${modalState.category?.name}" category and all its permissions?`
+              : `Are you sure you want to delete the "${modalState.module?.name}" module?`
         }
         type={modalState.type}
         loading={saving}

@@ -23,10 +23,10 @@ import {
   FaFileInvoiceDollar,
   FaCalculator,
   FaUserTie,
-  FaMoneyBillWave
+  FaMoneyBillWave,
 } from "react-icons/fa";
-import shiftSwapService from '../../services/shiftSchedulingService';
-import { useOrganizations } from '../../contexts/OrganizationContext';
+import shiftSwapService from "../../services/shiftSchedulingService";
+import { useOrganizations } from "../../contexts/OrganizationContext";
 
 const ShiftSwapping = () => {
   const [swapRequests, setSwapRequests] = useState([]);
@@ -35,7 +35,7 @@ const ShiftSwapping = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedRequestToReject, setSelectedRequestToReject] = useState(null);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionReason, setRejectionReason] = useState("");
   const [employees, setEmployees] = useState([]);
   const [rosters, setRosters] = useState([]);
   const [shifts, setShifts] = useState([]);
@@ -68,55 +68,69 @@ const ShiftSwapping = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch all data - handle departments error gracefully
       const [
         swapRequestsResponse,
         employeesResponse,
         rostersResponse,
         shiftsResponse,
-        departmentsResponse
+        departmentsResponse,
       ] = await Promise.allSettled([
         shiftSwapService.getSwapRequests({
-          organization_id: selectedOrganization.id
+          organization_id: selectedOrganization.id,
         }),
         shiftSwapService.getEmployees({
-          organization_id: selectedOrganization.id
+          organization_id: selectedOrganization.id,
         }),
         shiftSwapService.getRosters({
-          organization_id: selectedOrganization.id
+          organization_id: selectedOrganization.id,
         }),
         shiftSwapService.getShifts({
-          organization_id: selectedOrganization.id
+          organization_id: selectedOrganization.id,
         }),
-        shiftSwapService.getDepartments({
-          organization_id: selectedOrganization.id
-        }).catch(() => ({ success: false, data: [] })) // Handle departments error
+        shiftSwapService
+          .getDepartments({
+            organization_id: selectedOrganization.id,
+          })
+          .catch(() => ({ success: false, data: [] })), // Handle departments error
       ]);
 
       // Process swap requests
-      if (swapRequestsResponse.status === 'fulfilled' && swapRequestsResponse.value?.success) {
+      if (
+        swapRequestsResponse.status === "fulfilled" &&
+        swapRequestsResponse.value?.success
+      ) {
         setSwapRequests(swapRequestsResponse.value.data || []);
       } else {
         setSwapRequests([]);
       }
 
       // Process employees
-      if (employeesResponse.status === 'fulfilled' && employeesResponse.value?.success) {
+      if (
+        employeesResponse.status === "fulfilled" &&
+        employeesResponse.value?.success
+      ) {
         const employeesData = employeesResponse.value.data || [];
-        const formattedEmployees = employeesData.map(emp => ({
+        const formattedEmployees = employeesData.map((emp) => ({
           id: emp.id,
-          name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+          name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
           department_id: emp.department_id,
           employee_code: emp.employee_code,
-          department_name: emp.department?.name || `Department ${emp.department_id}`,
-          department: emp.department?.name || 'General'
+          department_name:
+            emp.department?.name || `Department ${emp.department_id}`,
+          department: emp.department?.name || "General",
         }));
         setEmployees(formattedEmployees);
-        
+
         // Extract unique departments from employees if departments API fails
-        if (departmentsResponse.status !== 'fulfilled' || !departmentsResponse.value?.success) {
-          const uniqueDepartments = [...new Set(formattedEmployees.map(emp => emp.department_name))];
+        if (
+          departmentsResponse.status !== "fulfilled" ||
+          !departmentsResponse.value?.success
+        ) {
+          const uniqueDepartments = [
+            ...new Set(formattedEmployees.map((emp) => emp.department_name)),
+          ];
           setDepartments(uniqueDepartments);
         }
       } else {
@@ -124,31 +138,46 @@ const ShiftSwapping = () => {
       }
 
       // Process rosters
-      if (rostersResponse.status === 'fulfilled' && rostersResponse.value?.success) {
+      if (
+        rostersResponse.status === "fulfilled" &&
+        rostersResponse.value?.success
+      ) {
         setRosters(rostersResponse.value.data || []);
       } else {
         setRosters([]);
       }
 
       // Process shifts
-      if (shiftsResponse.status === 'fulfilled' && shiftsResponse.value?.success) {
+      if (
+        shiftsResponse.status === "fulfilled" &&
+        shiftsResponse.value?.success
+      ) {
         setShifts(shiftsResponse.value.data || []);
       } else {
         setShifts([]);
       }
 
       // Process departments (only if API call succeeded)
-      if (departmentsResponse.status === 'fulfilled' && departmentsResponse.value?.success) {
+      if (
+        departmentsResponse.status === "fulfilled" &&
+        departmentsResponse.value?.success
+      ) {
         const departmentsData = departmentsResponse.value.data || [];
-        setDepartments(departmentsData.map(dept => dept.name || dept.title || dept.department_name));
-      } else if (employeesResponse.status === 'fulfilled' && employeesResponse.value?.success) {
+        setDepartments(
+          departmentsData.map(
+            (dept) => dept.name || dept.title || dept.department_name,
+          ),
+        );
+      } else if (
+        employeesResponse.status === "fulfilled" &&
+        employeesResponse.value?.success
+      ) {
         // Already handled above - extracting from employees
       } else {
         setDepartments(["IT", "Design", "Management", "Testing", "HR"]);
       }
-
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
       setSwapRequests([]);
       setEmployees([]);
       setRosters([]);
@@ -160,23 +189,23 @@ const ShiftSwapping = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewRequest(prev => ({ ...prev, [name]: value }));
+    setNewRequest((prev) => ({ ...prev, [name]: value }));
   };
 
   // When requester roster is selected, automatically set the requested employee to the roster's employee
   const handleRequesterRosterChange = (rosterId) => {
-    const selectedRoster = rosters.find(r => r.id == rosterId);
+    const selectedRoster = rosters.find((r) => r.id == rosterId);
     if (selectedRoster) {
-      setNewRequest(prev => ({
+      setNewRequest((prev) => ({
         ...prev,
         requester_roster_id: rosterId,
         // Set requested employee to the employee who owns this roster
-        requested_employee_id: selectedRoster.employee_id
+        requested_employee_id: selectedRoster.employee_id,
       }));
     }
   };
@@ -185,47 +214,56 @@ const ShiftSwapping = () => {
     e.preventDefault();
     try {
       // Validate form
-      if (!newRequest.requester_roster_id || !newRequest.requested_roster_id || !newRequest.requester_reason) {
-        alert('Please fill in all required fields');
+      if (
+        !newRequest.requester_roster_id ||
+        !newRequest.requested_roster_id ||
+        !newRequest.requester_reason
+      ) {
+        alert("Please fill in all required fields");
         return;
       }
 
       const response = await shiftSwapService.createSwapRequest(newRequest);
-      
+
       if (response.success) {
-        alert('Swap request created successfully!');
+        alert("Swap request created successfully!");
         setShowShiftForm(false);
         resetForm();
         await fetchAllData(); // Refresh all data
       } else {
-        throw new Error(response.message || 'Failed to create swap request');
+        throw new Error(response.message || "Failed to create swap request");
       }
     } catch (error) {
-      console.error('Error creating swap request:', error);
-      alert(error.message || 'Failed to create swap request. Please try again.');
+      console.error("Error creating swap request:", error);
+      alert(
+        error.message || "Failed to create swap request. Please try again.",
+      );
     }
   };
 
   const handleApproveRequest = async (requestId) => {
-    if (!window.confirm('Are you sure you want to approve this swap request?')) return;
-    
+    if (!window.confirm("Are you sure you want to approve this swap request?"))
+      return;
+
     try {
       const response = await shiftSwapService.approveSwapRequest(requestId);
-      
+
       if (response.success) {
-        alert('Swap request approved successfully!');
+        alert("Swap request approved successfully!");
         await fetchAllData(); // Refresh all data
-        
+
         // Close details modal if open
         if (selectedRequest?.id === requestId) {
           setSelectedRequest(null);
         }
       } else {
-        throw new Error(response.message || 'Failed to approve swap request');
+        throw new Error(response.message || "Failed to approve swap request");
       }
     } catch (error) {
-      console.error('Error approving swap request:', error);
-      alert(error.message || 'Failed to approve swap request. Please try again.');
+      console.error("Error approving swap request:", error);
+      alert(
+        error.message || "Failed to approve swap request. Please try again.",
+      );
     }
   };
 
@@ -236,67 +274,77 @@ const ShiftSwapping = () => {
 
   const handleRejectRequest = async () => {
     if (!selectedRequestToReject) return;
-    
+
     try {
-      const response = await shiftSwapService.rejectSwapRequest(selectedRequestToReject, {
-        rejection_reason: rejectionReason
-      });
-      
+      const response = await shiftSwapService.rejectSwapRequest(
+        selectedRequestToReject,
+        {
+          rejection_reason: rejectionReason,
+        },
+      );
+
       if (response.success) {
-        alert('Swap request rejected successfully!');
+        alert("Swap request rejected successfully!");
         setShowRejectModal(false);
-        setRejectionReason('');
+        setRejectionReason("");
         setSelectedRequestToReject(null);
         await fetchAllData(); // Refresh all data
-        
+
         // Close details modal if open
         if (selectedRequest?.id === selectedRequestToReject) {
           setSelectedRequest(null);
         }
       } else {
-        throw new Error(response.message || 'Failed to reject swap request');
+        throw new Error(response.message || "Failed to reject swap request");
       }
     } catch (error) {
-      console.error('Error rejecting swap request:', error);
-      alert(error.message || 'Failed to reject swap request. Please try again.');
+      console.error("Error rejecting swap request:", error);
+      alert(
+        error.message || "Failed to reject swap request. Please try again.",
+      );
     }
   };
 
   const handleDeleteRequest = async (requestId) => {
-    if (!window.confirm('Are you sure you want to delete this swap request?')) return;
-    
+    if (!window.confirm("Are you sure you want to delete this swap request?"))
+      return;
+
     try {
       const response = await shiftSwapService.deleteSwapRequest(requestId);
-      
+
       if (response.success) {
-        alert('Swap request deleted successfully!');
+        alert("Swap request deleted successfully!");
         await fetchAllData(); // Refresh all data
-        
+
         // Close details modal if open
         if (selectedRequest?.id === requestId) {
           setSelectedRequest(null);
         }
       } else {
-        throw new Error(response.message || 'Failed to delete swap request');
+        throw new Error(response.message || "Failed to delete swap request");
       }
     } catch (error) {
-      console.error('Error deleting swap request:', error);
-      alert(error.message || 'Failed to delete swap request. Please try again.');
+      console.error("Error deleting swap request:", error);
+      alert(
+        error.message || "Failed to delete swap request. Please try again.",
+      );
     }
   };
 
   const handleViewDetails = async (requestId) => {
     try {
       const response = await shiftSwapService.getSwapRequest(requestId);
-      
+
       if (response.success) {
         setSelectedRequest(response.data);
       } else {
-        throw new Error(response.message || 'Failed to fetch request details');
+        throw new Error(response.message || "Failed to fetch request details");
       }
     } catch (error) {
-      console.error('Error fetching request details:', error);
-      alert(error.message || 'Failed to load request details. Please try again.');
+      console.error("Error fetching request details:", error);
+      alert(
+        error.message || "Failed to load request details. Please try again.",
+      );
     }
   };
 
@@ -307,38 +355,60 @@ const ShiftSwapping = () => {
   const handleExport = () => {
     try {
       const csvContent = convertToCSV(filteredRequests);
-      downloadCSV(csvContent, `shift-swaps-${new Date().toISOString().split('T')[0]}.csv`);
-      alert('Data exported successfully!');
+      downloadCSV(
+        csvContent,
+        `shift-swaps-${new Date().toISOString().split("T")[0]}.csv`,
+      );
+      alert("Data exported successfully!");
     } catch (error) {
-      console.error('Error exporting data:', error);
-      alert('Failed to export data. Please try again.');
+      console.error("Error exporting data:", error);
+      alert("Failed to export data. Please try again.");
     }
   };
 
   const convertToCSV = (data) => {
-    if (!data.length) return '';
-    
-    const headers = ['ID', 'Requester', 'Requested Employee', 'Requester Roster Date', 'Requested Roster Date', 'Status', 'Reason', 'Created At'];
-    const rows = data.map(request => [
-      request.id || '',
-      request.requester ? `${request.requester.first_name || ''} ${request.requester.last_name || ''}`.trim() : '',
-      request.requested_employee ? `${request.requested_employee.first_name || ''} ${request.requested_employee.last_name || ''}`.trim() : '',
-      request.requester_roster?.roster_date ? new Date(request.requester_roster.roster_date).toLocaleDateString() : '',
-      request.requested_roster?.roster_date ? new Date(request.requested_roster.roster_date).toLocaleDateString() : '',
-      request.status || '',
-      request.requester_reason || '',
-      request.created_at ? new Date(request.created_at).toLocaleString() : ''
+    if (!data.length) return "";
+
+    const headers = [
+      "ID",
+      "Requester",
+      "Requested Employee",
+      "Requester Roster Date",
+      "Requested Roster Date",
+      "Status",
+      "Reason",
+      "Created At",
+    ];
+    const rows = data.map((request) => [
+      request.id || "",
+      request.requester
+        ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
+        : "",
+      request.requested_employee
+        ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
+        : "",
+      request.requester_roster?.roster_date
+        ? new Date(request.requester_roster.roster_date).toLocaleDateString()
+        : "",
+      request.requested_roster?.roster_date
+        ? new Date(request.requested_roster.roster_date).toLocaleDateString()
+        : "",
+      request.status || "",
+      request.requester_reason || "",
+      request.created_at ? new Date(request.created_at).toLocaleString() : "",
     ]);
-    
-    return [headers, ...rows].map(row => 
-      row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-    ).join('\n');
+
+    return [headers, ...rows]
+      .map((row) =>
+        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","),
+      )
+      .join("\n");
   };
 
   const downloadCSV = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = filename;
     link.click();
@@ -377,7 +447,7 @@ const ShiftSwapping = () => {
     return (
       <span
         className={`px-3 py-1 text-xs font-semibold rounded-full inline-flex items-center ${getStatusColor(
-          status
+          status,
         )}`}
       >
         <IconComponent className="mr-1" />
@@ -387,69 +457,89 @@ const ShiftSwapping = () => {
   };
 
   // Get rosters for current user
-  const currentUserRosters = rosters.filter(r => r.employee_id == currentUserId);
-  
+  const currentUserRosters = rosters.filter(
+    (r) => r.employee_id == currentUserId,
+  );
+
   // Get rosters for the selected employee to swap with
-  const requestedEmployeeRosters = rosters.filter(r => r.employee_id == newRequest.requested_employee_id);
+  const requestedEmployeeRosters = rosters.filter(
+    (r) => r.employee_id == newRequest.requested_employee_id,
+  );
 
   // Filter requests based on current filters
   const filteredRequests = swapRequests.filter((request) => {
-    const requesterName = request.requester ? 
-      `${request.requester.first_name || ''} ${request.requester.last_name || ''}`.toLowerCase().trim() : '';
-    
-    const requestedEmployeeName = request.requested_employee ? 
-      `${request.requested_employee.first_name || ''} ${request.requested_employee.last_name || ''}`.toLowerCase().trim() : '';
+    const requesterName = request.requester
+      ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`
+          .toLowerCase()
+          .trim()
+      : "";
 
-    const requesterDeptName = request.requester?.department?.name || 
-                             request.requester?.department_name || 
-                             employees.find(e => e.id === request.requester_employee_id)?.department_name || '';
+    const requestedEmployeeName = request.requested_employee
+      ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`
+          .toLowerCase()
+          .trim()
+      : "";
+
+    const requesterDeptName =
+      request.requester?.department?.name ||
+      request.requester?.department_name ||
+      employees.find((e) => e.id === request.requester_employee_id)
+        ?.department_name ||
+      "";
 
     const matchesSearch =
       !filters.search ||
       requesterName.includes(filters.search.toLowerCase()) ||
       requestedEmployeeName.includes(filters.search.toLowerCase()) ||
-      (request.requester_reason && request.requester_reason.toLowerCase().includes(filters.search.toLowerCase()));
-    
+      (request.requester_reason &&
+        request.requester_reason
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()));
+
     const matchesStatus =
-      filters.status === "all" || 
+      filters.status === "all" ||
       (request.status && request.status.toLowerCase() === filters.status);
-    
+
     const matchesDepartment =
       filters.department === "all" ||
-      requesterDeptName.toLowerCase().includes(filters.department.toLowerCase());
+      requesterDeptName
+        .toLowerCase()
+        .includes(filters.department.toLowerCase());
 
     const matchesEmployee =
       filters.employee === "all" ||
       request.requester_employee_id?.toString() === filters.employee ||
       request.requested_employee_id?.toString() === filters.employee;
 
-    return matchesSearch && matchesStatus && matchesDepartment && matchesEmployee;
+    return (
+      matchesSearch && matchesStatus && matchesDepartment && matchesEmployee
+    );
   });
 
   const stats = {
     total: swapRequests.length,
-    pending: swapRequests.filter(req => req.status === "pending").length,
-    approved: swapRequests.filter(req => req.status === "approved").length,
-    rejected: swapRequests.filter(req => req.status === "rejected").length,
+    pending: swapRequests.filter((req) => req.status === "pending").length,
+    approved: swapRequests.filter((req) => req.status === "approved").length,
+    rejected: swapRequests.filter((req) => req.status === "rejected").length,
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   const formatDateTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -467,17 +557,23 @@ const ShiftSwapping = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto">
-        
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Shift Swapping Management</h1>
-              <p className="text-gray-600">Manage and approve employee shift swap requests</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                Shift Swapping Management
+              </h1>
+              <p className="text-gray-600">
+                Manage and approve employee shift swap requests
+              </p>
             </div>
             {selectedOrganization && (
               <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                Organization: <span className="font-semibold">{selectedOrganization.name}</span>
+                Organization:{" "}
+                <span className="font-semibold">
+                  {selectedOrganization.name}
+                </span>
               </div>
             )}
           </div>
@@ -488,8 +584,12 @@ const ShiftSwapping = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Requests
+                </p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {stats.total}
+                </p>
               </div>
               <FaExchangeAlt className="text-blue-500 text-xl" />
             </div>
@@ -498,8 +598,12 @@ const ShiftSwapping = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.pending}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Pending Approval
+                </p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {stats.pending}
+                </p>
               </div>
               <FaClock className="text-yellow-500 text-xl" />
             </div>
@@ -509,7 +613,9 @@ const ShiftSwapping = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.approved}</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {stats.approved}
+                </p>
               </div>
               <FaCheck className="text-green-500 text-xl" />
             </div>
@@ -519,7 +625,9 @@ const ShiftSwapping = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.rejected}</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {stats.rejected}
+                </p>
               </div>
               <FaTimes className="text-red-500 text-xl" />
             </div>
@@ -534,7 +642,7 @@ const ShiftSwapping = () => {
               disabled={loading}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
             >
-              <FaSync className={loading ? 'animate-spin' : ''} /> Refresh
+              <FaSync className={loading ? "animate-spin" : ""} /> Refresh
             </button>
             <button className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
               <FaDownload /> Export
@@ -575,7 +683,9 @@ const ShiftSwapping = () => {
               </label>
               <select
                 value={filters.department}
-                onChange={(e) => handleFilterChange("department", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("department", e.target.value)
+                }
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
               >
                 <option value="all">All Departments</option>
@@ -651,11 +761,18 @@ const ShiftSwapping = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredRequests.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    <td
+                      colSpan="5"
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
                       <div className="flex flex-col items-center">
                         <FaExchangeAlt className="text-4xl text-gray-300 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 mb-1">No shift swap requests found</p>
-                        <p className="text-gray-500">Click "New Request" to create your first request</p>
+                        <p className="text-lg font-medium text-gray-900 mb-1">
+                          No shift swap requests found
+                        </p>
+                        <p className="text-gray-500">
+                          Click "New Request" to create your first request
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -673,18 +790,26 @@ const ShiftSwapping = () => {
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-semibold text-gray-900">
-                              {request.requester ? 
-                                `${request.requester.first_name || ''} ${request.requester.last_name || ''}`.trim() : 
-                                'Unknown'} ↔ {
-                                request.requested_employee ? 
-                                `${request.requested_employee.first_name || ''} ${request.requested_employee.last_name || ''}`.trim() : 
-                                'Unknown'}
+                              {request.requester
+                                ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
+                                : "Unknown"}{" "}
+                              ↔{" "}
+                              {request.requested_employee
+                                ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
+                                : "Unknown"}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {request.requester_roster?.roster_date ? 
-                                formatDate(request.requester_roster.roster_date) : ''} ↔ {
-                                request.requested_roster?.roster_date ? 
-                                formatDate(request.requested_roster.roster_date) : ''}
+                              {request.requester_roster?.roster_date
+                                ? formatDate(
+                                    request.requester_roster.roster_date,
+                                  )
+                                : ""}{" "}
+                              ↔{" "}
+                              {request.requested_roster?.roster_date
+                                ? formatDate(
+                                    request.requested_roster.roster_date,
+                                  )
+                                : ""}
                             </div>
                           </div>
                         </div>
@@ -694,16 +819,22 @@ const ShiftSwapping = () => {
                       <td className="px-4 py-3 w-[18%] min-w-[150px] text-sm text-gray-900">
                         <div>
                           <div className="font-medium mb-1">
-                            {request.requester_roster?.roster_date ? 
-                              formatDate(request.requester_roster.roster_date) : 'N/A'}
+                            {request.requester_roster?.roster_date
+                              ? formatDate(request.requester_roster.roster_date)
+                              : "N/A"}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {request.requester_roster?.start_time} - {request.requester_roster?.end_time}
+                            {request.requester_roster?.start_time} -{" "}
+                            {request.requester_roster?.end_time}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            Shift: {request.requester_roster?.shift_id ? 
-                              shifts.find(s => s.id === request.requester_roster.shift_id)?.name || 'N/A' : 
-                              'N/A'}
+                            Shift:{" "}
+                            {request.requester_roster?.shift_id
+                              ? shifts.find(
+                                  (s) =>
+                                    s.id === request.requester_roster.shift_id,
+                                )?.name || "N/A"
+                              : "N/A"}
                           </div>
                         </div>
                       </td>
@@ -711,7 +842,7 @@ const ShiftSwapping = () => {
                       {/* Reason */}
                       <td className="px-4 py-3 w-[22%] min-w-[180px]">
                         <div className="text-sm text-gray-900 max-w-xs">
-                          {request.requester_reason || 'No reason provided'}
+                          {request.requester_reason || "No reason provided"}
                         </div>
                       </td>
 
@@ -726,14 +857,14 @@ const ShiftSwapping = () => {
                       {/* Actions */}
                       <td className="px-4 py-3 w-[24%] min-w-[200px] text-sm font-medium">
                         <div className="flex gap-2">
-                         <button
-  onClick={() => handleViewDetails(request.id)}
-  className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
-  title="View Details"
->
-  <FaEye size={10} /> View
-</button>
-                          
+                          <button
+                            onClick={() => handleViewDetails(request.id)}
+                            className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
+                            title="View Details"
+                          >
+                            <FaEye size={10} /> View
+                          </button>
+
                           {request.status === "pending" && (
                             <>
                               <button
@@ -752,7 +883,7 @@ const ShiftSwapping = () => {
                               </button>
                             </>
                           )}
-                          
+
                           <button
                             onClick={() => handleDeleteRequest(request.id)}
                             className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
@@ -775,7 +906,8 @@ const ShiftSwapping = () => {
           <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
             <div className="flex flex-col sm:flex-row justify-between items-center">
               <div className="text-sm text-gray-600">
-                Showing {filteredRequests.length} of {swapRequests.length} shift swap requests
+                Showing {filteredRequests.length} of {swapRequests.length} shift
+                swap requests
               </div>
               <div className="text-sm font-semibold text-gray-800">
                 Pending approval:{" "}
@@ -790,7 +922,9 @@ const ShiftSwapping = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Create Shift Swap Request</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Create Shift Swap Request
+                </h2>
                 <button
                   onClick={() => {
                     setShowShiftForm(false);
@@ -812,17 +946,23 @@ const ShiftSwapping = () => {
                       name="requester_roster_id"
                       required
                       value={newRequest.requester_roster_id}
-                      onChange={(e) => handleRequesterRosterChange(e.target.value)}
+                      onChange={(e) =>
+                        handleRequesterRosterChange(e.target.value)
+                      }
                       className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
                     >
                       <option value="">Select Your Shift</option>
                       {currentUserRosters.map((roster) => {
-                        const shift = shifts.find(s => s.id === roster.shift_id);
+                        const shift = shifts.find(
+                          (s) => s.id === roster.shift_id,
+                        );
                         return (
                           <option key={roster.id} value={roster.id}>
-                            {roster.roster_date ? formatDate(roster.roster_date) : 'No date'} - 
-                            {roster.start_time} to {roster.end_time}
-                            {shift ? ` (${shift.name})` : ''}
+                            {roster.roster_date
+                              ? formatDate(roster.roster_date)
+                              : "No date"}{" "}
+                            -{roster.start_time} to {roster.end_time}
+                            {shift ? ` (${shift.name})` : ""}
                           </option>
                         );
                       })}
@@ -842,10 +982,11 @@ const ShiftSwapping = () => {
                     >
                       <option value="">Select Employee</option>
                       {employees
-                        .filter(emp => emp.id !== currentUserId)
+                        .filter((emp) => emp.id !== currentUserId)
                         .map((emp) => (
                           <option key={emp.id} value={emp.id}>
-                            {emp.name} ({emp.employee_code}) - {emp.department_name}
+                            {emp.name} ({emp.employee_code}) -{" "}
+                            {emp.department_name}
                           </option>
                         ))}
                     </select>
@@ -854,7 +995,13 @@ const ShiftSwapping = () => {
                   {newRequest.requested_employee_id && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Desired Shift from {employees.find(e => e.id == newRequest.requested_employee_id)?.name} *
+                        Desired Shift from{" "}
+                        {
+                          employees.find(
+                            (e) => e.id == newRequest.requested_employee_id,
+                          )?.name
+                        }{" "}
+                        *
                       </label>
                       <select
                         name="requested_roster_id"
@@ -865,12 +1012,16 @@ const ShiftSwapping = () => {
                       >
                         <option value="">Select Desired Shift</option>
                         {requestedEmployeeRosters.map((roster) => {
-                          const shift = shifts.find(s => s.id === roster.shift_id);
+                          const shift = shifts.find(
+                            (s) => s.id === roster.shift_id,
+                          );
                           return (
                             <option key={roster.id} value={roster.id}>
-                              {roster.roster_date ? formatDate(roster.roster_date) : 'No date'} - 
-                              {roster.start_time} to {roster.end_time}
-                              {shift ? ` (${shift.name})` : ''}
+                              {roster.roster_date
+                                ? formatDate(roster.roster_date)
+                                : "No date"}{" "}
+                              -{roster.start_time} to {roster.end_time}
+                              {shift ? ` (${shift.name})` : ""}
                             </option>
                           );
                         })}
@@ -922,11 +1073,13 @@ const ShiftSwapping = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Reject Swap Request</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Reject Swap Request
+                </h2>
                 <button
                   onClick={() => {
                     setShowRejectModal(false);
-                    setRejectionReason('');
+                    setRejectionReason("");
                   }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
@@ -951,7 +1104,7 @@ const ShiftSwapping = () => {
                   <button
                     onClick={() => {
                       setShowRejectModal(false);
-                      setRejectionReason('');
+                      setRejectionReason("");
                     }}
                     className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
                   >
@@ -974,7 +1127,9 @@ const ShiftSwapping = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Swap Request Details</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Swap Request Details
+                </h2>
                 <button
                   onClick={() => setSelectedRequest(null)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -988,7 +1143,10 @@ const ShiftSwapping = () => {
                 <div className="flex items-center justify-between">
                   {getStatusBadge(selectedRequest.status)}
                   <div className="text-sm text-gray-500">
-                    Created: {selectedRequest.created_at ? formatDateTime(selectedRequest.created_at) : 'N/A'}
+                    Created:{" "}
+                    {selectedRequest.created_at
+                      ? formatDateTime(selectedRequest.created_at)
+                      : "N/A"}
                   </div>
                 </div>
 
@@ -997,16 +1155,20 @@ const ShiftSwapping = () => {
                   <div className="flex items-center justify-center gap-6">
                     <div className="text-center">
                       <div className="font-bold text-lg mb-2">
-                        {selectedRequest.requester ? 
-                          `${selectedRequest.requester.first_name || ''} ${selectedRequest.requester.last_name || ''}`.trim() : 
-                          'Unknown'}
+                        {selectedRequest.requester
+                          ? `${selectedRequest.requester.first_name || ""} ${selectedRequest.requester.last_name || ""}`.trim()
+                          : "Unknown"}
                       </div>
                       <div className="text-sm text-gray-600 mb-1">
-                        {selectedRequest.requester_roster?.roster_date ? 
-                          formatDate(selectedRequest.requester_roster.roster_date) : 'N/A'}
+                        {selectedRequest.requester_roster?.roster_date
+                          ? formatDate(
+                              selectedRequest.requester_roster.roster_date,
+                            )
+                          : "N/A"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {selectedRequest.requester_roster?.start_time} - {selectedRequest.requester_roster?.end_time}
+                        {selectedRequest.requester_roster?.start_time} -{" "}
+                        {selectedRequest.requester_roster?.end_time}
                       </div>
                     </div>
 
@@ -1014,16 +1176,20 @@ const ShiftSwapping = () => {
 
                     <div className="text-center">
                       <div className="font-bold text-lg mb-2">
-                        {selectedRequest.requested_employee ? 
-                          `${selectedRequest.requested_employee.first_name || ''} ${selectedRequest.requested_employee.last_name || ''}`.trim() : 
-                          'Unknown'}
+                        {selectedRequest.requested_employee
+                          ? `${selectedRequest.requested_employee.first_name || ""} ${selectedRequest.requested_employee.last_name || ""}`.trim()
+                          : "Unknown"}
                       </div>
                       <div className="text-sm text-gray-600 mb-1">
-                        {selectedRequest.requested_roster?.roster_date ? 
-                          formatDate(selectedRequest.requested_roster.roster_date) : 'N/A'}
+                        {selectedRequest.requested_roster?.roster_date
+                          ? formatDate(
+                              selectedRequest.requested_roster.roster_date,
+                            )
+                          : "N/A"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {selectedRequest.requested_roster?.start_time} - {selectedRequest.requested_roster?.end_time}
+                        {selectedRequest.requested_roster?.start_time} -{" "}
+                        {selectedRequest.requested_roster?.end_time}
                       </div>
                     </div>
                   </div>
@@ -1041,35 +1207,45 @@ const ShiftSwapping = () => {
                       <div>
                         <span className="text-gray-600">Employee:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requester ? 
-                            `${selectedRequest.requester.first_name || ''} ${selectedRequest.requester.last_name || ''}`.trim() : 
-                            'N/A'}
+                          {selectedRequest.requester
+                            ? `${selectedRequest.requester.first_name || ""} ${selectedRequest.requester.last_name || ""}`.trim()
+                            : "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Employee Code:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requester?.employee_code || 'N/A'}
+                          {selectedRequest.requester?.employee_code || "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Shift Date:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requester_roster?.roster_date ? 
-                            formatDate(selectedRequest.requester_roster.roster_date) : 'N/A'}
+                          {selectedRequest.requester_roster?.roster_date
+                            ? formatDate(
+                                selectedRequest.requester_roster.roster_date,
+                              )
+                            : "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Shift Time:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requester_roster?.start_time || 'N/A'} - {selectedRequest.requester_roster?.end_time || 'N/A'}
+                          {selectedRequest.requester_roster?.start_time ||
+                            "N/A"}{" "}
+                          -{" "}
+                          {selectedRequest.requester_roster?.end_time || "N/A"}
                         </span>
                       </div>
                       {selectedRequest.requester_roster?.shift_id && (
                         <div>
                           <span className="text-gray-600">Shift Name:</span>
                           <span className="ml-2 font-medium">
-                            {shifts.find(s => s.id === selectedRequest.requester_roster.shift_id)?.name || 'N/A'}
+                            {shifts.find(
+                              (s) =>
+                                s.id ===
+                                selectedRequest.requester_roster.shift_id,
+                            )?.name || "N/A"}
                           </span>
                         </div>
                       )}
@@ -1086,35 +1262,46 @@ const ShiftSwapping = () => {
                       <div>
                         <span className="text-gray-600">Employee:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requested_employee ? 
-                            `${selectedRequest.requested_employee.first_name || ''} ${selectedRequest.requested_employee.last_name || ''}`.trim() : 
-                            'N/A'}
+                          {selectedRequest.requested_employee
+                            ? `${selectedRequest.requested_employee.first_name || ""} ${selectedRequest.requested_employee.last_name || ""}`.trim()
+                            : "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Employee Code:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requested_employee?.employee_code || 'N/A'}
+                          {selectedRequest.requested_employee?.employee_code ||
+                            "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Desired Date:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requested_roster?.roster_date ? 
-                            formatDate(selectedRequest.requested_roster.roster_date) : 'N/A'}
+                          {selectedRequest.requested_roster?.roster_date
+                            ? formatDate(
+                                selectedRequest.requested_roster.roster_date,
+                              )
+                            : "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Desired Time:</span>
                         <span className="ml-2 font-medium">
-                          {selectedRequest.requested_roster?.start_time || 'N/A'} - {selectedRequest.requested_roster?.end_time || 'N/A'}
+                          {selectedRequest.requested_roster?.start_time ||
+                            "N/A"}{" "}
+                          -{" "}
+                          {selectedRequest.requested_roster?.end_time || "N/A"}
                         </span>
                       </div>
                       {selectedRequest.requested_roster?.shift_id && (
                         <div>
                           <span className="text-gray-600">Shift Name:</span>
                           <span className="ml-2 font-medium">
-                            {shifts.find(s => s.id === selectedRequest.requested_roster.shift_id)?.name || 'N/A'}
+                            {shifts.find(
+                              (s) =>
+                                s.id ===
+                                selectedRequest.requested_roster.shift_id,
+                            )?.name || "N/A"}
                           </span>
                         </div>
                       )}
@@ -1124,18 +1311,29 @@ const ShiftSwapping = () => {
 
                 {/* Reason and Notes */}
                 <div className="border rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Reason for Swap</h3>
+                  <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                    Reason for Swap
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded text-sm text-gray-700">
-                    {selectedRequest.requester_reason || 'No reason provided'}
+                    {selectedRequest.requester_reason || "No reason provided"}
                   </div>
 
                   {selectedRequest.manager_approver && (
                     <div className="mt-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Approved by:</h4>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                        Approved by:
+                      </h4>
                       <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-700">Manager ID: {selectedRequest.manager_approver_id}</p>
+                        <p className="text-sm text-gray-700">
+                          Manager ID: {selectedRequest.manager_approver_id}
+                        </p>
                         <p className="text-xs text-gray-500">
-                          Approved at: {selectedRequest.manager_approved_at ? formatDateTime(selectedRequest.manager_approved_at) : 'N/A'}
+                          Approved at:{" "}
+                          {selectedRequest.manager_approved_at
+                            ? formatDateTime(
+                                selectedRequest.manager_approved_at,
+                              )
+                            : "N/A"}
                         </p>
                       </div>
                     </div>
@@ -1148,7 +1346,9 @@ const ShiftSwapping = () => {
                         Rejection Reason:
                       </h4>
                       <div className="bg-red-50 p-4 rounded border border-red-100">
-                        <p className="text-sm text-red-700">{selectedRequest.rejection_reason}</p>
+                        <p className="text-sm text-red-700">
+                          {selectedRequest.rejection_reason}
+                        </p>
                       </div>
                     </div>
                   )}

@@ -1,8 +1,9 @@
 // services/permissionService.js
 import axiosClient from '../axiosClient';
+// We don't need separate axios instance anymore since all endpoints are under /api/v1/
 
 const permissionService = {
-  // Get all permissions
+  // Get all permissions (uses /api/v1/permissions)
   getPermissions: async () => {
     try {
       const response = await axiosClient.get('/permissions');
@@ -70,81 +71,77 @@ const permissionService = {
     }
   },
 
-  // Get permission categories (extracted from existing permissions)
-  getPermissionCategories: async () => {
+  // Get modules from API (uses /api/v1/modules)
+  getModules: async () => {
     try {
-      const permissions = await permissionService.getPermissions();
-      const categories = new Set();
-      permissions.forEach(permission => {
-        const parts = permission.name.split('.');
-        if (parts.length > 0) {
-          categories.add(parts[0]);
-        }
-      });
-      return Array.from(categories).map(category => ({
-        id: category,
-        name: category.charAt(0).toUpperCase() + category.slice(1),
-        count: permissions.filter(p => p.name.startsWith(category + '.')).length
-      }));
+      const response = await axiosClient.get('/modules');
+      
+      // Handle response structure: {success: true, count: 8, data: [...]}
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      console.warn('Unexpected modules response structure:', response.data);
+      return [];
+      
     } catch (error) {
-      console.error('Error getting categories:', error);
+      console.error('Error fetching modules from /modules:', error);
       throw error;
     }
   },
 
-  // Create new category (by creating a default permission)
-  createCategory: async (categoryName) => {
+  // Get pages for a module (uses /api/v1/modules/{id}/pages)
+  getModulePages: async (moduleId) => {
     try {
-      // Create a view permission for the new category
-      const response = await axiosClient.post('/permissions', {
-        name: `${categoryName}.view`,
-        guard_name: 'web'
-      });
+      const response = await axiosClient.get(`/modules/${moduleId}/pages`);
+      
+      // Handle response structure: {message: "...", module_id: 2, data: [...]}
+      if (response.data && response.data.data) {
+        return response.data.data;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      console.warn('Unexpected pages response structure:', response.data);
+      return [];
+      
+    } catch (error) {
+      console.error(`Error fetching pages for module ${moduleId}:`, error);
+      throw error;
+    }
+  },
+
+  // Create new module (uses /api/v1/modules)
+  createModule: async (moduleData) => {
+    try {
+      const response = await axiosClient.post('/modules', moduleData);
       return response.data;
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error('Error creating module:', error);
       throw error;
     }
   },
 
-  // Update category name (by updating all permissions in that category)
-  updateCategory: async (oldCategoryName, newCategoryName) => {
+  // Update module (uses /api/v1/modules/{id})
+  updateModule: async (id, moduleData) => {
     try {
-      const permissions = await permissionService.getPermissions();
-      const categoryPermissions = permissions.filter(p => p.name.startsWith(oldCategoryName + '.'));
-      
-      // Update each permission in the category
-      const updatePromises = categoryPermissions.map(permission => {
-        const newName = permission.name.replace(`${oldCategoryName}.`, `${newCategoryName}.`);
-        return permissionService.updatePermission(permission.id, {
-          name: newName,
-          guard_name: permission.guard_name
-        });
-      });
-      
-      await Promise.all(updatePromises);
-      return { success: true, message: `Category updated from ${oldCategoryName} to ${newCategoryName}` };
+      const response = await axiosClient.post(`/modules/${id}`, moduleData);
+      return response.data;
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error(`Error updating module ${id}:`, error);
       throw error;
     }
   },
 
-  // Delete category (by deleting all permissions in that category)
-  deleteCategory: async (categoryName) => {
+  // Delete module (uses /api/v1/modules/{id})
+  deleteModule: async (id) => {
     try {
-      const permissions = await permissionService.getPermissions();
-      const categoryPermissions = permissions.filter(p => p.name.startsWith(categoryName + '.'));
-      
-      // Delete each permission in the category
-      const deletePromises = categoryPermissions.map(permission => 
-        permissionService.deletePermission(permission.id)
-      );
-      
-      await Promise.all(deletePromises);
-      return { success: true, message: `Category ${categoryName} deleted successfully` };
+      const response = await axiosClient.delete(`/modules/${id}`);
+      return response.data;
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error(`Error deleting module ${id}:`, error);
       throw error;
     }
   },
@@ -168,6 +165,37 @@ const permissionService = {
       { id: 'schedule', name: 'Schedule', icon: 'calendar', color: 'blue' },
       { id: 'track', name: 'Track', icon: 'chart-line', color: 'green' },
     ];
+  },
+
+  // Helper function to parse permission name into module.page.action format
+  parsePermissionName: (name) => {
+    const parts = name.split('.');
+    if (parts.length === 3) {
+      // module.page.action format
+      return {
+        module: parts[0],
+        page: parts[1],
+        action: parts[2],
+        type: 'page_permission',
+        displayName: `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].replace(/_/g, ' ')} ${parts[2]}`.replace(/\b\w/g, l => l.toUpperCase())
+      };
+    } else if (parts.length === 2) {
+      // module.action format
+      return {
+        module: parts[0],
+        page: '',
+        action: parts[1],
+        type: 'module_permission',
+        displayName: `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1]}`.replace(/\b\w/g, l => l.toUpperCase())
+      };
+    }
+    return {
+      module: 'other',
+      page: '',
+      action: name,
+      type: 'other',
+      displayName: name.replace(/\b\w/g, l => l.toUpperCase())
+    };
   }
 };
 
