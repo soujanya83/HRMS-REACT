@@ -19,6 +19,7 @@ import {
   FaCheck,
   FaTimes,
   FaInfoCircle,
+  FaSpinner,
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
@@ -72,6 +73,7 @@ const SelectField = ({
   required = false,
   placeholder = "-- Select --",
   disabled = false,
+  loading = false,
 }) => (
   <div className="w-full">
     <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
@@ -84,12 +86,12 @@ const SelectField = ({
       value={value || ""}
       onChange={onChange}
       required={required}
-      disabled={disabled}
+      disabled={disabled || loading}
       className={`w-full px-4 py-2.5 rounded-lg border ${
         error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
       } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
     >
-      <option value="">{placeholder}</option>
+      <option value="">{loading ? "Loading..." : placeholder}</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -186,6 +188,9 @@ export default function EmployeeForm() {
   const [activeTab, setActiveTab] = useState("personal");
   const [formErrors, setFormErrors] = useState({});
   const [completedTabs, setCompletedTabs] = useState(new Set());
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const [designationsLoading, setDesignationsLoading] = useState(false);
+  const [managersLoading, setManagersLoading] = useState(false);
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -239,54 +244,143 @@ export default function EmployeeForm() {
     if (isEdit) {
       setLoading(true);
       getEmployee(id)
-        .then(({ data }) => {
-          setFormData(data.data);
-          // Mark all tabs as completed in edit mode
-          setCompletedTabs(new Set(["personal", "employment", "financial", "emergency"]));
+        .then((response) => {
+          console.log('Employee API response:', response);
+          if (response.data && response.data.success === true) {
+            const employeeData = response.data.data;
+            console.log('Employee data for edit:', employeeData);
+            setFormData(employeeData);
+            setCompletedTabs(new Set(["personal", "employment", "financial", "emergency"]));
+            
+            // If department_id exists, fetch designations for that department
+            if (employeeData.department_id) {
+              setDesignationsLoading(true);
+              getDesignationsByDeptId(employeeData.department_id)
+                .then((res) => {
+                  console.log('Designations response for edit:', res);
+                  if (res && res.success === true) {
+                    const designationsData = res.data || [];
+                    setDesignations(
+                      designationsData.map((d) => ({ 
+                        value: d.id, 
+                        label: d.title 
+                      }))
+                    );
+                  }
+                })
+                .catch((err) => {
+                  console.error("Failed to fetch designations for edit:", err);
+                  setDesignations([]);
+                })
+                .finally(() => setDesignationsLoading(false));
+            }
+          } else {
+            console.error("Failed to fetch employee:", response);
+          }
         })
-        .catch((err) => console.error("Failed to fetch employee", err))
+        .catch((err) => {
+          console.error("Failed to fetch employee", err);
+          console.error("Error details:", err.response?.data);
+        })
         .finally(() => setLoading(false));
     }
   }, [id, isEdit]);
 
-  // Fetch dynamic data
+  // Fetch dynamic data when organization changes
   useEffect(() => {
     if (organizationId) {
+      console.log('Fetching data for organization ID:', organizationId);
+      
       // Fetch departments
+      setDepartmentsLoading(true);
       getDepartmentsByOrgId(organizationId)
-        .then((res) =>
-          setDepartments(
-            res.data.data.map((d) => ({ value: d.id, label: d.name }))
-          )
-        )
-        .catch((err) => console.error("Failed to fetch departments", err));
+        .then((res) => {
+          console.log('Departments API response:', res);
+          if (res && res.success === true) {
+            const departmentsData = res.data || [];
+            console.log('Departments data:', departmentsData);
+            setDepartments(
+              departmentsData.map((d) => ({ 
+                value: d.id, 
+                label: d.name 
+              }))
+            );
+          } else {
+            console.error("Failed to fetch departments - response structure:", res);
+            setDepartments([]);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching departments:", err);
+          console.error("Error details:", err.response?.data);
+          setDepartments([]);
+        })
+        .finally(() => setDepartmentsLoading(false));
 
       // Fetch managers (existing employees)
+      setManagersLoading(true);
       getEmployees({ organization_id: organizationId })
-        .then((res) =>
-          setManagers(
-            res.data.data.map((e) => ({
-              value: e.id,
-              label: `${e.first_name} ${e.last_name}`,
-            }))
-          )
-        )
-        .catch((err) => console.error("Failed to fetch managers", err));
+        .then((response) => {
+          console.log('Managers API response:', response);
+          if (response.data && response.data.success === true) {
+            const employeesData = response.data.data || [];
+            console.log('Managers data:', employeesData);
+            setManagers(
+              employeesData.map((e) => ({
+                value: e.id,
+                label: `${e.first_name} ${e.last_name}`,
+              }))
+            );
+          } else {
+            console.error("Failed to fetch managers:", response);
+            setManagers([]);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching managers:", err);
+          setManagers([]);
+        })
+        .finally(() => setManagersLoading(false));
+    } else {
+      console.log('No organization ID selected');
+      setDepartments([]);
+      setManagers([]);
     }
   }, [organizationId]);
 
   // Fetch designations when department changes
   useEffect(() => {
     if (formData.department_id) {
+      console.log('Fetching designations for department ID:', formData.department_id);
+      
+      // Reset designation when department changes
       setFormData((prev) => ({ ...prev, designation_id: "" }));
+      
+      setDesignationsLoading(true);
       getDesignationsByDeptId(formData.department_id)
-        .then((res) =>
-          setDesignations(
-            res.data.data.map((d) => ({ value: d.id, label: d.title }))
-          )
-        )
-        .catch((err) => console.error("Failed to fetch designations", err));
+        .then((res) => {
+          console.log('Designations API response:', res);
+          if (res && res.success === true) {
+            const designationsData = res.data || [];
+            console.log('Designations data:', designationsData);
+            setDesignations(
+              designationsData.map((d) => ({ 
+                value: d.id, 
+                label: d.title 
+              }))
+            );
+          } else {
+            console.error("Failed to fetch designations:", res);
+            setDesignations([]);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching designations:", err);
+          setDesignations([]);
+        })
+        .finally(() => setDesignationsLoading(false));
     } else {
+      console.log('No department selected');
       setDesignations([]);
     }
   }, [formData.department_id]);
@@ -467,6 +561,31 @@ export default function EmployeeForm() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
       <div className="max-w-6xl mx-auto">
+        {/* Debug Info Panel - Remove after testing */}
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">Debug Info</h3>
+          <div className="text-sm grid grid-cols-2 gap-2">
+            <div>
+              <span className="font-medium">Organization ID:</span> {organizationId || "None"}
+            </div>
+            <div>
+              <span className="font-medium">Departments:</span> {departments.length}
+              {departmentsLoading && <FaSpinner className="ml-2 animate-spin inline" />}
+            </div>
+            <div>
+              <span className="font-medium">Current Dept:</span> {formData.department_id || "None"}
+            </div>
+            <div>
+              <span className="font-medium">Designations:</span> {designations.length}
+              {designationsLoading && <FaSpinner className="ml-2 animate-spin inline" />}
+            </div>
+            <div>
+              <span className="font-medium">Managers:</span> {managers.length}
+              {managersLoading && <FaSpinner className="ml-2 animate-spin inline" />}
+            </div>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <button
@@ -643,7 +762,9 @@ export default function EmployeeForm() {
                   options={departments}
                   error={formErrors.department_id}
                   required
-                  placeholder="-- Select Department --"
+                  placeholder={departmentsLoading ? "Loading departments..." : "-- Select Department --"}
+                  disabled={departmentsLoading || departments.length === 0}
+                  loading={departmentsLoading}
                 />
                 
                 <SelectField
@@ -654,8 +775,15 @@ export default function EmployeeForm() {
                   options={designations}
                   error={formErrors.designation_id}
                   required
-                  placeholder={departments.length === 0 ? "-- Select Department First --" : "-- Select Designation --"}
-                  disabled={!formData.department_id || designations.length === 0}
+                  placeholder={
+                    !formData.department_id 
+                      ? "Select department first" 
+                      : designationsLoading 
+                        ? "Loading designations..." 
+                        : "-- Select Designation --"
+                  }
+                  disabled={!formData.department_id || designationsLoading || designations.length === 0}
+                  loading={designationsLoading}
                 />
                 
                 <SelectField
@@ -699,7 +827,9 @@ export default function EmployeeForm() {
                     onChange={handleChange}
                     options={managers}
                     error={formErrors.reporting_manager_id}
-                    placeholder="-- Select Reporting Manager --"
+                    placeholder={managersLoading ? "Loading managers..." : "-- Select Reporting Manager --"}
+                    disabled={managersLoading}
+                    loading={managersLoading}
                   />
                 </div>
               </div>
