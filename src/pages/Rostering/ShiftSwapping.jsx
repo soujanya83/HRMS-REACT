@@ -25,7 +25,7 @@ import {
   FaUserTie,
   FaMoneyBillWave,
 } from "react-icons/fa";
-import shiftSwapService from "../../services/shiftSchedulingService";
+import shiftSwapService from "../../services/shiftSwapService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
 const ShiftSwapping = () => {
@@ -66,127 +66,110 @@ const ShiftSwapping = () => {
   }, [selectedOrganization]);
 
   const fetchAllData = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      // Fetch all data - handle departments error gracefully
-      const [
-        swapRequestsResponse,
-        employeesResponse,
-        rostersResponse,
-        shiftsResponse,
-        departmentsResponse,
-      ] = await Promise.allSettled([
-        shiftSwapService.getSwapRequests({
-          organization_id: selectedOrganization.id,
-        }),
-        shiftSwapService.getEmployees({
-          organization_id: selectedOrganization.id,
-        }),
-        shiftSwapService.getRosters({
-          organization_id: selectedOrganization.id,
-        }),
-        shiftSwapService.getShifts({
-          organization_id: selectedOrganization.id,
-        }),
-        shiftSwapService
-          .getDepartments({
-            organization_id: selectedOrganization.id,
-          })
-          .catch(() => ({ success: false, data: [] })), // Handle departments error
-      ]);
+    // Fetch all data - handle departments with the correct endpoint
+    const [
+      swapRequestsResponse,
+      employeesResponse,
+      rostersResponse,
+      shiftsResponse,
+      departmentsResponse,
+    ] = await Promise.allSettled([
+      shiftSwapService.getSwapRequests({
+        organization_id: selectedOrganization.id,
+      }),
+      shiftSwapService.getEmployees({
+        organization_id: selectedOrganization.id,
+      }),
+      shiftSwapService.getRosters({
+        organization_id: selectedOrganization.id,
+      }),
+      shiftSwapService.getShifts({
+        organization_id: selectedOrganization.id,
+      }),
+      shiftSwapService.getDepartments(selectedOrganization.id)  // Updated this line
+        .catch(() => ({ success: false, data: [] })), // Handle departments error
+    ]);
 
-      // Process swap requests
-      if (
-        swapRequestsResponse.status === "fulfilled" &&
-        swapRequestsResponse.value?.success
-      ) {
-        setSwapRequests(swapRequestsResponse.value.data || []);
-      } else {
-        setSwapRequests([]);
-      }
-
-      // Process employees
-      if (
-        employeesResponse.status === "fulfilled" &&
-        employeesResponse.value?.success
-      ) {
-        const employeesData = employeesResponse.value.data || [];
-        const formattedEmployees = employeesData.map((emp) => ({
-          id: emp.id,
-          name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
-          department_id: emp.department_id,
-          employee_code: emp.employee_code,
-          department_name:
-            emp.department?.name || `Department ${emp.department_id}`,
-          department: emp.department?.name || "General",
-        }));
-        setEmployees(formattedEmployees);
-
-        // Extract unique departments from employees if departments API fails
-        if (
-          departmentsResponse.status !== "fulfilled" ||
-          !departmentsResponse.value?.success
-        ) {
-          const uniqueDepartments = [
-            ...new Set(formattedEmployees.map((emp) => emp.department_name)),
-          ];
-          setDepartments(uniqueDepartments);
-        }
-      } else {
-        setEmployees([]);
-      }
-
-      // Process rosters
-      if (
-        rostersResponse.status === "fulfilled" &&
-        rostersResponse.value?.success
-      ) {
-        setRosters(rostersResponse.value.data || []);
-      } else {
-        setRosters([]);
-      }
-
-      // Process shifts
-      if (
-        shiftsResponse.status === "fulfilled" &&
-        shiftsResponse.value?.success
-      ) {
-        setShifts(shiftsResponse.value.data || []);
-      } else {
-        setShifts([]);
-      }
-
-      // Process departments (only if API call succeeded)
-      if (
-        departmentsResponse.status === "fulfilled" &&
-        departmentsResponse.value?.success
-      ) {
-        const departmentsData = departmentsResponse.value.data || [];
-        setDepartments(
-          departmentsData.map(
-            (dept) => dept.name || dept.title || dept.department_name,
-          ),
-        );
-      } else if (
-        employeesResponse.status === "fulfilled" &&
-        employeesResponse.value?.success
-      ) {
-        // Already handled above - extracting from employees
-      } else {
-        setDepartments(["IT", "Design", "Management", "Testing", "HR"]);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
+    // Process swap requests
+    if (
+      swapRequestsResponse.status === "fulfilled" &&
+      swapRequestsResponse.value?.success
+    ) {
+      setSwapRequests(swapRequestsResponse.value.data || []);
+    } else {
       setSwapRequests([]);
-      setEmployees([]);
-      setRosters([]);
-      setShifts([]);
-      setDepartments(["IT", "Design", "Management", "Testing", "HR"]);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Process employees
+    if (
+      employeesResponse.status === "fulfilled" &&
+      employeesResponse.value?.success
+    ) {
+      const employeesData = employeesResponse.value.data || [];
+      const formattedEmployees = employeesData.map((emp) => ({
+        id: emp.id,
+        name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
+        department_id: emp.department_id,
+        employee_code: emp.employee_code,
+        department_name:
+          emp.department?.name || `Department ${emp.department_id}`,
+        department: emp.department?.name || "General",
+      }));
+      setEmployees(formattedEmployees);
+    } else {
+      setEmployees([]);
+    }
+
+    // Process rosters
+    if (
+      rostersResponse.status === "fulfilled" &&
+      rostersResponse.value?.success
+    ) {
+      setRosters(rostersResponse.value.data || []);
+    } else {
+      setRosters([]);
+    }
+
+    // Process shifts
+    if (
+      shiftsResponse.status === "fulfilled" &&
+      shiftsResponse.value?.success
+    ) {
+      setShifts(shiftsResponse.value.data || []);
+    } else {
+      setShifts([]);
+    }
+
+    // Process departments
+    if (
+      departmentsResponse.status === "fulfilled" &&
+      departmentsResponse.value?.success
+    ) {
+      const departmentsData = departmentsResponse.value.data || [];
+      // Extract just the department names
+      const departmentNames = departmentsData.map((dept) => dept.name);
+      setDepartments(departmentNames);
+    } else {
+      // Fallback: extract departments from employees or use defaults
+      const uniqueDepartments = [
+        ...new Set(employees.map((emp) => emp.department_name || "General")),
+      ];
+      setDepartments(uniqueDepartments.length > 0 ? uniqueDepartments : ["General"]);
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    setSwapRequests([]);
+    setEmployees([]);
+    setRosters([]);
+    setShifts([]);
+    setDepartments(["General"]); // Default fallback
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));

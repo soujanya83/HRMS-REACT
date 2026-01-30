@@ -56,35 +56,42 @@ const ShiftScheduling = () => {
     }
   }, [organizationId, showDeleted, orgLoading]);
 
-  const fetchShifts = async () => {
-    if (!organizationId) {
-      setError('No organization selected');
-      setLoading(false);
-      return;
-    }
+const fetchShifts = async () => {
+  if (!organizationId) {
+    setError('No organization selected');
+    setLoading(false);
+    return;
+  }
 
-    setLoading(true);
-    setError(null);
-    try {
-      let response;
-      if (showDeleted) {
-        response = await shiftSchedulingService.getDeletedShifts();
-      } else {
-        response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
-      }
-      
-      // Handle different response structures
+  setLoading(true);
+  setError(null);
+  try {
+    let response;
+    if (showDeleted) {
+      response = await shiftSchedulingService.getDeletedShifts();
+    } else {
+      response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
+    }
+    
+    // Handle API response structure correctly
+    if (response && response.success) {
+      const shiftsData = response.data || [];
+      setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
+    } else {
+      // Handle unexpected response format
       const shiftsData = response?.data || response || [];
       setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
-    } catch (error) {
-      console.error('Error fetching shifts:', error);
-      setError(error.response?.data?.message || 'Failed to load shifts. Please try again.');
-      setShifts([]);
-    } finally {
-      setLoading(false);
     }
-  };
-
+  } catch (error) {
+    console.error('Error fetching shifts:', error);
+    setError(error.response?.data?.message || 'Failed to load shifts. Please try again.');
+    setShifts([]);
+  } finally {
+    setLoading(false);
+  }
+};
+      
+ 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewShift(prev => ({ ...prev, [name]: value }));

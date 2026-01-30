@@ -50,16 +50,16 @@ import permissionService from "../../services/permissionService";
 
 // Safe getModuleDetails function
 const getModuleDetails = (moduleName) => {
-  if (!moduleName || typeof moduleName !== 'string') {
+  if (!moduleName || typeof moduleName !== "string") {
     return {
-      name: 'Unknown Module',
+      name: "Unknown Module",
       icon: <FaBox className="h-6 w-6" />,
       color: "bg-gray-100 text-gray-600 border-gray-200",
     };
   }
 
   const safeName = moduleName.toLowerCase().trim();
-  
+
   const iconMap = {
     recruitment: <FaUserTie className="h-6 w-6" />,
     employee: <FaUsers className="h-6 w-6" />,
@@ -77,7 +77,7 @@ const getModuleDetails = (moduleName) => {
     system: <FaWrench className="h-6 w-6" />,
     default: <FaBox className="h-6 w-6" />,
   };
-  
+
   const colorMap = {
     recruitment: "bg-purple-100 text-purple-600 border-purple-200",
     employee: "bg-green-100 text-green-600 border-green-200",
@@ -94,58 +94,66 @@ const getModuleDetails = (moduleName) => {
     finance: "bg-emerald-100 text-emerald-600 border-emerald-200",
     default: "bg-gray-100 text-gray-600 border-gray-200",
   };
-  
+
   const icon = iconMap[safeName] || iconMap.default;
   const color = colorMap[safeName] || colorMap.default;
   const displayName = safeName.charAt(0).toUpperCase() + safeName.slice(1);
-  
+
   return { name: displayName, icon, color };
 };
 
 // Parse permission name
 const parsePermissionName = (name) => {
-  if (!name || typeof name !== 'string') {
+  if (!name || typeof name !== "string") {
     return {
-      module: 'unknown',
-      page: '',
-      action: 'unknown',
-      type: 'other',
-      displayName: 'Unknown Permission'
+      module: "unknown",
+      page: "",
+      action: "unknown",
+      type: "other",
+      displayName: "Unknown Permission",
     };
   }
-  
-  const parts = name.split('.');
+
+  const parts = name.split(".");
   if (parts.length === 3) {
     // module.page.action format
     return {
       module: parts[0],
       page: parts[1],
       action: parts[2],
-      type: 'page_permission',
-      displayName: `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].replace(/_/g, ' ')} ${parts[2]}`.replace(/\b\w/g, l => l.toUpperCase())
+      type: "page_permission",
+      displayName:
+        `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1].replace(/_/g, " ")} ${parts[2]}`.replace(
+          /\b\w/g,
+          (l) => l.toUpperCase(),
+        ),
     };
   } else if (parts.length === 2) {
     // module.action format
     return {
       module: parts[0],
-      page: '',
+      page: "",
       action: parts[1],
-      type: 'module_permission',
-      displayName: `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1]}`.replace(/\b\w/g, l => l.toUpperCase())
+      type: "module_permission",
+      displayName:
+        `${parts[0].charAt(0).toUpperCase() + parts[0].slice(1)} ${parts[1]}`.replace(
+          /\b\w/g,
+          (l) => l.toUpperCase(),
+        ),
     };
   }
   return {
-    module: 'other',
-    page: '',
+    module: "other",
+    page: "",
     action: name,
-    type: 'other',
-    displayName: name.replace(/\b\w/g, l => l.toUpperCase())
+    type: "other",
+    displayName: name.replace(/\b\w/g, (l) => l.toUpperCase()),
   };
 };
 
 // Permission Type Badge
 const PermissionTypeBadge = ({ action }) => {
-  if (!action || typeof action !== 'string') {
+  if (!action || typeof action !== "string") {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
         <FaLock className="h-3 w-3" />
@@ -155,34 +163,100 @@ const PermissionTypeBadge = ({ action }) => {
   }
 
   const safeAction = action.toLowerCase();
-  
+
   const typeConfig = {
-    view: { color: "bg-blue-100 text-blue-800 border border-blue-200", icon: <FaEye className="h-3 w-3" />, label: "View" },
-    create: { color: "bg-green-100 text-green-800 border border-green-200", icon: <FaPlus className="h-3 w-3" />, label: "Create" },
-    add: { color: "bg-green-100 text-green-800 border border-green-200", icon: <FaPlus className="h-3 w-3" />, label: "Add" },
-    edit: { color: "bg-yellow-100 text-yellow-800 border border-yellow-200", icon: <FaEdit className="h-3 w-3" />, label: "Edit" },
-    delete: { color: "bg-red-100 text-red-800 border border-red-200", icon: <FaTrash className="h-3 w-3" />, label: "Delete" },
-    manage: { color: "bg-purple-100 text-purple-800 border border-purple-200", icon: <FaCog className="h-3 w-3" />, label: "Manage" },
-    run: { color: "bg-indigo-100 text-indigo-800 border border-indigo-200", icon: <FaPlay className="h-3 w-3" />, label: "Run" },
-    approve: { color: "bg-green-100 text-green-800 border border-green-200", icon: <FaCheck className="h-3 w-3" />, label: "Approve" },
-    reject: { color: "bg-red-100 text-red-800 border border-red-200", icon: <FaTimes className="h-3 w-3" />, label: "Reject" },
-    export: { color: "bg-blue-100 text-blue-800 border border-blue-200", icon: <FaDownload className="h-3 w-3" />, label: "Export" },
-    import: { color: "bg-green-100 text-green-800 border border-green-200", icon: <FaUpload className="h-3 w-3" />, label: "Import" },
-    assign: { color: "bg-purple-100 text-purple-800 border border-purple-200", icon: <FaUsers className="h-3 w-3" />, label: "Assign" },
-    review: { color: "bg-yellow-100 text-yellow-800 border border-yellow-200", icon: <FaEye className="h-3 w-3" />, label: "Review" },
-    generate: { color: "bg-indigo-100 text-indigo-800 border border-indigo-200", icon: <FaFileAlt className="h-3 w-3" />, label: "Generate" },
-    schedule: { color: "bg-blue-100 text-blue-800 border border-blue-200", icon: <FaCalendar className="h-3 w-3" />, label: "Schedule" },
-    track: { color: "bg-green-100 text-green-800 border border-green-200", icon: <FaChartLine className="h-3 w-3" />, label: "Track" },
+    view: {
+      color: "bg-blue-100 text-blue-800 border border-blue-200",
+      icon: <FaEye className="h-3 w-3" />,
+      label: "View",
+    },
+    create: {
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <FaPlus className="h-3 w-3" />,
+      label: "Create",
+    },
+    add: {
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <FaPlus className="h-3 w-3" />,
+      label: "Add",
+    },
+    edit: {
+      color: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      icon: <FaEdit className="h-3 w-3" />,
+      label: "Edit",
+    },
+    delete: {
+      color: "bg-red-100 text-red-800 border border-red-200",
+      icon: <FaTrash className="h-3 w-3" />,
+      label: "Delete",
+    },
+    manage: {
+      color: "bg-purple-100 text-purple-800 border border-purple-200",
+      icon: <FaCog className="h-3 w-3" />,
+      label: "Manage",
+    },
+    run: {
+      color: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+      icon: <FaPlay className="h-3 w-3" />,
+      label: "Run",
+    },
+    approve: {
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <FaCheck className="h-3 w-3" />,
+      label: "Approve",
+    },
+    reject: {
+      color: "bg-red-100 text-red-800 border border-red-200",
+      icon: <FaTimes className="h-3 w-3" />,
+      label: "Reject",
+    },
+    export: {
+      color: "bg-blue-100 text-blue-800 border border-blue-200",
+      icon: <FaDownload className="h-3 w-3" />,
+      label: "Export",
+    },
+    import: {
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <FaUpload className="h-3 w-3" />,
+      label: "Import",
+    },
+    assign: {
+      color: "bg-purple-100 text-purple-800 border border-purple-200",
+      icon: <FaUsers className="h-3 w-3" />,
+      label: "Assign",
+    },
+    review: {
+      color: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      icon: <FaEye className="h-3 w-3" />,
+      label: "Review",
+    },
+    generate: {
+      color: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+      icon: <FaFileAlt className="h-3 w-3" />,
+      label: "Generate",
+    },
+    schedule: {
+      color: "bg-blue-100 text-blue-800 border border-blue-200",
+      icon: <FaCalendar className="h-3 w-3" />,
+      label: "Schedule",
+    },
+    track: {
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <FaChartLine className="h-3 w-3" />,
+      label: "Track",
+    },
   };
 
-  const config = typeConfig[safeAction] || { 
-    color: "bg-gray-100 text-gray-800 border border-gray-200", 
+  const config = typeConfig[safeAction] || {
+    color: "bg-gray-100 text-gray-800 border border-gray-200",
     icon: <FaLock className="h-3 w-3" />,
-    label: safeAction.charAt(0).toUpperCase() + safeAction.slice(1)
+    label: safeAction.charAt(0).toUpperCase() + safeAction.slice(1),
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
+    >
       {config.icon}
       {config.label}
     </span>
@@ -197,7 +271,9 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
     <div className="p-6">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Modules</h2>
-        <p className="text-gray-600">Select a module to view its pages and permissions</p>
+        <p className="text-gray-600">
+          Select a module to view its pages and permissions
+        </p>
       </div>
 
       {loading ? (
@@ -208,28 +284,37 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
       ) : !modules || modules.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
           <FaBox className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No Modules Found</h3>
-          <p className="text-gray-500">No modules are available in the system</p>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">
+            No Modules Found
+          </h3>
+          <p className="text-gray-500">
+            No modules are available in the system
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {modules.map(module => {
+          {modules.map((module) => {
             const details = getModuleDetails(module.name.toLowerCase());
-            
+
             return (
-              <div key={module.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
+              <div
+                key={module.id}
+                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 min-w-0 flex-1">
-                    <div className={`p-3 rounded-lg ${details.color} flex-shrink-0`}>
+                    <div
+                      className={`p-3 rounded-lg ${details.color} flex-shrink-0`}
+                    >
                       {details.icon}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-gray-800 text-lg truncate">
-                          {module.name || 'Unnamed Module'}
+                          {module.name || "Unnamed Module"}
                         </h3>
                         <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
-                          ID: {module.id || 'N/A'}
+                          ID: {module.id || "N/A"}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
@@ -237,7 +322,7 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex-shrink-0">
                     <button
                       onClick={() => onViewPages(module)}
@@ -259,8 +344,15 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
 // ============================================
 // PAGE 2: MODULE PAGES PAGE (ONE PER LINE - PROPER ALIGNMENT)
 // ============================================
-const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack, loading }) => {
-  const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || '');
+const ModulePagesPage = ({
+  module,
+  pages,
+  onOpenForm,
+  onViewPermissions,
+  onBack,
+  loading,
+}) => {
+  const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || "");
 
   return (
     <div className="p-6">
@@ -273,14 +365,20 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
           <FaArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Modules
         </button>
-        
+
         <div className="flex items-center gap-3 mb-4">
-          <div className={`p-3 rounded-lg ${moduleDetails.color} flex-shrink-0`}>
+          <div
+            className={`p-3 rounded-lg ${moduleDetails.color} flex-shrink-0`}
+          >
             {moduleDetails.icon}
           </div>
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-gray-800 truncate">{module?.name || 'Unknown'} Module</h2>
-            <p className="text-gray-600 truncate">Select a page to create or view permissions</p>
+            <h2 className="text-2xl font-bold text-gray-800 truncate">
+              {module?.name || "Unknown"} Module
+            </h2>
+            <p className="text-gray-600 truncate">
+              Select a page to create or view permissions
+            </p>
           </div>
         </div>
       </div>
@@ -293,13 +391,20 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
       ) : !pages || pages.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
           <FaBook className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No Pages Found</h3>
-          <p className="text-gray-500">This module doesn't have any pages yet</p>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">
+            No Pages Found
+          </h3>
+          <p className="text-gray-500">
+            This module doesn't have any pages yet
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {pages.map(page => (
-            <div key={page.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
+          {pages.map((page) => (
+            <div
+              key={page.id}
+              className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 min-w-0 flex-1">
                   <div className="p-3 rounded-lg bg-green-100 text-green-600 border border-green-200 flex-shrink-0">
@@ -308,21 +413,24 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold text-gray-800 text-lg truncate">
-                        {page.name || 'Unnamed Page'}
+                        {page.name || "Unnamed Page"}
                       </h3>
                       <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
-                        ID: {page.id || 'N/A'}
+                        ID: {page.id || "N/A"}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 mb-2 truncate">
-                      Slug: <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200 font-mono">{page.slug || 'N/A'}</code>
+                      Slug:{" "}
+                      <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200 font-mono">
+                        {page.slug || "N/A"}
+                      </code>
                     </p>
                     <p className="text-sm text-gray-600">
                       Create permissions or view existing ones for this page
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <button
                     onClick={() => onOpenForm(module, page)}
@@ -347,13 +455,14 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
           <FaInfoCircle className="h-5 w-5" />
-          About {module?.name || 'Unknown'} Module
+          About {module?.name || "Unknown"} Module
         </h4>
         <p className="text-sm text-blue-700">
-          This module has {pages?.length || 0} page{pages?.length !== 1 ? 's' : ''}. 
-          Each page can have permissions in the format: 
+          This module has {pages?.length || 0} page
+          {pages?.length !== 1 ? "s" : ""}. Each page can have permissions in
+          the format:
           <code className="bg-blue-100 px-2 py-1 rounded mx-1 font-mono">
-            {module?.name?.toLowerCase() || 'module'}.page_slug.action
+            {module?.name?.toLowerCase() || "module"}.page_slug.action
           </code>
         </p>
       </div>
@@ -364,17 +473,24 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
 // ============================================
 // PAGE 3: PAGE PERMISSIONS PAGE (ONE PER LINE - PROPER ALIGNMENT)
 // ============================================
-const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, loading }) => {
-  const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || '');
-  
+const PagePermissionsPage = ({
+  module,
+  page,
+  permissions,
+  onBack,
+  onOpenForm,
+  loading,
+}) => {
+  const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || "");
+
   // Filter permissions for this specific page
   const pagePermissions = React.useMemo(() => {
     if (!module || !page || !permissions) return [];
-    
+
     const moduleName = module.name.toLowerCase();
     const pageSlug = page.slug;
-    
-    return permissions.filter(p => {
+
+    return permissions.filter((p) => {
       const parsed = parsePermissionName(p.name);
       return parsed.module === moduleName && parsed.page === pageSlug;
     });
@@ -383,7 +499,7 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
   // Get all unique actions
   const uniqueActions = React.useMemo(() => {
     const actions = new Set();
-    pagePermissions.forEach(p => {
+    pagePermissions.forEach((p) => {
       const parsed = parsePermissionName(p.name);
       if (parsed.action) actions.add(parsed.action);
     });
@@ -396,7 +512,7 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 flex-wrap">
           <button
-            onClick={() => onBack('modules')}
+            onClick={() => onBack("modules")}
             className="hover:text-gray-800 flex items-center gap-1 group"
           >
             <FaHome className="h-3 w-3" />
@@ -404,30 +520,48 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
           </button>
           <FaChevronRight className="h-3 w-3" />
           <button
-            onClick={() => onBack('pages')}
+            onClick={() => onBack("pages")}
             className="hover:text-gray-800 flex items-center gap-1 group"
           >
             <FaBox className="h-3 w-3" />
-            <span className="group-hover:underline truncate max-w-[100px]">{module?.name || 'Module'}</span>
+            <span className="group-hover:underline truncate max-w-[100px]">
+              {module?.name || "Module"}
+            </span>
           </button>
           <FaChevronRight className="h-3 w-3" />
           <span className="font-medium text-gray-800 flex items-center gap-1">
             <FaBook className="h-3 w-3" />
-            <span className="truncate max-w-[150px]">{page?.name || 'Page'} Permissions</span>
+            <span className="truncate max-w-[150px]">
+              {page?.name || "Page"} Permissions
+            </span>
           </span>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`p-3 rounded-lg ${moduleDetails.color} flex-shrink-0`}>
+            <div
+              className={`p-3 rounded-lg ${moduleDetails.color} flex-shrink-0`}
+            >
               {moduleDetails.icon}
             </div>
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold text-gray-800 truncate">{page?.name || 'Page'} Permissions</h2>
+              <h2 className="text-2xl font-bold text-gray-800 truncate">
+                {page?.name || "Page"} Permissions
+              </h2>
               <div className="flex items-center gap-2 text-gray-600 flex-wrap">
-                <span>Module: <span className="font-medium">{module?.name || 'Unknown'}</span></span>
+                <span>
+                  Module:{" "}
+                  <span className="font-medium">
+                    {module?.name || "Unknown"}
+                  </span>
+                </span>
                 <span className="hidden md:inline">•</span>
-                <span>Slug: <code className="bg-gray-100 px-2 py-0.5 rounded ml-1 font-mono truncate max-w-[200px]">{page?.slug || 'N/A'}</code></span>
+                <span>
+                  Slug:{" "}
+                  <code className="bg-gray-100 px-2 py-0.5 rounded ml-1 font-mono truncate max-w-[200px]">
+                    {page?.slug || "N/A"}
+                  </code>
+                </span>
               </div>
             </div>
           </div>
@@ -446,7 +580,9 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="text-sm text-gray-600">Total Permissions</div>
-              <div className="text-2xl font-bold text-gray-800 truncate">{pagePermissions.length}</div>
+              <div className="text-2xl font-bold text-gray-800 truncate">
+                {pagePermissions.length}
+              </div>
             </div>
             <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 flex-shrink-0">
               <FaKey className="h-5 w-5" />
@@ -457,7 +593,9 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="text-sm text-gray-600">Unique Actions</div>
-              <div className="text-2xl font-bold text-gray-800 truncate">{uniqueActions.length}</div>
+              <div className="text-2xl font-bold text-gray-800 truncate">
+                {uniqueActions.length}
+              </div>
             </div>
             <div className="p-2.5 bg-green-100 text-green-600 rounded-lg border border-green-200 flex-shrink-0">
               <FaFilter className="h-5 w-5" />
@@ -469,7 +607,8 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
             <div className="min-w-0">
               <div className="text-sm text-gray-600">Permission Format</div>
               <div className="text-sm font-mono text-gray-800 truncate">
-                {module?.name?.toLowerCase() || 'module'}.{page?.slug || 'page'}.action
+                {module?.name?.toLowerCase() || "module"}.{page?.slug || "page"}
+                .action
               </div>
             </div>
             <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg border border-purple-200 flex-shrink-0">
@@ -490,8 +629,12 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
           <div className="inline-block p-4 bg-white rounded-full shadow-lg mb-4 border border-gray-200">
             <FaKey className="h-16 w-16 text-gray-300" />
           </div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No Permissions Found</h3>
-          <p className="text-gray-500 mb-4">This page doesn't have any permissions yet</p>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">
+            No Permissions Found
+          </h3>
+          <p className="text-gray-500 mb-4">
+            This page doesn't have any permissions yet
+          </p>
           <button
             onClick={() => onOpenForm(module, page)}
             className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium"
@@ -507,24 +650,31 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
             <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <FaFilter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Available Actions:</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Available Actions:
+                </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {uniqueActions.map(action => (
+                {uniqueActions.map((action) => (
                   <PermissionTypeBadge key={action} action={action} />
                 ))}
               </div>
             </div>
           )}
-          
+
           {/* Permissions List - One per line */}
           <div className="space-y-4">
-            {pagePermissions.map(permission => {
+            {pagePermissions.map((permission) => {
               const parsed = parsePermissionName(permission.name);
-              const createdDate = permission.created_at ? new Date(permission.created_at) : new Date();
-              
+              const createdDate = permission.created_at
+                ? new Date(permission.created_at)
+                : new Date();
+
               return (
-                <div key={permission.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+                <div
+                  key={permission.id}
+                  className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+                >
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -536,23 +686,39 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
                       <code className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-600 block truncate border border-gray-200 mb-4">
                         {permission.name}
                       </code>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500 min-w-[80px]">Permission ID:</span>
-                          <span className="font-medium truncate">{permission.id || 'N/A'}</span>
+                          <span className="text-gray-500 min-w-[80px]">
+                            Permission ID:
+                          </span>
+                          <span className="font-medium truncate">
+                            {permission.id || "N/A"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500 min-w-[60px]">Guard:</span>
-                          <span className="font-medium truncate">{permission.guard_name || 'web'}</span>
+                          <span className="text-gray-500 min-w-[60px]">
+                            Guard:
+                          </span>
+                          <span className="font-medium truncate">
+                            {permission.guard_name || "web"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500 min-w-[70px]">Created:</span>
-                          <span className="font-medium truncate">{createdDate.toLocaleDateString()}</span>
+                          <span className="text-gray-500 min-w-[70px]">
+                            Created:
+                          </span>
+                          <span className="font-medium truncate">
+                            {createdDate.toLocaleDateString()}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500 min-w-[70px]">Module:</span>
-                          <span className="font-medium capitalize truncate">{parsed.module}</span>
+                          <span className="text-gray-500 min-w-[70px]">
+                            Module:
+                          </span>
+                          <span className="font-medium capitalize truncate">
+                            {parsed.module}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -571,17 +737,19 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
           About Permissions for this Page
         </h4>
         <p className="text-sm text-blue-700 mb-3">
-          All permissions for <strong>{page?.name || 'this page'}</strong> follow the format:
+          All permissions for <strong>{page?.name || "this page"}</strong>{" "}
+          follow the format:
         </p>
         <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 mb-3 overflow-x-auto">
           <code className="text-sm font-mono whitespace-nowrap">
-            {module?.name?.toLowerCase() || 'module'}.{page?.slug || 'page'}.action_name
+            {module?.name?.toLowerCase() || "module"}.{page?.slug || "page"}
+            .action_name
           </code>
         </div>
         <div className="text-sm text-blue-700">
           <p className="font-medium mb-1">Common actions for this page:</p>
           <div className="flex flex-wrap gap-2">
-            {['view', 'create', 'edit', 'delete', 'manage'].map(action => (
+            {["view", "create", "edit", "delete", "manage"].map((action) => (
               <PermissionTypeBadge key={action} action={action} />
             ))}
           </div>
@@ -594,7 +762,14 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, lo
 // ============================================
 // PERMISSION FORM MODAL
 // ============================================
-const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSave, loading }) => {
+const PermissionFormModal = ({
+  isOpen,
+  onClose,
+  contextModule,
+  contextPage,
+  onSave,
+  loading,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     guard_name: "web",
@@ -622,14 +797,14 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
       const pageSlug = contextPage.slug;
       const action = selectedAction || customAction;
       const permissionName = `${moduleName}.${pageSlug}.${action}`;
-      
-      setFormData(prev => ({ ...prev, name: permissionName }));
+
+      setFormData((prev) => ({ ...prev, name: permissionName }));
     }
   }, [contextModule, contextPage, selectedAction, customAction]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setErrors({ general: "Please select an action" });
       return;
@@ -639,8 +814,10 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
       await onSave(formData);
       onClose();
     } catch (error) {
-      setErrors({ 
-        general: error.response?.data?.message || "Failed to save permission. Please try again." 
+      setErrors({
+        general:
+          error.response?.data?.message ||
+          "Failed to save permission. Please try again.",
       });
     }
   };
@@ -649,22 +826,22 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
 
   const moduleDetails = getModuleDetails(contextModule.name.toLowerCase());
   const standardActions = [
-    { id: 'view', name: 'View' },
-    { id: 'create', name: 'Create' },
-    { id: 'add', name: 'Add' },
-    { id: 'edit', name: 'Edit' },
-    { id: 'delete', name: 'Delete' },
-    { id: 'manage', name: 'Manage' },
-    { id: 'run', name: 'Run' },
-    { id: 'approve', name: 'Approve' },
-    { id: 'reject', name: 'Reject' },
-    { id: 'export', name: 'Export' },
-    { id: 'import', name: 'Import' },
-    { id: 'assign', name: 'Assign' },
-    { id: 'review', name: 'Review' },
-    { id: 'generate', name: 'Generate' },
-    { id: 'schedule', name: 'Schedule' },
-    { id: 'track', name: 'Track' },
+    { id: "view", name: "View" },
+    { id: "create", name: "Create" },
+    { id: "add", name: "Add" },
+    { id: "edit", name: "Edit" },
+    { id: "delete", name: "Delete" },
+    { id: "manage", name: "Manage" },
+    { id: "run", name: "Run" },
+    { id: "approve", name: "Approve" },
+    { id: "reject", name: "Reject" },
+    { id: "export", name: "Export" },
+    { id: "import", name: "Import" },
+    { id: "assign", name: "Assign" },
+    { id: "review", name: "Review" },
+    { id: "generate", name: "Generate" },
+    { id: "schedule", name: "Schedule" },
+    { id: "track", name: "Track" },
   ];
 
   return (
@@ -677,13 +854,18 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
                 <FaKey className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-800">Create Permission</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Create Permission
+                </h2>
                 <p className="text-sm text-gray-500 truncate">
                   For {contextPage.name} page in {contextModule.name} module
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0"
+            >
               <FaTimes className="h-5 w-5 text-gray-500" />
             </button>
           </div>
@@ -700,12 +882,15 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
             {/* Module Info */}
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${moduleDetails.color} flex-shrink-0`}>
+                <div
+                  className={`p-2 rounded-lg ${moduleDetails.color} flex-shrink-0`}
+                >
                   {moduleDetails.icon}
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm text-blue-700 truncate">
-                    Module: <span className="font-semibold">{contextModule.name}</span>
+                    Module:{" "}
+                    <span className="font-semibold">{contextModule.name}</span>
                   </div>
                   <div className="text-xs text-blue-600 mt-1 truncate">
                     Auto-filled from selection
@@ -722,10 +907,14 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm text-green-700 truncate">
-                    Page: <span className="font-semibold">{contextPage.name}</span>
+                    Page:{" "}
+                    <span className="font-semibold">{contextPage.name}</span>
                   </div>
                   <div className="text-xs text-green-600 mt-1">
-                    Slug: <code className="bg-green-100 px-1.5 py-0.5 rounded border border-green-200 font-mono truncate max-w-full">{contextPage.slug}</code>
+                    Slug:{" "}
+                    <code className="bg-green-100 px-1.5 py-0.5 rounded border border-green-200 font-mono truncate max-w-full">
+                      {contextPage.slug}
+                    </code>
                   </div>
                 </div>
               </div>
@@ -745,7 +934,7 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
               >
                 <option value="">Select standard action</option>
-                {standardActions.map(action => (
+                {standardActions.map((action) => (
                   <option key={action.id} value={action.id}>
                     {action.name}
                   </option>
@@ -756,7 +945,9 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
                 type="text"
                 value={customAction}
                 onChange={(e) => {
-                  setCustomAction(e.target.value.toLowerCase().replace(/\s+/g, '_'));
+                  setCustomAction(
+                    e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                  );
                   setSelectedAction("");
                 }}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -767,7 +958,9 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
             {/* Preview */}
             {formData.name && (
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-sm font-medium text-gray-700 mb-1">Permission Preview:</div>
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  Permission Preview:
+                </div>
                 <code className="text-sm bg-white px-2 py-1.5 rounded border block truncate font-mono">
                   {formData.name}
                 </code>
@@ -807,7 +1000,7 @@ const PermissionFormModal = ({ isOpen, onClose, contextModule, contextPage, onSa
 // ============================================
 export default function PermissionManagementPage() {
   // State for 3-step flow
-  const [currentPage, setCurrentPage] = useState('modules'); // 'modules', 'pages', or 'permissions'
+  const [currentPage, setCurrentPage] = useState("modules"); // 'modules', 'pages', or 'permissions'
   const [modules, setModules] = useState([]);
   const [pages, setPages] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -832,13 +1025,13 @@ export default function PermissionManagementPage() {
     try {
       const [modulesData, permissionsData] = await Promise.all([
         permissionService.getModules(),
-        permissionService.getPermissions()
+        permissionService.getPermissions(),
       ]);
       setModules(modulesData || []);
       setPermissions(permissionsData || []);
     } catch (err) {
-      console.error('Failed to fetch data:', err);
-      setError('Failed to load data. Please try again.');
+      console.error("Failed to fetch data:", err);
+      setError("Failed to load data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -852,10 +1045,10 @@ export default function PermissionManagementPage() {
       const pagesData = await permissionService.getModulePages(module.id);
       setPages(pagesData || []);
       setSelectedModule(module);
-      setCurrentPage('pages');
+      setCurrentPage("pages");
     } catch (err) {
-      console.error('Error fetching pages:', err);
-      setError('Failed to load pages for this module');
+      console.error("Error fetching pages:", err);
+      setError("Failed to load pages for this module");
     } finally {
       setPagesLoading(false);
     }
@@ -868,10 +1061,10 @@ export default function PermissionManagementPage() {
     try {
       setSelectedModule(module);
       setSelectedPage(page);
-      setCurrentPage('permissions');
+      setCurrentPage("permissions");
     } catch (err) {
-      console.error('Error navigating to permissions:', err);
-      setError('Failed to load permissions');
+      console.error("Error navigating to permissions:", err);
+      setError("Failed to load permissions");
     } finally {
       setPermissionsLoading(false);
     }
@@ -879,13 +1072,13 @@ export default function PermissionManagementPage() {
 
   // Handle back navigation
   const handleBack = (targetPage) => {
-    if (targetPage === 'modules') {
-      setCurrentPage('modules');
+    if (targetPage === "modules") {
+      setCurrentPage("modules");
       setSelectedModule(null);
       setSelectedPage(null);
       setPages([]);
-    } else if (targetPage === 'pages') {
-      setCurrentPage('pages');
+    } else if (targetPage === "pages") {
+      setCurrentPage("pages");
       setSelectedPage(null);
     }
   };
@@ -909,26 +1102,31 @@ export default function PermissionManagementPage() {
     setSuccessMessage(null);
 
     try {
-      const savedPermission = await permissionService.createPermission(formData);
-      
+      const savedPermission =
+        await permissionService.createPermission(formData);
+
       // Update permissions list
-      setPermissions(prev => [...prev, savedPermission]);
-      
-      setSuccessMessage(`Permission "${savedPermission.name}" created successfully!`);
-      
+      setPermissions((prev) => [...prev, savedPermission]);
+
+      setSuccessMessage(
+        `Permission "${savedPermission.name}" created successfully!`,
+      );
+
       setTimeout(() => {
         setSuccessMessage(null);
         handleClosePermissionForm();
-        
+
         // Refresh permissions if we're on permissions page
-        if (currentPage === 'permissions') {
+        if (currentPage === "permissions") {
           fetchData();
         }
       }, 3000);
-      
     } catch (err) {
-      console.error('Error saving permission:', err);
-      setError(err.response?.data?.message || 'Failed to save permission. Please try again.');
+      console.error("Error saving permission:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to save permission. Please try again.",
+      );
       throw err;
     } finally {
       setSaving(false);
@@ -937,29 +1135,37 @@ export default function PermissionManagementPage() {
 
   // Refresh data
   const handleRefresh = () => {
-    if (currentPage === 'modules') {
+    if (currentPage === "modules") {
       fetchData();
-    } else if (currentPage === 'pages' && selectedModule) {
+    } else if (currentPage === "pages" && selectedModule) {
       fetchModulePages(selectedModule);
-    } else if (currentPage === 'permissions' && selectedModule && selectedPage) {
+    } else if (
+      currentPage === "permissions" &&
+      selectedModule &&
+      selectedPage
+    ) {
       fetchData();
     }
   };
 
   // Get current page title
   const getPageTitle = () => {
-    if (currentPage === 'modules') return 'Modules';
-    if (currentPage === 'pages') return selectedModule ? `${selectedModule.name} Pages` : 'Pages';
-    if (currentPage === 'permissions') return selectedPage ? `${selectedPage.name} Permissions` : 'Permissions';
-    return 'Permission Management';
+    if (currentPage === "modules") return "Modules";
+    if (currentPage === "pages")
+      return selectedModule ? `${selectedModule.name} Pages` : "Pages";
+    if (currentPage === "permissions")
+      return selectedPage ? `${selectedPage.name} Permissions` : "Permissions";
+    return "Permission Management";
   };
 
   // Get current page description
   const getPageDescription = () => {
-    if (currentPage === 'modules') return 'Select a module to view its pages';
-    if (currentPage === 'pages') return 'Select a page to create or view permissions';
-    if (currentPage === 'permissions') return 'View and manage permissions for this page';
-    return 'Manage system permissions';
+    if (currentPage === "modules") return "Select a module to view its pages";
+    if (currentPage === "pages")
+      return "Select a page to create or view permissions";
+    if (currentPage === "permissions")
+      return "View and manage permissions for this page";
+    return "Manage system permissions";
   };
 
   return (
@@ -970,7 +1176,9 @@ export default function PermissionManagementPage() {
           <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4 shadow-lg">
             <div className="flex items-center gap-3">
               <FaCheckCircle className="h-5 w-5 text-green-600" />
-              <p className="text-green-800 font-medium truncate">{successMessage}</p>
+              <p className="text-green-800 font-medium truncate">
+                {successMessage}
+              </p>
             </div>
           </div>
         </div>
@@ -980,21 +1188,25 @@ export default function PermissionManagementPage() {
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-800 truncate">{getPageTitle()}</h1>
-            <p className="text-gray-600 text-sm mt-1 truncate">{getPageDescription()}</p>
+            <h1 className="text-2xl font-bold text-gray-800 truncate">
+              {getPageTitle()}
+            </h1>
+            <p className="text-gray-600 text-sm mt-1 truncate">
+              {getPageDescription()}
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {currentPage === 'pages' && (
+            {currentPage === "pages" && (
               <button
-                onClick={() => handleBack('modules')}
+                onClick={() => handleBack("modules")}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
               >
                 <FaArrowLeft className="h-4 w-4" /> Back to Modules
               </button>
             )}
-            {currentPage === 'permissions' && (
+            {currentPage === "permissions" && (
               <button
-                onClick={() => handleBack('pages')}
+                onClick={() => handleBack("pages")}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
               >
                 <FaArrowLeft className="h-4 w-4" /> Back to Pages
@@ -1025,7 +1237,9 @@ export default function PermissionManagementPage() {
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <div className="text-sm text-gray-600">Total Modules</div>
-                <div className="text-2xl font-bold text-gray-800 truncate">{modules.length}</div>
+                <div className="text-2xl font-bold text-gray-800 truncate">
+                  {modules.length}
+                </div>
               </div>
               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 flex-shrink-0">
                 <FaBox className="h-5 w-5" />
@@ -1035,17 +1249,27 @@ export default function PermissionManagementPage() {
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <div className="text-sm text-gray-600">Current {currentPage === 'permissions' ? 'Page' : 'Module'}</div>
+                <div className="text-sm text-gray-600">
+                  Current {currentPage === "permissions" ? "Page" : "Module"}
+                </div>
                 <div className="text-2xl font-bold text-gray-800 truncate">
-                  {currentPage === 'modules' ? modules.length : 
-                   currentPage === 'pages' ? (selectedModule?.name?.substring(0, 10) || '...') : 
-                   currentPage === 'permissions' ? (selectedPage?.name?.substring(0, 10) || '...') : '-'}
+                  {currentPage === "modules"
+                    ? modules.length
+                    : currentPage === "pages"
+                      ? selectedModule?.name?.substring(0, 10) || "..."
+                      : currentPage === "permissions"
+                        ? selectedPage?.name?.substring(0, 10) || "..."
+                        : "-"}
                 </div>
               </div>
               <div className="p-2 bg-green-100 text-green-600 rounded-lg border border-green-200 flex-shrink-0">
-                {currentPage === 'modules' ? <FaBox className="h-5 w-5" /> : 
-                 currentPage === 'pages' ? <FaBook className="h-5 w-5" /> : 
-                 <FaKey className="h-5 w-5" />}
+                {currentPage === "modules" ? (
+                  <FaBox className="h-5 w-5" />
+                ) : currentPage === "pages" ? (
+                  <FaBook className="h-5 w-5" />
+                ) : (
+                  <FaKey className="h-5 w-5" />
+                )}
               </div>
             </div>
           </div>
@@ -1053,7 +1277,9 @@ export default function PermissionManagementPage() {
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <div className="text-sm text-gray-600">Total Permissions</div>
-                <div className="text-2xl font-bold text-gray-800 truncate">{permissions.length}</div>
+                <div className="text-2xl font-bold text-gray-800 truncate">
+                  {permissions.length}
+                </div>
               </div>
               <div className="p-2 bg-purple-100 text-purple-600 rounded-lg border border-purple-200 flex-shrink-0">
                 <FaKey className="h-5 w-5" />
@@ -1063,33 +1289,40 @@ export default function PermissionManagementPage() {
         </div>
 
         {/* Breadcrumb */}
-        {(currentPage === 'pages' || currentPage === 'permissions') && (
+        {(currentPage === "pages" || currentPage === "permissions") && (
           <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 flex-wrap">
             <button
-              onClick={() => handleBack('modules')}
+              onClick={() => handleBack("modules")}
               className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
             >
               <FaBox className="h-3 w-3 flex-shrink-0" />
               <span className="group-hover:underline truncate">Modules</span>
             </button>
-            {currentPage === 'permissions' && (
+            {currentPage === "permissions" && (
               <>
                 <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
                 <button
-                  onClick={() => handleBack('pages')}
+                  onClick={() => handleBack("pages")}
                   className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
                 >
                   <FaBook className="h-3 w-3 flex-shrink-0" />
-                  <span className="group-hover:underline truncate max-w-[100px]">{selectedModule?.name || 'Module'}</span>
+                  <span className="group-hover:underline truncate max-w-[100px]">
+                    {selectedModule?.name || "Module"}
+                  </span>
                 </button>
               </>
             )}
             <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
             <span className="font-medium text-gray-800 flex items-center gap-1 whitespace-nowrap">
-              {currentPage === 'pages' ? <FaBook className="h-3 w-3 flex-shrink-0" /> : <FaKey className="h-3 w-3 flex-shrink-0" />}
+              {currentPage === "pages" ? (
+                <FaBook className="h-3 w-3 flex-shrink-0" />
+              ) : (
+                <FaKey className="h-3 w-3 flex-shrink-0" />
+              )}
               <span className="truncate max-w-[150px]">
-                {currentPage === 'pages' ? (selectedModule?.name || 'Module') + ' Pages' : 
-                 (selectedPage?.name || 'Page') + ' Permissions'}
+                {currentPage === "pages"
+                  ? (selectedModule?.name || "Module") + " Pages"
+                  : (selectedPage?.name || "Page") + " Permissions"}
               </span>
             </span>
           </div>
@@ -1099,19 +1332,19 @@ export default function PermissionManagementPage() {
       {/* Main Content */}
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-          {currentPage === 'modules' ? (
+          {currentPage === "modules" ? (
             <ModulesPage
               modules={modules}
               onViewPages={fetchModulePages}
               loading={loading}
             />
-          ) : currentPage === 'pages' ? (
+          ) : currentPage === "pages" ? (
             <ModulePagesPage
               module={selectedModule}
               pages={pages}
               onOpenForm={handleOpenPermissionForm}
               onViewPermissions={fetchPagePermissions}
-              onBack={() => handleBack('modules')}
+              onBack={() => handleBack("modules")}
               loading={pagesLoading}
             />
           ) : (
