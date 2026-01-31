@@ -14,7 +14,9 @@ import {
   FaTimes,
   FaUndo,
   FaRedo,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaPalette,
+  FaRandom
 } from 'react-icons/fa';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import shiftSchedulingService from '../../services/shiftSchedulingService';
@@ -39,8 +41,34 @@ const ShiftScheduling = () => {
     start_time: '09:00',
     end_time: '17:00',
     color_code: '#4CAF50',
-    notes: ''
+    notes: '',
+    shift_type: 'custom' // 'predefined' or 'custom'
   });
+
+  // Predefined shift options
+  const predefinedShifts = [
+    { name: 'Morning Shift', color: '#4CAF50', start_time: '09:00', end_time: '17:00' }, // Green
+    { name: 'Mid Shift', color: '#2196F3', start_time: '12:00', end_time: '20:00' }, // Blue
+    { name: 'Late Shift', color: '#FF9800', start_time: '15:00', end_time: '23:00' }, // Orange
+    { name: 'Night Shift', color: '#9C27B0', start_time: '21:00', end_time: '05:00' }, // Purple
+    { name: 'Weekend Shift', color: '#F44336', start_time: '10:00', end_time: '18:00' }, // Red
+  ];
+
+  // Color options
+  const colorOptions = [
+    { name: 'Green', value: '#4CAF50' },
+    { name: 'Blue', value: '#2196F3' },
+    { name: 'Orange', value: '#FF9800' },
+    { name: 'Purple', value: '#9C27B0' },
+    { name: 'Red', value: '#F44336' },
+    { name: 'Cyan', value: '#00BCD4' },
+    { name: 'Teal', value: '#009688' },
+    { name: 'Pink', value: '#E91E63' },
+    { name: 'Indigo', value: '#3F51B5' },
+    { name: 'Brown', value: '#795548' },
+    { name: 'Gray', value: '#9E9E9E' },
+    { name: 'No Color', value: '#FFFFFF' },
+  ];
 
   // Update newShift when organization changes
   useEffect(() => {
@@ -56,45 +84,74 @@ const ShiftScheduling = () => {
     }
   }, [organizationId, showDeleted, orgLoading]);
 
-const fetchShifts = async () => {
-  if (!organizationId) {
-    setError('No organization selected');
-    setLoading(false);
-    return;
-  }
+  const fetchShifts = async () => {
+    if (!organizationId) {
+      setError('No organization selected');
+      setLoading(false);
+      return;
+    }
 
-  setLoading(true);
-  setError(null);
-  try {
-    let response;
-    if (showDeleted) {
-      response = await shiftSchedulingService.getDeletedShifts();
-    } else {
-      response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
-    }
-    
-    // Handle API response structure correctly
-    if (response && response.success) {
-      const shiftsData = response.data || [];
-      setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
-    } else {
-      // Handle unexpected response format
-      const shiftsData = response?.data || response || [];
-      setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
-    }
-  } catch (error) {
-    console.error('Error fetching shifts:', error);
-    setError(error.response?.data?.message || 'Failed to load shifts. Please try again.');
-    setShifts([]);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    setError(null);
+    try {
+      let response;
+      if (showDeleted) {
+        response = await shiftSchedulingService.getDeletedShifts();
+      } else {
+        response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
+      }
       
- 
+      // Handle API response structure correctly
+      if (response && response.success) {
+        const shiftsData = response.data || [];
+        setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
+      } else {
+        // Handle unexpected response format
+        const shiftsData = response?.data || response || [];
+        setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
+      }
+    } catch (error) {
+      console.error('Error fetching shifts:', error);
+      setError(error.response?.data?.message || 'Failed to load shifts. Please try again.');
+      setShifts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewShift(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePredefinedShiftSelect = (shift) => {
+    setNewShift({
+      ...newShift,
+      name: shift.name,
+      color_code: shift.color,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      shift_type: 'predefined'
+    });
+  };
+
+  const handleCustomShift = () => {
+    setNewShift(prev => ({ 
+      ...prev, 
+      name: '',
+      shift_type: 'custom',
+      color_code: '#4CAF50' // Reset to default green
+    }));
+  };
+
+  const handleColorSelect = (color) => {
+    setNewShift(prev => ({ ...prev, color_code: color }));
+  };
+
+  const generateRandomColor = () => {
+    const colors = colorOptions.map(c => c.value);
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    setNewShift(prev => ({ ...prev, color_code: randomColor }));
   };
 
   const handleSubmitShift = async (e) => {
@@ -121,12 +178,13 @@ const fetchShifts = async () => {
     try {
       if (editingShift) {
         // Update existing shift
-        const { organization, ...updateData } = newShift;
+        const { organization, shift_type, ...updateData } = newShift;
         await shiftSchedulingService.updateShift(editingShift.id, updateData);
         setSuccessMessage('Shift updated successfully!');
       } else {
         // Create new shift
-        await shiftSchedulingService.createShift(newShift);
+        const { shift_type, ...createData } = newShift;
+        await shiftSchedulingService.createShift(createData);
         setSuccessMessage('Shift created successfully!');
       }
 
@@ -157,7 +215,8 @@ const fetchShifts = async () => {
       start_time: formatTimeForInput(shift.start_time),
       end_time: formatTimeForInput(shift.end_time),
       color_code: shift.color_code || '#4CAF50',
-      notes: shift.notes || ''
+      notes: shift.notes || '',
+      shift_type: 'custom'
     });
     setShowShiftForm(true);
   };
@@ -196,7 +255,8 @@ const fetchShifts = async () => {
       start_time: formatTimeForInput(shift.start_time),
       end_time: formatTimeForInput(shift.end_time),
       color_code: shift.color_code || '#4CAF50',
-      notes: shift.notes || ''
+      notes: shift.notes || '',
+      shift_type: 'custom'
     });
     setEditingShift(null);
     setShowShiftForm(true);
@@ -209,7 +269,8 @@ const fetchShifts = async () => {
       start_time: '09:00',
       end_time: '17:00',
       color_code: '#4CAF50',
-      notes: ''
+      notes: '',
+      shift_type: 'custom'
     });
   };
 
@@ -513,7 +574,7 @@ const fetchShifts = async () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div 
-                            className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold"
+                            className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold border border-gray-200"
                             style={{ backgroundColor: shift.color_code || '#4CAF50' }}
                           >
                             {shift.name ? shift.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'S'}
@@ -666,52 +727,130 @@ const fetchShifts = async () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitShift}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Shift Name *
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={newShift.name}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Morning Shift, Evening Shift, Night Shift"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Color Code *
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="color"
-                          name="color_code"
-                          value={newShift.color_code}
-                          onChange={handleInputChange}
-                          required
-                          className="h-10 w-16 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          name="color_code"
-                          value={newShift.color_code}
-                          onChange={handleInputChange}
-                          required
-                          pattern="^#[0-9A-Fa-f]{6}$"
-                          className="flex-1 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="#4CAF50"
-                          title="Enter a hex color code (e.g., #4CAF50)"
-                        />
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Select Shift Type</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Predefined Shifts */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Quick Select:</h4>
+                        {predefinedShifts.map((shift, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => handlePredefinedShiftSelect(shift)}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${
+                              newShift.name === shift.name 
+                                ? 'border-blue-500 bg-blue-50' 
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div 
+                                className="h-6 w-6 rounded-full mr-3 border border-gray-300"
+                                style={{ backgroundColor: shift.color }}
+                              />
+                              <div>
+                                <div className="font-medium text-gray-800">{shift.name}</div>
+                                <div className="text-xs text-gray-500">
+                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                        
+                        <button
+                          type="button"
+                          onClick={handleCustomShift}
+                          className={`w-full text-left p-3 rounded-lg border transition-all ${
+                            newShift.shift_type === 'custom'
+                              ? 'border-purple-500 bg-purple-50' 
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <div className="h-6 w-6 rounded-full mr-3 border border-dashed border-gray-400 flex items-center justify-center">
+                              <span className="text-xs text-gray-600">+</span>
+                            </div>
+                            <div className="font-medium text-gray-800">Custom Shift</div>
+                          </div>
+                        </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Click the color box or enter a hex code
-                      </p>
-                    </div>
 
+                      {/* Custom Shift Form */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Shift Name *
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={newShift.name}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter custom shift name"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Color *
+                            </label>
+                            <button
+                              type="button"
+                              onClick={generateRandomColor}
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              <FaRandom className="text-xs" />
+                              Random
+                            </button>
+                          </div>
+                          <div className="flex gap-2 mb-2">
+                            <input
+                              type="color"
+                              name="color_code"
+                              value={newShift.color_code}
+                              onChange={handleInputChange}
+                              required
+                              className="h-10 w-16 cursor-pointer border border-gray-300 rounded"
+                            />
+                            <input
+                              type="text"
+                              name="color_code"
+                              value={newShift.color_code}
+                              onChange={handleInputChange}
+                              required
+                              pattern="^#[0-9A-Fa-f]{6}$"
+                              className="flex-1 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="#4CAF50"
+                              title="Enter a hex color code (e.g., #4CAF50)"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {colorOptions.map((color, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleColorSelect(color.value)}
+                                className={`h-8 rounded border ${
+                                  newShift.color_code === color.value
+                                    ? 'border-blue-500 ring-2 ring-blue-300'
+                                    : 'border-gray-300'
+                                }`}
+                                style={{ backgroundColor: color.value }}
+                                title={color.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-t pt-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Start Time *
@@ -741,22 +880,27 @@ const fetchShifts = async () => {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duration
-                      </label>
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="text-lg font-semibold text-blue-600">
-                          {calculateHours(newShift.start_time, newShift.end_time).toFixed(1)} hours
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          Calculated based on start and end times
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="text-sm font-medium text-gray-700">Duration</div>
+                            <div className="text-lg font-semibold text-blue-600">
+                              {calculateHours(newShift.start_time, newShift.end_time).toFixed(1)} hours
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-700">
+                              {formatTime(newShift.start_time)} - {formatTime(newShift.end_time)}
+                            </div>
+                            <div className="text-xs text-gray-500">Time format</div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes
+                        Notes (Optional)
                       </label>
                       <textarea
                         name="notes"
