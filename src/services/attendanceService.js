@@ -21,7 +21,7 @@ export const attendanceRuleService = {
     return axiosClient.post('/organization-attendance-rule', data);
   },
 
-  // Update existing attendance rule - USE PUT instead of POST
+  // Update existing attendance rule - USE PUT (not POST)
   updateRule: (id, data) => {
     return axiosClient.put(`/organization-attendance-rule/${id}`, data);
   },
