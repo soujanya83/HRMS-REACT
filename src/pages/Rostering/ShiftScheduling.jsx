@@ -467,7 +467,7 @@ const ShiftScheduling = () => {
             >
               List View
             </button>
-            <button
+            {/* <button
               onClick={() => setView('calendar')}
               className={`px-4 py-2 rounded-md transition-colors ${
                 view === 'calendar' 
@@ -476,8 +476,8 @@ const ShiftScheduling = () => {
               }`}
             >
               Calendar
-            </button>
-            <button
+            </button> */}
+            {/* <button
               onClick={() => setView('week')}
               className={`px-4 py-2 rounded-md transition-colors ${
                 view === 'week' 
@@ -486,11 +486,11 @@ const ShiftScheduling = () => {
               }`}
             >
               Week View
-            </button>
+            </button> */}
           </div>
 
           <div className="flex gap-2">
-            <button
+            {/* <button
               onClick={() => setShowDeleted(!showDeleted)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 showDeleted 
@@ -500,13 +500,13 @@ const ShiftScheduling = () => {
             >
               {showDeleted ? <FaUndo /> : <FaTrash />}
               {showDeleted ? 'View Active' : 'View Deleted'}
-            </button>
-            <button
+            </button> */}
+            {/* <button
               onClick={exportShifts}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <FaDownload /> Export
-            </button>
+            </button> */}
             <button
               onClick={() => setShowShiftForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

@@ -14,10 +14,25 @@ import {
   FaFingerprint,
   FaUsers,
   FaSpinner,
+  FaSave,
+  FaEdit,
+  FaTimes,
+  FaCheck,
+  FaTrash,
+  FaRegClock,
+  FaCoffee,
+  FaMoneyBill,
+  FaCalendar,
+  FaBuilding,
+  FaHome,
+  FaPercent,
+  FaDollarSign,
+  FaStickyNote
 } from "react-icons/fa";
-import { attendanceService } from "../../services/attendanceService";
+import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+import axios from "axios";
 
 const AttendanceTracking = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -26,7 +41,40 @@ const AttendanceTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // New states for attendance rules
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [rulesLoading, setRulesLoading] = useState(false);
+  const [rulesError, setRulesError] = useState(null);
+  const [rulesSuccess, setRulesSuccess] = useState(null);
+  const [existingRule, setExistingRule] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { selectedOrganization } = useOrganizations();
+
+  // Attendance Rules Form State
+  const [ruleForm, setRuleForm] = useState({
+    shift_name: "",
+    check_in: "09:00",
+    check_out: "18:00",
+    break_start: "13:00",
+    break_end: "14:00",
+    late_grace_minutes: 15,
+    half_day_after_minutes: 240, // 4 hours
+    allow_overtime: true,
+    overtime_rate: 1.5,
+    weekly_off_days: "Sunday",
+    flexible_hours: false,
+    absent_after_minutes: 480, // 8 hours
+    is_remote_applicable: true,
+    rounding_minutes: 5,
+    cross_midnight: false,
+    late_penalty_amount: 0,
+    absent_penalty_amount: 0,
+    relaxation: "Flexible break times",
+    policy_notes: "",
+    policy_version: "1.0",
+    is_active: true
+  });
 
   const [filters, setFilters] = useState({
     start_date: new Date().toISOString().split("T")[0],
@@ -45,6 +93,9 @@ const AttendanceTracking = () => {
     onTime: 0,
     onLeave: 0,
   });
+
+  // Weekly days options
+  const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   // Fetch initial data
   useEffect(() => {
@@ -77,19 +128,28 @@ const AttendanceTracking = () => {
         : [];
 
       // Handle attendance data structure properly
-      let attendanceData = [];
-      if (attendanceResponse.data) {
-        if (Array.isArray(attendanceResponse.data.data)) {
-          attendanceData = attendanceResponse.data.data;
-        } else if (Array.isArray(attendanceResponse.data)) {
-          attendanceData = attendanceResponse.data;
-        } else if (
-          attendanceResponse.data.data &&
-          Array.isArray(attendanceResponse.data.data)
-        ) {
-          attendanceData = attendanceResponse.data.data;
-        }
+   let attendanceData = [];
+if (attendanceResponse.data) {
+  // First check: response.data.data is an array
+  if (attendanceResponse.data.data && Array.isArray(attendanceResponse.data.data)) {
+    attendanceData = attendanceResponse.data.data;
+  } 
+  // Second check: response.data itself is an array
+  else if (Array.isArray(attendanceResponse.data)) {
+    attendanceData = attendanceResponse.data;
+  } 
+  // Third check: data might be in a different structure
+  else if (attendanceResponse.data && typeof attendanceResponse.data === 'object') {
+    // Try to extract array from the object
+    const possibleKeys = ['data', 'records', 'items', 'list', 'results'];
+    for (const key of possibleKeys) {
+      if (attendanceResponse.data[key] && Array.isArray(attendanceResponse.data[key])) {
+        attendanceData = attendanceResponse.data[key];
+        break;
       }
+    }
+  }
+}
 
       console.log("Employees data:", employeesData);
       console.log("Attendance data:", attendanceData);
@@ -123,6 +183,106 @@ const AttendanceTracking = () => {
     }
   };
 
+  // Fetch attendance rules when organization changes or modal opens
+  useEffect(() => {
+    if (selectedOrganization && showRulesModal) {
+      fetchAttendanceRules();
+    }
+  }, [selectedOrganization, showRulesModal]);
+
+  const fetchAttendanceRules = async () => {
+  if (!selectedOrganization?.id) {
+    setRulesError("No organization selected");
+    return;
+  }
+
+  setRulesLoading(true);
+  setRulesError(null);
+  setRulesSuccess(null);
+
+  try {
+    // Fetch ALL rules
+    const response = await attendanceRuleService.getRules();
+    
+    console.log("Rules API Response:", response.data); // Debug log
+    
+    if (response.data && response.data.status === true && response.data.data) {
+      const rulesData = response.data.data;
+      
+      // Check if rulesData is an array
+      if (Array.isArray(rulesData)) {
+        // Find rule for current organization
+        const organizationRule = rulesData.find(rule => {
+          // Debug log to see what we're comparing
+          console.log("Checking rule:", rule.organization_id, "vs selected:", selectedOrganization.id);
+          return rule.organization_id == selectedOrganization.id; // Use == for type conversion
+        });
+        
+        if (organizationRule) {
+          console.log("Found rule for organization:", organizationRule);
+          setExistingRule(organizationRule);
+          // Pre-fill form with existing data
+          setRuleForm({
+            shift_name: organizationRule.shift_name || "",
+            check_in: organizationRule.check_in || "09:00",
+            check_out: organizationRule.check_out || "18:00",
+            break_start: organizationRule.break_start || "13:00",
+            break_end: organizationRule.break_end || "14:00",
+            late_grace_minutes: organizationRule.late_grace_minutes || 15,
+            half_day_after_minutes: organizationRule.half_day_after_minutes || 240,
+            allow_overtime: organizationRule.allow_overtime || true,
+            overtime_rate: organizationRule.overtime_rate || 1.5,
+            weekly_off_days: organizationRule.weekly_off_days || "Sunday",
+            flexible_hours: organizationRule.flexible_hours || false,
+            absent_after_minutes: organizationRule.absent_after_minutes || 480,
+            is_remote_applicable: organizationRule.is_remote_applicable || true,
+            rounding_minutes: organizationRule.rounding_minutes || 5,
+            cross_midnight: organizationRule.cross_midnight || false,
+            late_penalty_amount: organizationRule.late_penalty_amount || 0,
+            absent_penalty_amount: organizationRule.absent_penalty_amount || 0,
+            relaxation: organizationRule.relaxation || "",
+            policy_notes: organizationRule.policy_notes || "",
+            policy_version: organizationRule.policy_version || "1.0",
+            is_active: organizationRule.is_active !== undefined ? organizationRule.is_active : true
+          });
+        } else {
+          console.log("No rule found for organization");
+          setExistingRule(null);
+          resetRuleForm();
+        }
+      } else {
+        // If rulesData is not an array (maybe single object)
+        console.log("Rules data is not an array:", rulesData);
+        if (rulesData.organization_id == selectedOrganization.id) {
+          setExistingRule(rulesData);
+          // Pre-fill form...
+        } else {
+          setExistingRule(null);
+          resetRuleForm();
+        }
+      }
+    } else {
+      console.log("No rules data found in response");
+      setExistingRule(null);
+      resetRuleForm();
+    }
+  } catch (err) {
+    console.error("Error fetching attendance rules:", err);
+    
+    // If 404 error, it means no rules exist yet (which is okay)
+    if (err.response?.status === 404) {
+      console.log("No attendance rules endpoint found or no rules exist");
+      setExistingRule(null);
+      resetRuleForm();
+      setRulesError(null); // Clear error since this is expected
+    } else {
+      setRulesError(err.response?.data?.message || "Failed to load attendance rules");
+    }
+  } finally {
+    setRulesLoading(false);
+  }
+};
+
   const fetchAttendanceData = async () => {
     try {
       setError(null);
@@ -138,16 +298,27 @@ const AttendanceTracking = () => {
       const response = await attendanceService.getAttendance(params);
 
       // Handle different API response structures
-      let data = [];
-      if (response.data) {
-        if (Array.isArray(response.data.data)) {
-          data = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          data = response.data;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          data = response.data.data;
-        }
-      }
+     let data = [];
+if (response.data) {
+  // Check if response.data.data exists first
+  if (response.data.data !== undefined) {
+    // Then check if it's an array
+    if (Array.isArray(response.data.data)) {
+      data = response.data.data;
+    } else {
+      // Handle case where response.data.data is not an array
+      data = [response.data.data];
+    }
+  } 
+  // Check if response.data itself is an array
+  else if (Array.isArray(response.data)) {
+    data = response.data;
+  }
+  // response.data is a single object
+  else if (response.data && typeof response.data === 'object') {
+    data = [response.data];
+  }
+}
 
       setAttendanceData(data);
       calculateStats(data);
@@ -207,6 +378,175 @@ const AttendanceTracking = () => {
       onTime,
       onLeave,
     });
+  };
+
+  // Handle form input changes
+  const handleRuleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setRuleForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : 
+              (type === 'number' ? parseFloat(value) || 0 : value)
+    }));
+  };
+
+  // Handle select multiple for weekly off days
+  const handleWeeklyOffDaysChange = (e) => {
+    const { value, checked } = e.target;
+    const currentDays = ruleForm.weekly_off_days.split(',').filter(day => day.trim());
+    
+    let updatedDays;
+    if (checked) {
+      updatedDays = [...currentDays, value];
+    } else {
+      updatedDays = currentDays.filter(day => day !== value);
+    }
+    
+    setRuleForm(prev => ({
+      ...prev,
+      weekly_off_days: updatedDays.join(',')
+    }));
+  };
+
+  // Reset form to defaults
+  const resetRuleForm = () => {
+    setRuleForm({
+      shift_name: "",
+      check_in: "09:00",
+      check_out: "18:00",
+      break_start: "13:00",
+      break_end: "14:00",
+      late_grace_minutes: 15,
+      half_day_after_minutes: 240,
+      allow_overtime: true,
+      overtime_rate: 1.5,
+      weekly_off_days: "Sunday",
+      flexible_hours: false,
+      absent_after_minutes: 480,
+      is_remote_applicable: true,
+      rounding_minutes: 5,
+      cross_midnight: false,
+      late_penalty_amount: 0,
+      absent_penalty_amount: 0,
+      relaxation: "",
+      policy_notes: "",
+      policy_version: "1.0",
+      is_active: true
+    });
+  };
+
+  // Handle form submission
+  const handleRulesSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setRulesError(null);
+  setRulesSuccess(null);
+
+  if (!selectedOrganization?.id) {
+    setRulesError("No organization selected");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Prepare data with organization_id (make sure it's a number)
+  const formData = {
+    ...ruleForm,
+    organization_id: Number(selectedOrganization.id), // Convert to number
+    // Convert boolean values to 1/0 if your API expects that
+    allow_overtime: ruleForm.allow_overtime ? 1 : 0,
+    flexible_hours: ruleForm.flexible_hours ? 1 : 0,
+    is_remote_applicable: ruleForm.is_remote_applicable ? 1 : 0,
+    cross_midnight: ruleForm.cross_midnight ? 1 : 0,
+    is_active: ruleForm.is_active ? 1 : 0
+  };
+
+  console.log("Submitting form data:", formData); // Debug log
+
+  try {
+    let response;
+    
+    if (existingRule) {
+      // Update existing rule
+      console.log("Updating rule with ID:", existingRule.id);
+      response = await attendanceRuleService.updateRule(existingRule.id, formData);
+    } else {
+      // Create new rule
+      console.log("Creating new rule");
+      response = await attendanceRuleService.createRule(formData);
+    }
+
+    console.log("API Response:", response.data); // Debug log
+
+    if (response.data.status === true) {
+      setRulesSuccess(existingRule ? "Attendance rule updated successfully!" : "Attendance rule created successfully!");
+      // Refresh rules
+      await fetchAttendanceRules();
+      
+      // Auto-close modal after success
+      setTimeout(() => {
+        setShowRulesModal(false);
+      }, 2000);
+    } else {
+      setRulesError(response.data.message || "Failed to save attendance rule");
+    }
+  } catch (err) {
+    console.error("Error saving attendance rule:", err);
+    console.error("Error details:", err.response?.data); // More debug info
+    setRulesError(err.response?.data?.message || err.response?.data?.errors?.join(', ') || "Failed to save attendance rule");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  // Handle delete rule
+  const handleDeleteRule = async () => {
+  if (!existingRule || !window.confirm("Are you sure you want to delete this attendance rule?")) {
+    return;
+  }
+
+  setIsSubmitting(true);
+  setRulesError(null);
+
+  try {
+    const response = await attendanceRuleService.deleteRule(existingRule.id);
+    
+    if (response.data.status === true) {
+      setRulesSuccess("Attendance rule deleted successfully!");
+      setExistingRule(null);
+      resetRuleForm();
+      
+      setTimeout(() => {
+        setShowRulesModal(false);
+      }, 2000);
+    } else {
+      setRulesError(response.data.message || "Failed to delete attendance rule");
+    }
+  } catch (err) {
+    console.error("Error deleting attendance rule:", err);
+    setRulesError(err.response?.data?.message || "Failed to delete attendance rule");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  // Format time for display
+  const formatTimeDisplay = (time) => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Calculate work hours
+  const calculateWorkHours = () => {
+    const checkIn = new Date(`2000-01-01T${ruleForm.check_in}`);
+    const checkOut = new Date(`2000-01-01T${ruleForm.check_out}`);
+    
+    let diff = (checkOut - checkIn) / (1000 * 60 * 60);
+    if (diff < 0) diff += 24; // Handle overnight shifts
+    
+    return diff.toFixed(1);
   };
 
   const handleFilterChange = (key, value) => {
@@ -428,23 +768,25 @@ const AttendanceTracking = () => {
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Attendance Tracking
-          </h1>
-          <p className="text-gray-600">
-            Monitor and manage employee attendance in real-time
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Attendance Tracking
+            </h1>
+            <p className="text-gray-600">
+              Monitor and manage employee attendance in real-time
+            </p>
+          </div>
+          
+          {/* Attendance Rules Button */}
+          <button
+            onClick={() => setShowRulesModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <FaClock className="h-4 w-4" />
+            Attendance Rules
+          </button>
         </div>
-        <button
-    onClick={() => navigate("/dashboard/attendance/rules")}
-    className="ml-auto flex items-center gap-2 px-4 py-2.5 mb-6 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-  >
-    <FaClock className="h-4 w-4" />
-    Attendance Rules
-  </button>
-
-    
 
         {/* Stats Cards - Redesigned to match holiday page */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -567,7 +909,7 @@ const AttendanceTracking = () => {
                   onChange={(e) =>
                     handleFilterChange("employee_id", e.target.value)
                   }
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="block w-full border border-gray-300 rounded-lg shadow-smfocus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2  focus:border-transparent transition-colors"
                 >
                   <option value="all">All Employees</option>
                   {employees.map((emp) => (
@@ -588,7 +930,7 @@ const AttendanceTracking = () => {
                   onChange={(e) =>
                     handleFilterChange("department", e.target.value)
                   }
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
                 >
                   <option value="all">All Departments</option>
                   {departments.map((dept) => (
@@ -607,7 +949,7 @@ const AttendanceTracking = () => {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange("status", e.target.value)}
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm  focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 >
                   <option value="all">All Status</option>
                   <option value="present">Present</option>
@@ -838,6 +1180,475 @@ const AttendanceTracking = () => {
           </div>
         </div>
       </div>
+
+      {/* Attendance Rules Modal */}
+      {showRulesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Attendance Rules
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Configure attendance policies for {selectedOrganization?.name}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRulesModal(false);
+                  setRulesError(null);
+                  setRulesSuccess(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <FaTimes className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Loading State */}
+              {rulesLoading && (
+                <div className="text-center py-8">
+                  <FaSpinner className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600">Loading attendance rules...</p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {rulesError && !rulesLoading && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                  <FaExclamationTriangle className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-red-700">{rulesError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {rulesSuccess && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                  <FaCheck className="text-green-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-green-700">{rulesSuccess}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Form */}
+              {!rulesLoading && (
+                <form onSubmit={handleRulesSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    {/* Basic Information Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <FaRegClock /> Basic Information
+                      </h3>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Shift Name
+                        </label>
+                        <input
+                          type="text"
+                          name="shift_name"
+                          value={ruleForm.shift_name}
+                          onChange={handleRuleFormChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., Regular Office Hours"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Check-in Time
+                          </label>
+                          <input
+                            type="time"
+                            name="check_in"
+                            value={ruleForm.check_in}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Check-out Time
+                          </label>
+                          <input
+                            type="time"
+                            name="check_out"
+                            value={ruleForm.check_out}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-blue-800">Work Hours:</span>
+                          <span className="text-lg font-bold text-blue-600">{calculateWorkHours()} hours</span>
+                        </div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          {formatTimeDisplay(ruleForm.check_in)} - {formatTimeDisplay(ruleForm.check_out)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Break Time Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <FaCoffee /> Break Time
+                      </h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Break Start
+                          </label>
+                          <input
+                            type="time"
+                            name="break_start"
+                            value={ruleForm.break_start}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Break End
+                          </label>
+                          <input
+                            type="time"
+                            name="break_end"
+                            value={ruleForm.break_end}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Overtime Settings */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              name="allow_overtime"
+                              checked={ruleForm.allow_overtime}
+                              onChange={handleRuleFormChange}
+                              className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Allow Overtime</span>
+                          </label>
+                          
+                          <div className="flex items-center gap-2">
+                            <FaPercent className="text-gray-400" />
+                            <input
+                              type="number"
+                              name="overtime_rate"
+                              value={ruleForm.overtime_rate}
+                              onChange={handleRuleFormChange}
+                              step="0.1"
+                              min="1"
+                              className="w-20 border border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="1.5"
+                            />
+                            <span className="text-sm text-gray-500">Rate</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grace Period & Penalties */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <FaClock /> Grace Period & Penalties
+                      </h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Late Grace (minutes)
+                          </label>
+                          <input
+                            type="number"
+                            name="late_grace_minutes"
+                            value={ruleForm.late_grace_minutes}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Late Penalty ($)
+                          </label>
+                          <div className="flex items-center">
+                            <FaDollarSign className="text-gray-400 mr-2" />
+                            <input
+                              type="number"
+                              name="late_penalty_amount"
+                              value={ruleForm.late_penalty_amount}
+                              onChange={handleRuleFormChange}
+                              step="0.01"
+                              min="0"
+                              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Half Day After (minutes)
+                          </label>
+                          <input
+                            type="number"
+                            name="half_day_after_minutes"
+                            value={ruleForm.half_day_after_minutes}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Absent After (minutes)
+                          </label>
+                          <input
+                            type="number"
+                            name="absent_after_minutes"
+                            value={ruleForm.absent_after_minutes}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                     <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Absent Penalty ($)
+  </label>
+  <div className="flex items-center">
+    <FaDollarSign className="text-gray-400 mr-2" />
+    <input
+      type="number"
+      name="absent_penalty_amount"
+      value={ruleForm.absent_penalty_amount === 0 ? '' : ruleForm.absent_penalty_amount}
+      onChange={handleRuleFormChange}
+      onFocus={(e) => {
+        if (ruleForm.absent_penalty_amount === 0) {
+          e.target.value = '';
+        }
+      }}
+      onBlur={(e) => {
+        if (e.target.value === '') {
+          setRuleForm(prev => ({ ...prev, absent_penalty_amount: 0 }));
+        }
+      }}
+      step="0.01"
+      min="0"
+      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      placeholder="0.00"
+    />
+  </div>
+</div>
+                    </div>
+
+                    {/* Additional Settings */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <FaBuilding /> Additional Settings
+                      </h3>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Weekly Off Days
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {weekDays.map(day => {
+                            const isSelected = ruleForm.weekly_off_days.split(',').includes(day);
+                            return (
+                              <label key={day} className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  value={day}
+                                  checked={isSelected}
+                                  onChange={handleWeeklyOffDaysChange}
+                                  className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{day}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            name="flexible_hours"
+                            checked={ruleForm.flexible_hours}
+                            onChange={handleRuleFormChange}
+                            className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Flexible Hours</span>
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            name="is_remote_applicable"
+                            checked={ruleForm.is_remote_applicable}
+                            onChange={handleRuleFormChange}
+                            className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Remote Work Allowed</span>
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            name="cross_midnight"
+                            checked={ruleForm.cross_midnight}
+                            onChange={handleRuleFormChange}
+                            className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Cross Midnight Shift</span>
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            name="is_active"
+                            checked={ruleForm.is_active}
+                            onChange={handleRuleFormChange}
+                            className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Active Rule</span>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Rounding Minutes
+                        </label>
+                        <input
+                          type="number"
+                          name="rounding_minutes"
+                          value={ruleForm.rounding_minutes}
+                          onChange={handleRuleFormChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Notes Section */}
+                    <div className="md:col-span-2 space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <FaStickyNote /> Notes & Version
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Relaxation
+                          </label>
+                          <input
+                            type="text"
+                            name="relaxation"
+                            value={ruleForm.relaxation}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., Flexible break times"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Policy Version
+                          </label>
+                          <input
+                            type="text"
+                            name="policy_version"
+                            value={ruleForm.policy_version}
+                            onChange={handleRuleFormChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 1.0"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Policy Notes
+                        </label>
+                        <textarea
+                          name="policy_notes"
+                          value={ruleForm.policy_notes}
+                          onChange={handleRuleFormChange}
+                          rows="3"
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Additional notes about the attendance policy..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center pt-6 border-t">
+                    <div className="flex gap-2">
+                      {existingRule && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteRule}
+                          disabled={isSubmitting}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                        >
+                          <FaTrash /> Delete Rule
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowRulesModal(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <FaSpinner className="animate-spin" />
+                            {existingRule ? "Updating..." : "Creating..."}
+                          </>
+                        ) : (
+                          <>
+                            <FaSave />
+                            {existingRule ? "Update Rule" : "Create Rule"}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

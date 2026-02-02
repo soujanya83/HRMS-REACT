@@ -82,6 +82,7 @@ export const attendanceService = {
 
 // Organization attendance rules
 export const attendanceRuleService = {
+  // Get all rules
   getRules: () => {
     return axiosClient.get('/organization-attendance-rule');
   },
@@ -95,13 +96,17 @@ export const attendanceRuleService = {
   },
 
   updateRule: (id, data) => {
-    return axiosClient.post(`/organization-attendance-rule/${id}`, data);
+    // Check if your Laravel uses PUT or POST for update
+    // Based on your earlier code, it uses PUT
+    return axiosClient.put(`/organization-attendance-rule/${id}`, data);
   },
 
   deleteRule: (id) => {
     return axiosClient.delete(`/organization-attendance-rule/${id}`);
   }
 };
+
+
 
 // Organization holidays
 export const holidayService = {
@@ -210,3 +215,4 @@ export const departmentService = {
 export const getDepartmentsByOrgId = (orgId) => {
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
+
