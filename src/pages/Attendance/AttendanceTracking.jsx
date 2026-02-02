@@ -32,7 +32,6 @@ import {
 import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
-import axios from "axios";
 
 const AttendanceTracking = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -41,7 +40,7 @@ const AttendanceTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // New states for attendance rules
+  // States for attendance rules
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [rulesLoading, setRulesLoading] = useState(false);
   const [rulesError, setRulesError] = useState(null);
@@ -59,18 +58,18 @@ const AttendanceTracking = () => {
     break_start: "13:00",
     break_end: "14:00",
     late_grace_minutes: 15,
-    half_day_after_minutes: 240, // 4 hours
+    half_day_after_minutes: 240,
     allow_overtime: true,
     overtime_rate: 1.5,
     weekly_off_days: "Sunday",
     flexible_hours: false,
-    absent_after_minutes: 480, // 8 hours
+    absent_after_minutes: 480,
     is_remote_applicable: true,
     rounding_minutes: 5,
     cross_midnight: false,
     late_penalty_amount: 0,
     absent_penalty_amount: 0,
-    relaxation: "Flexible break times",
+    relaxation: "",
     policy_notes: "",
     policy_version: "1.0",
     is_active: true
@@ -109,73 +108,64 @@ const AttendanceTracking = () => {
       setLoading(true);
       setError(null);
 
-      const [employeesResponse, attendanceResponse] = await Promise.all([
-        employeeService.getEmployees({
-          organization_id: selectedOrganization.id,
-        }),
-        attendanceService.getAttendance({
-          start_date: filters.start_date,
-          end_date: filters.end_date,
-          organization_id: selectedOrganization.id,
-        }),
-      ]);
+      // Fetch employees
+      const employeesResponse = await employeeService.getEmployees({
+        organization_id: selectedOrganization.id,
+      });
 
-      // Handle API response structure properly
-      const employeesData = Array.isArray(employeesResponse.data?.data)
-        ? employeesResponse.data.data
-        : Array.isArray(employeesResponse.data)
-        ? employeesResponse.data
-        : [];
+      // Fetch attendance data
+      const attendanceResponse = await attendanceService.getAttendance({
+        organization_id: selectedOrganization.id,
+        from_date: filters.start_date,
+        to_date: filters.end_date,
+      });
 
-      // Handle attendance data structure properly
-   let attendanceData = [];
-if (attendanceResponse.data) {
-  // First check: response.data.data is an array
-  if (attendanceResponse.data.data && Array.isArray(attendanceResponse.data.data)) {
-    attendanceData = attendanceResponse.data.data;
-  } 
-  // Second check: response.data itself is an array
-  else if (Array.isArray(attendanceResponse.data)) {
-    attendanceData = attendanceResponse.data;
-  } 
-  // Third check: data might be in a different structure
-  else if (attendanceResponse.data && typeof attendanceResponse.data === 'object') {
-    // Try to extract array from the object
-    const possibleKeys = ['data', 'records', 'items', 'list', 'results'];
-    for (const key of possibleKeys) {
-      if (attendanceResponse.data[key] && Array.isArray(attendanceResponse.data[key])) {
-        attendanceData = attendanceResponse.data[key];
-        break;
+      console.log("Attendance API response:", attendanceResponse);
+
+      // Handle employees data
+      const employeesData = employeesResponse.data?.data || 
+                           employeesResponse.data || 
+                           [];
+
+      // Handle attendance data
+      let attendanceData = [];
+      if (attendanceResponse.data?.success === true) {
+        if (attendanceResponse.data.data?.data && Array.isArray(attendanceResponse.data.data.data)) {
+          // Structure: {success: true, data: {current_page: 1, data: [...]}}
+          attendanceData = attendanceResponse.data.data.data;
+        } else if (Array.isArray(attendanceResponse.data.data)) {
+          attendanceData = attendanceResponse.data.data;
+        }
       }
-    }
-  }
-}
 
-      console.log("Employees data:", employeesData);
-      console.log("Attendance data:", attendanceData);
-
+      console.log("Processed attendance data:", attendanceData);
       setEmployees(employeesData);
       setAttendanceData(attendanceData);
 
       // Extract departments from employees
-      const uniqueDepartments = [
-        ...new Set(employeesData.map((emp) => emp.department).filter(Boolean)),
-      ];
-      setDepartments(uniqueDepartments);
+      const departmentsMap = new Map();
+      employeesData.forEach((emp) => {
+        if (emp.department_id) {
+          const deptId = emp.department_id;
+          const deptName = emp.department_name || `Department ${deptId}`;
+          
+          if (!departmentsMap.has(deptId)) {
+            departmentsMap.set(deptId, {
+              id: deptId,
+              name: deptName
+            });
+          }
+        }
+      });
+      
+      const departmentsList = Array.from(departmentsMap.values());
+      console.log("Departments extracted:", departmentsList);
+      setDepartments(departmentsList);
 
       calculateStats(attendanceData);
     } catch (err) {
       console.error("Error fetching data:", err);
-
-      if (err.response?.status === 401) {
-        return;
-      } else if (err.response?.status === 404) {
-        setError("API endpoint not found. Please contact administrator.");
-      } else {
-        setError("Failed to load data. Please try again.");
-      }
-
-      // Set empty arrays on error
+      setError("Failed to load data. Please try again.");
       setEmployees([]);
       setAttendanceData([]);
     } finally {
@@ -183,44 +173,33 @@ if (attendanceResponse.data) {
     }
   };
 
-  // Fetch attendance rules when organization changes or modal opens
-  useEffect(() => {
-    if (selectedOrganization && showRulesModal) {
-      fetchAttendanceRules();
-    }
-  }, [selectedOrganization, showRulesModal]);
-
+  // Fetch attendance rules when modal opens
   const fetchAttendanceRules = async () => {
-  if (!selectedOrganization?.id) {
-    setRulesError("No organization selected");
-    return;
-  }
+    if (!selectedOrganization?.id) {
+      setRulesError("No organization selected");
+      return;
+    }
 
-  setRulesLoading(true);
-  setRulesError(null);
-  setRulesSuccess(null);
+    setRulesLoading(true);
+    setRulesError(null);
+    setRulesSuccess(null);
 
-  try {
-    // Fetch ALL rules
-    const response = await attendanceRuleService.getRules();
-    
-    console.log("Rules API Response:", response.data); // Debug log
-    
-    if (response.data && response.data.status === true && response.data.data) {
-      const rulesData = response.data.data;
+    try {
+      // Call API to get attendance rules by organization ID
+      const response = await attendanceRuleService.getRulesByOrganization(selectedOrganization.id);
       
-      // Check if rulesData is an array
-      if (Array.isArray(rulesData)) {
-        // Find rule for current organization
-        const organizationRule = rulesData.find(rule => {
-          // Debug log to see what we're comparing
-          console.log("Checking rule:", rule.organization_id, "vs selected:", selectedOrganization.id);
-          return rule.organization_id == selectedOrganization.id; // Use == for type conversion
-        });
+      console.log("Attendance Rules API Response:", response.data);
+      
+      if (response.data && response.data.status === true && response.data.data) {
+        const rulesData = response.data.data;
         
-        if (organizationRule) {
-          console.log("Found rule for organization:", organizationRule);
+        if (Array.isArray(rulesData) && rulesData.length > 0) {
+          // Get the first rule (assuming one rule per organization)
+          const organizationRule = rulesData[0];
+          console.log("Found existing rule for organization:", organizationRule);
+          
           setExistingRule(organizationRule);
+          
           // Pre-fill form with existing data
           setRuleForm({
             shift_name: organizationRule.shift_name || "",
@@ -230,153 +209,80 @@ if (attendanceResponse.data) {
             break_end: organizationRule.break_end || "14:00",
             late_grace_minutes: organizationRule.late_grace_minutes || 15,
             half_day_after_minutes: organizationRule.half_day_after_minutes || 240,
-            allow_overtime: organizationRule.allow_overtime || true,
-            overtime_rate: organizationRule.overtime_rate || 1.5,
+            allow_overtime: organizationRule.allow_overtime !== undefined ? organizationRule.allow_overtime : true,
+            overtime_rate: parseFloat(organizationRule.overtime_rate) || 1.5,
             weekly_off_days: organizationRule.weekly_off_days || "Sunday",
-            flexible_hours: organizationRule.flexible_hours || false,
+            flexible_hours: organizationRule.flexible_hours !== undefined ? organizationRule.flexible_hours : false,
             absent_after_minutes: organizationRule.absent_after_minutes || 480,
-            is_remote_applicable: organizationRule.is_remote_applicable || true,
+            is_remote_applicable: organizationRule.is_remote_applicable !== undefined ? organizationRule.is_remote_applicable : true,
             rounding_minutes: organizationRule.rounding_minutes || 5,
-            cross_midnight: organizationRule.cross_midnight || false,
-            late_penalty_amount: organizationRule.late_penalty_amount || 0,
-            absent_penalty_amount: organizationRule.absent_penalty_amount || 0,
+            cross_midnight: organizationRule.cross_midnight !== undefined ? organizationRule.cross_midnight : false,
+            late_penalty_amount: parseFloat(organizationRule.late_penalty_amount) || 0,
+            absent_penalty_amount: parseFloat(organizationRule.absent_penalty_amount) || 0,
             relaxation: organizationRule.relaxation || "",
             policy_notes: organizationRule.policy_notes || "",
             policy_version: organizationRule.policy_version || "1.0",
             is_active: organizationRule.is_active !== undefined ? organizationRule.is_active : true
           });
         } else {
-          console.log("No rule found for organization");
+          console.log("No rule found for organization - will create new");
           setExistingRule(null);
           resetRuleForm();
         }
       } else {
-        // If rulesData is not an array (maybe single object)
-        console.log("Rules data is not an array:", rulesData);
-        if (rulesData.organization_id == selectedOrganization.id) {
-          setExistingRule(rulesData);
-          // Pre-fill form...
-        } else {
-          setExistingRule(null);
-          resetRuleForm();
-        }
+        console.log("No rules data found in response");
+        setExistingRule(null);
+        resetRuleForm();
       }
-    } else {
-      console.log("No rules data found in response");
-      setExistingRule(null);
-      resetRuleForm();
-    }
-  } catch (err) {
-    console.error("Error fetching attendance rules:", err);
-    
-    // If 404 error, it means no rules exist yet (which is okay)
-    if (err.response?.status === 404) {
-      console.log("No attendance rules endpoint found or no rules exist");
-      setExistingRule(null);
-      resetRuleForm();
-      setRulesError(null); // Clear error since this is expected
-    } else {
-      setRulesError(err.response?.data?.message || "Failed to load attendance rules");
-    }
-  } finally {
-    setRulesLoading(false);
-  }
-};
-
-  const fetchAttendanceData = async () => {
-    try {
-      setError(null);
-
-      const params = {
-        start_date: filters.start_date,
-        end_date: filters.end_date,
-        ...(filters.employee_id !== "all" && {
-          employee_id: filters.employee_id,
-        }),
-      };
-
-      const response = await attendanceService.getAttendance(params);
-
-      // Handle different API response structures
-     let data = [];
-if (response.data) {
-  // Check if response.data.data exists first
-  if (response.data.data !== undefined) {
-    // Then check if it's an array
-    if (Array.isArray(response.data.data)) {
-      data = response.data.data;
-    } else {
-      // Handle case where response.data.data is not an array
-      data = [response.data.data];
-    }
-  } 
-  // Check if response.data itself is an array
-  else if (Array.isArray(response.data)) {
-    data = response.data;
-  }
-  // response.data is a single object
-  else if (response.data && typeof response.data === 'object') {
-    data = [response.data];
-  }
-}
-
-      setAttendanceData(data);
-      calculateStats(data);
     } catch (err) {
-      console.error("Error fetching attendance data:", err);
-      setError("Failed to load attendance data.");
-      setAttendanceData([]);
+      console.error("Error fetching attendance rules:", err);
+      
+      // Check if it's a 404 error (no rules exist)
+      if (err.response?.status === 404) {
+        console.log("No attendance rules found - will create new");
+        setExistingRule(null);
+        resetRuleForm();
+        setRulesError(null);
+      } else {
+        setRulesError(err.response?.data?.message || "Failed to load attendance rules");
+      }
+    } finally {
+      setRulesLoading(false);
     }
   };
 
-  const calculateStats = (data) => {
-    // Ensure data is an array
-    const attendanceArray = Array.isArray(data) ? data : [];
+  // Open attendance rules modal
+  const handleOpenRulesModal = async () => {
+    setShowRulesModal(true);
+    setRulesError(null);
+    setRulesSuccess(null);
+    await fetchAttendanceRules();
+  };
 
-    const present = attendanceArray.filter(
-      (emp) =>
-        emp.status === "Present" ||
-        emp.status === "present" ||
-        emp.status === "PRESENT"
-    ).length;
-
-    const absent = attendanceArray.filter(
-      (emp) =>
-        emp.status === "Absent" ||
-        emp.status === "absent" ||
-        emp.status === "ABSENT"
-    ).length;
-
-    const late = attendanceArray.filter(
-      (emp) =>
-        emp.status === "Late" ||
-        emp.status === "late" ||
-        emp.status === "LATE" ||
-        (emp.late_minutes && emp.late_minutes > 0)
-    ).length;
-
-    const onTime = attendanceArray.filter(
-      (emp) =>
-        (emp.status === "Present" ||
-          emp.status === "present" ||
-          emp.status === "PRESENT") &&
-        (!emp.late_minutes || emp.late_minutes === 0)
-    ).length;
-
-    const onLeave = attendanceArray.filter(
-      (emp) =>
-        emp.status === "On Leave" ||
-        emp.status === "on_leave" ||
-        emp.status === "ON_LEAVE"
-    ).length;
-
-    setStats({
-      totalEmployees: employees.length,
-      present,
-      absent,
-      late,
-      onTime,
-      onLeave,
+  // Reset form to defaults
+  const resetRuleForm = () => {
+    setRuleForm({
+      shift_name: "",
+      check_in: "09:00",
+      check_out: "18:00",
+      break_start: "13:00",
+      break_end: "14:00",
+      late_grace_minutes: 15,
+      half_day_after_minutes: 240,
+      allow_overtime: true,
+      overtime_rate: 1.5,
+      weekly_off_days: "Sunday",
+      flexible_hours: false,
+      absent_after_minutes: 480,
+      is_remote_applicable: true,
+      rounding_minutes: 5,
+      cross_midnight: false,
+      late_penalty_amount: 0,
+      absent_penalty_amount: 0,
+      relaxation: "",
+      policy_notes: "",
+      policy_version: "1.0",
+      is_active: true
     });
   };
 
@@ -408,134 +314,97 @@ if (response.data) {
     }));
   };
 
-  // Reset form to defaults
-  const resetRuleForm = () => {
-    setRuleForm({
-      shift_name: "",
-      check_in: "09:00",
-      check_out: "18:00",
-      break_start: "13:00",
-      break_end: "14:00",
-      late_grace_minutes: 15,
-      half_day_after_minutes: 240,
-      allow_overtime: true,
-      overtime_rate: 1.5,
-      weekly_off_days: "Sunday",
-      flexible_hours: false,
-      absent_after_minutes: 480,
-      is_remote_applicable: true,
-      rounding_minutes: 5,
-      cross_midnight: false,
-      late_penalty_amount: 0,
-      absent_penalty_amount: 0,
-      relaxation: "",
-      policy_notes: "",
-      policy_version: "1.0",
-      is_active: true
-    });
-  };
-
   // Handle form submission
   const handleRulesSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  setRulesError(null);
-  setRulesSuccess(null);
+    e.preventDefault();
+    setIsSubmitting(true);
+    setRulesError(null);
+    setRulesSuccess(null);
 
-  if (!selectedOrganization?.id) {
-    setRulesError("No organization selected");
-    setIsSubmitting(false);
-    return;
-  }
+    if (!selectedOrganization?.id) {
+      setRulesError("No organization selected");
+      setIsSubmitting(false);
+      return;
+    }
 
-  // Prepare data with organization_id (make sure it's a number)
-  const formData = {
-    ...ruleForm,
-    organization_id: Number(selectedOrganization.id), // Convert to number
-    // Convert boolean values to 1/0 if your API expects that
-    allow_overtime: ruleForm.allow_overtime ? 1 : 0,
-    flexible_hours: ruleForm.flexible_hours ? 1 : 0,
-    is_remote_applicable: ruleForm.is_remote_applicable ? 1 : 0,
-    cross_midnight: ruleForm.cross_midnight ? 1 : 0,
-    is_active: ruleForm.is_active ? 1 : 0
+    // Prepare data for API
+    const formData = {
+      ...ruleForm,
+      organization_id: Number(selectedOrganization.id),
+      // Convert boolean values
+      allow_overtime: ruleForm.allow_overtime ? 1 : 0,
+      flexible_hours: ruleForm.flexible_hours ? 1 : 0,
+      is_remote_applicable: ruleForm.is_remote_applicable ? 1 : 0,
+      cross_midnight: ruleForm.cross_midnight ? 1 : 0,
+      is_active: ruleForm.is_active ? 1 : 0
+    };
+
+    console.log("Submitting form data:", formData);
+
+    try {
+      let response;
+      
+      if (existingRule) {
+        // Update existing rule
+        console.log("Updating rule with ID:", existingRule.id);
+        response = await attendanceRuleService.updateRule(existingRule.id, formData);
+      } else {
+        // Create new rule
+        console.log("Creating new rule");
+        response = await attendanceRuleService.createRule(formData);
+      }
+
+      console.log("API Response:", response.data);
+
+      if (response.data.status === true) {
+        setRulesSuccess(response.data.message || (existingRule ? "Attendance rule updated successfully!" : "Attendance rule created successfully!"));
+        // Refresh rules
+        await fetchAttendanceRules();
+        
+        // Auto-close modal after success
+        setTimeout(() => {
+          setShowRulesModal(false);
+        }, 2000);
+      } else {
+        setRulesError(response.data.message || "Failed to save attendance rule");
+      }
+    } catch (err) {
+      console.error("Error saving attendance rule:", err);
+      setRulesError(err.response?.data?.message || err.response?.data?.errors?.join(', ') || "Failed to save attendance rule");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  console.log("Submitting form data:", formData); // Debug log
-
-  try {
-    let response;
-    
-    if (existingRule) {
-      // Update existing rule
-      console.log("Updating rule with ID:", existingRule.id);
-      response = await attendanceRuleService.updateRule(existingRule.id, formData);
-    } else {
-      // Create new rule
-      console.log("Creating new rule");
-      response = await attendanceRuleService.createRule(formData);
-    }
-
-    console.log("API Response:", response.data); // Debug log
-
-    if (response.data.status === true) {
-      setRulesSuccess(existingRule ? "Attendance rule updated successfully!" : "Attendance rule created successfully!");
-      // Refresh rules
-      await fetchAttendanceRules();
-      
-      // Auto-close modal after success
-      setTimeout(() => {
-        setShowRulesModal(false);
-      }, 2000);
-    } else {
-      setRulesError(response.data.message || "Failed to save attendance rule");
-    }
-  } catch (err) {
-    console.error("Error saving attendance rule:", err);
-    console.error("Error details:", err.response?.data); // More debug info
-    setRulesError(err.response?.data?.message || err.response?.data?.errors?.join(', ') || "Failed to save attendance rule");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
   // Handle delete rule
   const handleDeleteRule = async () => {
-  if (!existingRule || !window.confirm("Are you sure you want to delete this attendance rule?")) {
-    return;
-  }
-
-  setIsSubmitting(true);
-  setRulesError(null);
-
-  try {
-    const response = await attendanceRuleService.deleteRule(existingRule.id);
-    
-    if (response.data.status === true) {
-      setRulesSuccess("Attendance rule deleted successfully!");
-      setExistingRule(null);
-      resetRuleForm();
-      
-      setTimeout(() => {
-        setShowRulesModal(false);
-      }, 2000);
-    } else {
-      setRulesError(response.data.message || "Failed to delete attendance rule");
+    if (!existingRule || !window.confirm("Are you sure you want to delete this attendance rule?")) {
+      return;
     }
-  } catch (err) {
-    console.error("Error deleting attendance rule:", err);
-    setRulesError(err.response?.data?.message || "Failed to delete attendance rule");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
-  // Format time for display
-  const formatTimeDisplay = (time) => {
-    if (!time) return "";
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+    setIsSubmitting(true);
+    setRulesError(null);
+
+    try {
+      const response = await attendanceRuleService.deleteRule(existingRule.id);
+      
+      if (response.data.status === true) {
+        setRulesSuccess(response.data.message || "Attendance rule deleted successfully!");
+        setExistingRule(null);
+        resetRuleForm();
+        
+        setTimeout(() => {
+          setShowRulesModal(false);
+        }, 2000);
+      } else {
+        setRulesError(response.data.message || "Failed to delete attendance rule");
+      }
+    } catch (err) {
+      console.error("Error deleting attendance rule:", err);
+      setRulesError(err.response?.data?.message || "Failed to delete attendance rule");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Calculate work hours
@@ -544,13 +413,43 @@ if (response.data) {
     const checkOut = new Date(`2000-01-01T${ruleForm.check_out}`);
     
     let diff = (checkOut - checkIn) / (1000 * 60 * 60);
-    if (diff < 0) diff += 24; // Handle overnight shifts
+    if (diff < 0) diff += 24;
     
     return diff.toFixed(1);
   };
 
+  const calculateStats = (data) => {
+    const attendanceArray = Array.isArray(data) ? data : [];
+    
+    const present = attendanceArray.filter(emp => 
+      emp.status && emp.status.toLowerCase() === "present"
+    ).length;
+    
+    const absent = attendanceArray.filter(emp => 
+      emp.status && emp.status.toLowerCase() === "absent"
+    ).length;
+    
+    const late = attendanceArray.filter(emp => 
+      emp.is_late && emp.is_late !== "0"
+    ).length;
+    
+    const onTime = present - late;
+    const onLeave = attendanceArray.filter(emp => 
+      emp.status && (emp.status.toLowerCase() === "on_leave" || emp.status.toLowerCase() === "on leave")
+    ).length;
+
+    setStats({
+      totalEmployees: employees.length,
+      present,
+      absent,
+      late,
+      onTime,
+      onLeave,
+    });
+  };
+
   const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleRefresh = async () => {
@@ -560,7 +459,6 @@ if (response.data) {
 
   const handleExport = async () => {
     try {
-      // Ensure attendanceData is an array
       const dataToExport = Array.isArray(attendanceData) ? attendanceData : [];
       const csvContent = convertToCSV(dataToExport);
       downloadCSV(
@@ -596,48 +494,16 @@ if (response.data) {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleClockIn = async (employeeId) => {
-    try {
-      await attendanceService.clockIn({
-        employee_id: employeeId,
-        clock_in_time: new Date().toISOString(),
-      });
-      await fetchAttendanceData();
-      alert("Clock in successful!");
-    } catch (err) {
-      console.error("Error clocking in:", err);
-      alert("Failed to clock in. Please try again.");
-    }
-  };
-
-  const handleClockOut = async (employeeId) => {
-    try {
-      await attendanceService.clockOut({
-        employee_id: employeeId,
-        clock_out_time: new Date().toISOString(),
-      });
-      await fetchAttendanceData();
-      alert("Clock out successful!");
-    } catch (err) {
-      console.error("Error clocking out:", err);
-      alert("Failed to clock out. Please try again.");
-    }
-  };
-
   const getStatusBadge = (status) => {
     const statusConfig = {
-      Present: "bg-green-100 text-green-800 border border-green-200",
       present: "bg-green-100 text-green-800 border border-green-200",
-      PRESENT: "bg-green-100 text-green-800 border border-green-200",
-      Absent: "bg-red-100 text-red-800 border border-red-200",
+      Present: "bg-green-100 text-green-800 border border-green-200",
       absent: "bg-red-100 text-red-800 border border-red-200",
-      ABSENT: "bg-red-100 text-red-800 border border-red-200",
-      Late: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      Absent: "bg-red-100 text-red-800 border border-red-200",
       late: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-      LATE: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      Late: "bg-yellow-100 text-yellow-800 border border-yellow-200",
       "On Leave": "bg-blue-100 text-blue-800 border border-blue-200",
       on_leave: "bg-blue-100 text-blue-800 border border-blue-200",
-      ON_LEAVE: "bg-blue-100 text-blue-800 border border-blue-200",
     };
 
     return `px-3 py-1 text-xs font-semibold rounded-full ${
@@ -645,27 +511,10 @@ if (response.data) {
     }`;
   };
 
-  const getDeviceIcon = (device) => {
-    switch (device?.toLowerCase()) {
-      case "biometric":
-      case "fingerprint":
-        return <FaFingerprint className="text-blue-500 text-sm" />;
-      case "mobile":
-      case "mobile app":
-        return <FaMobileAlt className="text-green-500 text-sm" />;
-      case "web":
-      case "web portal":
-      case "desktop":
-        return <FaDesktop className="text-purple-500 text-sm" />;
-      default:
-        return <FaClock className="text-gray-500 text-sm" />;
-    }
-  };
-
   const formatTime = (timeString) => {
     if (!timeString) return "-";
     try {
-      return new Date(timeString).toLocaleTimeString("en-US", {
+      return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
@@ -684,25 +533,32 @@ if (response.data) {
     }
   };
 
-  // Filter data based on current filters - FIXED with array check
+  const formatTimeDisplay = (time) => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Filter data based on current filters
   const filteredData = Array.isArray(attendanceData)
     ? attendanceData.filter((record) => {
+        const employee = record.employee || {};
         const matchesSearch =
           !filters.search ||
-          record.employee_name
-            ?.toLowerCase()
-            .includes(filters.search.toLowerCase()) ||
-          record.employee_id
-            ?.toLowerCase()
-            .includes(filters.search.toLowerCase());
+          (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+          (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+          (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
 
         const matchesDepartment =
           filters.department === "all" ||
-          record.department === filters.department;
+          (employee.department_id && employee.department_id.toString() === filters.department.toString());
 
         const matchesStatus =
           filters.status === "all" ||
-          record.status?.toLowerCase() === filters.status.toLowerCase();
+          (record.status && record.status.toLowerCase() === filters.status.toLowerCase());
 
         return matchesSearch && matchesDepartment && matchesStatus;
       })
@@ -714,42 +570,36 @@ if (response.data) {
       value: stats.totalEmployees,
       icon: FaUsers,
       color: "blue",
-      borderColor: "border-blue-500",
     },
     {
       label: "Present Today",
       value: stats.present,
       icon: FaUserCheck,
       color: "green",
-      borderColor: "border-green-500",
     },
     {
       label: "Absent",
       value: stats.absent,
       icon: FaUserTimes,
       color: "red",
-      borderColor: "border-red-500",
     },
     {
       label: "Late Arrivals",
       value: stats.late,
       icon: FaClock,
       color: "yellow",
-      borderColor: "border-yellow-500",
     },
     {
       label: "On Time",
       value: stats.onTime,
       icon: FaUserCheck,
       color: "purple",
-      borderColor: "border-purple-500",
     },
     {
       label: "On Leave",
       value: stats.onLeave,
       icon: FaCalendarAlt,
       color: "indigo",
-      borderColor: "border-indigo-500",
     },
   ];
 
@@ -780,7 +630,7 @@ if (response.data) {
           
           {/* Attendance Rules Button */}
           <button
-            onClick={() => setShowRulesModal(true)}
+            onClick={handleOpenRulesModal}
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <FaClock className="h-4 w-4" />
@@ -788,7 +638,7 @@ if (response.data) {
           </button>
         </div>
 
-        {/* Stats Cards - Redesigned to match holiday page */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statusCards.map((stat, index) => (
             <div
@@ -826,7 +676,7 @@ if (response.data) {
           </div>
         )}
 
-        {/* Action Buttons - Aligned like holiday page */}
+        {/* Action Buttons */}
         <div className="mb-6 flex justify-end">
           <div className="flex gap-2">
             <button
@@ -846,10 +696,10 @@ if (response.data) {
           </div>
         </div>
 
-        {/* Filters Section - IMPROVED to match holiday page style */}
+        {/* Filters Section */}
         <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
           <div className="space-y-4">
-            {/* Search bar - matching holiday page style */}
+            {/* Search bar */}
             <div className="relative max-w-md">
               <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
               <input
@@ -861,7 +711,7 @@ if (response.data) {
               />
             </div>
 
-            {/* Filter controls - improved grid layout */}
+            {/* Filter controls */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Start Date */}
               <div>
@@ -914,7 +764,7 @@ if (response.data) {
                   <option value="all">All Employees</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name || emp.employee_name}
+                      {emp.first_name} {emp.last_name} ({emp.employee_code})
                     </option>
                   ))}
                 </select>
@@ -925,18 +775,18 @@ if (response.data) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Department
                 </label>
-               <select
-  value={filters.department}
-  onChange={(e) => handleFilterChange("department", e.target.value)}
-  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
->
-  <option value="all">All Departments</option>
-  {departments.map((dept) => (
-    <option key={dept.id || dept} value={dept.id || dept}>
-      {typeof dept === 'object' ? dept.name || dept.label : dept}
-    </option>
-  ))}
-</select>
+                <select
+                  value={filters.department}
+                  onChange={(e) => handleFilterChange("department", e.target.value)}
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
+                >
+                  <option value="all">All Departments</option>
+                  {departments.map((dept) => (
+                    <option key={`dept-${dept.id}`} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Status Filter */}
@@ -982,9 +832,6 @@ if (response.data) {
                     Status
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Location/Device
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -993,7 +840,7 @@ if (response.data) {
                 {filteredData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="7"
+                      colSpan="6"
                       className="px-6 py-12 text-center text-gray-500"
                     >
                       <div className="flex flex-col items-center">
@@ -1017,18 +864,18 @@ if (response.data) {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                             <span className="text-gray-700 font-medium">
-                              {record.employee_name?.[0] || "E"}
+                              {record.employee?.first_name?.[0] || "E"}
                             </span>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-semibold text-gray-900">
-                              {record.employee_name}
+                              {record.employee?.first_name} {record.employee?.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {record.employee_id}
+                              {record.employee?.employee_code}
                             </div>
                             <div className="text-xs text-gray-400">
-                              {record.department}
+                              {record.employee?.department_id ? `Department ${record.employee.department_id}` : 'No Department'}
                             </div>
                           </div>
                         </div>
@@ -1050,20 +897,20 @@ if (response.data) {
                               {formatTime(record.check_out)}
                             </span>
                           </div>
-                          {record.late_minutes > 0 && (
+                          {record.is_late && record.is_late !== "0" && (
                             <div className="text-xs text-yellow-600 mt-1 font-medium">
-                              Late by {record.late_minutes} minutes
+                              Late arrival
                             </div>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                          {record.total_hours || "0h 00m"}
+                          {record.total_work_hours || "0.00"} hours
                         </div>
-                        {record.overtime && record.overtime !== "0h 00m" && (
+                        {record.is_overtime && record.is_overtime !== 0 && (
                           <div className="text-xs text-blue-600 font-medium">
-                            OT: {record.overtime}
+                            Overtime
                           </div>
                         )}
                       </td>
@@ -1075,45 +922,16 @@ if (response.data) {
                             : "Unknown"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2 text-sm">
-                          {getDeviceIcon(record.device)}
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <FaMapMarkerAlt className="text-gray-400 text-sm" />
-                              <span className="font-medium">
-                                {record.location || "Unknown"}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {record.device || "Unknown"}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex gap-2">
-                          {!record.check_in && (
-                            <button
-                              onClick={() => handleClockIn(record.employee_id)}
-                              className="px-4 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
-                            >
-                              Clock In
-                            </button>
-                          )}
-                          {record.check_in && !record.check_out && (
-                            <button
-                              onClick={() => handleClockOut(record.employee_id)}
-                              className="px-4 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap"
-                            >
-                              Clock Out
-                            </button>
-                          )}
-                          {record.check_in && record.check_out && (
-                            <span className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg whitespace-nowrap">
-                              Completed
-                            </span>
-                          )}
+                          <button
+                            className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded hover:bg-blue-200 transition-colors"
+                            onClick={() => {
+                              alert(`Viewing details for ${record.employee?.first_name}'s attendance`);
+                            }}
+                          >
+                            View
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1187,10 +1005,10 @@ if (response.data) {
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-gray-800">
-                  Attendance Rules
+                  {existingRule ? "Edit Attendance Rules" : "Add Attendance Rules"}
                 </h2>
                 <p className="text-gray-600 text-sm">
-                  Configure attendance policies for {selectedOrganization?.name}
+                  {existingRule ? "Update existing rules" : "Create new rules"} for {selectedOrganization?.name}
                 </p>
               </div>
               <button
@@ -1390,11 +1208,22 @@ if (response.data) {
                             <input
                               type="number"
                               name="late_penalty_amount"
-                              value={ruleForm.late_penalty_amount}
+                              value={ruleForm.late_penalty_amount === 0 ? '' : ruleForm.late_penalty_amount}
                               onChange={handleRuleFormChange}
+                              onFocus={(e) => {
+                                if (ruleForm.late_penalty_amount === 0) {
+                                  e.target.value = '';
+                                }
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value === '') {
+                                  setRuleForm(prev => ({ ...prev, late_penalty_amount: 0 }));
+                                }
+                              }}
                               step="0.01"
                               min="0"
                               className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="0.00"
                             />
                           </div>
                         </div>
@@ -1427,34 +1256,34 @@ if (response.data) {
                         </div>
                       </div>
 
-                     <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Absent Penalty ($)
-  </label>
-  <div className="flex items-center">
-    <FaDollarSign className="text-gray-400 mr-2" />
-    <input
-      type="number"
-      name="absent_penalty_amount"
-      value={ruleForm.absent_penalty_amount === 0 ? '' : ruleForm.absent_penalty_amount}
-      onChange={handleRuleFormChange}
-      onFocus={(e) => {
-        if (ruleForm.absent_penalty_amount === 0) {
-          e.target.value = '';
-        }
-      }}
-      onBlur={(e) => {
-        if (e.target.value === '') {
-          setRuleForm(prev => ({ ...prev, absent_penalty_amount: 0 }));
-        }
-      }}
-      step="0.01"
-      min="0"
-      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-      placeholder="0.00"
-    />
-  </div>
-</div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Absent Penalty ($)
+                        </label>
+                        <div className="flex items-center">
+                          <FaDollarSign className="text-gray-400 mr-2" />
+                          <input
+                            type="number"
+                            name="absent_penalty_amount"
+                            value={ruleForm.absent_penalty_amount === 0 ? '' : ruleForm.absent_penalty_amount}
+                            onChange={handleRuleFormChange}
+                            onFocus={(e) => {
+                              if (ruleForm.absent_penalty_amount === 0) {
+                                e.target.value = '';
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '') {
+                                setRuleForm(prev => ({ ...prev, absent_penalty_amount: 0 }));
+                              }
+                            }}
+                            step="0.01"
+                            min="0"
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Additional Settings */}
@@ -1600,7 +1429,7 @@ if (response.data) {
 
                   {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-6 border-t">
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                       {existingRule && (
                         <button
                           type="button"
@@ -1611,12 +1440,16 @@ if (response.data) {
                           <FaTrash /> Delete Rule
                         </button>
                       )}
-                    </div>
+                    </div> */}
                     
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        onClick={() => setShowRulesModal(false)}
+                        onClick={() => {
+                          setShowRulesModal(false);
+                          setRulesError(null);
+                          setRulesSuccess(null);
+                        }}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
                       >
                         Cancel

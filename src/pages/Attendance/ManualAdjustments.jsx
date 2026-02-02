@@ -15,7 +15,9 @@ import {
   FaBuilding,
   FaRedoAlt
 } from 'react-icons/fa';
-import { attendanceService, employeeService } from '../../services/attendanceService';
+// Correct - import from respective service files
+import { attendanceService } from "../../services/attendanceService";
+import { employeeService } from "../../services/employeeService";
 
 const ManualAdjustments = () => {
   const [adjustments, setAdjustments] = useState([]);

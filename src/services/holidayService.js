@@ -1,35 +1,30 @@
-import axiosClient from "../axiosClient";
+// src/services/holidayService.js
+import axiosClient from '../axiosClient';
 
+export const holidayService = {
+  getHolidays: () => {
+    return axiosClient.get('/organization-holiday');
+  },
 
-export const getHolidays = (params = {}) => {
-  return axiosClient.get("/holidays", { params });
+  createHoliday: (data) => {
+    return axiosClient.post('/organization-holiday', data);
+  },
+
+  getHoliday: (id) => {
+    return axiosClient.get(`/organization-holiday/${id}`);
+  },
+
+  updateHoliday: (id, data) => {
+    return axiosClient.post(`/organization-holiday/${id}`, data);
+  },
+
+  partialUpdateHoliday: (id, data) => {
+    return axiosClient.post(`/organization-holiday/${id}/partial`, data);
+  },
+
+  deleteHoliday: (id) => {
+    return axiosClient.delete(`/organization-holiday/${id}`);
+  }
 };
 
-
-export const getHolidayById = (id) => {
-  return axiosClient.get(`/holidays/${id}`);
-};
-
-
-export const createHoliday = (holidayData) => {
-  return axiosClient.post("/holidays", holidayData);
-};
-
-
-export const updateHoliday = (id, holidayData) => {
-  return axiosClient.put(`/holidays/${id}`, holidayData);
-};
-
-export const deleteHoliday = (id) => {
-  return axiosClient.delete(`/holidays/${id}`);
-};
-
-// Get holidays by year
-export const getHolidaysByYear = (year, params = {}) => {
-  return axiosClient.get(`/holidays/by-year/${year}`, { params });
-};
-
-// Get holidays by month
-export const getHolidaysByMonth = (year, month, params = {}) => {
-  return axiosClient.get(`/holidays/by-month/${year}/${month}`, { params });
-};
+export default holidayService;

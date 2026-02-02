@@ -21,8 +21,7 @@ import {
 import axiosClient from '../../axiosClient.js'; // Import your axiosClient
 
 // Or better, use the holidayService from attendanceService
-import { holidayService } from '../../services/attendanceService';
-
+import { holidayService } from "../../services/holidayService";
 const HolidaysCalendars = () => {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
