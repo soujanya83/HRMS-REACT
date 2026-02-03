@@ -27,7 +27,9 @@ import {
   FaHome,
   FaPercent,
   FaDollarSign,
-  FaStickyNote
+  FaStickyNote,
+  FaUser,
+  FaCalculator
 } from "react-icons/fa";
 import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
@@ -47,6 +49,16 @@ const AttendanceTracking = () => {
   const [rulesSuccess, setRulesSuccess] = useState(null);
   const [existingRule, setExistingRule] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State for view details modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [calculatedHours, setCalculatedHours] = useState({
+    totalHours: 0,
+    breakHours: 0,
+    netHours: 0,
+    overtimeHours: 0
+  });
 
   const { selectedOrganization } = useOrganizations();
 
@@ -96,6 +108,55 @@ const AttendanceTracking = () => {
 
   // Weekly days options
   const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // Function to calculate hours from check-in and check-out times
+  const calculateHours = (checkIn, checkOut, breakDuration = 0) => {
+    if (!checkIn || !checkOut) {
+      return {
+        total: "0.00",
+        break: "0.00",
+        net: "0.00",
+        overtime: "0.00"
+      };
+    }
+
+    try {
+      // Parse times
+      const [inHour, inMinute] = checkIn.split(':').map(Number);
+      const [outHour, outMinute] = checkOut.split(':').map(Number);
+
+      // Calculate total minutes
+      let totalMinutes = (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
+      
+      // Handle cross-midnight (if check-out is earlier than check-in)
+      if (totalMinutes < 0) {
+        totalMinutes += 24 * 60; // Add 24 hours
+      }
+
+      // Calculate hours
+      const totalHours = totalMinutes / 60;
+      const breakHours = (breakDuration || 0) / 60;
+      const netHours = Math.max(0, totalHours - breakHours);
+      
+      // Calculate overtime (assuming 8 hours regular work day)
+      const overtimeHours = Math.max(0, netHours - 8);
+
+      return {
+        total: totalHours.toFixed(2),
+        break: breakHours.toFixed(2),
+        net: netHours.toFixed(2),
+        overtime: overtimeHours.toFixed(2)
+      };
+    } catch (error) {
+      console.error("Error calculating hours:", error);
+      return {
+        total: "0.00",
+        break: "0.00",
+        net: "0.00",
+        overtime: "0.00"
+      };
+    }
+  };
 
   // Fetch initial data
   useEffect(() => {
@@ -183,6 +244,37 @@ const AttendanceTracking = () => {
       setAttendanceData([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to handle view details
+  const handleViewDetails = (record) => {
+    setSelectedRecord(record);
+    
+    // Calculate hours for this record
+    const hours = calculateHours(
+      record.check_in, 
+      record.check_out, 
+      record.break_duration
+    );
+    
+    setCalculatedHours({
+      totalHours: parseFloat(hours.total) || 0,
+      breakHours: parseFloat(hours.break) || 0,
+      netHours: parseFloat(hours.net) || 0,
+      overtimeHours: parseFloat(hours.overtime) || 0
+    });
+    
+    setShowDetailsModal(true);
+  };
+
+  // Function to handle view notes
+  const handleViewNotes = (record) => {
+    console.log("View notes for:", record);
+    if (record.notes) {
+      alert(`Notes for ${record.employee?.first_name}:\n\n${record.notes}`);
+    } else {
+      alert("No notes available for this record.");
     }
   };
 
@@ -422,7 +514,7 @@ const AttendanceTracking = () => {
     }
   };
 
-  // Calculate work hours
+  // Calculate work hours for rules modal
   const calculateWorkHours = () => {
     const checkIn = new Date(`2000-01-01T${ruleForm.check_in}`);
     const checkOut = new Date(`2000-01-01T${ruleForm.check_out}`);
@@ -600,13 +692,20 @@ const AttendanceTracking = () => {
     }
   };
 
-  const formatTimeDisplay = (time) => {
-    if (!time) return "";
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return "-";
+    try {
+      return new Date(dateTimeString).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return dateTimeString;
+    }
   };
 
   // Filter data based on current filters
@@ -846,8 +945,8 @@ const AttendanceTracking = () => {
                 </select>
               </div>
 
-              {/* Department Filter
-              <div>
+              {/* Department Filter */}
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Department
                 </label>
@@ -866,7 +965,7 @@ const AttendanceTracking = () => {
               </div> */}
 
               {/* Status Filter */}
-              {/* <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
@@ -881,7 +980,7 @@ const AttendanceTracking = () => {
                   <option value="late">Late</option>
                   <option value="on_leave">On Leave</option>
                 </select>
-              </div> */}
+              </div>
             </div>
           </div>
         </div>
@@ -931,141 +1030,144 @@ const AttendanceTracking = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((record) => (
-                    <tr
-                      key={`${record.id}-${record.date}`} // Use combination of id and date for unique key
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-gray-700 font-medium">
-                                                            {record.employee?.first_name?.[0] || "E"}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {record.employee?.first_name || "Unknown"} {record.employee?.last_name || ""}
+                  filteredData.map((record) => {
+                    // Calculate hours for this record
+                    const hours = calculateHours(
+                      record.check_in, 
+                      record.check_out, 
+                      record.break_duration
+                    );
+                    
+                    return (
+                      <tr
+                        key={`${record.id}-${record.date}`} // Use combination of id and date for unique key
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <span className="text-gray-700 font-medium">
+                                {record.employee?.first_name?.[0] || "E"}
+                              </span>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {record.employee?.employee_code || "No ID"}
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {record.employee?.first_name || "Unknown"} {record.employee?.last_name || ""}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {record.employee?.employee_code || "No ID"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {formatDate(record.date)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {record.employee?.department_name || "No Department"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm">
-                            <FaClock className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="font-medium">In: </span>
-                            <span className="ml-1 text-gray-700">
-                              {formatTime(record.check_in) || "-"}
-                            </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {formatDate(record.date)}
                           </div>
-                          <div className="flex items-center text-sm">
-                            <FaClock className="h-4 w-4 text-red-500 mr-2" />
-                            <span className="font-medium">Out: </span>
-                            <span className="ml-1 text-gray-700">
-                              {formatTime(record.check_out) || "-"}
-                            </span>
+                          <div className="text-sm text-gray-500">
+                            {record.employee?.department_name || "No Department"}
                           </div>
-                          <div className="flex items-center text-sm">
-                            <FaCoffee className="h-4 w-4 text-yellow-500 mr-2" />
-                            <span className="font-medium">Break: </span>
-                            <span className="ml-1 text-gray-700">
-                              {record.break_duration ? `${record.break_duration} mins` : "-"}
-                            </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            <div className="flex items-center text-sm">
+                              <FaClock className="h-4 w-4 text-green-500 mr-2" />
+                              <span className="font-medium">In: </span>
+                              <span className="ml-1 text-gray-700">
+                                {formatTime(record.check_in) || "-"}
+                              </span>
+                            </div>
+                            <div className="flex items-center text-sm">
+                              <FaClock className="h-4 w-4 text-red-500 mr-2" />
+                              <span className="font-medium">Out: </span>
+                              <span className="ml-1 text-gray-700">
+                                {formatTime(record.check_out) || "-"}
+                              </span>
+                            </div>
+                            <div className="flex items-center text-sm">
+                              <FaCoffee className="h-4 w-4 text-yellow-500 mr-2" />
+                              <span className="font-medium">Break: </span>
+                              <span className="ml-1 text-gray-700">
+                                {record.break_duration ? `${record.break_duration} mins` : "-"}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {record.work_hours || "0.0"} hrs
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {record.overtime_hours ? (
-                            <span className="flex items-center">
-                              <FaMoneyBill className="h-3 w-3 text-yellow-600 mr-1" />
-                              OT: {record.overtime_hours} hrs
-                            </span>
-                          ) : (
-                            "No overtime"
-                          )}
-                        </div>
-                        {record.is_late && record.is_late !== "0" && (
-                          <div className="text-sm text-red-600 font-medium mt-1">
-                            Late by {record.is_late} mins
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {hours.net} hrs
                           </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(record.status)}>
-                          {record.status?.replace("_", " ") || "Unknown"}
-                        </span>
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center text-xs text-gray-500">
-                            {record.check_in_device === "mobile" ? (
-                              <>
-                                <FaMobileAlt className="h-3 w-3 mr-1" />
-                                Mobile check-in
-                              </>
-                            ) : record.check_in_device === "web" ? (
-                              <>
-                                <FaDesktop className="h-3 w-3 mr-1" />
-                                Web check-in
-                              </>
+                          <div className="text-sm text-gray-500">
+                            {parseFloat(hours.overtime) > 0 ? (
+                              <span className="flex items-center">
+                                <FaMoneyBill className="h-3 w-3 text-yellow-600 mr-1" />
+                                OT: {hours.overtime} hrs
+                              </span>
                             ) : (
-                              record.check_in_device || "No device info"
+                              "No overtime"
                             )}
                           </div>
-                          {record.location && (
+                          {record.is_late && parseFloat(record.is_late) > 0 && (
+                            <div className="text-sm text-red-600 font-medium mt-1">
+                              Late by {record.is_late} mins
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={getStatusBadge(record.status)}>
+                            {record.status?.replace("_", " ") || "Unknown"}
+                          </span>
+                          <div className="mt-2 space-y-1">
                             <div className="flex items-center text-xs text-gray-500">
-                              <FaMapMarkerAlt className="h-3 w-3 mr-1" />
-                              {record.location}
+                              {record.check_in_device === "mobile" ? (
+                                <>
+                                  <FaMobileAlt className="h-3 w-3 mr-1" />
+                                  Mobile check-in
+                                </>
+                              ) : record.check_in_device === "web" ? (
+                                <>
+                                  <FaDesktop className="h-3 w-3 mr-1" />
+                                  Web check-in
+                                </>
+                              ) : (
+                                record.check_in_device || "No device info"
+                              )}
                             </div>
-                          )}
-                          {record.attendance_type === "biometric" && (
-                            <div className="flex items-center text-xs text-blue-500">
-                              <FaFingerprint className="h-3 w-3 mr-1" />
-                              Biometric
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            className="text-blue-600 hover:text-blue-900 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                            onClick={() => handleViewDetails(record)}
-                          >
-                            View
-                          </button>
-                          <button
-                            className="text-green-600 hover:text-green-900 px-3 py-1.5 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
-                            onClick={() => handleEditAttendance(record)}
-                          >
-                            Edit
-                          </button>
-                          {record.notes && (
+                            {record.location && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <FaMapMarkerAlt className="h-3 w-3 mr-1" />
+                                {record.location}
+                              </div>
+                            )}
+                            {record.attendance_type === "biometric" && (
+                              <div className="flex items-center text-xs text-blue-500">
+                                <FaFingerprint className="h-3 w-3 mr-1" />
+                                Biometric
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
                             <button
-                              className="text-purple-600 hover:text-purple-900 px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
-                              onClick={() => handleViewNotes(record)}
+                              className="text-blue-600 hover:text-blue-900 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                              onClick={() => handleViewDetails(record)}
                             >
-                              Notes
+                              View
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {record.notes && (
+                              <button
+                                className="text-purple-600 hover:text-purple-900 px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+                                onClick={() => handleViewNotes(record)}
+                              >
+                                Notes
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1088,6 +1190,229 @@ const AttendanceTracking = () => {
           </div>
         </div>
       </div>
+
+      {/* View Details Modal */}
+      {showDetailsModal && selectedRecord && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+              <div className="bg-white px-6 pt-6 pb-4">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      Attendance Details
+                    </h3>
+                    <p className="text-gray-600 mt-1">
+                      {selectedRecord.employee?.first_name} {selectedRecord.employee?.last_name} - {formatDate(selectedRecord.date)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <FaTimes className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Employee Information */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <FaUser className="mr-2" />
+                      Employee Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Full Name</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedRecord.employee?.first_name || "Unknown"} {selectedRecord.employee?.last_name || ""}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Employee Code</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedRecord.employee?.employee_code || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Department</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedRecord.employee?.department_name || "No Department"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Designation</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedRecord.employee?.designation || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attendance Details */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <FaClock className="mr-2" />
+                      Attendance Details
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Date</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {formatDate(selectedRecord.date)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Status</p>
+                        <span className={getStatusBadge(selectedRecord.status)}>
+                          {selectedRecord.status?.replace("_", " ") || "Unknown"}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Check In Time</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {formatTime(selectedRecord.check_in) || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Check Out Time</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {formatTime(selectedRecord.check_out) || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Break Duration</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedRecord.break_duration ? `${selectedRecord.break_duration} minutes` : "No break"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hours Calculation */}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <FaCalculator className="mr-2" />
+                      Hours Calculation
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Total Hours</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {calculatedHours.totalHours.toFixed(2)} hrs
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Break Time</p>
+                        <p className="text-2xl font-bold text-yellow-600">
+                          {calculatedHours.breakHours.toFixed(2)} hrs
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Net Hours</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {calculatedHours.netHours.toFixed(2)} hrs
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Overtime</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {calculatedHours.overtimeHours.toFixed(2)} hrs
+                        </p>
+                      </div>
+                    </div>
+                    {selectedRecord.is_late && parseFloat(selectedRecord.is_late) > 0 && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center">
+                          <FaExclamationTriangle className="text-red-500 mr-2" />
+                          <p className="text-red-700 font-medium">
+                            Late by {selectedRecord.is_late} minutes
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Additional Information */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      Additional Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Device Type</p>
+                        <p className="text-gray-900">
+                          {selectedRecord.check_in_device === "mobile" ? (
+                            <span className="flex items-center">
+                              <FaMobileAlt className="mr-2" /> Mobile Device
+                            </span>
+                          ) : selectedRecord.check_in_device === "web" ? (
+                            <span className="flex items-center">
+                              <FaDesktop className="mr-2" /> Web Browser
+                            </span>
+                          ) : (
+                            selectedRecord.check_in_device || "Unknown"
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Attendance Type</p>
+                        <p className="text-gray-900">
+                          {selectedRecord.attendance_type === "biometric" ? (
+                            <span className="flex items-center">
+                              <FaFingerprint className="mr-2" /> Biometric
+                            </span>
+                          ) : (
+                            selectedRecord.attendance_type || "Manual"
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Location</p>
+                        <p className="text-gray-900">
+                          {selectedRecord.location || "Location not recorded"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes Section */}
+                  {selectedRecord.notes && (
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                        <FaStickyNote className="mr-2" />
+                        Notes
+                      </h4>
+                      <p className="text-gray-700 whitespace-pre-wrap">
+                        {selectedRecord.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Actions */}
+                <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Attendance Rules Modal */}
       {showRulesModal && (
@@ -1573,7 +1898,12 @@ const AttendanceTracking = () => {
                         {existingRule && (
                           <button
                             type="button"
-                            onClick={handleDeleteRule}
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to delete this attendance rule?")) {
+                                console.log("Delete rule");
+                                alert("Delete rule functionality would be implemented here");
+                              }
+                            }}
                             className="px-5 py-2.5 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors shadow-sm flex items-center gap-2"
                             disabled={isSubmitting}
                           >
@@ -1620,29 +1950,6 @@ const AttendanceTracking = () => {
       `}</style>
     </div>
   );
-};
-
-// Placeholder handlers for the missing functions
-const handleViewDetails = (record) => {
-  console.log("View details for:", record);
-  alert(`View details for ${record.employee?.first_name} - ${record.date}`);
-};
-
-const handleEditAttendance = (record) => {
-  console.log("Edit attendance for:", record);
-  alert(`Edit attendance for ${record.employee?.first_name} - ${record.date}`);
-};
-
-const handleViewNotes = (record) => {
-  console.log("View notes for:", record);
-  alert(`Notes for ${record.employee?.first_name}:\n${record.notes}`);
-};
-
-const handleDeleteRule = () => {
-  if (window.confirm("Are you sure you want to delete this attendance rule?")) {
-    console.log("Delete rule");
-    alert("Delete rule functionality would be implemented here");
-  }
 };
 
 export default AttendanceTracking;
