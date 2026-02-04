@@ -119,26 +119,28 @@ const navLinks = [
   name: "Rostering",
   icon: HiOutlineCalendar,
   children: [
-    {
-      name: "Roster Periods",
-      path: "/dashboard/rostering/periods",
-      icon: HiOutlineCalendar,
-    },
-    {
+      {
       name: "Shift Scheduling",
       path: "/dashboard/rostering/scheduling",
       icon: HiOutlineTable,
     },
     {
-      name: "Shift Swapping Requests",
-      path: "/dashboard/rostering/swapping",
-      icon: HiOutlineSwitchHorizontal,
+      name: "Roster Periods",
+      path: "/dashboard/rostering/periods",
+      icon: HiOutlineCalendar,
     },
-    {
+     {
       name: "Weekly / Monthly Rosters",
       path: "/dashboard/rostering/rosters",
       icon: HiOutlineViewGrid,
     },
+  
+    {
+      name: "Shift Swapping Requests",
+      path: "/dashboard/rostering/swapping",
+      icon: HiOutlineSwitchHorizontal,
+    },
+   
     {
       name: "Notifications",
       path: "/dashboard/rostering/notifications",
