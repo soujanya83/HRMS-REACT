@@ -140,44 +140,17 @@ const handleCreatePeriod = async (e) => {
   }
 
   try {
-    // Get user ID from token or authentication context
-    // If you have a user context, use that instead
-    const token = localStorage.getItem('ACCESS_TOKEN');
-    
-    // Decode the token to get user info (if JWT)
-    let userId = 1; // Default fallback
-    
-    if (token) {
-      try {
-        // If it's a JWT token, decode it
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.user_id || payload.sub || 1;
-      } catch (decodeError) {
-        console.warn("Could not decode token:", decodeError);
-        // Try to get from localStorage or default to 1
-        userId = parseInt(localStorage.getItem('USER_ID') || '1', 10);
-      }
-    } else {
-      userId = parseInt(localStorage.getItem('USER_ID') || '1', 10);
-    }
-
+    // ⭐️ FIX: Use created_by: 4 instead of 1 ⭐️
     const dataToSend = {
       organization_id: parseInt(selectedOrganization.id, 10),
       type: formData.type,
       start_date: formData.start_date,
-      created_by: userId // Use the extracted user ID
+      created_by: 4 // ⭐️ CHANGE THIS TO 4 ⭐️
     };
 
-    console.log("Creating roster period with data:", dataToSend);
-    console.log("Data types:", {
-      organization_id: typeof dataToSend.organization_id,
-      type: typeof dataToSend.type,
-      start_date: typeof dataToSend.start_date,
-      created_by: typeof dataToSend.created_by
-    });
+    console.log("✅ Sending with valid user ID 4:", dataToSend);
 
     const response = await rosterPeriodService.createRosterPeriod(dataToSend);
-    console.log("API Response:", response.data);
 
     if (response.data?.success === true) {
       setSuccessMessage("Roster period created successfully!");
@@ -193,7 +166,6 @@ const handleCreatePeriod = async (e) => {
     }
   } catch (err) {
     console.error("Error creating roster period:", err);
-    console.error("Error response data:", err.response?.data);
     
     if (err.response?.data?.errors) {
       const errorMessages = Object.entries(err.response.data.errors).map(
