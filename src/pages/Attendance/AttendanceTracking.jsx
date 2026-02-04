@@ -268,16 +268,6 @@ const AttendanceTracking = () => {
     setShowDetailsModal(true);
   };
 
-  // Function to handle view notes
-  const handleViewNotes = (record) => {
-    console.log("View notes for:", record);
-    if (record.notes) {
-      alert(`Notes for ${record.employee?.first_name}:\n\n${record.notes}`);
-    } else {
-      alert("No notes available for this record.");
-    }
-  };
-
   // Fetch attendance rules when modal opens
   const fetchAttendanceRules = async () => {
     if (!selectedOrganization?.id) {
@@ -945,7 +935,7 @@ const AttendanceTracking = () => {
                 </select>
               </div>
 
-              {/* Department Filter */}
+              {/* Department Filter - Commented out */}
               {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Department
@@ -1065,7 +1055,7 @@ const AttendanceTracking = () => {
                             {formatDate(record.date)}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {record.employee?.department_name || "No Department"}
+                            {record.employee?.designation || ""}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1130,7 +1120,7 @@ const AttendanceTracking = () => {
                                   Web check-in
                                 </>
                               ) : (
-                                record.check_in_device || "No device info"
+                                ""
                               )}
                             </div>
                             {record.location && (
@@ -1155,14 +1145,6 @@ const AttendanceTracking = () => {
                             >
                               View
                             </button>
-                            {record.notes && (
-                              <button
-                                className="text-purple-600 hover:text-purple-900 px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
-                                onClick={() => handleViewNotes(record)}
-                              >
-                                Notes
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -1359,7 +1341,7 @@ const AttendanceTracking = () => {
                               <FaDesktop className="mr-2" /> Web Browser
                             </span>
                           ) : (
-                            selectedRecord.check_in_device || "Unknown"
+                            "Not specified"
                           )}
                         </p>
                       </div>
@@ -1384,7 +1366,7 @@ const AttendanceTracking = () => {
                     </div>
                   </div>
 
-                  {/* Notes Section */}
+                  {/* Notes Section - Only shown if there are notes */}
                   {selectedRecord.notes && (
                     <div className="bg-yellow-50 p-4 rounded-lg">
                       <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
@@ -1586,356 +1568,356 @@ const AttendanceTracking = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Late Grace Period (minutes)
                           </label>
-                          <input
-                            type="number"
-                            name="late_grace_minutes"
-                            value={ruleForm.late_grace_minutes}
-                            onChange={handleRuleFormChange}
-                            min="0"
-                            max="120"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Half Day After (minutes)
-                          </label>
-                          <input
-                            type="number"
-                            name="half_day_after_minutes"
-                            value={ruleForm.half_day_after_minutes}
-                            onChange={handleRuleFormChange}
-                            min="0"
-                            max="720"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Mark Absent After (minutes)
-                          </label>
-                          <input
-                            type="number"
-                            name="absent_after_minutes"
-                            value={ruleForm.absent_after_minutes}
-                            onChange={handleRuleFormChange}
-                            min="0"
-                            max="1440"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Overtime & Penalties */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaMoneyBill className="inline mr-2" />
-                          Overtime & Penalties
-                        </h4>
-                        
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="allow_overtime"
-                            name="allow_overtime"
-                            checked={ruleForm.allow_overtime}
-                            onChange={handleRuleFormChange}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <label htmlFor="allow_overtime" className="ml-2 block text-sm text-gray-700">
-                            Allow Overtime
-                          </label>
-                        </div>
-
-                        {ruleForm.allow_overtime && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Overtime Rate (x regular rate)
-                            </label>
-                            <div className="relative">
-                              <FaPercent className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                              <input
-                                type="number"
-                                name="overtime_rate"
-                                value={ruleForm.overtime_rate}
-                                onChange={handleRuleFormChange}
-                                step="0.1"
-                                min="1"
-                                max="3"
-                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Late Penalty Amount
-                            </label>
-                            <div className="relative">
-                              <FaDollarSign className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                              <input
-                                type="number"
-                                name="late_penalty_amount"
-                                value={ruleForm.late_penalty_amount}
-                                onChange={handleRuleFormChange}
-                                min="0"
-                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Absent Penalty Amount
-                            </label>
-                            <div className="relative">
-                              <FaDollarSign className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                              <input
-                                type="number"
-                                name="absent_penalty_amount"
-                                value={ruleForm.absent_penalty_amount}
-                                onChange={handleRuleFormChange}
-                                min="0"
-                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Weekly Off Days */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaCalendar className="inline mr-2" />
-                          Weekly Off Days
-                        </h4>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          {weekDays.map(day => {
-                            const isSelected = ruleForm.weekly_off_days.split(',').includes(day);
-                            return (
-                              <div key={day} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`day-${day}`}
-                                  value={day}
-                                  checked={isSelected}
-                                  onChange={handleWeeklyOffDaysChange}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor={`day-${day}`} className="ml-2 block text-sm text-gray-700">
-                                  {day}
-                                </label>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Additional Settings */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaHome className="inline mr-2" />
-                          Additional Settings
-                        </h4>
-                        
-                        <div className="space-y-3">
-                          <div className="flex items-center">
                             <input
-                              type="checkbox"
-                              id="flexible_hours"
-                              name="flexible_hours"
-                              checked={ruleForm.flexible_hours}
+                              type="number"
+                              name="late_grace_minutes"
+                              value={ruleForm.late_grace_minutes}
                               onChange={handleRuleFormChange}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label htmlFor="flexible_hours" className="ml-2 block text-sm text-gray-700">
-                              Flexible Working Hours
-                            </label>
-                          </div>
-
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="is_remote_applicable"
-                              name="is_remote_applicable"
-                              checked={ruleForm.is_remote_applicable}
-                              onChange={handleRuleFormChange}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label htmlFor="is_remote_applicable" className="ml-2 block text-sm text-gray-700">
-                              Allow Remote Attendance
-                            </label>
-                          </div>
-
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="cross_midnight"
-                              name="cross_midnight"
-                              checked={ruleForm.cross_midnight}
-                              onChange={handleRuleFormChange}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label htmlFor="cross_midnight" className="ml-2 block text-sm text-gray-700">
-                              Shift Crosses Midnight
-                            </label>
-                          </div>
-
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="is_active"
-                              name="is_active"
-                              checked={ruleForm.is_active}
-                              onChange={handleRuleFormChange}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
-                              Rule is Active
-                            </label>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Time Rounding (minutes)
-                          </label>
-                          <input
-                            type="number"
-                            name="rounding_minutes"
-                            value={ruleForm.rounding_minutes}
-                            onChange={handleRuleFormChange}
-                            min="0"
-                            max="60"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Notes & Version */}
-                      <div className="md:col-span-2 space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaStickyNote className="inline mr-2" />
-                          Policy Details
-                        </h4>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Relaxation / Special Cases
-                          </label>
-                          <textarea
-                            name="relaxation"
-                            value={ruleForm.relaxation}
-                            onChange={handleRuleFormChange}
-                            rows="2"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            placeholder="e.g., 2 grace days per month, special cases..."
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Policy Notes
-                          </label>
-                          <textarea
-                            name="policy_notes"
-                            value={ruleForm.policy_notes}
-                            onChange={handleRuleFormChange}
-                            rows="3"
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            placeholder="Additional policy details, terms, and conditions..."
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Policy Version
-                            </label>
-                            <input
-                              type="text"
-                              name="policy_version"
-                              value={ruleForm.policy_version}
-                              onChange={handleRuleFormChange}
+                              min="0"
+                              max="120"
                               className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                              placeholder="e.g., 1.0, 2.1"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Half Day After (minutes)
+                            </label>
+                            <input
+                              type="number"
+                              name="half_day_after_minutes"
+                              value={ruleForm.half_day_after_minutes}
+                              onChange={handleRuleFormChange}
+                              min="0"
+                              max="720"
+                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Mark Absent After (minutes)
+                            </label>
+                            <input
+                              type="number"
+                              name="absent_after_minutes"
+                              value={ruleForm.absent_after_minutes}
+                              onChange={handleRuleFormChange}
+                              min="0"
+                              max="1440"
+                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                             />
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Form Actions */}
-                    <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center">
-                      <div className="text-sm text-gray-500">
-                        {existingRule ? (
-                          <div className="flex items-center gap-2">
-                            <FaEdit className="text-blue-500" />
-                            <span>Editing existing rule created on {formatDate(existingRule.created_at)}</span>
+                        {/* Overtime & Penalties */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaMoneyBill className="inline mr-2" />
+                            Overtime & Penalties
+                          </h4>
+                          
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="allow_overtime"
+                              name="allow_overtime"
+                              checked={ruleForm.allow_overtime}
+                              onChange={handleRuleFormChange}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="allow_overtime" className="ml-2 block text-sm text-gray-700">
+                              Allow Overtime
+                            </label>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <FaSave className="text-green-500" />
-                            <span>Creating new attendance rule</span>
+
+                          {ruleForm.allow_overtime && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Overtime Rate (x regular rate)
+                              </label>
+                              <div className="relative">
+                                <FaPercent className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="number"
+                                  name="overtime_rate"
+                                  value={ruleForm.overtime_rate}
+                                  onChange={handleRuleFormChange}
+                                  step="0.1"
+                                  min="1"
+                                  max="3"
+                                  className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Late Penalty Amount
+                              </label>
+                              <div className="relative">
+                                <FaDollarSign className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="number"
+                                  name="late_penalty_amount"
+                                  value={ruleForm.late_penalty_amount}
+                                  onChange={handleRuleFormChange}
+                                  min="0"
+                                  className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Absent Penalty Amount
+                              </label>
+                              <div className="relative">
+                                <FaDollarSign className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="number"
+                                  name="absent_penalty_amount"
+                                  value={ruleForm.absent_penalty_amount}
+                                  onChange={handleRuleFormChange}
+                                  min="0"
+                                  className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Weekly Off Days */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaCalendar className="inline mr-2" />
+                            Weekly Off Days
+                          </h4>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {weekDays.map(day => {
+                              const isSelected = ruleForm.weekly_off_days.split(',').includes(day);
+                              return (
+                                <div key={day} className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id={`day-${day}`}
+                                    value={day}
+                                    checked={isSelected}
+                                    onChange={handleWeeklyOffDaysChange}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  />
+                                  <label htmlFor={`day-${day}`} className="ml-2 block text-sm text-gray-700">
+                                    {day}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Additional Settings */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaHome className="inline mr-2" />
+                            Additional Settings
+                          </h4>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="flexible_hours"
+                                name="flexible_hours"
+                                checked={ruleForm.flexible_hours}
+                                onChange={handleRuleFormChange}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <label htmlFor="flexible_hours" className="ml-2 block text-sm text-gray-700">
+                                Flexible Working Hours
+                              </label>
+                            </div>
+
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="is_remote_applicable"
+                                name="is_remote_applicable"
+                                checked={ruleForm.is_remote_applicable}
+                                onChange={handleRuleFormChange}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <label htmlFor="is_remote_applicable" className="ml-2 block text-sm text-gray-700">
+                                Allow Remote Attendance
+                              </label>
+                            </div>
+
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="cross_midnight"
+                                name="cross_midnight"
+                                checked={ruleForm.cross_midnight}
+                                onChange={handleRuleFormChange}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <label htmlFor="cross_midnight" className="ml-2 block text-sm text-gray-700">
+                                Shift Crosses Midnight
+                              </label>
+                            </div>
+
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="is_active"
+                                name="is_active"
+                                checked={ruleForm.is_active}
+                                onChange={handleRuleFormChange}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+                                Rule is Active
+                              </label>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Time Rounding (minutes)
+                            </label>
+                            <input
+                              type="number"
+                              name="rounding_minutes"
+                              value={ruleForm.rounding_minutes}
+                              onChange={handleRuleFormChange}
+                              min="0"
+                              max="60"
+                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Notes & Version */}
+                        <div className="md:col-span-2 space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaStickyNote className="inline mr-2" />
+                            Policy Details
+                          </h4>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Relaxation / Special Cases
+                            </label>
+                            <textarea
+                              name="relaxation"
+                              value={ruleForm.relaxation}
+                              onChange={handleRuleFormChange}
+                              rows="2"
+                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              placeholder="e.g., 2 grace days per month, special cases..."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Policy Notes
+                            </label>
+                            <textarea
+                              name="policy_notes"
+                              value={ruleForm.policy_notes}
+                              onChange={handleRuleFormChange}
+                              rows="3"
+                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              placeholder="Additional policy details, terms, and conditions..."
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Policy Version
+                              </label>
+                              <input
+                                type="text"
+                                name="policy_version"
+                                value={ruleForm.policy_version}
+                                onChange={handleRuleFormChange}
+                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                placeholder="e.g., 1.0, 2.1"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setShowRulesModal(false)}
-                          className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                          disabled={isSubmitting}
-                        >
-                          Cancel
-                        </button>
+
+                      {/* Form Actions */}
+                      <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                          {existingRule ? (
+                            <div className="flex items-center gap-2">
+                              <FaEdit className="text-blue-500" />
+                              <span>Editing existing rule created on {formatDate(existingRule.created_at)}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <FaSave className="text-green-500" />
+                              <span>Creating new attendance rule</span>
+                            </div>
+                          )}
+                        </div>
                         
-                        {existingRule && (
+                        <div className="flex gap-3">
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm("Are you sure you want to delete this attendance rule?")) {
-                                console.log("Delete rule");
-                                alert("Delete rule functionality would be implemented here");
-                              }
-                            }}
-                            className="px-5 py-2.5 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors shadow-sm flex items-center gap-2"
+                            onClick={() => setShowRulesModal(false)}
+                            className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                             disabled={isSubmitting}
                           >
-                            <FaTrash /> Delete
+                            Cancel
                           </button>
-                        )}
-                        
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <FaSpinner className="animate-spin" />
-                              {existingRule ? "Updating..." : "Creating..."}
-                            </>
-                          ) : (
-                            <>
-                              <FaSave />
-                              {existingRule ? "Update Rule" : "Create Rule"}
-                            </>
+                          
+                          {existingRule && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this attendance rule?")) {
+                                  console.log("Delete rule");
+                                  alert("Delete rule functionality would be implemented here");
+                                }
+                              }}
+                              className="px-5 py-2.5 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors shadow-sm flex items-center gap-2"
+                              disabled={isSubmitting}
+                            >
+                              <FaTrash /> Delete
+                            </button>
                           )}
-                        </button>
+                          
+                          <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <FaSpinner className="animate-spin" />
+                                {existingRule ? "Updating..." : "Creating..."}
+                              </>
+                            ) : (
+                              <>
+                                <FaSave />
+                                {existingRule ? "Update Rule" : "Create Rule"}
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </form>
-                )}
+                    </form>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
       )}
 
       {/* Styles */}

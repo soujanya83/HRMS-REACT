@@ -44,6 +44,7 @@ import ShiftScheduling from "./pages/Rostering/ShiftScheduling";
 import ShiftSwapping from "./pages/Rostering/ShiftSwapping";
 import RostersPage from "./pages/Rostering/RostersPage";
 import NotificationsPage from "./pages/Rostering/NotificationsPage";
+import RosterPeriods from "./pages/Rostering/RosterPeriods";
 
 // --- Import Payroll Pages ---
 import SalaryStructureSetup from "./pages/Payroll/SalaryStructureSetup";
@@ -174,6 +175,8 @@ function App() {
             { path: "swapping", element: <ShiftSwapping /> },
             { path: "rosters", element: <RostersPage /> },
             { path: "notifications", element: <NotificationsPage /> },
+            { path: "notifications", element: <NotificationsPage /> },
+             { path: "periods", element: <RosterPeriods /> },
             { index: true, element: <Navigate to="scheduling" replace /> }
           ]
         },

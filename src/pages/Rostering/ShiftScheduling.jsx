@@ -50,8 +50,8 @@ const ShiftScheduling = () => {
     { name: 'Morning Shift', color: '#4CAF50', start_time: '09:00', end_time: '17:00' }, // Green
     { name: 'Mid Shift', color: '#2196F3', start_time: '12:00', end_time: '20:00' }, // Blue
     { name: 'Late Shift', color: '#FF9800', start_time: '15:00', end_time: '23:00' }, // Orange
-    { name: 'Night Shift', color: '#9C27B0', start_time: '21:00', end_time: '05:00' }, // Purple
-    { name: 'Weekend Shift', color: '#F44336', start_time: '10:00', end_time: '18:00' }, // Red
+    // { name: 'Night Shift', color: '#9C27B0', start_time: '21:00', end_time: '05:00' }, // Purple
+    // { name: 'Weekend Shift', color: '#F44336', start_time: '10:00', end_time: '18:00' }, // Red
   ];
 
   // Color options
@@ -369,7 +369,7 @@ const ShiftScheduling = () => {
                 {selectedOrganization?.name ? `Managing shifts for ${selectedOrganization.name}` : 'Create and manage shift schedules'}
               </p>
             </div>
-            {organizations.length > 1 && (
+            {/* {organizations.length > 1 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Organization:</span>
                 <select
@@ -387,7 +387,7 @@ const ShiftScheduling = () => {
                   ))}
                 </select>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 

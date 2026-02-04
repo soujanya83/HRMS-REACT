@@ -551,14 +551,14 @@ const ShiftSwapping = () => {
                 Manage and approve employee shift swap requests
               </p>
             </div>
-            {selectedOrganization && (
+            {/* {selectedOrganization && (
               <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border shadow-sm">
                 Organization:{" "}
                 <span className="font-semibold">
                   {selectedOrganization.name}
                 </span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
