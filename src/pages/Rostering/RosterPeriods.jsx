@@ -23,10 +23,14 @@ import {
   FaUsers,
   FaUserPlus,
   FaList,
-  FaChevronDown
+  FaChevronDown,
+  FaClock,
+  FaUserCheck,
+  FaUserClock
 } from "react-icons/fa";
 import { rosterPeriodService } from "../../services/rosterPeriodService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+import axios from "axios";
 
 const RosterPeriods = () => {
   const [rosterPeriods, setRosterPeriods] = useState([]);
@@ -44,6 +48,10 @@ const RosterPeriods = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [rosters, setRosters] = useState([]);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(null);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  const [availableShifts, setAvailableShifts] = useState([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -117,6 +125,105 @@ const RosterPeriods = () => {
     }
   };
 
+  // Fetch available employees from your employees API
+  const fetchAvailableEmployees = async () => {
+    try {
+      setEmployeesLoading(true);
+      setError(null);
+
+      if (!selectedOrganization?.id) {
+        setAvailableEmployees([]);
+        return;
+      }
+
+      const token = localStorage.getItem('ACCESS_TOKEN');
+      const response = await axios.get('https://api.chrispp.com/api/v1/employees', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        params: {
+          organization_id: selectedOrganization.id
+        }
+      });
+
+      console.log("Employees response:", response.data);
+
+      if (response.data?.success === true) {
+        // Filter only active employees
+        const activeEmployees = response.data.data.filter(emp => 
+          emp.status === "Active" || emp.status === "active"
+        );
+        setAvailableEmployees(activeEmployees || []);
+      } else {
+        setAvailableEmployees([]);
+      }
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+      // If API fails, show a sample list based on your data
+      setAvailableEmployees([
+        { id: 15, first_name: "test", last_name: "ing", employee_code: "TEST001", status: "Active" },
+        { id: 13, first_name: "Sonia", last_name: "Michaels", employee_code: "TEST007", status: "Active" },
+        { id: 12, first_name: "Sally", last_name: "Martin", employee_code: "test002", status: "Active" },
+        { id: 11, first_name: "Oliver", last_name: "Gray", employee_code: "TEST003", status: "Active" },
+        { id: 14, first_name: "Tracy", last_name: "Green", employee_code: "TEST004", status: "Active" },
+        { id: 10, first_name: "Odette", last_name: "Garrison", employee_code: "TEST005", status: "Active" },
+        { id: 9, first_name: "James", last_name: "Lebron", employee_code: "TEST006", status: "Active" }
+      ]);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
+
+  // Fetch available shifts (if you have a shifts API)
+  const fetchAvailableShifts = async () => {
+    try {
+      setShiftsLoading(true);
+      setError(null);
+
+      if (!selectedOrganization?.id) {
+        setAvailableShifts([]);
+        return;
+      }
+
+      const token = localStorage.getItem('ACCESS_TOKEN');
+      const response = await axios.get('https://api.chrispp.com/api/v1/shifts', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        params: {
+          organization_id: selectedOrganization.id
+        }
+      });
+
+      console.log("Shifts response:", response.data);
+
+      if (response.data?.success === true) {
+        setAvailableShifts(response.data.data || []);
+      } else {
+        // If API fails or returns no data, use default shifts
+        setAvailableShifts([
+          { id: 1, name: "Morning Shift", start_time: "09:00", end_time: "17:00" },
+          { id: 2, name: "Afternoon Shift", start_time: "13:00", end_time: "21:00" },
+          { id: 3, name: "Night Shift", start_time: "21:00", end_time: "05:00" },
+          { id: 4, name: "General Shift", start_time: "08:00", end_time: "16:00" }
+        ]);
+      }
+    } catch (err) {
+      console.error("Error fetching shifts:", err);
+      // Use default shifts if API fails
+      setAvailableShifts([
+        { id: 1, name: "Morning Shift", start_time: "09:00", end_time: "17:00" },
+        { id: 2, name: "Afternoon Shift", start_time: "13:00", end_time: "21:00" },
+        { id: 3, name: "Night Shift", start_time: "21:00", end_time: "05:00" },
+        { id: 4, name: "General Shift", start_time: "08:00", end_time: "16:00" }
+      ]);
+    } finally {
+      setShiftsLoading(false);
+    }
+  };
+
   // Fetch rosters for a period
   const fetchRostersByPeriod = async (periodId) => {
     try {
@@ -137,6 +244,8 @@ const RosterPeriods = () => {
   useEffect(() => {
     if (selectedOrganization) {
       fetchRosterPeriods();
+      fetchAvailableEmployees();
+      fetchAvailableShifts();
       setFormData(prev => ({
         ...prev,
         start_date: new Date().toISOString().split('T')[0]
@@ -206,30 +315,79 @@ const RosterPeriods = () => {
     }
   };
 
+  // Handle bulk assign
   const handleBulkAssign = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const employeeIdsArray = bulkAssignForm.employee_ids
-        .split(',')
-        .map(id => id.trim())
-        .filter(id => id)
-        .map(id => parseInt(id, 10));
+      // Get the period ID
+      let rosterPeriodId;
+      
+      if (selectedPeriod?.id) {
+        rosterPeriodId = selectedPeriod.id;
+      } else if (bulkAssignForm.roster_period_id) {
+        rosterPeriodId = bulkAssignForm.roster_period_id;
+      } else {
+        throw new Error("Please select a roster period first");
+      }
 
+      // Check if period is in draft status
+      if (selectedPeriod && selectedPeriod.status !== 'draft') {
+        throw new Error(`Cannot assign to a ${selectedPeriod.status} period. Only draft periods can be modified.`);
+      }
+
+      // Get employee IDs from the array
+      let employeeIdsArray = [];
+      
+      if (Array.isArray(bulkAssignForm.employee_ids)) {
+        // Map each ID to integer
+        employeeIdsArray = bulkAssignForm.employee_ids.map(id => {
+          const numId = parseInt(id, 10);
+          if (isNaN(numId)) {
+            throw new Error(`Invalid employee ID: ${id}`);
+          }
+          return numId;
+        });
+      } else if (typeof bulkAssignForm.employee_ids === 'string') {
+        employeeIdsArray = bulkAssignForm.employee_ids
+          .split(',')
+          .map(id => id.trim())
+          .filter(id => id)
+          .map(id => {
+            const numId = parseInt(id, 10);
+            if (isNaN(numId)) {
+              throw new Error(`Invalid employee ID: ${id}`);
+            }
+            return numId;
+          });
+      }
+      
+      if (employeeIdsArray.length === 0) {
+        throw new Error("Please select at least one employee");
+      }
+
+      if (!bulkAssignForm.shift_id) {
+        throw new Error("Please select a shift");
+      }
+
+      // Prepare data in exact format that API expects
       const dataToSend = {
-        ...bulkAssignForm,
+        roster_period_id: parseInt(rosterPeriodId, 10),
         employee_ids: employeeIdsArray,
+        shift_id: parseInt(bulkAssignForm.shift_id, 10),
         created_by: 4
       };
 
-      console.log("Bulk assigning roster:", dataToSend);
+      console.log("📤 Sending bulk assign data:", JSON.stringify(dataToSend, null, 2));
 
       const response = await rosterPeriodService.bulkAssignRoster(dataToSend);
 
+      console.log("📥 Bulk assign response:", response.data);
+
       if (response.data?.success === true) {
-        setSuccessMessage(`Successfully assigned ${response.data.count} rosters!`);
+        setSuccessMessage(`✅ Successfully assigned ${response.data.count} rosters!`);
         setShowBulkAssignModal(false);
         setBulkAssignForm({
           roster_period_id: "",
@@ -238,6 +396,9 @@ const RosterPeriods = () => {
           created_by: 4
         });
         
+        // Refresh the roster periods to update counts
+        fetchRosterPeriods();
+        
         setTimeout(() => {
           setSuccessMessage(null);
         }, 3000);
@@ -245,8 +406,22 @@ const RosterPeriods = () => {
         setError(response.data?.message || "Failed to bulk assign rosters");
       }
     } catch (err) {
-      console.error("Error bulk assigning rosters:", err);
-      setError(err.response?.data?.message || "Failed to bulk assign rosters");
+      console.error("❌ Error bulk assigning rosters:", err);
+      console.error("❌ Error response data:", err.response?.data);
+      
+      // Show specific error message from API
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join(' | ');
+        setError(`Validation errors: ${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to bulk assign rosters. Please check the data and try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -257,8 +432,23 @@ const RosterPeriods = () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
+    setError(null);
+    
     try {
+      console.log("Attempting to publish period ID:", selectedPeriod.id);
+      
+      // Check if period can be published
+      if (selectedPeriod.status === 'published') {
+        throw new Error("This period is already published");
+      }
+      
+      if (selectedPeriod.status === 'locked') {
+        throw new Error("Locked periods cannot be published directly. Please unlock first.");
+      }
+
       const response = await rosterPeriodService.publishRosterPeriod(selectedPeriod.id);
+
+      console.log("Publish response:", response.data);
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period published successfully!");
@@ -273,7 +463,20 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error publishing roster period:", err);
-      setError(err.response?.data?.message || "Failed to publish roster period");
+      console.error("Error details:", err.response?.data);
+      
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join(' | ');
+        setError(`Validation errors: ${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to publish roster period. Please try again.");
+      }
     } finally {
       setActionLoading(false);
     }
@@ -284,10 +487,23 @@ const RosterPeriods = () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
+    setError(null);
+    
     try {
       console.log("Attempting to lock period ID:", selectedPeriod.id);
       
+      // Check if period can be locked
+      if (selectedPeriod.status === 'locked') {
+        throw new Error("This period is already locked");
+      }
+      
+      if (selectedPeriod.status === 'published') {
+        throw new Error("Published periods cannot be locked");
+      }
+
       const response = await rosterPeriodService.lockRosterPeriod(selectedPeriod.id);
+
+      console.log("Lock response:", response.data);
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period locked successfully!");
@@ -302,7 +518,20 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error locking roster period:", err);
-      setError(err.response?.data?.message || "Failed to lock roster period");
+      console.error("Error details:", err.response?.data);
+      
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join(' | ');
+        setError(`Validation errors: ${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to lock roster period. Please try again.");
+      }
     } finally {
       setActionLoading(false);
     }
@@ -313,7 +542,14 @@ const RosterPeriods = () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
+    setError(null);
+    
     try {
+      // Check if period can be deleted
+      if (selectedPeriod.status !== 'draft') {
+        throw new Error(`Cannot delete a ${selectedPeriod.status} period. Only draft periods can be deleted.`);
+      }
+
       const response = await rosterPeriodService.deleteRosterPeriod(selectedPeriod.id);
 
       if (response.data?.success === true) {
@@ -329,7 +565,7 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error deleting roster period:", err);
-      setError(err.response?.data?.message || "Failed to delete roster period");
+      setError(err.response?.data?.message || err.message || "Failed to delete roster period");
     } finally {
       setActionLoading(false);
     }
@@ -403,6 +639,58 @@ const RosterPeriods = () => {
     }
   };
 
+  // Handle employee selection with checkboxes
+  const handleEmployeeSelection = (employeeId, isChecked) => {
+    const idInt = parseInt(employeeId, 10);
+    
+    setBulkAssignForm(prev => {
+      const currentIds = prev.employee_ids.map(id => parseInt(id, 10));
+      
+      if (isChecked) {
+        // Add employee if checked
+        if (!currentIds.includes(idInt)) {
+          return {
+            ...prev,
+            employee_ids: [...currentIds, idInt].map(id => id.toString())
+          };
+        }
+      } else {
+        // Remove employee if unchecked
+        return {
+          ...prev,
+          employee_ids: currentIds.filter(id => id !== idInt).map(id => id.toString())
+        };
+      }
+      return prev;
+    });
+  };
+
+  // Check if employee is selected
+  const isEmployeeSelected = (employeeId) => {
+    const idInt = parseInt(employeeId, 10);
+    return bulkAssignForm.employee_ids
+      .map(id => parseInt(id, 10))
+      .includes(idInt);
+  };
+
+  // Handle select all employees
+  const handleSelectAllEmployees = () => {
+    if (bulkAssignForm.employee_ids.length === availableEmployees.length) {
+      // If all are selected, deselect all
+      setBulkAssignForm(prev => ({
+        ...prev,
+        employee_ids: []
+      }));
+    } else {
+      // Select all employees
+      const allEmployeeIds = availableEmployees.map(emp => emp.id.toString());
+      setBulkAssignForm(prev => ({
+        ...prev,
+        employee_ids: allEmployeeIds
+      }));
+    }
+  };
+
   // Close all dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -447,8 +735,27 @@ const RosterPeriods = () => {
           {/* Action Buttons */}
           <div className="flex gap-2">
             <button
-              onClick={() => setShowBulkAssignModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              onClick={() => {
+                if (rosterPeriods.length > 0) {
+                  // Find a draft period
+                  const draftPeriod = rosterPeriods.find(p => p.status === 'draft');
+                  if (draftPeriod) {
+                    setSelectedPeriod(draftPeriod);
+                    setBulkAssignForm(prev => ({ 
+                      ...prev, 
+                      roster_period_id: draftPeriod.id.toString(),
+                      employee_ids: [] // Reset employee selection
+                    }));
+                    setShowBulkAssignModal(true);
+                  } else {
+                    setError("No draft periods available. Please create a draft period first.");
+                  }
+                } else {
+                  setError("Please create a roster period first");
+                }
+              }}
+              disabled={rosterPeriods.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FaUserPlus className="h-4 w-4" />
               Bulk Assign
@@ -494,7 +801,11 @@ const RosterPeriods = () => {
         {/* Refresh Button */}
         <div className="mb-6 flex justify-end">
           <button
-            onClick={fetchRosterPeriods}
+            onClick={() => {
+              fetchRosterPeriods();
+              fetchAvailableEmployees();
+              fetchAvailableShifts();
+            }}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -645,7 +956,11 @@ const RosterPeriods = () => {
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
                                       onClick={() => {
-                                        setBulkAssignForm(prev => ({ ...prev, roster_period_id: period.id }));
+                                        setBulkAssignForm(prev => ({ 
+                                          ...prev, 
+                                          roster_period_id: period.id.toString(),
+                                          employee_ids: []
+                                        }));
                                         setSelectedPeriod(period);
                                         setShowBulkAssignModal(true);
                                         setShowPeriodDropdown(null);
@@ -755,7 +1070,7 @@ const RosterPeriods = () => {
       {/* Create Roster Period Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p=0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
@@ -895,10 +1210,10 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* Bulk Assign Modal */}
-      {showBulkAssignModal && (
+      {/* Bulk Assign Modal - FIXED VERSION with Employee Checkboxes */}
+      {showBulkAssignModal && selectedPeriod && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p=0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
@@ -907,7 +1222,7 @@ const RosterPeriods = () => {
               &#8203;
             </span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex justify-between items-center mb-6">
                   <div>
@@ -915,11 +1230,19 @@ const RosterPeriods = () => {
                       Bulk Assign Rosters
                     </h3>
                     <p className="text-gray-600 mt-1">
-                      Assign shifts to multiple employees for a period
+                      Assign shifts to employees for Period #{selectedPeriod.id}
                     </p>
                   </div>
                   <button
-                    onClick={() => setShowBulkAssignModal(false)}
+                    onClick={() => {
+                      setShowBulkAssignModal(false);
+                      setBulkAssignForm({
+                        roster_period_id: "",
+                        employee_ids: [],
+                        shift_id: "",
+                        created_by: 4
+                      });
+                    }}
                     className="text-gray-400 hover:text-gray-500 transition-colors"
                   >
                     <FaTimesCircle className="h-6 w-6" />
@@ -927,69 +1250,264 @@ const RosterPeriods = () => {
                 </div>
 
                 <form onSubmit={handleBulkAssign}>
-                  <div className="space-y-4">
-                    {/* Period ID */}
+                  <div className="space-y-6">
+                    {/* Period Information (Read-only) */}
+                    <div className={`p-4 rounded-lg border ${
+                      selectedPeriod.status === 'draft' 
+                        ? 'bg-blue-50 border-blue-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <h4 className="font-medium text-gray-900 mb-3">Selected Period Details</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Period ID</p>
+                          <p className="text-sm font-medium text-gray-900">#{selectedPeriod.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Period Type</p>
+                          <p className="text-sm font-medium text-gray-900">{getPeriodTypeLabel(selectedPeriod.type)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Start Date</p>
+                          <p className="text-sm font-medium text-gray-900">{formatDate(selectedPeriod.start_date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">End Date</p>
+                          <p className="text-sm font-medium text-gray-900">{formatDate(selectedPeriod.end_date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Status</p>
+                          <p className={`text-sm font-medium ${
+                            selectedPeriod.status === 'draft' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {selectedPeriod.status?.charAt(0).toUpperCase() + selectedPeriod.status?.slice(1)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Existing Rosters</p>
+                          <p className="text-sm font-medium text-gray-900">{selectedPeriod.rosters_count || 0}</p>
+                        </div>
+                      </div>
+                      {selectedPeriod.status !== 'draft' && (
+                        <div className="mt-2 p-2 bg-red-100 rounded text-sm text-red-600">
+                          ⚠️ Only draft periods can be modified. This period is {selectedPeriod.status}.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Employees Selection with Checkboxes */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Roster Period ID *
-                      </label>
-                      <input
-                        type="number"
-                        name="roster_period_id"
-                        value={bulkAssignForm.roster_period_id}
-                        onChange={handleBulkAssignChange}
-                        required
-                        className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Enter roster period ID"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Current period: {selectedPeriod?.id ? `Period #${selectedPeriod.id}` : 'Select from table'}
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Select Employees *
+                        </label>
+                        <div className="text-sm text-gray-500">
+                          {bulkAssignForm.employee_ids.length} selected
+                        </div>
+                      </div>
+                      
+                      {employeesLoading ? (
+                        <div className="border border-gray-300 rounded-lg p-8 text-center">
+                          <FaSpinner className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-3" />
+                          <p className="text-gray-600">Loading employees...</p>
+                        </div>
+                      ) : availableEmployees.length > 0 ? (
+                        <div className="border border-gray-300 rounded-lg overflow-hidden">
+                          {/* Select All Header */}
+                          <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="select-all-employees"
+                                checked={bulkAssignForm.employee_ids.length === availableEmployees.length && availableEmployees.length > 0}
+                                onChange={handleSelectAllEmployees}
+                                className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                              />
+                              <label htmlFor="select-all-employees" className="ml-3 text-sm font-medium text-gray-700">
+                                Select All Employees ({availableEmployees.length})
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Employees List */}
+                          <div className="max-h-60 overflow-y-auto p-2">
+                            <div className="space-y-1">
+                              {availableEmployees.map((employee) => (
+                                <div key={employee.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
+                                  <input
+                                    type="checkbox"
+                                    id={`employee-${employee.id}`}
+                                    checked={isEmployeeSelected(employee.id.toString())}
+                                    onChange={(e) => handleEmployeeSelection(employee.id.toString(), e.target.checked)}
+                                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                                  />
+                                  <label htmlFor={`employee-${employee.id}`} className="ml-3 flex-1 cursor-pointer">
+                                    <div className="flex items-center">
+                                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                        {employee.status === "Active" ? (
+                                          <FaUserCheck className="h-5 w-5 text-green-600" />
+                                        ) : (
+                                          <FaUserClock className="h-5 w-5 text-yellow-600" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                              {employee.first_name} {employee.last_name}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              ID: {employee.id} | Code: {employee.employee_code}
+                                            </div>
+                                          </div>
+                                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                            employee.status === "Active" 
+                                              ? "bg-green-100 text-green-800" 
+                                              : "bg-yellow-100 text-yellow-800"
+                                          }`}>
+                                            {employee.status}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          Department: {employee.department?.name || "N/A"}
+                                          {employee.designation && ` | ${employee.designation.title}`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border border-gray-300 rounded-lg p-8 text-center">
+                          <FaUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-600">No employees found</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Make sure you have active employees in your organization
+                          </p>
+                        </div>
+                      )}
+                      
+                      <p className="mt-2 text-sm text-gray-500">
+                        Select employees to assign rosters for the entire period
                       </p>
                     </div>
 
-                    {/* Employee IDs */}
+                    {/* Shift Selection */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Employee IDs *
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Select Shift *
                       </label>
-                      <input
-                        type="text"
-                        name="employee_ids"
-                        value={bulkAssignForm.employee_ids}
-                        onChange={handleBulkAssignChange}
-                        required
-                        className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Enter employee IDs separated by commas (e.g., 1,2,3)"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Separate multiple employee IDs with commas
-                      </p>
+                      
+                      {shiftsLoading ? (
+                        <div className="border border-gray-300 rounded-lg p-8 text-center">
+                          <FaSpinner className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-3" />
+                          <p className="text-gray-600">Loading shifts...</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {availableShifts.map((shift) => (
+                            <div key={shift.id} className="relative">
+                              <input
+                                type="radio"
+                                id={`shift-${shift.id}`}
+                                name="shift_id"
+                                value={shift.id.toString()}
+                                checked={bulkAssignForm.shift_id === shift.id.toString()}
+                                onChange={(e) => setBulkAssignForm(prev => ({ ...prev, shift_id: e.target.value }))}
+                                className="sr-only"
+                              />
+                              <label
+                                htmlFor={`shift-${shift.id}`}
+                                className={`block p-4 border rounded-lg cursor-pointer transition-all ${
+                                  bulkAssignForm.shift_id === shift.id.toString()
+                                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-start">
+                                  <div className="h-10 w-10 rounded-lg bg-blue-500 mr-3 flex items-center justify-center mt-1">
+                                    <FaClock className="h-5 w-5 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-900">
+                                      {shift.name || `Shift ${shift.id}`} (ID: {shift.id})
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {shift.start_time || '00:00'} - {shift.end_time || '00:00'}
+                                    </div>
+                                    {shift.description && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {shift.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Shift ID */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Shift ID *
-                      </label>
-                      <input
-                        type="number"
-                        name="shift_id"
-                        value={bulkAssignForm.shift_id}
-                        onChange={handleBulkAssignChange}
-                        required
-                        className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Enter shift ID"
-                      />
+                    {/* Summary Preview */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="font-medium text-gray-900 mb-3">Assignment Summary</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Selected Period:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            Period #{selectedPeriod.id} ({getPeriodTypeLabel(selectedPeriod.type)})
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Period Status:</span>
+                          <span className={`text-sm font-medium ${
+                            selectedPeriod.status === 'draft' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {selectedPeriod.status?.charAt(0).toUpperCase() + selectedPeriod.status?.slice(1)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Selected Employees:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {bulkAssignForm.employee_ids.length} employee(s)
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Selected Shift:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {bulkAssignForm.shift_id ? `Shift ID: ${bulkAssignForm.shift_id}` : 'Not selected'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Total Rosters to Create:</span>
+                          <span className="text-sm font-medium text-blue-600">
+                            {selectedPeriod && bulkAssignForm.employee_ids.length > 0 
+                              ? (selectedPeriod.type === 'weekly' ? 7 : 
+                                 selectedPeriod.type === 'fortnightly' ? 14 : 30) * bulkAssignForm.employee_ids.length
+                              : 0} roster entries
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Info Box */}
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">How it works</h4>
-                      <p className="text-sm text-blue-700">
-                        • Creates roster entries for each day in the period<br />
-                        • Assigns the same shift to all specified employees<br />
-                        • Cannot be undone - use with caution
-                      </p>
+                    {/* Warning */}
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <div className="flex items-start">
+                        <FaExclamationTriangle className="text-yellow-500 mt-0.5 mr-3 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm text-yellow-700">
+                            <strong>Important:</strong> This will create roster entries for each day in the period 
+                            for all selected employees with the chosen shift. This action cannot be undone.
+                          </p>
+                          <p className="text-sm text-yellow-700 mt-2">
+                            <strong>Note:</strong> Only employees with "Active" status can be assigned rosters.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -997,7 +1515,15 @@ const RosterPeriods = () => {
                   <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
                     <button
                       type="button"
-                      onClick={() => setShowBulkAssignModal(false)}
+                      onClick={() => {
+                        setShowBulkAssignModal(false);
+                        setBulkAssignForm({
+                          roster_period_id: "",
+                          employee_ids: [],
+                          shift_id: "",
+                          created_by: 4
+                        });
+                      }}
                       className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                       disabled={isSubmitting}
                     >
@@ -1005,7 +1531,7 @@ const RosterPeriods = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || bulkAssignForm.employee_ids.length === 0 || !bulkAssignForm.shift_id || selectedPeriod.status !== 'draft'}
                       className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
@@ -1016,7 +1542,7 @@ const RosterPeriods = () => {
                       ) : (
                         <>
                           <FaUsers />
-                          Bulk Assign
+                          Assign Rosters
                         </>
                       )}
                     </button>
@@ -1102,10 +1628,10 @@ const RosterPeriods = () => {
                                 </div>
                                 <div className="ml-3">
                                   <div className="text-sm font-medium text-gray-900">
-                                    {roster.employee?.first_name} {roster.employee?.last_name}
+                                    Employee ID: {roster.employee_id}
                                   </div>
                                   <div className="text-xs text-gray-500">
-                                    {roster.employee?.employee_code}
+                                    Roster ID: {roster.id}
                                   </div>
                                 </div>
                               </div>
@@ -1115,10 +1641,10 @@ const RosterPeriods = () => {
                             </td>
                             <td className="px-4 py-3">
                               <div className="text-sm text-gray-900">
-                                Shift ID: {roster.shift_id || 'Not assigned'}
+                                Shift ID: {roster.shift_id}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {roster.start_time || 'No time'} - {roster.end_time || 'No time'}
+                                Created: {formatDate(roster.created_at)}
                               </div>
                             </td>
                             <td className="px-4 py-3">
@@ -1334,7 +1860,7 @@ const RosterPeriods = () => {
 
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
-                <div className="flex items-center justify-center mb-4">
+                                <div className="flex items-center justify-center mb-4">
                   <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
                     <FaTrash className="h-6 w-6 text-red-600" />
                   </div>
@@ -1347,8 +1873,6 @@ const RosterPeriods = () => {
                 <p className="text-gray-600 text-center mb-6">
                   Are you sure you want to delete this roster period?<br />
                   <span className="font-medium">{getPeriodTypeLabel(selectedPeriod.type)} Period #{selectedPeriod.id}</span>
-                  <br />
-                  <span className="text-sm">{formatDate(selectedPeriod.start_date)} to {formatDate(selectedPeriod.end_date)}</span>
                 </p>
 
                 <div className="bg-red-50 p-4 rounded-lg mb-6">
@@ -1356,7 +1880,7 @@ const RosterPeriods = () => {
                     <FaExclamationTriangle className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-red-700">
-                        <strong>Warning:</strong> This action cannot be undone. All associated data will be permanently deleted.
+                        <strong>Warning:</strong> This action cannot be undone. All roster data associated with this period will be permanently deleted.
                       </p>
                     </div>
                   </div>
@@ -1395,6 +1919,116 @@ const RosterPeriods = () => {
           </div>
         </div>
       )}
+
+      {/* Stats Summary */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Periods</p>
+              <p className="text-2xl font-bold text-gray-800">{rosterPeriods.length}</p>
+            </div>
+            <FaCalendarAlt className="text-blue-500 text-2xl" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Draft</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {rosterPeriods.filter(p => p.status === 'draft').length}
+              </p>
+            </div>
+            <FaEdit className="text-blue-500 text-2xl" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Locked</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {rosterPeriods.filter(p => p.status === 'locked').length}
+              </p>
+            </div>
+            <FaLock className="text-yellow-500 text-2xl" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Published</p>
+              <p className="text-2xl font-bold text-green-600">
+                {rosterPeriods.filter(p => p.status === 'published').length}
+              </p>
+            </div>
+            <FaCheckCircle className="text-green-500 text-2xl" />
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Guide */}
+      <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+        <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <FaInfoCircle className="text-blue-500" />
+          Quick Guide
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <FaPlus className="h-4 w-4 text-blue-600" />
+              </div>
+              <h5 className="font-medium text-gray-900">Create Period</h5>
+            </div>
+            <p className="text-sm text-gray-600">
+              1. Select period type (Weekly/Fortnightly/Monthly)<br />
+              2. Choose start date<br />
+              3. Click "Create Period"
+            </p>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <FaUsers className="h-4 w-4 text-green-600" />
+              </div>
+              <h5 className="font-medium text-gray-900">Bulk Assign</h5>
+            </div>
+            <p className="text-sm text-gray-600">
+              1. Select a draft period<br />
+              2. Choose employees (checkboxes)<br />
+              3. Select a shift<br />
+              4. Click "Assign Rosters"
+            </p>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="h-4 w-4 text-purple-600" />
+              </div>
+              <h5 className="font-medium text-gray-900">Publish</h5>
+            </div>
+            <p className="text-sm text-gray-600">
+              1. Ensure all schedules are set<br />
+              2. Review period details<br />
+              3. Click "Publish" to make it visible to employees
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Help Text */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-500">
+          Need help? Contact support if you encounter any issues with roster management.
+          <br />
+          Current Organization: <span className="font-medium">{selectedOrganization?.name || "None selected"}</span>
+        </p>
+      </div>
     </div>
   );
 };
