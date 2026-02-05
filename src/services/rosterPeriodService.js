@@ -35,5 +35,15 @@ export const rosterPeriodService = {
   // Get roster period statistics
   getPeriodStats: (periodId) => {
     return axiosClient.get(`/periods/${periodId}/stats`);
+  },
+
+  // Bulk assign roster to employees
+  bulkAssignRoster: (data) => {
+    return axiosClient.post('/rosters/bulk-assign', data);
+  },
+
+  // Get rosters by period ID
+  getRostersByPeriod: (periodId) => {
+    return axiosClient.get(`/rosters/period/${periodId}`);
   }
 };
