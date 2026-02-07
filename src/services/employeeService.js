@@ -104,8 +104,14 @@ export const getEmployeeDocuments = (employeeId) => {
 };
 
 // Upload new employee document
+// FIXED VERSION in employeeService.js
 export const uploadEmployeeDocument = (employeeId, documentData) => {
-  return axiosClient.post(`/employees/${employeeId}/documents`, documentData, {
+  // Ensure employeeId is a string/number, not FormData
+  const id = typeof employeeId === 'object' ? 
+    (employeeId.get ? employeeId.get('employee_id') : null) : 
+    employeeId;
+  
+  return axiosClient.post(`/employees/${id}/documents`, documentData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

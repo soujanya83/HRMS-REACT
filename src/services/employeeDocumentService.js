@@ -13,8 +13,9 @@ export const getEmployeeDocument = (documentId) => {
 };
 
 // Create new employee document - RENAMED to avoid conflict
-export const createEmployeeDocument = (documentData) => {
-  return axiosClient.post("/employee-documents", documentData, {
+export const createEmployeeDocument = (formData) => {
+  // FormData should already contain employee_id
+  return axiosClient.post("/employee-documents", formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

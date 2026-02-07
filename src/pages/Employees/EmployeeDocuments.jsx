@@ -472,34 +472,51 @@ const EmployeeDocuments = ({ employeeId, employeeName }) => {
   };
 
   const handleUploadSubmit = async (formData, isEdit = false) => {
-    try {
-      console.log('Submitting document with FormData:');
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}:`, pair[1]);
-      }
+  try {
+    console.log('Submitting document with FormData:');
+    
+    // Always append employee_id to FormData
+    formData.append('employee_id', employeeId);
 
-      // Always append employee_id
-      formData.append('employee_id', employeeId);
-
-      if (isEdit && editingDocument) {
-        await updateEmployeeDocument(editingDocument.id, formData);
-      } else {
-        await createEmployeeDocument(formData);
-      }
-      
-      // Refresh documents
-      setRefreshTrigger(prev => prev + 1);
-      setShowUploadModal(false);
-      setEditingDocument(null);
-      setUploadError(null);
-      
-    } catch (error) {
-      console.error('Error in document operation:', error);
-      setUploadError(error.response?.data?.message || error.message || 'Upload failed');
-      // Re-throw to be handled by modal
-      throw error;
+    // Log FormData contents
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
     }
-  };
+
+    // IMPORTANT: Use the correct service function
+    if (isEdit && editingDocument) {
+      await updateEmployeeDocument(editingDocument.id, formData);
+    } else {
+      // This should call: POST /employee-documents
+      await createEmployeeDocument(formData);
+    }
+    
+    // Refresh documents
+    setRefreshTrigger(prev => prev + 1);
+    setShowUploadModal(false);
+    setEditingDocument(null);
+    setUploadError(null);
+    
+    toast.success(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
+    
+  } catch (error) {
+    console.error('Error in document operation:', error);
+    
+    // Better error handling
+    if (error.response?.data?.message) {
+      setUploadError(error.response.data.message);
+    } else if (error.response?.data?.errors) {
+      // Handle Laravel validation errors
+      const errorMessages = Object.values(error.response.data.errors).flat();
+      setUploadError(errorMessages.join(', '));
+    } else {
+      setUploadError(error.message || 'Upload failed');
+    }
+    
+    // Re-throw to be handled by modal
+    throw error;
+  }
+};
 
   const handleEdit = (document) => {
     setEditingDocument(document);

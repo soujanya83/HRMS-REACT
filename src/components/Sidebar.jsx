@@ -141,14 +141,14 @@ const navLinks = [
       icon: HiOutlineSwitchHorizontal,
     },
    
-    {
-      name: "Notifications",
-      path: "/dashboard/rostering/notifications",
-      icon: HiOutlineBell,
-    },
+    // {
+    //   name: "Notifications",
+    //   path: "/dashboard/rostering/notifications",
+    //   icon: HiOutlineBell,
+    // },
   ],
 },
-  {
+  { 
     name: "Attendance",
     icon: HiOutlineClipboardList,
     children: [

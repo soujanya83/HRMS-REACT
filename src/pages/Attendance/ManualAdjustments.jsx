@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../../axiosClient';
 import { 
   FaSearch, 
@@ -13,21 +13,35 @@ import {
   FaSpinner,
   FaUsers,
   FaBuilding,
-  FaRedoAlt
+  FaRedoAlt,
+  FaEdit,
+  FaTrash,
+  FaEye,
+  FaCalendarAlt,
+  FaUserCheck,
+  FaUserTimes,
+  FaInfoCircle
 } from 'react-icons/fa';
-// Correct - import from respective service files
-import { attendanceService } from "../../services/attendanceService";
+import manualAdjustmentService from "../../services/manualAdjustmentService";
 import { employeeService } from "../../services/employeeService";
+import { useOrganizations } from "../../contexts/OrganizationContext";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ManualAdjustments = () => {
+  const { selectedOrganization } = useOrganizations();
   const [adjustments, setAdjustments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showAdjustmentForm, setShowAdjustmentForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(15); // Default to your organization ID
+  const [selectedAdjustment, setSelectedAdjustment] = useState(null);
+  const [editingAdjustment, setEditingAdjustment] = useState(null);
   
+  // Filters state
   const [filters, setFilters] = useState({
     status: 'all',
     department: 'all',
@@ -38,19 +52,29 @@ const ManualAdjustments = () => {
     employee_id: 'all'
   });
 
+  // New adjustment form state
   const [newAdjustment, setNewAdjustment] = useState({
     employee_id: '',
+    organization_id: '',
+    attendance_id: '',
     date: '',
     original_check_in: '',
     original_check_out: '',
     adjusted_check_in: '',
     adjusted_check_out: '',
     reason: '',
-    type: 'Check-in Adjustment',
-    notes: ''
+    notes: '',
+    created_by: 4 // Replace with actual logged-in user ID
   });
 
-  // Stats data
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    adjusted_check_in: '',
+    adjusted_check_out: '',
+    reason: ''
+  });
+
+  // Stats state
   const [stats, setStats] = useState({
     totalRequests: 0,
     approved: 0,
@@ -58,19 +82,17 @@ const ManualAdjustments = () => {
     rejected: 0
   });
 
-  // Static fallback employees
-  const staticEmployees = [
-    { id: 1, name: 'John Smith', employee_id: 'EMP001', department: 'Engineering' },
-    { id: 2, name: 'Sarah Johnson', employee_id: 'EMP002', department: 'Marketing' },
-    { id: 3, name: 'Mike Chen', employee_id: 'EMP003', department: 'Sales' }
-  ];
+  // User ID (replace with actual user ID from your auth system)
+  const userId = 4;
+
+  // Fetch all data when organization changes
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      fetchInitialData();
+    }
+  }, [selectedOrganization]);
 
   // Fetch initial data
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  // Fetch all initial data
   const fetchInitialData = async () => {
     setLoading(true);
     try {
@@ -81,16 +103,23 @@ const ManualAdjustments = () => {
       ]);
     } catch (error) {
       console.error('Error fetching initial data:', error);
+      toast.error('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch adjustments from API
+  // Fetch adjustments from API with filters
   const fetchAdjustments = async () => {
+    if (!selectedOrganization?.id) {
+      toast.error('Please select an organization');
+      return;
+    }
+    
     try {
-      // Build query params
       const params = {};
+      
+      // Apply filters to API params
       if (filters.status !== 'all') params.status = filters.status;
       if (filters.date) params.date = filters.date;
       if (filters.startDate) params.start_date = filters.startDate;
@@ -99,90 +128,29 @@ const ManualAdjustments = () => {
       if (filters.employee_id !== 'all') params.employee_id = filters.employee_id;
       if (filters.department !== 'all') params.department = filters.department;
 
-      // Fetch from API
-      const response = await attendanceService.getAttendance(params);
+      console.log('Fetching adjustments with params:', params);
       
-      // Extract adjustments from response
-      const adjustmentsData = extractAdjustmentsFromResponse(response);
-      setAdjustments(adjustmentsData);
-      calculateStats(adjustmentsData);
+      const response = await manualAdjustmentService.getAdjustmentsList(
+        selectedOrganization.id, 
+        params
+      );
+      
+      console.log('Adjustments API response:', response.data);
+      
+      if (response.data?.status === true && Array.isArray(response.data.data)) {
+        const transformedData = transformAdjustmentsData(response.data.data);
+        setAdjustments(transformedData);
+        calculateStats(transformedData);
+        toast.success(`Loaded ${transformedData.length} adjustments`);
+      } else {
+        setAdjustments([]);
+        toast.info('No adjustments found');
+      }
       
     } catch (error) {
       console.error('Failed to fetch adjustments:', error);
-      // Use empty array on error
+      toast.error(error.response?.data?.message || 'Failed to fetch adjustments');
       setAdjustments([]);
-    }
-  };
-
-  // Extract adjustments from API response
-  const extractAdjustmentsFromResponse = (response) => {
-    const responseData = response.data;
-    
-    // Check different possible response formats
-    if (Array.isArray(responseData)) {
-      return transformAdjustmentsData(responseData);
-    } else if (responseData?.data && Array.isArray(responseData.data)) {
-      return transformAdjustmentsData(responseData.data);
-    } else if (responseData?.success === true && responseData.data && Array.isArray(responseData.data)) {
-      return transformAdjustmentsData(responseData.data);
-    } else if (responseData) {
-      // Single object response
-      return transformAdjustmentsData([responseData]);
-    }
-    
-    return [];
-  };
-
-  // Fetch employees
-  const fetchEmployees = async () => {
-    try {
-      const response = await employeeService.getAllEmployees();
-      
-      let employeesData = [];
-      if (response?.data?.success === true && Array.isArray(response.data.data)) {
-        employeesData = response.data.data;
-      } else if (Array.isArray(response?.data)) {
-        employeesData = response.data;
-      } else if (Array.isArray(response)) {
-        employeesData = response;
-      }
-      
-      setEmployees(employeesData.length > 0 ? employeesData : staticEmployees);
-    } catch (error) {
-      console.log('Using static employee data',error  );
-      setEmployees(staticEmployees);
-    }
-  };
-
-  // Fetch departments from organization-specific endpoint
-  const fetchDepartments = async () => {
-    try {
-      // Use the organization-specific endpoint
-const response = await axiosClient.get(`/organizations/${selectedOrganizationId}/departments`);      
-      console.log('Departments API response:', response.data);
-      
-      let departmentsData = [];
-      if (response?.data?.success === true && Array.isArray(response.data.data)) {
-        departmentsData = response.data.data.map(dept => ({
-          id: dept.id,
-          name: dept.name,
-          description: dept.description
-        }));
-      } else if (Array.isArray(response?.data)) {
-        departmentsData = response.data.map(dept => ({
-          id: dept.id,
-          name: dept.name,
-          description: dept.description
-        }));
-      }
-      
-      console.log('Processed departments:', departmentsData);
-      setDepartments(departmentsData);
-      
-    } catch (error) {
-      console.error('Failed to fetch departments:', error);
-      // Use empty array on error
-      setDepartments([]);
     }
   };
 
@@ -190,55 +158,542 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
   const transformAdjustmentsData = (apiData) => {
     if (!Array.isArray(apiData)) return [];
     
-    return apiData.map(item => ({
-      id: item.id || Math.random(),
-      employee_id: item.employee?.employee_id || item.employee_id || `EMP${item.employee?.id || item.employee_id || '000'}`,
-      employee_name: item.employee?.name || `${item.employee?.first_name || ''} ${item.employee?.last_name || ''}`.trim() || 'Unknown Employee',
-      department: item.employee?.department || item.department || 'N/A',
-      adjustment_date: item.date || item.adjustment_date,
-      original_check_in: formatTimeForDisplay(item.original_check_in || item.check_in),
-      original_check_out: formatTimeForDisplay(item.original_check_out || item.check_out),
-      adjusted_check_in: formatTimeForDisplay(item.adjusted_check_in),
-      adjusted_check_out: formatTimeForDisplay(item.adjusted_check_out),
-      reason: item.reason || item.description || item.notes || '',
-      status: item.status || item.adjustment_status || 'pending',
-      requested_by: item.requested_by || item.created_by?.name || item.employee?.name || 'System',
-      approved_by: item.approved_by || item.approver?.name || item.approved_by_name || '-',
-      requested_date: item.created_at || item.requested_date || new Date().toISOString(),
-      total_hours_change: calculateTimeDifference(
-        item.original_check_in || item.check_in,
-        item.original_check_out || item.check_out,
-        item.adjusted_check_in,
-        item.adjusted_check_out
-      ),
-      type: item.type || item.adjustment_type || 'Check-in Adjustment'
-    }));
+    return apiData.map(item => {
+      // Extract department name from employee data
+      let departmentName = 'N/A';
+      if (item.employee?.department_id) {
+        const dept = departments.find(d => d.id === item.employee.department_id);
+        departmentName = dept ? dept.name : `Dept ${item.employee.department_id}`;
+      }
+      
+      return {
+        id: item.id,
+        employee_id: item.employee?.employee_code || `EMP${item.employee_id}`,
+        employee_name: item.employee ? 
+          `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() : 
+          `Employee ${item.employee_id}`,
+        department: departmentName,
+        department_id: item.employee?.department_id || null,
+        adjustment_date: item.date,
+        original_check_in: formatTimeForDisplay(item.original_check_in),
+        original_check_out: formatTimeForDisplay(item.original_check_out),
+        adjusted_check_in: formatTimeForDisplay(item.adjusted_check_in),
+        adjusted_check_out: formatTimeForDisplay(item.adjusted_check_out),
+        reason: item.reason || '',
+        status: item.status?.toLowerCase() || 'pending',
+        approved_by: item.approved_by || null,
+        approved_by_name: item.approved_by_name || '-',
+        requested_date: item.created_at || new Date().toISOString(),
+        total_hours_change: calculateTimeDifference(
+          item.original_check_in,
+          item.original_check_out,
+          item.adjusted_check_in,
+          item.adjusted_check_out
+        ),
+        raw_data: item,
+        employee_raw: item.employee,
+        attendance_raw: item.attendance
+      };
+    });
   };
 
-  // Format time for display
-  const formatTimeForDisplay = (timeString) => {
-    if (!timeString || timeString === '00:00:00' || timeString === '--:--') return '--:--';
+  // Fetch employees for dropdown
+  const fetchEmployees = async () => {
+    if (!selectedOrganization?.id) return;
     
     try {
-      const timeParts = timeString.toString().split(':');
-      const hour = parseInt(timeParts[0]) || 0;
-      const minute = timeParts[1] || '00';
-      const period = hour >= 12 ? 'PM' : 'AM';
-      const displayHour = hour % 12 || 12;
-      return `${displayHour}:${minute} ${period}`;
+      const response = await employeeService.getAllEmployees({ 
+        organization_id: selectedOrganization.id 
+      });
+      
+      let employeesData = [];
+      if (response?.data?.success === true && Array.isArray(response.data.data)) {
+        employeesData = response.data.data;
+      } else if (Array.isArray(response?.data)) {
+        employeesData = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        employeesData = response.data.data;
+      }
+      
+      setEmployees(employeesData);
+      console.log('Fetched employees:', employeesData.length);
     } catch (error) {
-      error
+      console.error('Error fetching employees:', error);
+      toast.error('Failed to load employees');
+      setEmployees([]);
+    }
+  };
+
+  // Fetch departments for dropdown
+  const fetchDepartments = async () => {
+    if (!selectedOrganization?.id) return;
+    
+    try {
+      const response = await axiosClient.get(`/organizations/${selectedOrganization.id}/departments`);
+      
+      let departmentsData = [];
+      if (response?.data?.success === true && Array.isArray(response.data.data)) {
+        departmentsData = response.data.data;
+      } else if (Array.isArray(response?.data)) {
+        departmentsData = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        departmentsData = response.data.data;
+      }
+      
+      setDepartments(departmentsData);
+      console.log('Fetched departments:', departmentsData.length);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      toast.error('Failed to load departments');
+      setDepartments([]);
+    }
+  };
+
+  // Load existing attendance when employee and date are selected
+  const loadExistingAttendance = useCallback(async () => {
+    if (!newAdjustment.employee_id || !newAdjustment.date) return;
+    
+    try {
+      const response = await manualAdjustmentService.getAttendanceByEmployeeDate(
+        newAdjustment.employee_id,
+        newAdjustment.date
+      );
+      
+      console.log('Existing attendance response:', response.data);
+      
+      if (response.data?.success === true && response.data.data) {
+        const attendance = response.data.data;
+        setNewAdjustment(prev => ({
+          ...prev,
+          attendance_id: attendance.id,
+          original_check_in: attendance.check_in || '',
+          original_check_out: attendance.check_out || '',
+          adjusted_check_in: attendance.check_in || '',
+          adjusted_check_out: attendance.check_out || '',
+          organization_id: attendance.organization_id || selectedOrganization.id
+        }));
+        toast.info('Existing attendance loaded');
+      } else {
+        // No existing attendance found
+        setNewAdjustment(prev => ({
+          ...prev,
+          attendance_id: '',
+          original_check_in: '',
+          original_check_out: '',
+          adjusted_check_in: '09:00',
+          adjusted_check_out: '18:00'
+        }));
+        toast.info('No existing attendance found for this date');
+      }
+    } catch (error) {
+      console.log('No existing attendance found for this date', error);
+      setNewAdjustment(prev => ({
+        ...prev,
+        attendance_id: '',
+        original_check_in: '',
+        original_check_out: '',
+        adjusted_check_in: '09:00',
+        adjusted_check_out: '18:00'
+      }));
+    }
+  }, [newAdjustment.employee_id, newAdjustment.date, selectedOrganization]);
+
+  // Handle new adjustment form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewAdjustment(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle edit form input changes
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Apply filters and fetch data
+  const applyFilters = () => {
+    fetchAdjustments();
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      status: 'all',
+      department: 'all',
+      date: '',
+      search: '',
+      startDate: '',
+      endDate: '',
+      employee_id: 'all'
+    });
+  };
+
+  // Submit new adjustment request - FIXED
+  const handleSubmitAdjustment = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Validation
+      if (!newAdjustment.employee_id || !newAdjustment.date || !newAdjustment.reason) {
+        toast.error('Employee, Date, and Reason are required fields');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out) {
+        toast.error('Please adjust at least one time (check-in or check-out)');
+        setSubmitting(false);
+        return;
+      }
+
+      // Prepare data for API (exactly matching your API format)
+      const adjustmentData = {
+        employee_id: parseInt(newAdjustment.employee_id),
+        organization_id: selectedOrganization.id,
+        attendance_id: newAdjustment.attendance_id ? parseInt(newAdjustment.attendance_id) : null,
+        date: newAdjustment.date,
+        original_check_in: newAdjustment.original_check_in ? formatTimeForAPI(newAdjustment.original_check_in) : null,
+        original_check_out: newAdjustment.original_check_out ? formatTimeForAPI(newAdjustment.original_check_out) : null,
+        adjusted_check_in: formatTimeForAPI(newAdjustment.adjusted_check_in) || null,
+        adjusted_check_out: formatTimeForAPI(newAdjustment.adjusted_check_out) || null,
+        reason: newAdjustment.reason,
+        created_by: userId
+      };
+
+      // Remove null values but keep required fields
+      Object.keys(adjustmentData).forEach(key => {
+        if (adjustmentData[key] === null || adjustmentData[key] === undefined) {
+          delete adjustmentData[key];
+        }
+      });
+
+      console.log('Submitting adjustment:', adjustmentData);
+
+      const response = await manualAdjustmentService.createAdjustment(adjustmentData);
+      
+      console.log('Create adjustment response:', response.data);
+      
+      if (response.data?.status === true) {
+        toast.success('Adjustment request submitted successfully!');
+        setShowAdjustmentForm(false);
+        resetNewAdjustmentForm();
+        fetchAdjustments(); // Refresh the list
+      } else {
+        toast.error(response.data?.message || 'Failed to submit adjustment request');
+      }
+      
+    } catch (error) {
+      console.error('Submission error:', error);
+      console.log('Error response:', error.response?.data);
+      
+      // Show detailed validation errors
+      if (error.response?.status === 422) {
+        const errors = error.response.data.errors;
+        if (errors) {
+          const errorMessages = Object.values(errors).flat().join('\n');
+          toast.error(`Validation Error:\n${errorMessages}`);
+        } else {
+          toast.error(error.response.data?.message || 'Validation error occurred');
+        }
+      } else {
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           'Failed to submit adjustment request';
+        toast.error(errorMessage);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Reset new adjustment form
+  const resetNewAdjustmentForm = () => {
+    setNewAdjustment({
+      employee_id: '',
+      organization_id: selectedOrganization?.id || '',
+      attendance_id: '',
+      date: '',
+      original_check_in: '',
+      original_check_out: '',
+      adjusted_check_in: '',
+      adjusted_check_out: '',
+      reason: '',
+      notes: '',
+      created_by: userId
+    });
+  };
+
+  // Open view modal for adjustment
+  const handleViewAdjustment = async (adjustmentId) => {
+    try {
+      const response = await manualAdjustmentService.getAdjustmentById(adjustmentId);
+      
+      if (response.data) {
+        setSelectedAdjustment(response.data);
+        setShowViewModal(true);
+      }
+    } catch (error) {
+      console.error('Error viewing adjustment:', error);
+      toast.error('Failed to load adjustment details');
+    }
+  };
+
+  // Open edit modal for adjustment
+  const handleEditAdjustment = (adjustment) => {
+    setEditingAdjustment(adjustment);
+    setEditForm({
+      adjusted_check_in: adjustment.adjusted_check_in.replace(/ [AP]M$/, ''),
+      adjusted_check_out: adjustment.adjusted_check_out.replace(/ [AP]M$/, ''),
+      reason: adjustment.reason
+    });
+    setShowEditModal(true);
+  };
+
+  // Submit edit form
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const editData = {
+        adjusted_check_in: formatTimeForAPI(editForm.adjusted_check_in),
+        adjusted_check_out: formatTimeForAPI(editForm.adjusted_check_out),
+        reason: editForm.reason
+      };
+
+      console.log('Updating adjustment:', editData);
+
+      const response = await manualAdjustmentService.updateAdjustment(editingAdjustment.id, editData);
+      
+      if (response.data?.status === true) {
+        toast.success('Adjustment updated successfully!');
+        setShowEditModal(false);
+        fetchAdjustments();
+      } else {
+        toast.error(response.data?.message || 'Failed to update adjustment');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update adjustment');
+    }
+  };
+
+  // Approve adjustment
+  const handleApprove = async (adjustmentId) => {
+    if (!window.confirm('Are you sure you want to approve this adjustment?')) return;
+    
+    try {
+      const response = await manualAdjustmentService.approveAdjustment(adjustmentId, userId);
+      
+      if (response.data?.status === true) {
+        toast.success('Adjustment approved successfully!');
+        fetchAdjustments();
+      } else {
+        toast.error(response.data?.message || 'Failed to approve adjustment');
+      }
+      
+    } catch (error) {
+      console.error('Approval error:', error);
+      toast.error('Failed to approve adjustment');
+    }
+  };
+
+  // Reject adjustment
+  const handleReject = async (adjustmentId) => {
+    if (!window.confirm('Are you sure you want to reject this adjustment?')) return;
+    
+    try {
+      const response = await manualAdjustmentService.rejectAdjustment(adjustmentId, userId);
+      
+      if (response.data?.status === true) {
+        toast.success('Adjustment rejected successfully!');
+        fetchAdjustments();
+      } else {
+        toast.error(response.data?.message || 'Failed to reject adjustment');
+      }
+      
+    } catch (error) {
+      console.error('Rejection error:', error);
+      toast.error('Failed to reject adjustment');
+    }
+  };
+
+  // Delete adjustment
+  const handleDelete = async (adjustmentId) => {
+    if (!window.confirm('Are you sure you want to delete this adjustment? This action cannot be undone.')) return;
+    
+    try {
+      const response = await manualAdjustmentService.deleteAdjustment(adjustmentId);
+      
+      if (response.status === 200 || response.status === 204) {
+        toast.success('Adjustment deleted successfully!');
+        fetchAdjustments();
+      } else {
+        toast.error('Failed to delete adjustment');
+      }
+      
+    } catch (error) {
+      console.error('Deletion error:', error);
+      toast.error('Failed to delete adjustment');
+    }
+  };
+
+  // Export adjustments to CSV
+  const exportAdjustments = () => {
+    if (filteredAdjustments.length === 0) {
+      toast.warning('No data to export');
+      return;
+    }
+
+    const exportData = filteredAdjustments.map(adj => ({
+      'Employee Name': adj.employee_name,
+      'Employee ID': adj.employee_id,
+      'Department': adj.department,
+      'Date': adj.adjustment_date,
+      'Original Check-in': adj.original_check_in,
+      'Original Check-out': adj.original_check_out,
+      'Adjusted Check-in': adj.adjusted_check_in,
+      'Adjusted Check-out': adj.adjusted_check_out,
+      'Reason': adj.reason,
+      'Status': adj.status.charAt(0).toUpperCase() + adj.status.slice(1),
+      'Hours Change': adj.total_hours_change,
+      'Requested Date': formatDateTime(adj.requested_date),
+      'Approved By': adj.approved_by_name
+    }));
+
+    const headers = Object.keys(exportData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `adjustments-${selectedOrganization?.name || 'org'}-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Exported ${exportData.length} adjustments`);
+  };
+
+  // Format time for display (HH:MM AM/PM) - From your API: "09:12:00" -> "09:12 AM"
+  const formatTimeForDisplay = (timeString) => {
+    if (!timeString || timeString === '00:00:00' || timeString === '--:--' || timeString === null || timeString === 'null') {
+      return '--:--';
+    }
+    
+    try {
+      // Remove seconds if present
+      let timeToFormat = timeString;
+      if (timeString.includes(':')) {
+        const parts = timeString.split(':');
+        if (parts.length === 3) {
+          timeToFormat = `${parts[0]}:${parts[1]}`;
+        }
+      }
+      
+      // Parse hours and minutes
+      const [hours, minutes] = timeToFormat.split(':').map(Number);
+      
+      if (isNaN(hours) || isNaN(minutes)) {
+        return timeString;
+      }
+      
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHour = hours % 12 || 12;
+      
+      return `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting time:', timeString, error);
       return timeString;
     }
   };
 
-  // Calculate time difference
+  // Format time for API (HH:MM:SS) - Convert "09:12" to "09:12:00"
+  const formatTimeForAPI = (timeString) => {
+    if (!timeString || timeString === '--:--' || timeString === '') {
+      return null;
+    }
+    
+    // If time is empty, return null
+    if (!timeString.trim()) {
+      return null;
+    }
+    
+    // If time is in format "09:30 AM", convert to "09:30:00"
+    if (timeString.includes(' ')) {
+      const [time, period] = timeString.split(' ');
+      let [hours, minutes] = time.split(':');
+      
+      hours = parseInt(hours);
+      if (period === 'PM' && hours < 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+    }
+    
+    // If already in HH:MM format, add seconds
+    if (timeString.length === 5 && timeString.includes(':')) {
+      return `${timeString}:00`;
+    }
+    
+    // If already in HH:MM:SS format, return as is
+    if (timeString.length === 8 && timeString.includes(':')) {
+      return timeString;
+    }
+    
+    return timeString;
+  };
+
+  // Format date-time for display
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return 'N/A';
+    
+    try {
+      // Handle different date formats
+      let date;
+      if (dateTimeString.includes('T')) {
+        date = new Date(dateTimeString);
+      } else {
+        // Handle "2026-02-03 11:59:59" format
+        date = new Date(dateTimeString.replace(' ', 'T'));
+      }
+      
+      if (isNaN(date.getTime())) {
+        return dateTimeString;
+      }
+      
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return dateTimeString;
+    }
+  };
+
+  // Calculate time difference between original and adjusted times
   const calculateTimeDifference = (origIn, origOut, adjIn, adjOut) => {
     const toMinutes = (timeStr) => {
-      if (!timeStr || timeStr === '--:--') return 0;
+      if (!timeStr || timeStr === '--:--' || timeStr === '00:00:00' || timeStr === null) return 0;
       
       try {
-        const [hours, minutes] = timeStr.toString().split(':').map(Number);
+        // Handle HH:MM:SS format
+        const parts = timeStr.split(':');
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
         return (hours || 0) * 60 + (minutes || 0);
       } catch {
         return 0;
@@ -255,27 +710,27 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
     
     const diff = adjDuration - origDuration;
     
-    if (diff === 0) return '±0h 00m';
+    if (Math.abs(diff) < 1) return '±0h 00m';
     
     const hours = Math.floor(Math.abs(diff) / 60);
     const minutes = Math.abs(diff) % 60;
     const sign = diff > 0 ? '+' : '-';
     
-    return `${sign}${hours}h ${minutes}m`;
+    return `${sign}${hours}h ${minutes.toString().padStart(2, '0')}m`;
   };
 
-  // Calculate statistics
+  // Calculate statistics from adjustments data
   const calculateStats = (data) => {
     const dataArray = Array.isArray(data) ? data : [];
     
     const approved = dataArray.filter(adj => 
-      adj.status === 'approved' || adj.status === 'Approved'
+      adj.status === 'approved'
     ).length;
     const pending = dataArray.filter(adj => 
-      adj.status === 'pending' || adj.status === 'Pending'
+      adj.status === 'pending'
     ).length;
     const rejected = dataArray.filter(adj => 
-      adj.status === 'rejected' || adj.status === 'Rejected'
+      adj.status === 'rejected'
     ).length;
 
     setStats({
@@ -284,180 +739,6 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
       pending,
       rejected
     });
-  };
-
-  // Handle filter changes
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  // Apply filters
-  const applyFilters = () => {
-    fetchAdjustments();
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      status: 'all',
-      department: 'all',
-      date: '',
-      search: '',
-      startDate: '',
-      endDate: '',
-      employee_id: 'all'
-    });
-    fetchAdjustments();
-  };
-
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewAdjustment(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Load existing attendance when employee and date are selected
-  const loadExistingAttendance = async () => {
-    if (!newAdjustment.employee_id || !newAdjustment.date) return;
-    
-    try {
-      const response = await attendanceService.getAttendanceForModification(
-        newAdjustment.employee_id, 
-        newAdjustment.date
-      );
-      
-      if (response.data) {
-        const attendance = response.data;
-        setNewAdjustment(prev => ({
-          ...prev,
-          original_check_in: attendance.check_in || '',
-          original_check_out: attendance.check_out || '',
-          adjusted_check_in: attendance.check_in || '',
-          adjusted_check_out: attendance.check_out || ''
-        }));
-      }
-    } catch (error) {
-      console.log('No existing attendance found for this date',error);
-      setNewAdjustment(prev => ({
-        ...prev,
-        original_check_in: '',
-        original_check_out: '',
-        adjusted_check_in: '',
-        adjusted_check_out: ''
-      }));
-    }
-  };
-
-  // Submit new adjustment request
-  const handleSubmitAdjustment = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      if (!newAdjustment.employee_id || !newAdjustment.date || !newAdjustment.reason) {
-        alert('❌ Employee ID, Date, and Reason are required');
-        setSubmitting(false);
-        return;
-      }
-
-      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out) {
-        alert('❌ Please adjust at least one time (check-in or check-out)');
-        setSubmitting(false);
-        return;
-      }
-
-      const attendanceData = {
-        employee_id: newAdjustment.employee_id,
-        date: newAdjustment.date,
-        check_in: formatTimeForAPI(newAdjustment.adjusted_check_in) || null,
-        check_out: formatTimeForAPI(newAdjustment.adjusted_check_out) || null,
-        reason: newAdjustment.reason,
-        type: newAdjustment.type,
-        notes: newAdjustment.notes
-      };
-
-      Object.keys(attendanceData).forEach(key => {
-        if (attendanceData[key] === null || attendanceData[key] === '') {
-          delete attendanceData[key];
-        }
-      });
-
-      const response = await attendanceService.createAttendance(attendanceData);
-      
-      alert('✅ Adjustment request submitted successfully!');
-      setShowAdjustmentForm(false);
-      resetForm();
-      fetchAdjustments();
-      
-    } catch (error) {
-      console.error('Submission error:', error);
-      const errorMessage = error.response?.data?.message || 
-                         error.response?.data?.errors?.join?.('\n') || 
-                         'Failed to submit adjustment request';
-      alert(`❌ ${errorMessage}`);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Format time for API (HH:MM:SS)
-  const formatTimeForAPI = (timeString) => {
-    if (!timeString) return null;
-    return timeString.length === 5 ? `${timeString}:00` : timeString;
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setNewAdjustment({
-      employee_id: '',
-      date: '',
-      original_check_in: '',
-      original_check_out: '',
-      adjusted_check_in: '',
-      adjusted_check_out: '',
-      reason: '',
-      type: 'Check-in Adjustment',
-      notes: ''
-    });
-  };
-
-  // Handle approve action
-  const handleApprove = async (id) => {
-    if (!window.confirm('Are you sure you want to approve this adjustment?')) return;
-    
-    try {
-      // Update locally for demo
-      setAdjustments(prev => 
-        prev.map(adj => 
-          adj.id === id ? { ...adj, status: 'approved', approved_by: 'You' } : adj
-        )
-      );
-      
-      alert('✅ Adjustment approved successfully!');
-      
-    } catch (error) {
-      console.error('Approval error:', error);
-      alert('❌ Failed to approve adjustment');
-    }
-  };
-
-  // Handle reject action
-  const handleReject = async (id) => {
-    if (!window.confirm('Are you sure you want to reject this adjustment?')) return;
-    
-    try {
-      setAdjustments(prev => 
-        prev.map(adj => 
-          adj.id === id ? { ...adj, status: 'rejected', approved_by: 'You' } : adj
-        )
-      );
-      
-      alert('✅ Adjustment rejected successfully!');
-      
-    } catch (error) {
-      console.error('Rejection error:', error);
-      alert('❌ Failed to reject adjustment');
-    }
   };
 
   // Get status badge styling
@@ -482,8 +763,38 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
     }
   };
 
-  // Filter adjustments based on search
+  // Filter adjustments based on filters
   const filteredAdjustments = adjustments.filter(adj => {
+    // Status filter
+    if (filters.status !== 'all' && adj.status !== filters.status) {
+      return false;
+    }
+    
+    // Employee filter
+    if (filters.employee_id !== 'all' && adj.employee_id !== filters.employee_id) {
+      return false;
+    }
+    
+    // Department filter
+    if (filters.department !== 'all' && adj.department !== filters.department) {
+      return false;
+    }
+    
+    // Date filter
+    if (filters.date && adj.adjustment_date !== filters.date) {
+      return false;
+    }
+    
+    // Date range filter
+    if (filters.startDate && new Date(adj.adjustment_date) < new Date(filters.startDate)) {
+      return false;
+    }
+    
+    if (filters.endDate && new Date(adj.adjustment_date) > new Date(filters.endDate)) {
+      return false;
+    }
+    
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       return (
@@ -493,22 +804,9 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
         adj.department?.toLowerCase().includes(searchLower)
       );
     }
+    
     return true;
   });
-
-  // Export adjustments data
-  const exportAdjustments = () => {
-    const dataStr = JSON.stringify(filteredAdjustments, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileName = `adjustments-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileName);
-    linkElement.click();
-    
-    alert(`✅ Exported ${filteredAdjustments.length} adjustments`);
-  };
 
   // Loading state
   if (loading && adjustments.length === 0) {
@@ -516,7 +814,21 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
       <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <FaSpinner className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading data from API...</p>
+          <p className="text-gray-600">Loading manual adjustments...</p>
+          <p className="text-sm text-gray-500 mt-2">Organization: {selectedOrganization?.name}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No organization selected
+  if (!selectedOrganization?.id) {
+    return (
+      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <FaBuilding className="text-6xl text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">No Organization Selected</h2>
+          <p className="text-gray-600 mb-4">Please select an organization to view manual adjustments</p>
         </div>
       </div>
     );
@@ -524,22 +836,473 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
 
   return (
     <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusDraggable pauseOnHover />
+      
+      {/* View Adjustment Modal */}
+      {showViewModal && selectedAdjustment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Adjustment Details</h2>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Employee Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <FaUsers className="text-blue-500" /> Employee Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Employee Name</p>
+                    <p className="font-medium">
+                      {selectedAdjustment.employee?.first_name} {selectedAdjustment.employee?.last_name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Employee Code</p>
+                    <p className="font-medium">{selectedAdjustment.employee?.employee_code}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Department</p>
+                    <p className="font-medium">
+                      {departments.find(d => d.id === selectedAdjustment.employee?.department_id)?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{selectedAdjustment.employee?.personal_email}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Adjustment Details */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <FaInfoCircle className="text-blue-500" /> Adjustment Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Adjustment Date</p>
+                    <p className="font-medium">
+                      {new Date(selectedAdjustment.date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <span className={getStatusBadge(selectedAdjustment.status)}>
+                      {selectedAdjustment.status?.charAt(0).toUpperCase() + selectedAdjustment.status?.slice(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Created By</p>
+                    <p className="font-medium">User ID: {selectedAdjustment.created_by}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Created At</p>
+                    <p className="font-medium">{formatDateTime(selectedAdjustment.created_at)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Time Comparison */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Time Comparison</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium text-gray-700 mb-3 text-center">Original Times</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Check-in:</span>
+                        <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_in)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Check-out:</span>
+                        <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_out)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4 bg-blue-50">
+                    <h4 className="font-medium text-blue-700 mb-3 text-center">Adjusted Times</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">Check-in:</span>
+                        <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_in)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">Check-out:</span>
+                        <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_out)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Time Difference */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total Time Change:</span>
+                    <span className={`text-lg font-bold ${
+                      calculateTimeDifference(
+                        selectedAdjustment.original_check_in,
+                        selectedAdjustment.original_check_out,
+                        selectedAdjustment.adjusted_check_in,
+                        selectedAdjustment.adjusted_check_out
+                      ).includes('+') 
+                        ? 'text-green-600' 
+                        : calculateTimeDifference(
+                            selectedAdjustment.original_check_in,
+                            selectedAdjustment.original_check_out,
+                            selectedAdjustment.adjusted_check_in,
+                            selectedAdjustment.adjusted_check_out
+                          ).includes('-')
+                        ? 'text-red-600'
+                        : 'text-gray-600'
+                    }`}>
+                      {calculateTimeDifference(
+                        selectedAdjustment.original_check_in,
+                        selectedAdjustment.original_check_out,
+                        selectedAdjustment.adjusted_check_in,
+                        selectedAdjustment.adjusted_check_out
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Reason */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Reason for Adjustment</h3>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="whitespace-pre-wrap">{selectedAdjustment.reason}</p>
+                </div>
+              </div>
+              
+              {/* Approval Information */}
+              {selectedAdjustment.approved_by && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2">Approval Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Approved By</p>
+                      <p className="font-medium">User ID: {selectedAdjustment.approved_by}</p>
+                    </div>
+                    {selectedAdjustment.approved_at && (
+                      <div>
+                        <p className="text-sm text-gray-600">Approved At</p>
+                        <p className="font-medium">{formatDateTime(selectedAdjustment.approved_at)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Adjustment Modal */}
+      {showEditModal && editingAdjustment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Adjustment</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitEdit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Adjusted Check-in
+                  </label>
+                  <input
+                    type="time"
+                    name="adjusted_check_in"
+                    value={editForm.adjusted_check_in}
+                    onChange={handleEditInputChange}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Adjusted Check-out
+                  </label>
+                  <input
+                    type="time"
+                    name="adjusted_check_out"
+                    value={editForm.adjusted_check_out}
+                    onChange={handleEditInputChange}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reason
+                  </label>
+                  <textarea
+                    name="reason"
+                    value={editForm.reason}
+                    onChange={handleEditInputChange}
+                    rows="3"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Update Adjustment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* New Adjustment Modal */}
+      {showAdjustmentForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Request Manual Adjustment</h2>
+              <button
+                onClick={() => {
+                  setShowAdjustmentForm(false);
+                  resetNewAdjustmentForm();
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitAdjustment}>
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Employee *
+                    </label>
+                    <select
+                      name="employee_id"
+                      value={newAdjustment.employee_id}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setTimeout(() => loadExistingAttendance(), 100);
+                      }}
+                      required
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Employee</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.first_name} {emp.last_name} ({emp.employee_code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Adjustment Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={newAdjustment.date}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setTimeout(() => loadExistingAttendance(), 100);
+                      }}
+                      required
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+
+                {/* Time Adjustments */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Original Check-in
+                      </label>
+                      <input
+                        type="time"
+                        name="original_check_in"
+                        value={newAdjustment.original_check_in.replace(/ [AP]M$/, '')}
+                        readOnly
+                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Original Check-out
+                      </label>
+                      <input
+                        type="time"
+                        name="original_check_out"
+                        value={newAdjustment.original_check_out.replace(/ [AP]M$/, '')}
+                        readOnly
+                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Adjusted Check-in
+                      </label>
+                      <input
+                        type="time"
+                        name="adjusted_check_in"
+                        value={newAdjustment.adjusted_check_in.replace(/ [AP]M$/, '')}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Adjusted Check-out
+                      </label>
+                      <input
+                        type="time"
+                        name="adjusted_check_out"
+                        value={newAdjustment.adjusted_check_out.replace(/ [AP]M$/, '')}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Note: Adjust at least one time (check-in or check-out)
+                  </p>
+                </div>
+
+                {/* Reason and Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reason for Adjustment *
+                  </label>
+                  <textarea
+                    name="reason"
+                    value={newAdjustment.reason}
+                    onChange={handleInputChange}
+                    required
+                    rows="3"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Please provide a detailed reason for this adjustment..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={newAdjustment.notes}
+                    onChange={handleInputChange}
+                    rows="2"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Any additional notes or comments..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdjustmentForm(false);
+                    resetNewAdjustmentForm();
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="animate-spin" /> Submitting...
+                    </>
+                  ) : (
+                    'Submit Request'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
-        
         {/* Header */}
         <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Manual Adjustments</h1>
             <p className="text-gray-600">Manage and approve attendance adjustment requests</p>
+            <div className="flex items-center gap-2 mt-1">
+              <FaBuilding className="text-gray-400" />
+              <span className="text-sm text-gray-500">
+                Organization: <span className="font-semibold">{selectedOrganization.name}</span>
+              </span>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
-              onClick={fetchAdjustments}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              onClick={fetchInitialData}
               disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
             >
               <FaRedoAlt className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh Data'}
+              {loading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
@@ -590,13 +1353,15 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
         {/* Enhanced Filters Section */}
         <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Filters</h3>
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <FaFilter /> Filters
+            </h3>
             <div className="flex gap-2">
               <button
                 onClick={applyFilters}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
-                Apply Filters
+                <FaSearch /> Apply Filters
               </button>
               <button
                 onClick={resetFilters}
@@ -637,15 +1402,11 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
               className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Employees</option>
-              {employees.length > 0 ? (
-                employees.map(emp => (
-                  <option key={emp.id || emp.employee_id} value={emp.id || emp.employee_id}>
-                    {emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim()} ({emp.employee_id})
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>No employees available</option>
-              )}
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.first_name} {emp.last_name} ({emp.employee_code})
+                </option>
+              ))}
             </select>
 
             <select 
@@ -654,45 +1415,52 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
               className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Departments</option>
-              {departments.length > 0 ? (
-                departments.map(dept => (
-                  <option key={dept.id} value={dept.name}>
-                    {dept.name}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>Loading departments...</option>
-              )}
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.name}>
+                  {dept.name}
+                </option>
+              ))}
             </select>
 
-            <input 
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Start Date"
-            />
+            <div className="relative">
+              <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Start Date"
+              />
+            </div>
 
-            <input 
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="End Date"
-            />
+            <div className="relative">
+              <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="End Date"
+              />
+            </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Showing {filteredAdjustments.length} of {adjustments.length} adjustments
+        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="text-sm text-gray-600 flex items-center gap-2">
+            <span>Showing {filteredAdjustments.length} of {adjustments.length} adjustments</span>
+            {filteredAdjustments.length !== adjustments.length && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                Filtered
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <button
               onClick={exportAdjustments}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               disabled={filteredAdjustments.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FaDownload /> Export ({filteredAdjustments.length})
             </button>
@@ -705,211 +1473,13 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
           </div>
         </div>
 
-        {/* Adjustment Form Modal */}
-        {showAdjustmentForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Request Manual Adjustment</h2>
-                <button
-                  onClick={() => {
-                    setShowAdjustmentForm(false);
-                    resetForm();
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <form onSubmit={handleSubmitAdjustment}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Employee *
-                    </label>
-                    <select
-                      name="employee_id"
-                      value={newAdjustment.employee_id}
-                      onChange={(e) => {
-                        handleInputChange(e);
-                        setTimeout(() => loadExistingAttendance(), 100);
-                      }}
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select Employee</option>
-                      {employees.length > 0 ? (
-                        employees.map(emp => (
-                          <option key={emp.id || emp.employee_id} value={emp.id || emp.employee_id}>
-                            {emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim()} ({emp.employee_id})
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>No employees available</option>
-                      )}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Adjustment Date *
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={newAdjustment.date}
-                      onChange={(e) => {
-                        handleInputChange(e);
-                        setTimeout(() => loadExistingAttendance(), 100);
-                      }}
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Time Section */}
-                  <div className="md:col-span-2">
-                    <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Original Check-in
-                        </label>
-                        <input
-                          type="time"
-                          name="original_check_in"
-                          value={newAdjustment.original_check_in}
-                          readOnly
-                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Original Check-out
-                        </label>
-                        <input
-                          type="time"
-                          name="original_check_out"
-                          value={newAdjustment.original_check_out}
-                          readOnly
-                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Adjusted Check-in
-                        </label>
-                        <input
-                          type="time"
-                          name="adjusted_check_in"
-                          value={newAdjustment.adjusted_check_in}
-                          onChange={handleInputChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Adjusted Check-out
-                        </label>
-                        <input
-                          type="time"
-                          name="adjusted_check_out"
-                          value={newAdjustment.adjusted_check_out}
-                          onChange={handleInputChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Note: Adjust at least one time (check-in or check-out)
-                    </p>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Adjustment Type
-                    </label>
-                    <select
-                      name="type"
-                      value={newAdjustment.type}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Check-in Adjustment">Check-in Adjustment</option>
-                      <option value="Check-out Adjustment">Check-out Adjustment</option>
-                      <option value="System Correction">System Correction</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason for Adjustment *
-                    </label>
-                    <textarea
-                      name="reason"
-                      value={newAdjustment.reason}
-                      onChange={handleInputChange}
-                      required
-                      rows="3"
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Please provide a detailed reason for this adjustment..."
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additional Notes
-                    </label>
-                    <textarea
-                      name="notes"
-                      value={newAdjustment.notes}
-                      onChange={handleInputChange}
-                      rows="2"
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Any additional notes or comments..."
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4 pt-4 border-t">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAdjustmentForm(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <FaSpinner className="animate-spin" /> Submitting...
-                      </>
-                    ) : (
-                      'Submit Request'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* Adjustments Table */}
         <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date & Type</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Time Changes</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reason</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
@@ -924,16 +1494,16 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
                     <p className="text-lg font-medium">No adjustments found</p>
                     <p className="text-sm text-gray-400 mt-1">
                       {adjustments.length === 0 
-                        ? 'No adjustment requests in the system' 
-                        : 'Try adjusting your filters'
+                        ? 'No adjustment requests in the system. Click "New Adjustment" to create one.' 
+                        : 'No adjustments match your current filters. Try adjusting your filter criteria.'
                       }
                     </p>
                     {adjustments.length === 0 && (
                       <button
                         onClick={() => setShowAdjustmentForm(true)}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                       >
-                        Create First Adjustment
+                        <FaPlus /> Create First Adjustment
                       </button>
                     )}
                   </td>
@@ -966,21 +1536,20 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
                             day: 'numeric'
                           })}
                         </div>
-                        <div className="text-xs text-gray-500">{adjustment.type}</div>
                         <div className="text-xs text-gray-400">
-                          Requested: {new Date(adjustment.requested_date).toLocaleDateString()}
+                          {formatDateTime(adjustment.requested_date)}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Original:</span>
-                          <span>{adjustment.original_check_in} - {adjustment.original_check_out}</span>
+                        <div className="mb-1">
+                          <span className="text-gray-500 text-xs">Original: </span>
+                          <span className="font-medium">{adjustment.original_check_in} - {adjustment.original_check_out}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Adjusted:</span>
-                          <span>{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
+                        <div className="mb-1">
+                          <span className="text-gray-500 text-xs">Adjusted: </span>
+                          <span className="font-medium text-blue-600">{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
                         </div>
                         <div className={`text-xs font-medium ${
                           adjustment.total_hours_change.includes('+') 
@@ -995,44 +1564,70 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-700 max-w-xs">
-                        {adjustment.reason}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        By: {adjustment.requested_by}
+                        {adjustment.reason.length > 100 ? 
+                          `${adjustment.reason.substring(0, 100)}...` : 
+                          adjustment.reason
+                        }
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {getStatusIcon(adjustment.status)}
                         <span className={getStatusBadge(adjustment.status)}>
-                          {adjustment.status}
+                          {adjustment.status.charAt(0).toUpperCase() + adjustment.status.slice(1)}
                         </span>
                       </div>
-                      {adjustment.approved_by !== '-' && (
+                      {adjustment.approved_by_name !== '-' && adjustment.approved_by_name && (
                         <div className="text-xs text-gray-500 mt-1">
-                          By: {adjustment.approved_by}
+                          By: {adjustment.approved_by_name}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {(adjustment.status === 'pending' || adjustment.status === 'Pending') ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApprove(adjustment.id)}
-                            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(adjustment.id)}
-                            className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 text-xs">No actions available</span>
-                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleViewAdjustment(adjustment.id)}
+                          className="p-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                          title="View Details"
+                        >
+                          <FaEye />
+                        </button>
+                        
+                        {adjustment.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(adjustment.id)}
+                              className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                              title="Approve"
+                            >
+                              <FaUserCheck />
+                            </button>
+                            <button
+                              onClick={() => handleReject(adjustment.id)}
+                              className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                              title="Reject"
+                            >
+                              <FaUserTimes />
+                            </button>
+                          </>
+                        )}
+                        
+                        <button
+                          onClick={() => handleEditAdjustment(adjustment)}
+                          className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDelete(adjustment.id)}
+                          className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                          title="Delete"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1040,6 +1635,26 @@ const response = await axiosClient.get(`/organizations/${selectedOrganizationId}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination (Optional - if your API supports it) */}
+        {filteredAdjustments.length > 0 && (
+          <div className="mt-6 flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Showing {filteredAdjustments.length} adjustments
+            </div>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50">
+                Previous
+              </button>
+              <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                1
+              </button>
+              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50">
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -484,59 +484,61 @@ const RosterPeriods = () => {
 
   // Handle lock period
   const handleLockPeriod = async () => {
-    if (!selectedPeriod) return;
+  if (!selectedPeriod) return;
 
-    setActionLoading(true);
-    setError(null);
+  setActionLoading(true);
+  setError(null);
+  
+  try {
+    console.log("Attempting to lock period ID:", selectedPeriod.id);
     
-    try {
-      console.log("Attempting to lock period ID:", selectedPeriod.id);
-      
-      // Check if period can be locked
-      if (selectedPeriod.status === 'locked') {
-        throw new Error("This period is already locked");
-      }
-      
-      if (selectedPeriod.status === 'published') {
-        throw new Error("Published periods cannot be locked");
-      }
-
-      const response = await rosterPeriodService.lockRosterPeriod(selectedPeriod.id);
-
-      console.log("Lock response:", response.data);
-
-      if (response.data?.success === true) {
-        setSuccessMessage("Roster period locked successfully!");
-        fetchRosterPeriods();
-        setShowLockModal(false);
-        
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        setError(response.data?.message || "Failed to lock roster period");
-      }
-    } catch (err) {
-      console.error("Error locking roster period:", err);
-      console.error("Error details:", err.response?.data);
-      
-      if (err.response?.data?.errors) {
-        const errorMessages = Object.entries(err.response.data.errors)
-          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-          .join(' | ');
-        setError(`Validation errors: ${errorMessages}`);
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
-      } else {
-        setError("Failed to lock roster period. Please try again.");
-      }
-    } finally {
-      setActionLoading(false);
+    // Check if period can be locked (API says only published can be locked)
+    if (selectedPeriod.status === 'locked') {
+      throw new Error("This period is already locked");
     }
-  };
+    
+    // Updated: Only published periods can be locked
+    if (selectedPeriod.status !== 'published') {
+      throw new Error(`Only published periods can be locked. Current status: ${selectedPeriod.status}`);
+    }
 
+    const response = await rosterPeriodService.lockRosterPeriod(selectedPeriod.id);
+
+    console.log("Lock response:", response.data);
+
+    if (response.data?.success === true) {
+      setSuccessMessage("Roster period locked successfully!");
+      fetchRosterPeriods();
+      setShowLockModal(false);
+      
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } else {
+      setError(response.data?.message || "Failed to lock roster period");
+    }
+  } catch (err) {
+    console.error("Error locking roster period:", err);
+    console.error("Error details:", err.response?.data);
+    
+    if (err.response?.data?.errors) {
+      const errorMessages = Object.entries(err.response.data.errors)
+        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+        .join(' | ');
+      setError(`Validation errors: ${errorMessages}`);
+    } else if (err.response?.data?.message) {
+      setError(err.response.data.message);
+    } else if (err.response?.data?.error) {
+      setError(err.response.data.error); // Added this line
+    } else if (err.message) {
+      setError(err.message);
+    } else {
+      setError("Failed to lock roster period. Please try again.");
+    }
+  } finally {
+    setActionLoading(false);
+  }
+};
   // Handle delete period
   const handleDeletePeriod = async () => {
     if (!selectedPeriod) return;
@@ -734,32 +736,7 @@ const RosterPeriods = () => {
           
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <button
-              onClick={() => {
-                if (rosterPeriods.length > 0) {
-                  // Find a draft period
-                  const draftPeriod = rosterPeriods.find(p => p.status === 'draft');
-                  if (draftPeriod) {
-                    setSelectedPeriod(draftPeriod);
-                    setBulkAssignForm(prev => ({ 
-                      ...prev, 
-                      roster_period_id: draftPeriod.id.toString(),
-                      employee_ids: [] // Reset employee selection
-                    }));
-                    setShowBulkAssignModal(true);
-                  } else {
-                    setError("No draft periods available. Please create a draft period first.");
-                  }
-                } else {
-                  setError("Please create a roster period first");
-                }
-              }}
-              disabled={rosterPeriods.length === 0}
-              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaUserPlus className="h-4 w-4" />
-              Bulk Assign
-            </button>
+            
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -908,7 +885,20 @@ const RosterPeriods = () => {
                           <div className="mt-2 text-xs text-gray-500">
                             {period.status === 'draft' && 'Can be edited and scheduled'}
                             {period.status === 'locked' && 'Read-only, cannot be modified'}
-                            {period.status === 'published' && 'Finalized and visible to employees'}
+                            {/* Lock - only for published */}
+{period.status === 'published' && (
+  <button
+    className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2"
+    onClick={() => {
+      setSelectedPeriod(period);
+      setShowLockModal(true);
+      setShowPeriodDropdown(null);
+    }}
+  >
+    <FaLock className="text-yellow-500" />
+    Lock Period
+  </button>
+)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1051,20 +1041,20 @@ const RosterPeriods = () => {
         </div>
 
         {/* Info Footer */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start">
-            <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-blue-900 mb-1">About Roster Periods</h4>
-              <p className="text-sm text-blue-700">
-                • <strong>Draft</strong> periods can be edited and scheduled<br />
-                • <strong>Locked</strong> periods are read-only and cannot be modified<br />
-                • <strong>Published</strong> periods are finalized and visible to employees<br />
-                • Create periods based on your scheduling needs: Weekly, Fortnightly, or Monthly
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+  <div className="flex items-start">
+    <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
+    <div>
+      <h4 className="font-medium text-blue-900 mb-1">About Roster Periods</h4>
+      <p className="text-sm text-blue-700">
+        • <strong>Draft</strong> periods can be edited and scheduled<br />
+        • <strong>Published</strong> periods are visible to employees<br />
+        • <strong>Locked</strong> periods are read-only and cannot be modified (Only published periods can be locked)<br />
+        • Workflow: Draft → Publish → Lock
+      </p>
+    </div>
+  </div>
+</div>
       </div>
 
       {/* Create Roster Period Modal */}
