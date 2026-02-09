@@ -44,7 +44,6 @@ const ManualAdjustments = () => {
   // Filters state
   const [filters, setFilters] = useState({
     status: 'all',
-    department: 'all',
     date: '',
     search: '',
     startDate: '',
@@ -58,20 +57,18 @@ const ManualAdjustments = () => {
     organization_id: '',
     attendance_id: '',
     date: '',
-    original_check_in: '',
-    original_check_out: '',
-    adjusted_check_in: '',
-    adjusted_check_out: '',
+    original_check_in: '09:00',
+    original_check_out: '18:00',
+    adjusted_check_in: '09:00',
+    adjusted_check_out: '18:00',
     reason: '',
-    notes: '',
-    created_by: 4 // Replace with actual logged-in user ID
+    created_by: 4
   });
 
   // Edit form state
   const [editForm, setEditForm] = useState({
     adjusted_check_in: '',
-    adjusted_check_out: '',
-    reason: ''
+    adjusted_check_out: ''
   });
 
   // Stats state
@@ -126,25 +123,18 @@ const ManualAdjustments = () => {
       if (filters.endDate) params.end_date = filters.endDate;
       if (filters.search) params.search = filters.search;
       if (filters.employee_id !== 'all') params.employee_id = filters.employee_id;
-      if (filters.department !== 'all') params.department = filters.department;
 
-      console.log('Fetching adjustments with params:', params);
-      
       const response = await manualAdjustmentService.getAdjustmentsList(
         selectedOrganization.id, 
         params
       );
       
-      console.log('Adjustments API response:', response.data);
-      
       if (response.data?.status === true && Array.isArray(response.data.data)) {
         const transformedData = transformAdjustmentsData(response.data.data);
         setAdjustments(transformedData);
         calculateStats(transformedData);
-        toast.success(`Loaded ${transformedData.length} adjustments`);
       } else {
         setAdjustments([]);
-        toast.info('No adjustments found');
       }
       
     } catch (error) {
@@ -216,7 +206,6 @@ const ManualAdjustments = () => {
       }
       
       setEmployees(employeesData);
-      console.log('Fetched employees:', employeesData.length);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast.error('Failed to load employees');
@@ -241,10 +230,8 @@ const ManualAdjustments = () => {
       }
       
       setDepartments(departmentsData);
-      console.log('Fetched departments:', departmentsData.length);
     } catch (error) {
       console.error('Error fetching departments:', error);
-      toast.error('Failed to load departments');
       setDepartments([]);
     }
   };
@@ -259,39 +246,37 @@ const ManualAdjustments = () => {
         newAdjustment.date
       );
       
-      console.log('Existing attendance response:', response.data);
-      
       if (response.data?.success === true && response.data.data) {
         const attendance = response.data.data;
         setNewAdjustment(prev => ({
           ...prev,
           attendance_id: attendance.id,
-          original_check_in: attendance.check_in || '',
-          original_check_out: attendance.check_out || '',
-          adjusted_check_in: attendance.check_in || '',
-          adjusted_check_out: attendance.check_out || '',
+          // Use the actual check_in/check_out from attendance
+          original_check_in: attendance.check_in || '09:00',
+          original_check_out: attendance.check_out || '18:00',
+          adjusted_check_in: attendance.check_in || '09:00',
+          adjusted_check_out: attendance.check_out || '18:00',
           organization_id: attendance.organization_id || selectedOrganization.id
         }));
-        toast.info('Existing attendance loaded');
       } else {
-        // No existing attendance found
+        // No existing attendance found - keep default times
         setNewAdjustment(prev => ({
           ...prev,
           attendance_id: '',
-          original_check_in: '',
-          original_check_out: '',
+          original_check_in: '09:00',
+          original_check_out: '18:00',
           adjusted_check_in: '09:00',
           adjusted_check_out: '18:00'
         }));
-        toast.info('No existing attendance found for this date');
       }
     } catch (error) {
       console.log('No existing attendance found for this date', error);
+      // On 404 error, just keep the default times
       setNewAdjustment(prev => ({
         ...prev,
         attendance_id: '',
-        original_check_in: '',
-        original_check_out: '',
+        original_check_in: '09:00',
+        original_check_out: '18:00',
         adjusted_check_in: '09:00',
         adjusted_check_out: '18:00'
       }));
@@ -324,7 +309,6 @@ const ManualAdjustments = () => {
   const resetFilters = () => {
     setFilters({
       status: 'all',
-      department: 'all',
       date: '',
       search: '',
       startDate: '',
@@ -333,7 +317,7 @@ const ManualAdjustments = () => {
     });
   };
 
-  // Submit new adjustment request - FIXED
+  // Submit new adjustment request
   const handleSubmitAdjustment = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -352,45 +336,40 @@ const ManualAdjustments = () => {
         return;
       }
 
-      // Prepare data for API (exactly matching your API format)
+      // Prepare data for API
       const adjustmentData = {
         employee_id: parseInt(newAdjustment.employee_id),
         organization_id: selectedOrganization.id,
         attendance_id: newAdjustment.attendance_id ? parseInt(newAdjustment.attendance_id) : null,
         date: newAdjustment.date,
-        original_check_in: newAdjustment.original_check_in ? formatTimeForAPI(newAdjustment.original_check_in) : null,
-        original_check_out: newAdjustment.original_check_out ? formatTimeForAPI(newAdjustment.original_check_out) : null,
+        original_check_in: formatTimeForAPI(newAdjustment.original_check_in),
+        original_check_out: formatTimeForAPI(newAdjustment.original_check_out),
         adjusted_check_in: formatTimeForAPI(newAdjustment.adjusted_check_in) || null,
         adjusted_check_out: formatTimeForAPI(newAdjustment.adjusted_check_out) || null,
         reason: newAdjustment.reason,
         created_by: userId
       };
 
-      // Remove null values but keep required fields
+      // Remove null values
       Object.keys(adjustmentData).forEach(key => {
         if (adjustmentData[key] === null || adjustmentData[key] === undefined) {
           delete adjustmentData[key];
         }
       });
 
-      console.log('Submitting adjustment:', adjustmentData);
-
       const response = await manualAdjustmentService.createAdjustment(adjustmentData);
-      
-      console.log('Create adjustment response:', response.data);
       
       if (response.data?.status === true) {
         toast.success('Adjustment request submitted successfully!');
         setShowAdjustmentForm(false);
         resetNewAdjustmentForm();
-        fetchAdjustments(); // Refresh the list
+        fetchAdjustments();
       } else {
         toast.error(response.data?.message || 'Failed to submit adjustment request');
       }
       
     } catch (error) {
       console.error('Submission error:', error);
-      console.log('Error response:', error.response?.data);
       
       // Show detailed validation errors
       if (error.response?.status === 422) {
@@ -419,12 +398,11 @@ const ManualAdjustments = () => {
       organization_id: selectedOrganization?.id || '',
       attendance_id: '',
       date: '',
-      original_check_in: '',
-      original_check_out: '',
-      adjusted_check_in: '',
-      adjusted_check_out: '',
+      original_check_in: '09:00',
+      original_check_out: '18:00',
+      adjusted_check_in: '09:00',
+      adjusted_check_out: '18:00',
       reason: '',
-      notes: '',
       created_by: userId
     });
   };
@@ -449,8 +427,7 @@ const ManualAdjustments = () => {
     setEditingAdjustment(adjustment);
     setEditForm({
       adjusted_check_in: adjustment.adjusted_check_in.replace(/ [AP]M$/, ''),
-      adjusted_check_out: adjustment.adjusted_check_out.replace(/ [AP]M$/, ''),
-      reason: adjustment.reason
+      adjusted_check_out: adjustment.adjusted_check_out.replace(/ [AP]M$/, '')
     });
     setShowEditModal(true);
   };
@@ -462,11 +439,8 @@ const ManualAdjustments = () => {
     try {
       const editData = {
         adjusted_check_in: formatTimeForAPI(editForm.adjusted_check_in),
-        adjusted_check_out: formatTimeForAPI(editForm.adjusted_check_out),
-        reason: editForm.reason
+        adjusted_check_out: formatTimeForAPI(editForm.adjusted_check_out)
       };
-
-      console.log('Updating adjustment:', editData);
 
       const response = await manualAdjustmentService.updateAdjustment(editingAdjustment.id, editData);
       
@@ -585,14 +559,13 @@ const ManualAdjustments = () => {
     toast.success(`Exported ${exportData.length} adjustments`);
   };
 
-  // Format time for display (HH:MM AM/PM) - From your API: "09:12:00" -> "09:12 AM"
+  // Format time for display (HH:MM AM/PM)
   const formatTimeForDisplay = (timeString) => {
     if (!timeString || timeString === '00:00:00' || timeString === '--:--' || timeString === null || timeString === 'null') {
       return '--:--';
     }
     
     try {
-      // Remove seconds if present
       let timeToFormat = timeString;
       if (timeString.includes(':')) {
         const parts = timeString.split(':');
@@ -601,7 +574,6 @@ const ManualAdjustments = () => {
         }
       }
       
-      // Parse hours and minutes
       const [hours, minutes] = timeToFormat.split(':').map(Number);
       
       if (isNaN(hours) || isNaN(minutes)) {
@@ -613,18 +585,16 @@ const ManualAdjustments = () => {
       
       return `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
-      console.error('Error formatting time:', timeString, error);
       return timeString;
     }
   };
 
-  // Format time for API (HH:MM:SS) - Convert "09:12" to "09:12:00"
+  // Format time for API (HH:MM:SS)
   const formatTimeForAPI = (timeString) => {
     if (!timeString || timeString === '--:--' || timeString === '') {
       return null;
     }
     
-    // If time is empty, return null
     if (!timeString.trim()) {
       return null;
     }
@@ -659,12 +629,10 @@ const ManualAdjustments = () => {
     if (!dateTimeString) return 'N/A';
     
     try {
-      // Handle different date formats
       let date;
       if (dateTimeString.includes('T')) {
         date = new Date(dateTimeString);
       } else {
-        // Handle "2026-02-03 11:59:59" format
         date = new Date(dateTimeString.replace(' ', 'T'));
       }
       
@@ -690,7 +658,6 @@ const ManualAdjustments = () => {
       if (!timeStr || timeStr === '--:--' || timeStr === '00:00:00' || timeStr === null) return 0;
       
       try {
-        // Handle HH:MM:SS format
         const parts = timeStr.split(':');
         const hours = parseInt(parts[0]) || 0;
         const minutes = parseInt(parts[1]) || 0;
@@ -772,11 +739,6 @@ const ManualAdjustments = () => {
     
     // Employee filter
     if (filters.employee_id !== 'all' && adj.employee_id !== filters.employee_id) {
-      return false;
-    }
-    
-    // Department filter
-    if (filters.department !== 'all' && adj.department !== filters.department) {
       return false;
     }
     
@@ -1039,7 +1001,7 @@ const ManualAdjustments = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adjusted Check-in
+                    Adjusted Check-in *
                   </label>
                   <input
                     type="time"
@@ -1053,27 +1015,13 @@ const ManualAdjustments = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adjusted Check-out
+                    Adjusted Check-out *
                   </label>
                   <input
                     type="time"
                     name="adjusted_check_out"
                     value={editForm.adjusted_check_out}
                     onChange={handleEditInputChange}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reason
-                  </label>
-                  <textarea
-                    name="reason"
-                    value={editForm.reason}
-                    onChange={handleEditInputChange}
-                    rows="3"
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg"
                     required
                   />
@@ -1175,9 +1123,11 @@ const ManualAdjustments = () => {
                         type="time"
                         name="original_check_in"
                         value={newAdjustment.original_check_in.replace(/ [AP]M$/, '')}
-                        readOnly
-                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                        disabled
                       />
+                      <p className="text-xs text-gray-500 mt-1">Enter original time</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1187,13 +1137,15 @@ const ManualAdjustments = () => {
                         type="time"
                         name="original_check_out"
                         value={newAdjustment.original_check_out.replace(/ [AP]M$/, '')}
-                        readOnly
-                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg"
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                        disabled
                       />
+                      <p className="text-xs text-gray-500 mt-1">Enter original time</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adjusted Check-in
+                        Adjusted Check-in *
                       </label>
                       <input
                         type="time"
@@ -1205,7 +1157,7 @@ const ManualAdjustments = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adjusted Check-out
+                        Adjusted Check-out *
                       </label>
                       <input
                         type="time"
@@ -1217,11 +1169,11 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    Note: Adjust at least one time (check-in or check-out)
+                    * Note: Adjust at least one time (check-in or check-out). Original times will be auto-loaded if attendance exists for this date, otherwise enter them manually.
                   </p>
                 </div>
 
-                {/* Reason and Notes */}
+                {/* Reason */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reason for Adjustment *
@@ -1234,20 +1186,6 @@ const ManualAdjustments = () => {
                     rows="3"
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Please provide a detailed reason for this adjustment..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Additional Notes (Optional)
-                  </label>
-                  <textarea
-                    name="notes"
-                    value={newAdjustment.notes}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Any additional notes or comments..."
                   />
                 </div>
               </div>
@@ -1372,7 +1310,7 @@ const ManualAdjustments = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
               <input 
@@ -1405,19 +1343,6 @@ const ManualAdjustments = () => {
               {employees.map(emp => (
                 <option key={emp.id} value={emp.id}>
                   {emp.first_name} {emp.last_name} ({emp.employee_code})
-                </option>
-              ))}
-            </select>
-
-            <select 
-              value={filters.department}
-              onChange={(e) => handleFilterChange('department', e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Departments</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.name}>
-                  {dept.name}
                 </option>
               ))}
             </select>
@@ -1620,13 +1545,16 @@ const ManualAdjustments = () => {
                           <FaEdit />
                         </button>
                         
-                        <button
-                          onClick={() => handleDelete(adjustment.id)}
-                          className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
+                        {/* Show delete button only for rejected adjustments */}
+                        {adjustment.status === 'rejected' && (
+                          <button
+                            onClick={() => handleDelete(adjustment.id)}
+                            className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1636,22 +1564,11 @@ const ManualAdjustments = () => {
           </table>
         </div>
         
-        {/* Pagination (Optional - if your API supports it) */}
+        {/* Pagination */}
         {filteredAdjustments.length > 0 && (
           <div className="mt-6 flex justify-between items-center">
             <div className="text-sm text-gray-600">
               Showing {filteredAdjustments.length} adjustments
-            </div>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50">
-                Previous
-              </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                1
-              </button>
-              <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50">
-                Next
-              </button>
             </div>
           </div>
         )}

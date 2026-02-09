@@ -151,47 +151,117 @@ const DocumentCard = ({ document, onView, onDelete }) => {
 const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    document_type: '',
-    issue_date: '',
-    expiry_date: '',
-    file: null
-  });
+ // In DocumentUploadModal component - Update initial state
+const [formData, setFormData] = useState({
+  document_type: '',
+  issue_date: '',
+  expiry_date: '',
+  file: null,
+  file_name: '', // Add this
+});
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData({ ...formData, file: e.target.files[0] });
-    }
-  };
+  // In EmployeeProfile.jsx - Update handleFileChange
+const handleFileChange = (e) => {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    // Get filename without extension
+    const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+    
+    setFormData({ 
+      ...formData, 
+      file: file,
+      // Auto-populate file_name with a cleaned version of the filename
+      file_name: formData.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      // Auto-suggest document type from filename if not set
+      document_type: formData.document_type || 
+        fileNameWithoutExt
+          .replace(/[_-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+    });
+  }
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.file) {
-      setError('Please select a file to upload');
-      return;
-    }
+  // In EmployeeProfile.jsx - FIXED handleSubmit function in DocumentUploadModal
+// In EmployeeProfile.jsx - Update the handleSubmit function in DocumentUploadModal
+// In EmployeeProfile.jsx - CORRECTED handleSubmit function
+// In EmployeeProfile.jsx - UPDATED handleSubmit function
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log('DEBUG - handleSubmit triggered in EmployeeProfile');
+  console.log('Employee ID:', employeeId);
+  console.log('Form data:', formData);
+  
+  if (!formData.file) {
+    setError('Please select a file to upload');
+    return;
+  }
 
-    setUploading(true);
-    setError('');
+  setUploading(true);
+  setError('');
 
-    try {
-      const actualFormData = new FormData();
-      actualFormData.append('employee_id', employeeId);
-      actualFormData.append('document_type', formData.document_type);
+  try {
+    const actualFormData = new FormData();
+    
+    // CORRECT FIELD NAMES BASED ON PREVIOUS VALIDATION ERRORS:
+    // 1. Add employee_id (required)
+    actualFormData.append('employee_id', employeeId);
+    
+    // 2. API expects 'document_type' - NOT document_name!
+    actualFormData.append('document_type', formData.document_type);
+    
+    // 3. API expects 'file' field for file upload - NOT document!
+    actualFormData.append('file', formData.file);
+    
+    // 4. API expects 'file_name' field (required)
+    actualFormData.append('file_name', formData.file_name || formData.file.name || 'document');
+    
+    // 5. Optional fields
+    if (formData.issue_date) {
       actualFormData.append('issue_date', formData.issue_date);
-      actualFormData.append('expiry_date', formData.expiry_date);
-      actualFormData.append('document', formData.file);
-
-      await uploadEmployeeDocument(actualFormData);
-      onUploadSuccess();
-      onClose();
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError(err.response?.data?.message || 'Failed to upload document');
-    } finally {
-      setUploading(false);
     }
-  };
+    if (formData.expiry_date) {
+      actualFormData.append('expiry_date', formData.expiry_date);
+    }
+
+    // Debug: Show FormData contents
+    console.log('DEBUG - CORRECTED EmployeeProfile FormData being sent:');
+    const formDataObj = {};
+    for (let pair of actualFormData.entries()) {
+      const value = pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1];
+      console.log(`${pair[0]}: ${value}`);
+      formDataObj[pair[0]] = value;
+    }
+    console.log('CORRECTED FormData summary:', formDataObj);
+
+    // Call the API
+    await uploadEmployeeDocument(actualFormData);
+    
+    console.log('DEBUG - Document upload successful');
+    onUploadSuccess();
+    onClose();
+  } catch (err) {
+    console.error('Upload error details:', {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status,
+      url: err.config?.url,
+      config: err.config
+    });
+    
+    if (err.response?.status === 422) {
+      const errors = err.response.data?.errors || {};
+      const errorMessages = Object.values(errors).flat();
+      setError(errorMessages.join(', ') || 'Validation failed. Please check all fields.');
+      
+      // Show specific field errors if available
+      console.error('Validation errors:', errors);
+    } else {
+      setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
+    }
+  } finally {
+    setUploading(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -219,88 +289,112 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Document Type *
-              </label>
-              <select
-                value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              >
-                <option value="">Select Type</option>
-                <option value="ID Proof">ID Proof</option>
-                <option value="Address Proof">Address Proof</option>
-                <option value="Qualification">Qualification</option>
-                <option value="Employment Contract">Employment Contract</option>
-                <option value="Visa">Visa</option>
-                <option value="Passport">Passport</option>
-                <option value="Driving License">Driving License</option>
-                <option value="Bank Details">Bank Details</option>
-                <option value="Tax File">Tax File</option>
-                <option value="Superannuation">Superannuation</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+ <label className="block text-sm font-medium text-gray-700 mb-1">
+      Document Type *
+    </label>
+    <select
+      value={formData.document_type}
+      onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      required
+    >
+      <option value="">Select Type</option>
+      <option value="Aadhaar Card">Aadhaar Card</option>
+      <option value="PAN Card">PAN Card</option>
+      <option value="Passport">Passport</option>
+      <option value="Driving License">Driving License</option>
+      <option value="Visa">Visa</option>
+      <option value="Work Permit">Work Permit</option>
+      <option value="Employment Contract">Employment Contract</option>
+      <option value="Offer Letter">Offer Letter</option>
+      <option value="Experience Letter">Experience Letter</option>
+      <option value="Salary Slip">Salary Slip</option>
+      <option value="Bank Statement">Bank Statement</option>
+      <option value="Tax Document">Tax Document</option>
+      <option value="Education Certificate">Education Certificate</option>
+      <option value="Professional Certificate">Professional Certificate</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Issue Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.issue_date}
-                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expiry Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
+  {/* File Name - ADD THIS */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      File Name *
+    </label>
+    <input
+      type="text"
+      value={formData.file_name || ''}
+      onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+      placeholder="Enter a descriptive file name (e.g., 'John_Aadhaar_Card')"
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      required
+    />
+    <p className="text-xs text-gray-500 mt-1">
+      This will be the name shown in the documents list
+    </p>
+  </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Document File *
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  required
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  {formData.file ? (
-                    <div className="text-green-600">
-                      <FaCheck className="h-8 w-8 mx-auto mb-2" />
-                      <p className="font-medium">{formData.file.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {(formData.file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">
-                      <FaFileAlt className="h-8 w-8 mx-auto mb-2" />
-                      <p className="font-medium">Click to select file</p>
-                      <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
+  {/* Dates Row */}
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Issue Date
+      </label>
+      <input
+        type="date"
+        value={formData.issue_date}
+        onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Expiry Date
+      </label>
+      <input
+        type="date"
+        value={formData.expiry_date}
+        onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+  </div>
+
+  {/* File Upload */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Document File *
+    </label>
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <input
+        type="file"
+        onChange={handleFileChange}
+        className="hidden"
+        id="file-upload"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+        required
+      />
+      <label htmlFor="file-upload" className="cursor-pointer">
+        {formData.file ? (
+          <div className="text-green-600">
+            <FaCheck className="h-8 w-8 mx-auto mb-2" />
+            <p className="font-medium">{formData.file.name}</p>
+            <p className="text-sm text-gray-500">
+              {(formData.file.size / 1024 / 1024).toFixed(2)} MB
+            </p>
           </div>
+        ) : (
+          <div className="text-gray-500">
+            <FaFileAlt className="h-8 w-8 mx-auto mb-2" />
+            <p className="font-medium">Click to select file</p>
+            <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
+          </div>
+        )}
+      </label>
+    </div>
+  </div>
+</div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
             <button

@@ -15,135 +15,103 @@ import {
   FaSpinner,
   FaUserTie,
   FaChartBar,
-  FaFileInvoiceDollar
+  FaFileInvoiceDollar,
+  FaPaperPlane,
+  FaSyncAlt,
+  FaFilter
 } from 'react-icons/fa';
+import { useOrganizations } from '../../contexts/OrganizationContext';
+import { timesheetService } from '../../services/timesheetService';
 
 const TimesheetApprovals = () => {
+  const { selectedOrganization } = useOrganizations();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [filters, setFilters] = useState({
-    status: 'pending',
+    status: 'all',
     employee: 'all',
     date: '',
     search: ''
   });
-
-  // Mock data
-  const employees = [
-    { id: 1, name: 'John Smith', department: 'Engineering' },
-    { id: 2, name: 'Sarah Johnson', department: 'Marketing' },
-    { id: 3, name: 'Mike Chen', department: 'Sales' },
-    { id: 4, name: 'Lisa Brown', department: 'Design' }
-  ];
+  const [pushToXeroLoading, setPushToXeroLoading] = useState(false);
+  const [selectedTimesheetIds, setSelectedTimesheetIds] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setTimesheets([
-        {
-          id: 1,
-          employee_id: 1,
-          employee_name: 'John Smith',
-          employee_department: 'Engineering',
-          period: '2024-03-18 to 2024-03-24',
-          total_hours: 42.5,
-          regular_hours: 40,
-          overtime_hours: 2.5,
-          status: 'pending',
-          submitted_date: '2024-03-25',
-          projects: [
-            { name: 'Website Redesign', hours: 32, billable: true },
-            { name: 'Internal Training', hours: 8, billable: false },
-            { name: 'Client Meeting', hours: 2.5, billable: true }
-          ],
-          notes: 'Completed frontend components and attended client demo'
-        },
-        {
-          id: 2,
-          employee_id: 2,
-          employee_name: 'Sarah Johnson',
-          employee_department: 'Marketing',
-          period: '2024-03-18 to 2024-03-24',
-          total_hours: 38,
-          regular_hours: 38,
-          overtime_hours: 0,
-          status: 'pending',
-          submitted_date: '2024-03-25',
-          projects: [
-            { name: 'Q2 Campaign', hours: 30, billable: true },
-            { name: 'Social Media', hours: 8, billable: true }
-          ],
-          notes: 'Finalized campaign assets and scheduled social posts'
-        },
-        {
-          id: 3,
-          employee_id: 3,
-          employee_name: 'Mike Chen',
-          employee_department: 'Sales',
-          period: '2024-03-18 to 2024-03-24',
-          total_hours: 45,
-          regular_hours: 40,
-          overtime_hours: 5,
-          status: 'approved',
-          submitted_date: '2024-03-24',
-          approved_by: 'HR Manager',
-          approved_date: '2024-03-25',
-          projects: [
-            { name: 'Client Proposals', hours: 35, billable: true },
-            { name: 'Sales Training', hours: 10, billable: false }
-          ],
-          notes: 'Prepared proposals for enterprise clients'
-        },
-        {
-          id: 4,
-          employee_id: 4,
-          employee_name: 'Lisa Brown',
-          employee_department: 'Design',
-          period: '2024-03-18 to 2024-03-24',
-          total_hours: 41,
-          regular_hours: 40,
-          overtime_hours: 1,
-          status: 'rejected',
-          submitted_date: '2024-03-24',
-          rejected_by: 'HR Manager',
-          rejected_date: '2024-03-25',
-          rejection_reason: 'Missing project codes',
-          projects: [
-            { name: 'UI Design System', hours: 35, billable: true },
-            { name: 'Logo Redesign', hours: 6, billable: true }
-          ],
-          notes: 'Created design components and updated brand assets'
-        }
-      ]);
-      setLoading(false);
-    }, 1500);
-  }, []);
+    fetchTimesheets();
+  }, [selectedOrganization, refreshTrigger]);
 
-  const handleApprove = (id) => {
-    setTimesheets(prev => prev.map(ts => 
-      ts.id === id ? { 
-        ...ts, 
-        status: 'approved',
-        approved_by: 'You',
-        approved_date: new Date().toISOString().split('T')[0]
-      } : ts
-    ));
+  const fetchTimesheets = async () => {
+    setLoading(true);
+    try {
+      if (selectedOrganization?.id) {
+        const response = await timesheetService.getTimesheets(selectedOrganization.id);
+        console.log('📋 Timesheets API response for Approvals:', response);
+        
+        if (response?.status && Array.isArray(response.data)) {
+          const submittedTimesheets = response.data.filter(t => 
+            t.status === 'submitted' || t.status === 'approved'
+          );
+          console.log('✅ Filtered timesheets for approvals:', submittedTimesheets);
+          setTimesheets(submittedTimesheets);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching timesheets:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = (id) => {
+  const handleApprove = async (id) => {
+    if (window.confirm('Are you sure you want to approve this timesheet?')) {
+      try {
+        setTimesheets(prev => prev.map(ts => 
+          ts.id === id ? { 
+            ...ts, 
+            status: 'approved',
+            approved_by: 'You',
+            approved_at: new Date().toISOString()
+          } : ts
+        ));
+        
+        alert('Timesheet approved successfully!');
+        
+        setTimeout(() => {
+          setRefreshTrigger(prev => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error('Error approving timesheet:', error);
+        alert('Failed to approve timesheet. Please try again.');
+      }
+    }
+  };
+
+  const handleReject = async (id) => {
     const reason = prompt('Please enter rejection reason:');
     if (reason) {
-      setTimesheets(prev => prev.map(ts => 
-        ts.id === id ? { 
-          ...ts, 
-          status: 'rejected',
-          rejected_by: 'You',
-          rejected_date: new Date().toISOString().split('T')[0],
-          rejection_reason: reason
-        } : ts
-      ));
+      try {
+        setTimesheets(prev => prev.map(ts => 
+          ts.id === id ? { 
+            ...ts, 
+            status: 'rejected',
+            rejected_by: 'You',
+            rejected_date: new Date().toISOString(),
+            rejection_reason: reason
+          } : ts
+        ));
+        
+        alert('Timesheet rejected successfully!');
+        
+        setTimeout(() => {
+          setRefreshTrigger(prev => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error('Error rejecting timesheet:', error);
+        alert('Failed to reject timesheet. Please try again.');
+      }
     }
   };
 
@@ -152,43 +120,130 @@ const TimesheetApprovals = () => {
     setShowDetailModal(true);
   };
 
+  const handlePushToXero = async () => {
+    if (!selectedOrganization?.id) {
+      alert('Please select an organization first');
+      return;
+    }
+
+    if (selectedTimesheetIds.length === 0) {
+      alert('Please select timesheets to push to Xero');
+      return;
+    }
+
+    if (window.confirm(`Push ${selectedTimesheetIds.length} timesheet(s) to Xero?`)) {
+      setPushToXeroLoading(true);
+      try {
+        console.log('📤 Pushing to Xero with selected IDs:', selectedTimesheetIds);
+        
+        const response = await timesheetService.pushToXero(selectedOrganization.id);
+        console.log('✅ Push to Xero response:', response);
+        
+        if (response.status) {
+          const pushedCount = response.employees_pushed || response.data?.employees_pushed || 0;
+          alert(`Successfully pushed ${pushedCount} timesheets to Xero`);
+          
+          setTimesheets(prev => prev.map(ts => 
+            selectedTimesheetIds.includes(ts.id) 
+              ? { 
+                  ...ts, 
+                  xero_status: 'pushed', 
+                  xero_synced_at: new Date().toISOString(),
+                  status: 'approved'
+                } 
+              : ts
+          ));
+          
+          setSelectedTimesheetIds([]);
+          
+          setTimeout(() => {
+            setRefreshTrigger(prev => prev + 1);
+          }, 2000);
+        } else {
+          alert(response.message || 'Failed to push to Xero');
+        }
+      } catch (error) {
+        console.error('Error pushing to Xero:', error);
+        console.error('Error details:', error.response?.data || error.message);
+        alert('Failed to push to Xero. Please check console for details.');
+      } finally {
+        setPushToXeroLoading(false);
+      }
+    }
+  };
+
+  const toggleTimesheetSelection = (timesheetId) => {
+    setSelectedTimesheetIds(prev => 
+      prev.includes(timesheetId)
+        ? prev.filter(id => id !== timesheetId)
+        : [...prev, timesheetId]
+    );
+  };
+
+  const selectAllTimesheets = () => {
+    const allIds = timesheets
+      .filter(t => 
+        t.status === 'submitted' && 
+        (t.xero_status === null || t.xero_status !== 'pushed') &&
+        parseFloat(t.regular_hours || 0) > 0
+      )
+      .map(t => t.id);
+    
+    if (selectedTimesheetIds.length === allIds.length && allIds.length > 0) {
+      setSelectedTimesheetIds([]);
+    } else {
+      setSelectedTimesheetIds(allIds);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      submitted: 'bg-blue-100 text-blue-800 border border-blue-200',
       approved: 'bg-green-100 text-green-800 border border-green-200',
       rejected: 'bg-red-100 text-red-800 border border-red-200'
     };
-    return `px-3 py-1 text-xs font-semibold rounded-full inline-flex items-center ${styles[status]}`;
+    return `px-3 py-1 text-xs font-semibold rounded-full inline-flex items-center ${styles[status] || 'bg-gray-100 text-gray-800 border border-gray-200'}`;
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'approved': return <FaCheckCircle className="mr-1" />;
       case 'rejected': return <FaTimesCircle className="mr-1" />;
+      case 'submitted': return <FaPaperPlane className="mr-1" />;
       default: return <FaClock className="mr-1" />;
     }
   };
 
   const filteredTimesheets = timesheets.filter(ts => {
     if (filters.status !== 'all' && ts.status !== filters.status) return false;
-    if (filters.employee !== 'all' && ts.employee_id.toString() !== filters.employee) return false;
-    if (filters.search && !ts.employee_name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.search && !`${ts.employee?.first_name || ''} ${ts.employee?.last_name || ''}`.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
   });
 
   const stats = {
-    pending: timesheets.filter(ts => ts.status === 'pending').length,
+    submitted: timesheets.filter(ts => ts.status === 'submitted').length,
     approved: timesheets.filter(ts => ts.status === 'approved').length,
     rejected: timesheets.filter(ts => ts.status === 'rejected').length,
-    total: timesheets.length
+    total: timesheets.length,
+    readyForXero: timesheets.filter(ts => 
+      ts.status === 'submitted' && 
+      (ts.xero_status === null || ts.xero_status !== 'pushed') &&
+      parseFloat(ts.regular_hours || 0) > 0
+    ).length
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   if (loading) {
@@ -209,11 +264,17 @@ const TimesheetApprovals = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Timesheet Approvals</h1>
-          <p className="text-gray-600">Review and approve employee timesheets</p>
+          <p className="text-gray-600">Review, approve, and push timesheets to Xero</p>
+          {selectedOrganization && (
+            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+              <FaUserTie className="mr-2 text-xs" />
+              {selectedOrganization.name}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -228,9 +289,9 @@ const TimesheetApprovals = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.pending}</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.submitted}</p>
               </div>
-              <FaClock className="text-yellow-500 text-xl" />
+              <FaPaperPlane className="text-yellow-500 text-xl" />
             </div>
           </div>
           
@@ -253,20 +314,70 @@ const TimesheetApprovals = () => {
               <FaTimesCircle className="text-red-500 text-xl" />
             </div>
           </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ready for Xero</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.readyForXero}</p>
+              </div>
+              <FaSyncAlt className="text-purple-500 text-xl" />
+            </div>
+          </div>
         </div>
 
-        {/* Action Button */}
-        <div className="mb-6 flex justify-end">
+        {/* Action Buttons */}
+        <div className="mb-6 flex justify-between items-center">
           <div className="flex gap-2">
+            <button
+              onClick={handlePushToXero}
+              disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
+              className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                selectedTimesheetIds.length > 0 && !pushToXeroLoading
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+              {pushToXeroLoading ? 'Pushing to Xero...' : `Push to Xero (${selectedTimesheetIds.length})`}
+            </button>
+            
+            <button 
+              onClick={() => setRefreshTrigger(prev => prev + 1)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <FaSyncAlt /> Refresh
+            </button>
+            
             <button className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
               <FaDownload /> Export
             </button>
           </div>
+
+          {selectedTimesheetIds.length > 0 && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-blue-600 font-medium">
+                {selectedTimesheetIds.length} timesheet(s) selected
+              </span>
+              <button
+                onClick={selectAllTimesheets}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                {selectedTimesheetIds.length === stats.readyForXero ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                onClick={() => setSelectedTimesheetIds([])}
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Clear Selection
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filters Section */}
         <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search bar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -295,26 +406,9 @@ const TimesheetApprovals = () => {
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
+                <option value="submitted">Submitted</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
-              </select>
-            </div>
-
-            {/* Employee filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Employee
-              </label>
-              <select 
-                value={filters.employee}
-                onChange={(e) => setFilters(prev => ({ ...prev, employee: e.target.value }))}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
-              >
-                <option value="all">All Employees</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.name}</option>
-                ))}
               </select>
             </div>
 
@@ -339,22 +433,32 @@ const TimesheetApprovals = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[22%] min-w-[180px]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">
+                    {stats.readyForXero > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0}
+                        onChange={selectAllTimesheets}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    )}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Period
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[130px]">
-                    Hours Breakdown
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Hours
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[130px]">
-                    Projects
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[12%] min-w-[100px]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Xero Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -362,7 +466,7 @@ const TimesheetApprovals = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredTimesheets.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                       <div className="flex flex-col items-center">
                         <FaClock className="text-4xl text-gray-300 mb-3" />
                         <p className="text-lg font-medium text-gray-900 mb-1">No timesheets found</p>
@@ -373,90 +477,106 @@ const TimesheetApprovals = () => {
                 ) : (
                   filteredTimesheets.map((timesheet) => (
                     <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
+                      {/* Checkbox for Xero Push */}
+                      <td className="px-4 py-3">
+                        {timesheet.status === 'submitted' && 
+                         (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') &&
+                         parseFloat(timesheet.regular_hours || 0) > 0 && (
+                          <input
+                            type="checkbox"
+                            checked={selectedTimesheetIds.includes(timesheet.id)}
+                            onChange={() => toggleTimesheetSelection(timesheet.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        )}
+                      </td>
+
                       {/* Employee */}
-                      <td className="px-4 py-3 w-[22%] min-w-[180px]">
+                      <td className="px-4 py-3">
                         <div className="flex items-start">
                           <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {timesheet.employee_name.split(' ').map(n => n[0]).join('')}
+                            {`${timesheet.employee?.first_name?.[0] || ''}${timesheet.employee?.last_name?.[0] || ''}`}
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-semibold text-gray-900">
-                              {timesheet.employee_name}
+                              {timesheet.employee?.first_name || 'N/A'} {timesheet.employee?.last_name || ''}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {timesheet.employee_department}
+                              {timesheet.employee?.employee_code || 'N/A'}
                             </div>
                             <div className="text-xs text-gray-400">
-                              Submitted: {formatDate(timesheet.submitted_date)}
+                              Submitted: {formatDate(timesheet.created_at)}
                             </div>
                           </div>
                         </div>
                       </td>
 
                       {/* Period */}
-                      <td className="px-4 py-3 w-[18%] min-w-[150px]">
-                        <div className="text-sm text-gray-900">{timesheet.period}</div>
-                      </td>
-
-                      {/* Hours Breakdown */}
-                      <td className="px-4 py-3 w-[16%] min-w-[130px]">
-                        <div className="text-sm">
-                          <div className="font-semibold text-gray-900 mb-1">
-                            {timesheet.total_hours}h total
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Regular: {timesheet.regular_hours}h
-                          </div>
-                          {timesheet.overtime_hours > 0 && (
-                            <div className="text-sm text-gray-500">
-                              Overtime: {timesheet.overtime_hours}h
-                            </div>
-                          )}
+                      <td className="px-4 py-3">
+                        <div className="text-sm text-gray-900">
+                          {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
                         </div>
                       </td>
 
-                      {/* Projects */}
-                      <td className="px-4 py-3 w-[16%] min-w-[130px]">
-                        <div className="space-y-1">
-                          {timesheet.projects.slice(0, 2).map((project, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                              <span className="text-sm text-gray-900 truncate max-w-[80px]">
-                                {project.name}
-                              </span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                project.billable 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {project.hours}h
-                              </span>
-                            </div>
-                          ))}
-                          {timesheet.projects.length > 2 && (
-                            <div className="text-xs text-blue-600">
-                              +{timesheet.projects.length - 2} more projects
+                      {/* Hours */}
+                      <td className="px-4 py-3">
+                        <div className="text-sm">
+                          <div className="font-semibold text-gray-900 mb-1">
+                            {parseFloat(timesheet.regular_hours || 0).toFixed(2)}h
+                          </div>
+                          {parseFloat(timesheet.overtime_hours || 0) > 0 && (
+                            <div className="text-xs text-orange-600">
+                              +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
                             </div>
                           )}
                         </div>
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 w-[12%] min-w-[100px]">
+                      <td className="px-4 py-3">
                         <div className="flex flex-col space-y-1">
                           <span className={getStatusBadge(timesheet.status)}>
                             {getStatusIcon(timesheet.status)}
-                            {timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1)}
+                            {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
                           </span>
                           {timesheet.approved_by && (
                             <div className="text-xs text-gray-500">
                               Approved by: {timesheet.approved_by}
                             </div>
                           )}
+                          {timesheet.approved_at && (
+                            <div className="text-xs text-gray-500">
+                              On: {formatDate(timesheet.approved_at)}
+                            </div>
+                          )}
                         </div>
                       </td>
 
+                      {/* Xero Status */}
+                      <td className="px-4 py-3">
+                        {timesheet.xero_status ? (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            timesheet.xero_status === 'pushed' 
+                              ? 'bg-green-100 text-green-800 border border-green-200' 
+                              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          }`}>
+                            <FaCheckCircle className="mr-1" />
+                            {timesheet.xero_status.charAt(0).toUpperCase() + timesheet.xero_status.slice(1)}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            Not Pushed
+                          </span>
+                        )}
+                        {timesheet.xero_synced_at && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {formatDate(timesheet.xero_synced_at)}
+                          </div>
+                        )}
+                      </td>
+
                       {/* Actions */}
-                      <td className="px-4 py-3 w-[16%] min-w-[140px] text-sm font-medium">
+                      <td className="px-4 py-3 text-sm font-medium">
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewDetails(timesheet)}
@@ -465,7 +585,7 @@ const TimesheetApprovals = () => {
                           >
                             <FaEye /> Details
                           </button>
-                          {timesheet.status === 'pending' && (
+                          {timesheet.status === 'submitted' && (
                             <>
                               <button
                                 onClick={() => handleApprove(timesheet.id)}
@@ -501,8 +621,8 @@ const TimesheetApprovals = () => {
                 Showing {filteredTimesheets.length} of {timesheets.length} timesheets
               </div>
               <div className="text-sm font-semibold text-gray-800">
-                Pending approvals:{" "}
-                <span className="text-yellow-600">{stats.pending}</span>
+                Ready for Xero push:{" "}
+                <span className="text-purple-600">{stats.readyForXero}</span>
               </div>
             </div>
           </div>
@@ -529,19 +649,19 @@ const TimesheetApprovals = () => {
                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Employee Information</h3>
                     <div className="flex items-center space-x-3 mb-3">
                       <div className="flex-shrink-0 h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-base">
-                        {selectedTimesheet.employee_name.split(' ').map(n => n[0]).join('')}
+                        {`${selectedTimesheet.employee?.first_name?.[0] || ''}${selectedTimesheet.employee?.last_name?.[0] || ''}`}
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-gray-900">
-                          {selectedTimesheet.employee_name}
+                          {selectedTimesheet.employee?.first_name || 'N/A'} {selectedTimesheet.employee?.last_name || ''}
                         </div>
                         <div className="text-sm text-gray-600">
-                          {selectedTimesheet.employee_department}
+                          {selectedTimesheet.employee?.employee_code || 'N/A'}
                         </div>
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      <span className="font-medium">Submitted:</span> {formatDate(selectedTimesheet.submitted_date)}
+                      <span className="font-medium">Submitted:</span> {formatDate(selectedTimesheet.created_at)}
                     </div>
                   </div>
 
@@ -549,22 +669,28 @@ const TimesheetApprovals = () => {
                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Hours Summary</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-gray-800">{selectedTimesheet.total_hours}h</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
+                        </div>
                         <div className="text-xs text-gray-600">Total Hours</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-green-600">{selectedTimesheet.regular_hours}h</div>
+                        <div className="text-lg font-bold text-green-600">
+                          {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
+                        </div>
                         <div className="text-xs text-gray-600">Regular Hours</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-orange-600">{selectedTimesheet.overtime_hours}h</div>
+                        <div className="text-lg font-bold text-orange-600">
+                          {parseFloat(selectedTimesheet.overtime_hours || 0).toFixed(2)}h
+                        </div>
                         <div className="text-xs text-gray-600">Overtime Hours</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded">
                         <div className="text-lg font-bold text-blue-600">
-                          {selectedTimesheet.projects.filter(p => p.billable).reduce((sum, p) => sum + p.hours, 0)}h
+                          {selectedTimesheet.xero_status === 'pushed' ? 'Pushed' : 'Not Pushed'}
                         </div>
-                        <div className="text-xs text-gray-600">Billable Hours</div>
+                        <div className="text-xs text-gray-600">Xero Status</div>
                       </div>
                     </div>
                   </div>
@@ -574,65 +700,65 @@ const TimesheetApprovals = () => {
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-800 mb-2">Period</h3>
                   <div className="text-sm text-gray-900 bg-gray-50 p-4 rounded-lg">
-                    {selectedTimesheet.period}
+                    {formatDate(selectedTimesheet.from_date)} - {formatDate(selectedTimesheet.to_date)}
                   </div>
                 </div>
 
-                {/* Projects Breakdown */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Project Breakdown</h3>
-                  <div className="space-y-2">
-                    {selectedTimesheet.projects.map((project, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm border-b pb-2">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{project.name}</div>
-                          <div className="text-gray-500">{project.hours}h • {project.billable ? 'Billable' : 'Non-Billable'}</div>
-                        </div>
-                        <div className="text-gray-900">
-                          {project.billable ? `$${(project.hours * 75).toFixed(0)}` : '-'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {selectedTimesheet.notes && (
+                {/* Daily Breakdown */}
+                {selectedTimesheet.daily_breakdown && typeof selectedTimesheet.daily_breakdown === 'object' && (
                   <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Employee Notes</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
-                      {selectedTimesheet.notes}
-                    </p>
-                  </div>
-                )}
-
-                {/* Rejection Reason */}
-                {selectedTimesheet.rejection_reason && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Rejection Reason</h3>
-                    <p className="text-sm text-red-700 bg-red-50 p-4 rounded-lg">
-                      {selectedTimesheet.rejection_reason}
-                    </p>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Daily Breakdown</h3>
+                    <div className="space-y-2">
+                      {Object.entries(selectedTimesheet.daily_breakdown).map(([date, hours]) => (
+                        <div key={date} className="flex justify-between items-center text-sm border-b pb-2">
+                          <div className="text-gray-700">{formatDate(date)}</div>
+                          <div className="font-medium text-gray-900">
+                            {parseFloat(hours).toFixed(2)} hours
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                {selectedTimesheet.status === 'pending' && (
+                {selectedTimesheet.status === 'submitted' && (
                   <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                     <button
-                      onClick={() => handleReject(selectedTimesheet.id)}
+                      onClick={() => {
+                        handleReject(selectedTimesheet.id);
+                        setShowDetailModal(false);
+                      }}
                       className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
                     >
                       Reject
                     </button>
                     <button
-                      onClick={() => handleApprove(selectedTimesheet.id)}
+                      onClick={() => {
+                        handleApprove(selectedTimesheet.id);
+                        setShowDetailModal(false);
+                      }}
                       className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
                     >
                       <FaSave /> Approve Timesheet
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Overlay */}
+        {pushToXeroLoading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-8 rounded-xl shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                <div>
+                  <div className="text-lg font-medium text-gray-900">Pushing to Xero...</div>
+                  <div className="text-sm text-gray-600">Please wait while we sync with Xero</div>
+                </div>
               </div>
             </div>
           </div>

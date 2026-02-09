@@ -36,8 +36,7 @@ import HolidaysCalendars from "./pages/Attendance/HolidaysCalendars";
 // --- Import Timesheet Pages ---
 import TimesheetEntry from "./pages/Timesheet/TimesheetEntry";
 import TimesheetApprovals from "./pages/Timesheet/TimesheetApprovals";
-import OvertimeTracking from "./pages/Timesheet/OvertimeTracking";
-import TimesheetReports from "./pages/Timesheet/TimesheetReports";
+
 
 // --- Import Rostering Pages ---
 import ShiftScheduling from "./pages/Rostering/ShiftScheduling";
@@ -47,12 +46,10 @@ import NotificationsPage from "./pages/Rostering/NotificationsPage";
 import RosterPeriods from "./pages/Rostering/RosterPeriods";
 
 // --- Import Payroll Pages ---
-import SalaryStructureSetup from "./pages/Payroll/SalaryStructureSetup";
-import SalaryProcessing from "./pages/Payroll/SalaryProcessing";
-import Deductions from "./pages/Payroll/Deductions";
-import PayslipGeneration from "./pages/Payroll/PayslipGeneration";
-import BonusIncentives from "./pages/Payroll/BonusIncentives";
-import PayrollReports from "./pages/Payroll/PayrollReports";
+import RunPayroll from "./pages/Payroll/ReviewPayroll";
+import ReviewPayroll from "./pages/Payroll/ReviewPayroll";
+import Payslip from "./pages/Payroll/Payslip";
+
 
 // --- Import Performance Pages ---
 import GoalSetting from "./pages/Performance/GoalSetting";
@@ -163,8 +160,7 @@ function App() {
           children: [
             { path: "entry", element: <TimesheetEntry /> },
             { path: "approvals", element: <TimesheetApprovals /> },
-            { path: "overtime", element: <OvertimeTracking /> },
-            { path: "reports", element: <TimesheetReports /> },
+           
             { index: true, element: <Navigate to="entry" replace /> }
           ]
         },
@@ -180,18 +176,18 @@ function App() {
             { index: true, element: <Navigate to="scheduling" replace /> }
           ]
         },
-        { 
-          path: "payroll", 
-          children: [
-            { path: "setup", element: <SalaryStructureSetup /> },
-            { path: "processing", element: <SalaryProcessing /> },
-            { path: "deductions", element: <Deductions /> },
-            { path: "payslips", element: <PayslipGeneration /> },
-            { path: "bonus", element: <BonusIncentives /> },
-            { path: "reports", element: <PayrollReports /> },
-            { index: true, element: <Navigate to="processing" replace /> }
-          ]
-        },
+       {
+  path: "payroll",
+  children: [
+    { path: "run", element: <RunPayroll /> },
+    { path: "review", element: <ReviewPayroll /> },
+    { path: "payslip", element: <Payslip /> },
+
+    // default route
+    { index: true, element: <Navigate to="run" replace /> },
+  ],
+},
+
         { 
           path: "performance", 
           children: [

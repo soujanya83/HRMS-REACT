@@ -207,41 +207,27 @@ const navLinks = [
   },
 
   {
-    name: "Payroll",
-    icon: HiOutlineCreditCard,
-    children: [
-      {
-        name: "Salary Structure Setup",
-        path: "/dashboard/payroll/setup",
-        icon: HiOutlineCog,
-      },
-      {
-        name: "Salary Processing",
-        path: "/dashboard/payroll/processing",
-        icon: HiOutlineCash,
-      },
-      {
-        name: "Deductions",
-        path: "/dashboard/payroll/deductions",
-        icon: HiOutlineMinusCircle,
-      },
-      {
-        name: "Payslip Generation",
-        path: "/dashboard/payroll/payslips",
-        icon: HiOutlinePrinter,
-      },
-      {
-        name: "Bonus & Incentives",
-        path: "/dashboard/payroll/bonus",
-        icon: HiOutlineGift,
-      },
-      {
-        name: "Payroll Reports",
-        path: "/dashboard/payroll/reports",
-        icon: HiOutlineDocumentReport,
-      },
-    ],
+  name: "Payroll",
+  icon: HiOutlineCreditCard,
+  children: [
+    {
+      name: "Run Payroll",
+      path: "/dashboard/payroll/run",
+      icon: HiOutlineCash,
+    },
+    {
+      name: "Review Payroll",
+      path: "/dashboard/payroll/review",
+      icon: HiOutlineDocumentReport,
+    },
+    {
+      name: "Payslip",
+      path: "/dashboard/payroll/payslip",
+      icon: HiOutlinePrinter,
+    },
+  ],
   },
+
   {
     name: "Performance",
     icon: HiOutlineChartBar,

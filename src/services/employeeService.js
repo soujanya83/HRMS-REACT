@@ -105,13 +105,18 @@ export const getEmployeeDocuments = (employeeId) => {
 
 // Upload new employee document
 // FIXED VERSION in employeeService.js
-export const uploadEmployeeDocument = (employeeId, documentData) => {
-  // Ensure employeeId is a string/number, not FormData
-  const id = typeof employeeId === 'object' ? 
-    (employeeId.get ? employeeId.get('employee_id') : null) : 
-    employeeId;
+export const uploadEmployeeDocument = (documentData) => {
+  console.log('DEBUG - uploadEmployeeDocument called with data:');
   
-  return axiosClient.post(`/employees/${id}/documents`, documentData, {
+  // Log FormData contents for debugging
+  if (documentData instanceof FormData) {
+    for (let pair of documentData.entries()) {
+      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
+    }
+  }
+  
+  // The FormData should already contain employee_id, so we don't need it as a separate parameter
+  return axiosClient.post('/employee-documents', documentData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -119,7 +124,7 @@ export const uploadEmployeeDocument = (employeeId, documentData) => {
 };
 
 // --- Departments ---
-// Get departments for a specific organization
+// Get departments for a specific organization - ADD THIS MISSING FUNCTION
 export const getDepartmentsByOrganization = (orgId) => {
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
@@ -187,7 +192,7 @@ export const employeeService = {
   // Original functions
   getEmployees,
   getEmployee,
-  getDepartmentsByOrganization,
+  getDepartmentsByOrganization, // Now this is defined
   createEmployee,
   updateEmployee,
   deleteEmployee,

@@ -1,6 +1,5 @@
+// employeeDocumentService.js
 import axiosClient from "../axiosClient";
-
-// --- Employee Documents CRUD Operations ---
 
 // Get all employee documents
 export const getEmployeeDocuments = (params = {}) => {
@@ -12,10 +11,9 @@ export const getEmployeeDocument = (documentId) => {
   return axiosClient.get(`/employee-documents/${documentId}`);
 };
 
-// Create new employee document - RENAMED to avoid conflict
-export const createEmployeeDocument = (formData) => {
-  // FormData should already contain employee_id
-  return axiosClient.post("/employee-documents", formData, {
+// Create new employee document
+export const createEmployeeDocument = (employeeId, formData) => {
+  return axiosClient.post(`/employees/${employeeId}/documents`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -23,9 +21,8 @@ export const createEmployeeDocument = (formData) => {
 };
 
 // Update employee document
-export const updateEmployeeDocument = (documentId, documentData) => {
-  documentData.append('_method', 'PUT');
-  return axiosClient.post(`/employee-documents/${documentId}`, documentData, {
+export const updateEmployeeDocument = (documentId, formData) => {
+  return axiosClient.post(`/employee-documents/${documentId}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

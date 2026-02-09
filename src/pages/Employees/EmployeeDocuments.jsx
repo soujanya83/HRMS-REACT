@@ -44,7 +44,7 @@ const FileIcon = ({ fileName }) => {
 };
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {} }) => {
+const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {}, employeeId }) => {
   const [formData, setFormData] = useState({
     document_type: initialData.document_type || '',
     issue_date: initialData.issue_date || '',
@@ -76,7 +76,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
       setFormData(prev => ({
         ...prev,
         file,
-        file_name: file.name, // Set file_name from file name
+        file_name: file.name,
         // Auto-suggest document type from filename
         document_type: prev.document_type || 
           file.name
@@ -109,21 +109,32 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
     try {
       const data = new FormData();
       
-      // Required fields
-      data.append('document_type', formData.document_type);
+      // ALWAYS append employee_id
+      data.append('employee_id', employeeId);
       
-      // File fields (required for new uploads)
+      // Map field names to match API expectations
+      // API expects 'document_name' but you have 'document_type'
+      if (formData.document_type) {
+        data.append('document_name', formData.document_type);
+      }
+      
+      // For file field, API expects 'document' but you have 'file'
       if (!isEdit) {
         if (!formData.file) {
           throw new Error('Please select a file to upload');
         }
-        data.append('file', formData.file); // File upload field
-        data.append('file_name', formData.file_name || formData.file.name); // Separate file name field
+        // Append file with correct field name 'document'
+        data.append('document', formData.file);
+        // Also append file_name separately if needed
+        data.append('file_name', formData.file_name || formData.file.name);
       } else {
         // For edits, only append file if changed
         if (formData.file) {
-          data.append('file', formData.file);
+          data.append('document', formData.file);
           data.append('file_name', formData.file_name || formData.file.name);
+        } else if (formData.file_name) {
+          // If no file but file_name exists (editing existing file)
+          data.append('file_name', formData.file_name);
         }
       }
       
@@ -153,8 +164,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
         setDebugInfo({
           status: error.response.status,
           errors: validationErrors,
-          data: error.response.data,
-          formData: Object.fromEntries(data ? data.entries() : [])
+          data: error.response.data
         });
       } else {
         alert(error.response?.data?.message || error.message || 'Failed to upload document');
@@ -308,7 +318,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
                   Document File <span className="text-red-500">*</span>
                 </label>
                 <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors ${
-                  errors.file ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                  errors.document ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <div className="space-y-3 text-center">
                     <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
@@ -344,10 +354,10 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
                     )}
                   </div>
                 </div>
-                {errors.file && (
+                {errors.document && (
                   <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-600 flex items-center gap-2">
-                      <FaExclamationTriangle /> {errors.file[0]}
+                      <FaExclamationTriangle /> {errors.document[0]}
                     </p>
                   </div>
                 )}
@@ -475,20 +485,18 @@ const EmployeeDocuments = ({ employeeId, employeeName }) => {
   try {
     console.log('Submitting document with FormData:');
     
-    // Always append employee_id to FormData
-    formData.append('employee_id', employeeId);
-
-    // Log FormData contents
+    // Log FormData contents for debugging
     for (let pair of formData.entries()) {
       console.log(`${pair[0]}:`, pair[1]);
     }
 
-    // IMPORTANT: Use the correct service function
     if (isEdit && editingDocument) {
+      // For updates, use PUT method
+      formData.append('_method', 'PUT');
       await updateEmployeeDocument(editingDocument.id, formData);
     } else {
-      // This should call: POST /employee-documents
-      await createEmployeeDocument(formData);
+      // For new uploads - pass employeeId to service
+      await createEmployeeDocument(employeeId, formData);
     }
     
     // Refresh documents
@@ -497,7 +505,8 @@ const EmployeeDocuments = ({ employeeId, employeeName }) => {
     setEditingDocument(null);
     setUploadError(null);
     
-    toast.success(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
+    // Show success message
+    alert(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
     
   } catch (error) {
     console.error('Error in document operation:', error);
@@ -629,6 +638,7 @@ const EmployeeDocuments = ({ employeeId, employeeName }) => {
         onSubmit={handleUploadSubmit}
         isEdit={!!editingDocument}
         initialData={editingDocument || {}}
+        employeeId={employeeId}  // Pass employeeId to modal
       />
 
       <ConfirmationModal
