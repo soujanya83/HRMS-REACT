@@ -1,17 +1,18 @@
-// services/payrollService.js - FINAL VERSION
+// services/payrollService.js - FINAL VERSION WITH ALL PAYSLIPS API
 import axiosClient from '../axiosClient';
 
 const API_BASE = '/xero';
 
 export const payrollService = {
-  // Fetch Pay Periods
+  // ============ PAY PERIODS ============
   fetchPayPeriods: (organizationId) => {
     return axiosClient.get('/pay-periods', {
       params: { organization_id: organizationId }
     });
   },
 
-  // Create Pay Run - WITH COMPLETE ERROR HANDLING
+  // ============ PAY RUNS ============
+  // Create Pay Run
   createPayRun: async (organizationId, fromDate, toDate) => {
     try {
       console.log('🎯 Creating pay run:', {
@@ -35,7 +36,6 @@ export const payrollService = {
         details: error.response?.data?.details
       });
       
-      // Extract error message
       let errorMessage = 'Failed to create pay run';
       let errorType = 'GENERAL';
       
@@ -61,7 +61,15 @@ export const payrollService = {
     }
   },
 
-  // Review Pay Run
+  // Get All Pay Runs by Organization (POST)
+  getAllPayRunsByOrganization: (organizationId) => {
+    console.log('📡 Fetching ALL pay runs for organization:', organizationId);
+    return axiosClient.post(`${API_BASE}-payruns/by-organization`, {
+      organization_id: parseInt(organizationId, 10)
+    });
+  },
+
+  // Review Pay Run by Date Range (GET)
   reviewPayRun: (organizationId, fromDate, toDate) => {
     const params = { organization_id: organizationId };
     if (fromDate) params.from_date = fromDate;
@@ -77,7 +85,21 @@ export const payrollService = {
     });
   },
 
-  // Sync Payslips
+  // Get Pay Run Details
+  getPayRunDetails: (payRunId) => {
+    return axiosClient.get(`${API_BASE}/payruns/${payRunId}`);
+  },
+
+  // ============ PAYSLIPS ============
+  // NEW: Get All Payslips by Organization (POST)
+  getAllPayslipsByOrganization: (organizationId) => {
+    console.log('📡 Fetching ALL payslips for organization:', organizationId);
+    return axiosClient.post(`${API_BASE}-payslips/by-organization`, {
+      organization_id: parseInt(organizationId, 10)
+    });
+  },
+
+  // Sync Payslips from Xero
   syncPayslips: (organizationId, xeroPayRunId) => {
     return axiosClient.post(`${API_BASE}/payslips/sync`, {
       organization_id: organizationId.toString(),
@@ -85,10 +107,10 @@ export const payrollService = {
     });
   },
 
-  // Get Payslips by Pay Run
-  getPayslipsByPayRun: (xeroPayRunId) => {
+  // Get Payslips by Pay Run (Database ID)
+  getPayslipsByPayRun: (payRunDbId) => {
     return axiosClient.get(`${API_BASE}/payslips`, {
-      params: { xero_pay_run_id: xeroPayRunId }
+      params: { xero_pay_run_id: payRunDbId }
     });
   },
 
@@ -97,10 +119,5 @@ export const payrollService = {
     return axiosClient.get(`${API_BASE}/payslips`, {
       params: { employee_id: employeeId }
     });
-  },
-
-  // Get Pay Run Details
-  getPayRunDetails: (payRunId) => {
-    return axiosClient.get(`${API_BASE}/payruns/${payRunId}`);
   }
 };

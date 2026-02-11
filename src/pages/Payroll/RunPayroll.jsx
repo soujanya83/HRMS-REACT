@@ -1,9 +1,8 @@
-// components/RunPayroll.jsx - COMPLETE FIXED VERSION
+// components/RunPayroll.jsx - COMPLETE VERSION WITH ALL PAYSLIPS
 import React, { useState, useEffect } from "react";
 import {
   FaFileInvoice,
   FaSearch,
-  FaFilter,
   FaDownload,
   FaPrint,
   FaEye,
@@ -17,25 +16,26 @@ import {
   FaSync,
   FaFilePdf,
   FaPaperPlane,
-  FaHistory,
   FaSpinner,
   FaCalendar,
   FaUsers,
   FaFileAlt,
   FaCogs,
   FaPlay,
-  FaStop,
   FaExclamationTriangle,
-  FaArrowRight,
   FaCheck,
-  FaClock,
   FaBan,
-  FaCopy,
-  FaFileExcel,
   FaChartLine,
   FaInfoCircle,
-  FaTrash,
-  FaUndo
+  FaArrowRight,
+  FaAngleRight,
+  FaAngleLeft,
+  FaThumbsUp,
+  FaThumbsDown,
+  FaClock,
+  FaHistory,
+  FaListAlt,
+  FaFileInvoice as FaPayslipIcon
 } from "react-icons/fa";
 import { payrollService } from "../../services/payrollService.js";
 import { useOrganizations } from "../../contexts/OrganizationContext.jsx";
@@ -47,23 +47,32 @@ const RunPayroll = () => {
   const [loading, setLoading] = useState({
     payPeriods: false,
     payRuns: false,
+    allPayRuns: false,
     payslips: false,
-    creatingPayRun: false
+    allPayslips: false,
+    creatingPayRun: false,
+    approving: false,
+    syncing: false,
+    employeeHistory: false
   });
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [activeTab, setActiveTab] = useState("payPeriods");
+  
+  // View Modes
+  const [payRunViewMode, setPayRunViewMode] = useState("byPeriod"); // 'byPeriod' or 'all'
+  const [payslipViewMode, setPayslipViewMode] = useState("byPayRun"); // 'byPayRun' or 'all'
 
-  // State for pay periods
+  // State for pay periods (FORTNIGHTLY ONLY)
   const [payPeriods, setPayPeriods] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [payPeriodFilters, setPayPeriodFilters] = useState({
-    calendar_type: "all",
-    is_current: "current"
+    is_current: "all"
   });
 
   // State for pay runs
-  const [payRuns, setPayRuns] = useState([]);
+  const [payRuns, setPayRuns] = useState([]); // Filtered by period
+  const [allPayRuns, setAllPayRuns] = useState([]); // All pay runs for organization
   const [selectedPayRun, setSelectedPayRun] = useState(null);
   const [payRunFilters, setPayRunFilters] = useState({
     status: "all",
@@ -71,19 +80,24 @@ const RunPayroll = () => {
   });
 
   // State for payslips
-  const [payslips, setPayslips] = useState([]);
+  const [payslips, setPayslips] = useState([]); // Filtered by pay run
+  const [allPayslips, setAllPayslips] = useState([]); // ALL payslips for organization
   const [selectedPayslips, setSelectedPayslips] = useState([]);
   const [payslipFilters, setPayslipFilters] = useState({
     search: "",
     status: "all"
   });
 
-  // Form state
+  // State for employee payslip history
+  const [employeeHistory, setEmployeeHistory] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showEmployeeHistory, setShowEmployeeHistory] = useState(false);
+
+  // Form state - AUTO SET from selected period
   const [payRunDateRange, setPayRunDateRange] = useState({
     from_date: "",
     to_date: ""
   });
-  const [calendarType, setCalendarType] = useState("FORTNIGHTLY");
 
   // Preview state
   const [showPreview, setShowPreview] = useState(false);
@@ -91,290 +105,355 @@ const RunPayroll = () => {
   const [showPayRunDetails, setShowPayRunDetails] = useState(false);
   const [selectedPayRunDetails, setSelectedPayRunDetails] = useState(null);
 
-  // Fetch data on component mount
+  // ============ INITIAL DATA LOAD ============
   useEffect(() => {
-    fetchPayPeriods();
-    fetchAllPayRuns();
+    if (organizationId) {
+      console.log('🏢 Organization changed to:', organizationId);
+      fetchPayPeriods();
+      fetchAllPayRunsForOrganization();
+      fetchAllPayslipsForOrganization(); // NEW: Fetch all payslips
+    }
   }, [organizationId]);
 
-  // Fetch pay periods
+  // ============ PAY PERIODS API ============
   const fetchPayPeriods = async () => {
+    if (!organizationId) {
+      setError("No organization selected");
+      return;
+    }
+
     try {
       setLoading(prev => ({ ...prev, payPeriods: true }));
       setError(null);
+      
+      console.log('📡 Fetching pay periods for organization:', organizationId);
       const response = await payrollService.fetchPayPeriods(organizationId);
       
-      if (response.data?.status) {
-        const periods = response.data.data || [];
-        setPayPeriods(periods);
+      if (response.data && response.data.status) {
+        const allPeriods = response.data.data || [];
         
-        // Set default selected period to current
-        const currentPeriod = periods.find(p => p.is_current);
+        // FILTER: ONLY FORTNIGHTLY PERIODS
+        const fortnightlyPeriods = allPeriods.filter(p => 
+          p.calendar_type && p.calendar_type.toUpperCase() === "FORTNIGHTLY"
+        );
+        
+        console.log(`✅ Found ${fortnightlyPeriods.length} fortnightly periods`);
+        fortnightlyPeriods.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+        setPayPeriods(fortnightlyPeriods);
+        
+        const currentPeriod = fortnightlyPeriods.find(p => p.is_current === true);
         if (currentPeriod) {
-          setSelectedPeriod(currentPeriod);
-          setPayRunDateRange({
-            from_date: currentPeriod.start_date.split('T')[0],
-            to_date: currentPeriod.end_date.split('T')[0]
-          });
-          setCalendarType(currentPeriod.calendar_type);
+          console.log('🎯 Selected current period:', currentPeriod.calendar_name);
+          handlePeriodChange(currentPeriod);
+        } else if (fortnightlyPeriods.length > 0) {
+          console.log('🎯 Selected most recent period');
+          handlePeriodChange(fortnightlyPeriods[0]);
         }
-      } else {
-        setError("Failed to fetch pay periods: Invalid response format");
       }
     } catch (error) {
-      console.error("Error fetching pay periods:", error);
-      setError(error.response?.data?.message || error.message || "Failed to fetch pay periods. Please try again.");
+      console.error("❌ Error fetching pay periods:", error);
+      if (error.response?.status === 404) {
+        setError(`No pay periods found for organization ID: ${organizationId}. Please check if this organization has payroll setup.`);
+      } else {
+        setError(error.response?.data?.message || error.message || "Failed to fetch pay periods.");
+      }
     } finally {
       setLoading(prev => ({ ...prev, payPeriods: false }));
     }
   };
 
-  // Create pay run - FIXED WITH DRAFT HANDLING
-  // In RunPayroll.jsx - Replace the entire createPayRun function with this:
+  // ============ PAY RUNS APIS ============
+  const fetchAllPayRunsForOrganization = async () => {
+    if (!organizationId) return;
 
-const createPayRun = async () => {
-  if (!payRunDateRange.from_date || !payRunDateRange.to_date) {
-    setError("Please select a date range");
-    return;
-  }
-
-  try {
-    setLoading(prev => ({ ...prev, creatingPayRun: true }));
-    setError(null);
-    setSuccessMessage(null);
-    
-    console.log('🔄 Creating pay run for period:', {
-      from: payRunDateRange.from_date,
-      to: payRunDateRange.to_date
-    });
-    
-    const response = await payrollService.createPayRun(
-      organizationId.toString(),
-      payRunDateRange.from_date,
-      payRunDateRange.to_date
-    );
-    
-    if (response.data?.status) {
-      setSuccessMessage(response.data.message || "Pay run created successfully!");
-      
-      // Clear form
-      setPayRunDateRange({
-        from_date: "",
-        to_date: ""
-      });
-      
-      // Refresh data
-      await fetchAllPayRuns();
-      await fetchPayPeriods();
-      
-      // Switch to pay runs tab
-      setActiveTab("payRuns");
-      setPayRunFilters(prev => ({ ...prev, status: "DRAFT" }));
-    }
-  } catch (error) {
-    console.error("❌ Error creating pay run:", error);
-    
-    let errorMessage = error.message || "Failed to create pay run";
-    
-    // Special handling for draft pay run error
-    if (error.type === 'DRAFT_EXISTS' || 
-        error.message?.includes('draft pay run') || 
-        error.details?.Message?.includes('one draft pay run per pay frequency')) {
-      
-      // Force fetch all pay runs to check
-      console.log('🔍 Fetching all pay runs to check for drafts...');
-      await fetchAllPayRuns();
-      
-      // Get ALL pay runs, not just filtered ones
-      const allDraftPayRuns = payRuns.filter(p => p.status === 'DRAFT');
-      const draftCount = allDraftPayRuns.length;
-      
-      errorMessage = `⚠️ Cannot create pay run: There is already a draft pay run for this period.\n\n`;
-      
-      if (draftCount > 0) {
-        errorMessage += `Found ${draftCount} draft pay run(s):\n`;
-        allDraftPayRuns.slice(0, 3).forEach((payRun, index) => {
-          errorMessage += `${index + 1}. ${payRun.calendar_name || 'Unnamed'} `;
-          errorMessage += `(${formatDate(payRun.period_start_date)} - ${formatDate(payRun.period_end_date)})\n`;
-        });
-        if (draftCount > 3) {
-          errorMessage += `... and ${draftCount - 3} more\n`;
-        }
-      } else {
-        errorMessage += `Note: The system says there's a draft, but none are showing in our list.\n`;
-        errorMessage += `This might be because:\n`;
-        errorMessage += `1. The draft is in Xero but not synced to our system yet\n`;
-        errorMessage += `2. The pay run date range doesn't match our search\n`;
-        errorMessage += `3. There's a synchronization issue\n`;
-      }
-      
-      errorMessage += `\nPlease:\n`;
-      errorMessage += `1. Go to the "Pay Runs" tab\n`;
-      errorMessage += `2. Look for any DRAFT pay runs (all periods)\n`;
-      errorMessage += `3. Approve or void them\n`;
-      errorMessage += `4. Try creating a new pay run again\n`;
-      errorMessage += `\nOr try creating a pay run for a different date range.`;
-      
-      // Switch to pay runs tab and show all (no filter)
-      setActiveTab("payRuns");
-      setPayRunFilters(prev => ({ ...prev, status: "all" }));
-    }
-    
-    setError(errorMessage);
-  } finally {
-    setLoading(prev => ({ ...prev, creatingPayRun: false }));
-  }
-};
-
-// Also update the fetchAllPayRuns function to ensure it fetches ALL pay runs:
-const fetchAllPayRuns = async () => {
-  try {
-    setLoading(prev => ({ ...prev, payRuns: true }));
-    setError(null);
-    
-    // Fetch pay runs WITHOUT date filter to get ALL pay runs
-    const response = await payrollService.reviewPayRun(organizationId);
-    
-    if (response.data?.status) {
-      const allPayRuns = response.data.data || [];
-      setPayRuns(allPayRuns);
-      console.log('📋 All pay runs fetched:', {
-        total: allPayRuns.length,
-        drafts: allPayRuns.filter(p => p.status === 'DRAFT').length,
-        payRuns: allPayRuns.map(p => ({
-          id: p.xero_pay_run_id,
-          name: p.calendar_name,
-          status: p.status,
-          period: `${formatDate(p.period_start_date)} - ${formatDate(p.period_end_date)}`
-        }))
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching pay runs:", error);
-    setError(error.response?.data?.message || error.message || "Failed to fetch pay runs.");
-  } finally {
-    setLoading(prev => ({ ...prev, payRuns: false }));
-  }
-};
-
-// Update the useEffect to use fetchAllPayRuns:
-useEffect(() => {
-  fetchPayPeriods();
-  fetchAllPayRuns(); // Changed from fetchPayRuns()
-}, [organizationId]);
-
- 
-
-  // Fetch pay runs with date filter
-  const fetchPayRuns = async (fromDate = null, toDate = null) => {
     try {
-      setLoading(prev => ({ ...prev, payRuns: true }));
+      setLoading(prev => ({ ...prev, allPayRuns: true }));
       setError(null);
       
-      const from = fromDate || payRunDateRange.from_date;
-      const to = toDate || payRunDateRange.to_date;
+      console.log('📡 Fetching ALL pay runs for organization:', organizationId);
+      const response = await payrollService.getAllPayRunsByOrganization(organizationId);
       
-      const response = await payrollService.reviewPayRun(
-        organizationId,
-        from,
-        to
-      );
-      
-      if (response.data?.status) {
-        setPayRuns(response.data.data || []);
-      } else {
-        setError("Failed to fetch pay runs: Invalid response format");
+      if (response.data && response.data.status) {
+        const allPayRunsData = response.data.data || [];
+        
+        // Filter to only show FORTNIGHTLY pay runs
+        const fortnightlyPayRuns = allPayRunsData.filter(payRun => {
+          if (payRun.period_start_date && payRun.period_end_date) {
+            const start = new Date(payRun.period_start_date);
+            const end = new Date(payRun.period_end_date);
+            const daysDiff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+            return daysDiff === 14 || daysDiff === 13 || daysDiff === 15;
+          }
+          return payRun.calendar_name?.toLowerCase().includes('fortnightly');
+        });
+        
+        setAllPayRuns(fortnightlyPayRuns);
+        console.log(`📊 Loaded ${fortnightlyPayRuns.length} fortnightly pay runs`);
       }
     } catch (error) {
-      console.error("Error fetching pay runs:", error);
-      setError(error.response?.data?.message || error.message || "Failed to fetch pay runs.");
+      console.error("❌ Error fetching all pay runs:", error);
+      setAllPayRuns([]);
+    } finally {
+      setLoading(prev => ({ ...prev, allPayRuns: false }));
+    }
+  };
+
+  const fetchPayRunsByPeriod = async (period) => {
+    if (!period || !organizationId) return;
+
+    try {
+      setLoading(prev => ({ ...prev, payRuns: true }));
+      
+      const fromDate = period.start_date.split('T')[0];
+      const toDate = period.end_date.split('T')[0];
+      
+      console.log('📡 Fetching pay runs for period:', fromDate, 'to', toDate);
+      const response = await payrollService.reviewPayRun(organizationId, fromDate, toDate);
+      
+      if (response.data && response.data.status) {
+        const payRunsData = response.data.data || [];
+        setPayRuns(payRunsData);
+        console.log(`📊 Loaded ${payRunsData.length} pay runs for period`);
+      } else {
+        setPayRuns([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching pay runs by period:", error);
+      setPayRuns([]);
     } finally {
       setLoading(prev => ({ ...prev, payRuns: false }));
     }
   };
 
-  // Approve pay run
+  // ============ PAYSLIPS APIS ============
+  // NEW: Fetch ALL payslips for organization
+  const fetchAllPayslipsForOrganization = async () => {
+    if (!organizationId) return;
+
+    try {
+      setLoading(prev => ({ ...prev, allPayslips: true }));
+      setError(null);
+      
+      console.log('📡 Fetching ALL payslips for organization:', organizationId);
+      const response = await payrollService.getAllPayslipsByOrganization(organizationId);
+      
+      if (response.data && response.data.status) {
+        const payslipsData = response.data.data || [];
+        setAllPayslips(payslipsData);
+        console.log(`📊 Loaded ${payslipsData.length} payslips for organization`);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching all payslips:", error);
+      setAllPayslips([]);
+    } finally {
+      setLoading(prev => ({ ...prev, allPayslips: false }));
+    }
+  };
+
+  const fetchPayslipsByPayRun = async (xeroPayRunId) => {
+    try {
+      setLoading(prev => ({ ...prev, payslips: true }));
+      setError(null);
+      
+      const payRun = allPayRuns.find(p => p.xero_pay_run_id === xeroPayRunId) || 
+                     payRuns.find(p => p.xero_pay_run_id === xeroPayRunId);
+      
+      if (!payRun) {
+        setError("Pay run not found");
+        return;
+      }
+
+      console.log('📋 Fetching payslips for pay run DB ID:', payRun.id);
+      const response = await payrollService.getPayslipsByPayRun(payRun.id);
+      
+      if (response.data && response.data.status) {
+        const payslipData = response.data.data.data || [];
+        setPayslips(payslipData);
+        setSelectedPayRun(xeroPayRunId);
+        setPayslipViewMode('byPayRun');
+        setActiveTab("payslips");
+        console.log(`📋 Loaded ${payslipData.length} payslips`);
+      } else {
+        setPayslips([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching payslips:", error);
+      setPayslips([]);
+    } finally {
+      setLoading(prev => ({ ...prev, payslips: false }));
+    }
+  };
+
+  // ============ CREATE PAY RUN ============
+  const createPayRun = async () => {
+    if (!selectedPeriod) {
+      setError("Please select a fortnightly pay period");
+      return;
+    }
+
+    if (payRuns.length > 0) {
+      const existingPayRun = payRuns[0];
+      setError(
+        `⚠️ Cannot create pay run: A ${existingPayRun.status} pay run already exists for this period.\n\n` +
+        `Period: ${formatDate(selectedPeriod.start_date)} to ${formatDate(selectedPeriod.end_date)}\n` +
+        `Existing Pay Run ID: ${existingPayRun.id}\n` +
+        `Status: ${existingPayRun.status}`
+      );
+      setActiveTab("payRuns");
+      setPayRunFilters(prev => ({ ...prev, status: existingPayRun.status }));
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, creatingPayRun: true }));
+      setError(null);
+      setSuccessMessage(null);
+      
+      console.log('🔄 Creating pay run for period:', payRunDateRange);
+      const response = await payrollService.createPayRun(
+        organizationId,
+        payRunDateRange.from_date,
+        payRunDateRange.to_date
+      );
+      
+      if (response.data && response.data.status) {
+        setSuccessMessage(`✅ Fortnightly pay run created successfully!`);
+        await fetchPayRunsByPeriod(selectedPeriod);
+        await fetchAllPayRunsForOrganization();
+        setActiveTab("payRuns");
+        setPayRunFilters(prev => ({ ...prev, status: "DRAFT" }));
+      }
+    } catch (error) {
+      console.error("❌ Error creating pay run:", error);
+      const errorMsg = error.response?.data?.message || error.message;
+      
+      if (errorMsg.includes('draft pay run') || errorMsg.includes('already a draft')) {
+        setError(
+          `⚠️ Cannot create pay run: There is already a draft pay run for this period.\n\n` +
+          `Please go to the Pay Runs tab and approve or delete the existing draft pay run.`
+        );
+        setActiveTab("payRuns");
+        setPayRunFilters(prev => ({ ...prev, status: "DRAFT" }));
+      } else {
+        setError(errorMsg || "Failed to create pay run");
+      }
+    } finally {
+      setLoading(prev => ({ ...prev, creatingPayRun: false }));
+    }
+  };
+
+  // ============ APPROVE PAY RUN ============
   const approvePayRun = async (xeroPayRunId) => {
     if (!window.confirm("Are you sure you want to approve this pay run? This action cannot be undone.")) {
       return;
     }
 
     try {
+      setLoading(prev => ({ ...prev, approving: true }));
       setError(null);
+      
+      console.log('✅ Approving pay run:', xeroPayRunId);
       const response = await payrollService.approvePayRun(xeroPayRunId, organizationId);
       
-      if (response.data?.status) {
-        setSuccessMessage("Pay run approved successfully!");
-        fetchAllPayRuns();
-      } else {
-        setError(response.data?.message || "Failed to approve pay run");
+      if (response.data && response.data.status) {
+        setSuccessMessage("✅ Pay run approved successfully!");
+        await fetchPayRunsByPeriod(selectedPeriod);
+        await fetchAllPayRunsForOrganization();
       }
     } catch (error) {
-      console.error("Error approving pay run:", error);
-      setError(error.response?.data?.message || error.message || "Failed to approve pay run.");
+      console.error("❌ Error approving pay run:", error);
+      if (error.response?.data?.details?.Message?.includes("You can't update a posted pay run")) {
+        setError("⚠️ This pay run is already POSTED and cannot be approved.");
+      } else {
+        setError(error.response?.data?.message || error.message || "Failed to approve pay run");
+      }
+    } finally {
+      setLoading(prev => ({ ...prev, approving: false }));
     }
   };
 
-  // Sync payslips
+  // ============ SYNC PAYSLIPS ============
   const syncPayslips = async (xeroPayRunId) => {
     try {
-      setLoading(prev => ({ ...prev, payslips: true }));
+      setLoading(prev => ({ ...prev, syncing: true }));
       setError(null);
-      const response = await payrollService.syncPayslips(
-        organizationId,
-        xeroPayRunId
-      );
       
-      if (response.data?.status) {
-        setSuccessMessage(`Payslips synced successfully! ${response.data.message}`);
-        fetchPayslipsByPayRun(xeroPayRunId);
-      } else {
-        setError(response.data?.message || "Failed to sync payslips");
+      console.log('🔄 Syncing payslips for pay run:', xeroPayRunId);
+      const response = await payrollService.syncPayslips(organizationId, xeroPayRunId);
+      
+      if (response.data && response.data.status) {
+        setSuccessMessage(`✅ ${response.data.message || 'Payslips synced successfully!'}`);
+        await fetchPayslipsByPayRun(xeroPayRunId);
+        await fetchAllPayslipsForOrganization(); // Refresh all payslips
       }
     } catch (error) {
-      console.error("Error syncing payslips:", error);
-      setError(error.response?.data?.message || error.message || "Failed to sync payslips.");
+      console.error("❌ Error syncing payslips:", error);
+      setError(error.response?.data?.message || error.message || "Failed to sync payslips");
     } finally {
-      setLoading(prev => ({ ...prev, payslips: false }));
+      setLoading(prev => ({ ...prev, syncing: false }));
     }
   };
 
-  // Fetch payslips by pay run
-  const fetchPayslipsByPayRun = async (xeroPayRunId) => {
+  // ============ EMPLOYEE HISTORY ============
+  const fetchEmployeeHistory = async (employeeId) => {
     try {
-      setLoading(prev => ({ ...prev, payslips: true }));
+      setLoading(prev => ({ ...prev, employeeHistory: true }));
       setError(null);
       
-      const response = await payrollService.getPayslipsByPayRun(xeroPayRunId);
+      console.log('📋 Fetching employee history for employee:', employeeId);
+      const response = await payrollService.getEmployeePayslipHistory(employeeId);
       
-      if (response.data?.status) {
-        setPayslips(response.data.data || []);
-        setSelectedPayRun(xeroPayRunId);
-        setActiveTab("payslips");
-      } else {
-        setError("Failed to fetch payslips: Invalid response format");
+      if (response.data && response.data.status) {
+        setEmployeeHistory(response.data.data.data || []);
+        setSelectedEmployee(employeeId);
+        setShowEmployeeHistory(true);
+        console.log(`📋 Loaded ${response.data.data.data?.length || 0} historical payslips`);
       }
     } catch (error) {
-      console.error("Error fetching payslips:", error);
-      setError(error.response?.data?.message || error.message || "Failed to fetch payslips.");
+      console.error("❌ Error fetching employee history:", error);
+      setError(error.response?.data?.message || "Failed to fetch employee history");
     } finally {
-      setLoading(prev => ({ ...prev, payslips: false }));
+      setLoading(prev => ({ ...prev, employeeHistory: false }));
     }
   };
 
-  // View pay run details
-  const viewPayRunDetails = async (payRun) => {
+  // ============ HANDLERS ============
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    setPayRunDateRange({
+      from_date: period.start_date.split('T')[0],
+      to_date: period.end_date.split('T')[0]
+    });
+    setSelectedPayRun(null);
+    setPayslips([]);
+    fetchPayRunsByPeriod(period);
+  };
+
+  const handlePayRunViewModeChange = (mode) => {
+    setPayRunViewMode(mode);
+    if (mode === 'all' && allPayRuns.length === 0) {
+      fetchAllPayRunsForOrganization();
+    }
+  };
+
+  const handlePayslipViewModeChange = (mode) => {
+    setPayslipViewMode(mode);
+    if (mode === 'all' && allPayslips.length === 0) {
+      fetchAllPayslipsForOrganization();
+    }
+  };
+
+  const viewPayRunDetails = (payRun) => {
     setSelectedPayRunDetails(payRun);
     setShowPayRunDetails(true);
   };
 
-  // Preview payslip
   const handlePreviewPayslip = (payslip) => {
     setPreviewPayslip(payslip);
     setShowPreview(true);
   };
 
-  // Helper functions
+  // ============ HELPER FUNCTIONS ============
   const getStatusColor = (status) => {
     const colors = {
       DRAFT: "bg-yellow-100 text-yellow-800 border border-yellow-200",
@@ -413,6 +492,14 @@ useEffect(() => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
+      if (typeof dateString === 'string' && dateString.includes('/Date(')) {
+        const timestamp = parseInt(dateString.match(/\d+/)[0]);
+        return new Date(timestamp).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+      }
       return new Date(dateString).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
@@ -423,58 +510,86 @@ useEffect(() => {
     }
   };
 
-  const calculatePayRunStats = (payRun) => {
-    return {
-      totalWages: formatCurrency(payRun.total_wages),
-      totalTax: formatCurrency(payRun.total_tax),
-      totalNetPay: formatCurrency(payRun.total_net_pay),
-      employeeCount: payRun.employee_count || 0
-    };
-  };
-
-  // Filter functions
+  // ============ FILTERS ============
   const filteredPayPeriods = payPeriods.filter((period) => {
-    const matchesType = 
-      payPeriodFilters.calendar_type === "all" || 
-      period.calendar_type === payPeriodFilters.calendar_type;
-    
-    const matchesCurrent = 
-      payPeriodFilters.is_current === "all" || 
+    return payPeriodFilters.is_current === "all" || 
       (payPeriodFilters.is_current === "current" && period.is_current) ||
       (payPeriodFilters.is_current === "past" && !period.is_current);
-    
-    return matchesType && matchesCurrent;
   });
 
-  const filteredPayRuns = payRuns.filter((payRun) => {
-    const matchesStatus = 
-      payRunFilters.status === "all" || 
-      payRun.status === payRunFilters.status;
-    
-    const matchesSearch =
-      payRunFilters.search === "" ||
-      (payRun.calendar_name?.toLowerCase().includes(payRunFilters.search.toLowerCase())) ||
-      (payRun.xero_pay_run_id?.toLowerCase().includes(payRunFilters.search.toLowerCase())) ||
-      (payRun.pay_run_name?.toLowerCase().includes(payRunFilters.search.toLowerCase()));
-    
-    return matchesStatus && matchesSearch;
-  });
+  const getFilteredPayRuns = () => {
+    const sourceRuns = payRunViewMode === 'all' ? allPayRuns : payRuns;
+    return sourceRuns.filter((payRun) => {
+      const matchesStatus = payRunFilters.status === "all" || payRun.status === payRunFilters.status;
+      const matchesSearch = payRunFilters.search === "" ||
+        payRun.calendar_name?.toLowerCase().includes(payRunFilters.search.toLowerCase()) ||
+        payRun.xero_pay_run_id?.toLowerCase().includes(payRunFilters.search.toLowerCase()) ||
+        `#${payRun.id}`.includes(payRunFilters.search);
+      return matchesStatus && matchesSearch;
+    });
+  };
 
-  const filteredPayslips = payslips.filter((payslip) => {
-    const employee = payslip.employee_connection?.employee;
-    const matchesSearch =
-      payslipFilters.search === "" ||
-      (employee?.first_name?.toLowerCase().includes(payslipFilters.search.toLowerCase())) ||
-      (employee?.last_name?.toLowerCase().includes(payslipFilters.search.toLowerCase())) ||
-      (employee?.employee_code?.toLowerCase().includes(payslipFilters.search.toLowerCase()));
-    
-    return matchesSearch;
-  });
+  const getFilteredPayslips = () => {
+    const sourcePayslips = payslipViewMode === 'all' ? allPayslips : payslips;
+    return sourcePayslips.filter((payslip) => {
+      const employee = payslip.employee_connection?.employee;
+      const matchesSearch = payslipFilters.search === "" ||
+        employee?.first_name?.toLowerCase().includes(payslipFilters.search.toLowerCase()) ||
+        employee?.last_name?.toLowerCase().includes(payslipFilters.search.toLowerCase()) ||
+        employee?.employee_code?.toLowerCase().includes(payslipFilters.search.toLowerCase()) ||
+        payslip.xero_payslip_id?.toLowerCase().includes(payslipFilters.search.toLowerCase());
+      return matchesSearch;
+    });
+  };
 
-  // Get draft pay runs count
-  const draftPayRunsCount = payRuns.filter(p => p.status === 'DRAFT').length;
+  const filteredPayRuns = getFilteredPayRuns();
+  const filteredPayslips = getFilteredPayslips();
 
-  if (loading.payPeriods && loading.payRuns) {
+  // ============ TOTALS ============
+  const payRunTotals = (payRunViewMode === 'all' ? allPayRuns : payRuns).reduce((acc, run) => ({
+    totalWages: acc.totalWages + (parseFloat(run.total_wages) || 0),
+    totalTax: acc.totalTax + (parseFloat(run.total_tax) || 0),
+    totalNetPay: acc.totalNetPay + (parseFloat(run.total_net_pay) || 0),
+    count: acc.count + 1
+  }), { totalWages: 0, totalTax: 0, totalNetPay: 0, count: 0 });
+
+  const payslipTotals = (payslipViewMode === 'all' ? allPayslips : payslips).reduce((acc, payslip) => ({
+    totalWages: acc.totalWages + (parseFloat(payslip.wages) || 0),
+    totalTax: acc.totalTax + (parseFloat(payslip.tax_deducted) || 0),
+    totalNetPay: acc.totalNetPay + (parseFloat(payslip.net_pay) || 0),
+    count: acc.count + 1
+  }), { totalWages: 0, totalTax: 0, totalNetPay: 0, count: 0 });
+
+  const draftPayRunsCount = (payRunViewMode === 'all' ? allPayRuns : payRuns).filter(p => p.status === 'DRAFT').length;
+
+  // ============ RENDER ============
+  if (!loading.payPeriods && payPeriods.length === 0 && !error) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <FaExclamationTriangle className="text-4xl text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Fortnightly Pay Periods Found</h2>
+            <p className="text-gray-600 mb-4">
+              Organization: {selectedOrganization?.name || 'Unknown'} (ID: {organizationId})
+            </p>
+            <p className="text-gray-500 mb-6">
+              This organization doesn't have any fortnightly pay periods configured.
+              {selectedOrganization?.id !== 15 && " Try switching back to organization ID 15 (Trugnina) which has test data."}
+            </p>
+            <button
+              onClick={fetchPayPeriods}
+              className="px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+            >
+              <FaSync className="inline mr-2" /> Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading.payPeriods && payPeriods.length === 0) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -489,162 +604,148 @@ useEffect(() => {
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
+        {/* ============ HEADER ============ */}
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
                 <FaFileInvoice className="mr-3 text-blue-600" />
-                Run Payroll
+                Fortnightly Payroll
               </h1>
-              <p className="text-gray-600">Manage pay periods, create pay runs, and process employee payments</p>
+              <p className="text-gray-600">Manage fortnightly pay periods, pay runs, and payslips</p>
               {selectedOrganization && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                   <FaBuilding className="text-gray-400" />
                   <span>Organization: {selectedOrganization.name} (ID: {organizationId})</span>
+                  {selectedOrganization.id === 15 && (
+                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+                      Test Data Available
+                    </span>
+                  )}
                 </div>
               )}
+              <div className="mt-2 inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                <FaCalendarAlt className="mr-2 text-xs" />
+                Fortnightly Pay Periods Only
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  fetchPayPeriods();
-                  fetchAllPayRuns();
-                }}
-                disabled={loading.payPeriods || loading.payRuns}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaSync className={loading.payPeriods || loading.payRuns ? "animate-spin" : ""} />
-                Refresh Data
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                fetchPayPeriods();
+                fetchAllPayRunsForOrganization();
+                fetchAllPayslipsForOrganization();
+              }}
+              disabled={loading.payPeriods || loading.allPayRuns || loading.allPayslips}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <FaSync className={loading.payPeriods || loading.allPayRuns || loading.allPayslips ? "animate-spin" : ""} />
+              Refresh All Data
+            </button>
           </div>
         </div>
 
-        {/* Messages */}
+        {/* ============ MESSAGES ============ */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <FaExclamationTriangle className="text-red-500 text-xl mt-0.5" />
-              <div className="flex-1">
-                <p className="text-red-800 font-medium">Error</p>
-                <p className="text-red-600 text-sm whitespace-pre-line">{error}</p>
-                
-                {/* Show special actions for draft error */}
-                {error.includes('draft pay run') && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setActiveTab("payRuns");
-                        setPayRunFilters(prev => ({ ...prev, status: "DRAFT" }));
-                      }}
-                      className="px-3 py-1.5 bg-yellow-600 text-white text-xs font-medium rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-1"
-                    >
-                      <FaEye /> View Draft Pay Runs ({draftPayRunsCount})
-                    </button>
-                    <button
-                      onClick={() => setError(null)}
-                      className="px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-1"
-                    >
-                      <FaTimesCircle /> Dismiss
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-500 hover:text-red-700"
-              >
-                <FaTimesCircle />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <FaCheckCircle className="text-green-500 text-xl" />
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <FaExclamationTriangle className="text-red-500 text-xl flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-green-800 font-medium">Success</p>
-              <p className="text-green-600 text-sm">{successMessage}</p>
+              <p className="text-red-800 font-medium">Error</p>
+              <p className="text-red-600 text-sm whitespace-pre-line">{error}</p>
             </div>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="text-green-500 hover:text-green-700"
-            >
+            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
               <FaTimesCircle />
             </button>
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Pay Runs</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{payRuns.length}</p>
-                {draftPayRunsCount > 0 && (
-                  <p className="text-xs text-yellow-600 mt-1">{draftPayRunsCount} draft(s)</p>
-                )}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+            <FaCheckCircle className="text-green-500 text-xl flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-green-800 font-medium">Success</p>
+              <p className="text-green-600 text-sm">{successMessage}</p>
+            </div>
+            <button onClick={() => setSuccessMessage(null)} className="text-green-500 hover:text-green-700">
+              <FaTimesCircle />
+            </button>
+          </div>
+        )}
+
+        {/* ============ STATS CARDS ============ */}
+        {payPeriods.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Fortnightly Periods</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{payPeriods.length}</p>
+                </div>
+                <FaCalendar className="text-blue-500 text-xl" />
               </div>
-              <FaFileInvoice className="text-blue-500 text-xl" />
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-indigo-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Pay Runs</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{allPayRuns.length}</p>
+                  {draftPayRunsCount > 0 && (
+                    <p className="text-xs text-yellow-600 mt-1">{draftPayRunsCount} draft</p>
+                  )}
+                </div>
+                <FaCogs className="text-indigo-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Payslips</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{allPayslips.length}</p>
+                </div>
+                <FaPayslipIcon className="text-purple-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Wages</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(payRunTotals.totalWages)}</p>
+                </div>
+                <FaMoneyBillWave className="text-green-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Net Payout</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(payRunTotals.totalNetPay)}</p>
+                </div>
+                <FaUsers className="text-red-500 text-xl" />
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Wages</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  {formatCurrency(payRuns.reduce((sum, run) => sum + (parseFloat(run.total_wages) || 0), 0))}
-                </p>
-              </div>
-              <FaMoneyBillWave className="text-green-500 text-xl" />
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Tax</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  {formatCurrency(payRuns.reduce((sum, run) => sum + (parseFloat(run.total_tax) || 0), 0))}
-                </p>
-              </div>
-              <FaChartLine className="text-red-500 text-xl" />
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Net Payout</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  {formatCurrency(payRuns.reduce((sum, run) => sum + (parseFloat(run.total_net_pay) || 0), 0))}
-                </p>
-              </div>
-              <FaUsers className="text-purple-500 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs Navigation */}
+        {/* ============ TABS NAVIGATION ============ */}
         <div className="mb-6 border-b border-gray-200">
           <nav className="flex space-x-8">
             {["payPeriods", "payRuns", "payslips"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
+                disabled={payPeriods.length === 0 && tab !== "payPeriods"}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                } ${payPeriods.length === 0 && tab !== "payPeriods" ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {tab === "payPeriods" && (
                   <span className="flex items-center gap-2">
-                    <FaCalendar /> Pay Periods
+                    <FaCalendar /> Fortnightly Periods
                     {payPeriods.length > 0 && (
                       <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                         {payPeriods.length}
@@ -655,9 +756,9 @@ useEffect(() => {
                 {tab === "payRuns" && (
                   <span className="flex items-center gap-2">
                     <FaCogs /> Pay Runs
-                    {payRuns.length > 0 && (
+                    {(payRunViewMode === 'all' ? allPayRuns.length : payRuns.length) > 0 && (
                       <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                        {payRuns.length}
+                        {payRunViewMode === 'all' ? allPayRuns.length : payRuns.length}
                       </span>
                     )}
                     {draftPayRunsCount > 0 && (
@@ -669,10 +770,10 @@ useEffect(() => {
                 )}
                 {tab === "payslips" && (
                   <span className="flex items-center gap-2">
-                    <FaFileInvoice /> Payslips
-                    {selectedPayRun && payslips.length > 0 && (
+                    <FaPayslipIcon /> Payslips
+                    {(payslipViewMode === 'all' ? allPayslips.length : payslips.length) > 0 && (
                       <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                        {payslips.length}
+                        {payslipViewMode === 'all' ? allPayslips.length : payslips.length}
                       </span>
                     )}
                   </span>
@@ -682,125 +783,57 @@ useEffect(() => {
           </nav>
         </div>
 
-        {/* Pay Periods Tab */}
+        {/* ============ PAY PERIODS TAB ============ */}
         {activeTab === "payPeriods" && (
           <div className="space-y-6">
             {/* Create Pay Run Card */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                    <FaPlay className="mr-2 text-green-600" />
-                    Create New Pay Run
-                  </h2>
-                  {draftPayRunsCount > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full">
-                      <FaExclamationTriangle />
-                      <span>You have {draftPayRunsCount} draft pay run(s)</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Date Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pay Period Date Range *
-                    </label>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">From Date</label>
-                        <input
-                          type="date"
-                          value={payRunDateRange.from_date}
-                          onChange={(e) => setPayRunDateRange(prev => ({ ...prev, from_date: e.target.value }))}
-                          className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        />
+            {selectedPeriod && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="border-b border-gray-200 px-6 py-4 bg-blue-50">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+                      <FaPlay className="mr-2 text-green-600" />
+                      Create New Fortnightly Pay Run
+                    </h2>
+                    {draftPayRunsCount > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full">
+                        <FaExclamationTriangle />
+                        <span>{draftPayRunsCount} draft pay run(s) for this period</span>
                       </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FaInfoCircle className="text-purple-500 text-xl" />
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">To Date</label>
-                        <input
-                          type="date"
-                          value={payRunDateRange.to_date}
-                          onChange={(e) => setPayRunDateRange(prev => ({ ...prev, to_date: e.target.value }))}
-                          className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        />
+                        <p className="text-sm font-medium text-purple-800">Fortnightly Payroll System</p>
+                        <p className="text-sm text-purple-600">Only fortnightly pay periods are available.</p>
+                        {selectedPeriod && (
+                          <p className="text-xs text-purple-500 mt-1">
+                            Selected: {formatDate(selectedPeriod.start_date)} - {formatDate(selectedPeriod.end_date)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Calendar Type */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Calendar Type
-                    </label>
-                    <select
-                      value={calendarType}
-                      onChange={(e) => setCalendarType(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  <div className="flex justify-end">
+                    <button
+                      onClick={createPayRun}
+                      disabled={loading.creatingPayRun || !selectedPeriod || payRuns.length > 0}
+                      className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      title={payRuns.length > 0 ? "Pay run already exists for this period" : ""}
                     >
-                      <option value="WEEKLY">Weekly</option>
-                      <option value="FORTNIGHTLY">Fortnightly</option>
-                      <option value="MONTHLY">Monthly</option>
-                    </select>
+                      {loading.creatingPayRun ? <FaSpinner className="animate-spin" /> : <FaPlay />}
+                      Create Fortnightly Pay Run
+                    </button>
                   </div>
-
-                  {/* Quick Select */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Quick Select Period
-                    </label>
-                    <select
-                      value={selectedPeriod?.id || ""}
-                      onChange={(e) => {
-                        const period = payPeriods.find(p => p.id === parseInt(e.target.value));
-                        if (period) {
-                          setSelectedPeriod(period);
-                          setPayRunDateRange({
-                            from_date: period.start_date.split('T')[0],
-                            to_date: period.end_date.split('T')[0]
-                          });
-                          setCalendarType(period.calendar_type);
-                        }
-                      }}
-                      className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    >
-                      <option value="">Select a pay period</option>
-                      {payPeriods.map(period => (
-                        <option key={period.id} value={period.id}>
-                          {period.calendar_name} ({formatDate(period.start_date)} - {formatDate(period.end_date)})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-between items-center">
-                  <div className="text-sm text-gray-500">
-                    {payRunDateRange.from_date && payRunDateRange.to_date && (
-                      <div className="flex items-center gap-2">
-                        <FaInfoCircle className="text-blue-500" />
-                        <span>Selected period: {formatDate(payRunDateRange.from_date)} to {formatDate(payRunDateRange.to_date)}</span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={createPayRun}
-                    disabled={loading.creatingPayRun || !payRunDateRange.from_date || !payRunDateRange.to_date}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading.creatingPayRun ? (
-                      <FaSpinner className="animate-spin" />
-                    ) : (
-                      <FaPlay />
-                    )}
-                    Create Pay Run
-                  </button>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Pay Periods List */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -808,29 +841,17 @@ useEffect(() => {
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center">
                     <FaCalendar className="mr-2 text-blue-600" />
-                    Available Pay Periods
+                    Fortnightly Pay Periods
                   </h2>
-                  <div className="flex gap-2">
-                    <select
-                      value={payPeriodFilters.calendar_type}
-                      onChange={(e) => setPayPeriodFilters(prev => ({ ...prev, calendar_type: e.target.value }))}
-                      className="border border-gray-300 px-3 py-1.5 rounded-lg text-sm"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="WEEKLY">Weekly</option>
-                      <option value="FORTNIGHTLY">Fortnightly</option>
-                      <option value="MONTHLY">Monthly</option>
-                    </select>
-                    <select
-                      value={payPeriodFilters.is_current}
-                      onChange={(e) => setPayPeriodFilters(prev => ({ ...prev, is_current: e.target.value }))}
-                      className="border border-gray-300 px-3 py-1.5 rounded-lg text-sm"
-                    >
-                      <option value="all">All Periods</option>
-                      <option value="current">Current Only</option>
-                      <option value="past">Past Only</option>
-                    </select>
-                  </div>
+                  <select
+                    value={payPeriodFilters.is_current}
+                    onChange={(e) => setPayPeriodFilters(prev => ({ ...prev, is_current: e.target.value }))}
+                    className="border border-gray-300 px-3 py-1.5 rounded-lg text-sm"
+                  >
+                    <option value="all">All Periods</option>
+                    <option value="current">Current Only</option>
+                    <option value="past">Past Only</option>
+                  </select>
                 </div>
               </div>
 
@@ -838,29 +859,19 @@ useEffect(() => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Calendar</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Period</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Days</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Calendar</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Period</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Days</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {filteredPayPeriods.map((period) => (
-                      <tr key={period.id} className="hover:bg-gray-50">
+                      <tr key={period.id} className={`hover:bg-gray-50 ${selectedPeriod?.id === period.id ? 'bg-blue-50' : ''}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">{period.calendar_name}</div>
-                          <div className="text-sm text-gray-500">ID: {period.calendar_id?.substring(0, 8)}...</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            period.calendar_type === 'WEEKLY' ? 'bg-blue-100 text-blue-800' :
-                            period.calendar_type === 'FORTNIGHTLY' ? 'bg-purple-100 text-purple-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {period.calendar_type}
-                          </span>
+                          <div className="text-sm text-gray-500">Fortnightly</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{formatDate(period.start_date)}</div>
@@ -871,28 +882,21 @@ useEffect(() => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {period.is_current ? (
-                            <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                              Current
-                            </span>
+                            <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Current</span>
                           ) : (
-                            <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                              Past
-                            </span>
+                            <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Past</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
-                            onClick={() => {
-                              setPayRunDateRange({
-                                from_date: period.start_date.split('T')[0],
-                                to_date: period.end_date.split('T')[0]
-                              });
-                              setCalendarType(period.calendar_type);
-                              setSelectedPeriod(period);
-                            }}
-                            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                            onClick={() => handlePeriodChange(period)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg ${
+                              selectedPeriod?.id === period.id
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                           >
-                            Use This Period
+                            {selectedPeriod?.id === period.id ? 'Selected' : 'Select'}
                           </button>
                         </td>
                       </tr>
@@ -904,9 +908,68 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Pay Runs Tab */}
+        {/* ============ PAY RUNS TAB ============ */}
         {activeTab === "payRuns" && (
           <div className="space-y-6">
+            {/* View Mode Toggle */}
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-700">View Mode:</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePayRunViewModeChange('byPeriod')}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                        payRunViewMode === 'byPeriod'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaCalendar className="inline mr-2" />
+                      By Period
+                    </button>
+                    <button
+                      onClick={() => handlePayRunViewModeChange('all')}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                        payRunViewMode === 'all'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaListAlt className="inline mr-2" />
+                      All Pay Runs ({allPayRuns.length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Period Info Banner */}
+            {payRunViewMode === 'byPeriod' && selectedPeriod && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FaInfoCircle className="text-blue-500 text-xl" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">
+                        Period: {formatDate(selectedPeriod.start_date)} - {formatDate(selectedPeriod.end_date)}
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        {payRuns.length} pay run(s) • {payRuns.filter(p => p.status === 'DRAFT').length} draft
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => fetchPayRunsByPeriod(selectedPeriod)}
+                    disabled={loading.payRuns}
+                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <FaSync className={loading.payRuns ? "animate-spin" : ""} /> Refresh
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Filters */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -917,14 +980,14 @@ useEffect(() => {
                     placeholder="Search pay runs..."
                     value={payRunFilters.search}
                     onChange={(e) => setPayRunFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+                    className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
                 
                 <select
                   value={payRunFilters.status}
                   onChange={(e) => setPayRunFilters(prev => ({ ...prev, status: e.target.value }))}
-                  className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
+                  className="border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                 >
                   <option value="all">All Status</option>
                   <option value="DRAFT">Draft</option>
@@ -934,45 +997,34 @@ useEffect(() => {
                   <option value="VOIDED">Voided</option>
                 </select>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">From:</span>
-                  <input
-                    type="date"
-                    value={payRunDateRange.from_date}
-                    onChange={(e) => setPayRunDateRange(prev => ({ ...prev, from_date: e.target.value }))}
-                    className="border border-gray-300 px-3 py-2 rounded text-sm"
-                  />
+                <div className="md:col-span-2 flex justify-end">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FaClock className="text-gray-400" />
+                    <span>Total: {payRunViewMode === 'all' ? allPayRuns.length : payRuns.length} pay runs</span>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => fetchPayRuns()}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <FaSearch /> Search
-                </button>
               </div>
             </div>
 
-            {/* Pay Runs List */}
+            {/* Pay Runs Table */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pay Run Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Period</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Payment Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Financial Summary</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pay Run</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Period</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Payment Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Summary</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {filteredPayRuns.map((payRun) => {
                       const StatusIcon = getStatusIcon(payRun.status);
-                      const stats = calculatePayRunStats(payRun);
                       return (
-                        <tr key={payRun.xero_pay_run_id} className="hover:bg-gray-50">
+                        <tr key={payRun.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
                             <div className="flex items-center">
                               <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -980,17 +1032,17 @@ useEffect(() => {
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-semibold text-gray-900">
-                                  {payRun.calendar_name || `Pay Run #${payRun.xero_pay_run_id?.substring(0, 8)}`}
+                                  {payRun.calendar_name || `Pay Run #${payRun.id}`}
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {payRun.xero_pay_run_id?.substring(0, 12)}...
+                                <div className="text-xs text-gray-500">
+                                  ID: {payRun.id} • Xero: {payRun.xero_pay_run_id?.substring(0, 8)}...
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{formatDate(payRun.period_start_date)}</div>
-                            <div className="text-sm text-gray-500">to {formatDate(payRun.period_end_date)}</div>
+                            <div className="text-xs text-gray-500">to {formatDate(payRun.period_end_date)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatDate(payRun.payment_date)}
@@ -1005,18 +1057,14 @@ useEffect(() => {
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Wages:</span>
-                                <span className="font-medium">{stats.totalWages}</span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Tax:</span>
-                                <span className="font-medium text-red-600">{stats.totalTax}</span>
+                                <span className="font-medium">{formatCurrency(payRun.total_wages)}</span>
                               </div>
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Net:</span>
-                                <span className="font-medium text-green-600">{stats.totalNetPay}</span>
+                                <span className="font-medium text-green-600">{formatCurrency(payRun.total_net_pay)}</span>
                               </div>
                               <div className="text-xs text-gray-500">
-                                {stats.employeeCount} employees
+                                {payRun.employee_count || 0} employees
                               </div>
                             </div>
                           </td>
@@ -1024,22 +1072,32 @@ useEffect(() => {
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={() => viewPayRunDetails(payRun)}
-                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1"
                               >
                                 <FaEye /> Details
                               </button>
                               <button
                                 onClick={() => fetchPayslipsByPayRun(payRun.xero_pay_run_id)}
-                                className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1"
+                                className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 flex items-center justify-center gap-1"
                               >
-                                <FaFileInvoice /> Payslips
+                                <FaPayslipIcon /> Payslips
+                              </button>
+                              <button
+                                onClick={() => syncPayslips(payRun.xero_pay_run_id)}
+                                disabled={loading.syncing}
+                                className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center justify-center gap-1 disabled:opacity-50"
+                              >
+                                {loading.syncing ? <FaSpinner className="animate-spin" /> : <FaSync />}
+                                Sync
                               </button>
                               {payRun.status === 'DRAFT' && (
                                 <button
                                   onClick={() => approvePayRun(payRun.xero_pay_run_id)}
-                                  className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-1"
+                                  disabled={loading.approving}
+                                  className="px-3 py-1.5 bg-yellow-600 text-white text-xs font-medium rounded-lg hover:bg-yellow-700 flex items-center justify-center gap-1 disabled:opacity-50"
                                 >
-                                  <FaCheck /> Approve
+                                  {loading.approving ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                                  Approve
                                 </button>
                               )}
                             </div>
@@ -1052,11 +1110,13 @@ useEffect(() => {
 
                 {filteredPayRuns.length === 0 && (
                   <div className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <FaFileInvoice className="text-4xl text-gray-300 mb-3" />
-                      <p className="text-lg font-medium text-gray-900 mb-1">No pay runs found</p>
-                      <p className="text-gray-500">Create a pay run from the Pay Periods tab</p>
-                    </div>
+                    <FaCogs className="text-4xl text-gray-300 mx-auto mb-3" />
+                    <p className="text-lg font-medium text-gray-900 mb-1">No pay runs found</p>
+                    <p className="text-gray-500">
+                      {payRunViewMode === 'byPeriod' && selectedPeriod
+                        ? `Create a pay run for period ${formatDate(selectedPeriod.start_date)} - ${formatDate(selectedPeriod.end_date)}`
+                        : 'No fortnightly pay runs found'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1064,149 +1124,192 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Payslips Tab */}
+        {/* ============ PAYSLIPS TAB ============ */}
         {activeTab === "payslips" && (
           <div className="space-y-6">
+            {/* View Mode Toggle */}
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-700">View Mode:</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePayslipViewModeChange('byPayRun')}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                        payslipViewMode === 'byPayRun'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      disabled={!selectedPayRun && payslipViewMode === 'byPayRun'}
+                    >
+                      <FaFileInvoice className="inline mr-2" />
+                      By Pay Run {selectedPayRun && `(${payslips.length})`}
+                    </button>
+                    <button
+                      onClick={() => handlePayslipViewModeChange('all')}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                        payslipViewMode === 'all'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaListAlt className="inline mr-2" />
+                      All Payslips ({allPayslips.length})
+                    </button>
+                  </div>
+                </div>
+                {payslipViewMode === 'all' && (
+                  <button
+                    onClick={fetchAllPayslipsForOrganization}
+                    disabled={loading.allPayslips}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    <FaSync className={loading.allPayslips ? "animate-spin" : ""} />
+                    Refresh All
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Header */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800">
-                    Payslips for {selectedPayRun ? payRuns.find(p => p.xero_pay_run_id === selectedPayRun)?.calendar_name : "Selected Pay Run"}
+                    {payslipViewMode === 'all' 
+                      ? `All Payslips (${allPayslips.length})` 
+                      : selectedPayRun 
+                        ? `Payslips for Pay Run #${payRuns.find(p => p.xero_pay_run_id === selectedPayRun)?.id || ''}`
+                        : 'Select a pay run to view payslips'}
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    {payslips.length} payslips • Total: {formatCurrency(payslips.reduce((sum, p) => sum + (parseFloat(p.net_pay) || 0), 0))}
+                    Total Net Pay: {formatCurrency(payslipTotals.totalNetPay)} • {payslipViewMode === 'all' ? allPayslips.length : payslips.length} payslips
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <div className="relative">
-                    <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search employees..."
-                      value={payslipFilters.search}
-                      onChange={(e) => setPayslipFilters(prev => ({ ...prev, search: e.target.value }))}
-                      className="border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-64"
-                    />
-                  </div>
-                  {selectedPayRun && (
-                    <button
-                      onClick={() => {
-                        const payRun = payRuns.find(p => p.xero_pay_run_id === selectedPayRun);
-                        if (payRun) syncPayslips(payRun.xero_pay_run_id);
-                      }}
-                      disabled={loading.payslips}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading.payslips ? <FaSpinner className="animate-spin" /> : <FaSync />}
-                      Sync Payslips
-                    </button>
-                  )}
+                <div className="relative">
+                  <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search employees..."
+                    value={payslipFilters.search}
+                    onChange={(e) => setPayslipFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-64"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Payslips List */}
+            {/* Payslips Table */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={selectedPayslips.length === filteredPayslips.length && filteredPayslips.length > 0}
-                          onChange={() => {
-                            if (selectedPayslips.length === filteredPayslips.length) {
-                              setSelectedPayslips([]);
-                            } else {
-                              setSelectedPayslips(filteredPayslips.map(p => p.id));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Hours</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Wages</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tax</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Net Pay</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pay Run</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Payslip ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Hours</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Wages</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tax</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Net Pay</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredPayslips.map((payslip) => (
-                      <tr key={payslip.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedPayslips.includes(payslip.id)}
-                            onChange={() => {
-                              setSelectedPayslips(prev =>
-                                prev.includes(payslip.id)
-                                  ? prev.filter(id => id !== payslip.id)
-                                  : [...prev, payslip.id]
-                              );
-                            }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FaUserTie className="text-blue-600 text-lg" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-semibold text-gray-900">
-                                {payslip.employee_connection?.employee?.first_name} {payslip.employee_connection?.employee?.last_name}
+                  <tbody>
+                    {filteredPayslips.map((payslip) => {
+                      const employee = payslip.employee_connection?.employee;
+                      return (
+                        <tr key={payslip.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <FaUserTie className="text-blue-600 text-lg" />
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {payslip.employee_connection?.employee?.employee_code}
+                              <div className="ml-4">
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {employee?.first_name || 'N/A'} {employee?.last_name || ''}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {employee?.employee_code || 'N/A'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {parseFloat(payslip.hours_worked) || 0} hrs
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-blue-600">
-                            {formatCurrency(payslip.wages)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-red-600">
-                            {formatCurrency(payslip.tax_deducted)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-green-600">
-                            {formatCurrency(payslip.net_pay)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => handlePreviewPayslip(payslip)}
-                              className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                              title="Preview"
-                            >
-                              <FaEye />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium">#{payslip.xero_pay_run_id}</div>
+                            <div className="text-xs text-gray-500">
+                              {formatDate(payslip.pay_run?.period_start_date)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-mono">
+                              {payslip.xero_payslip_id?.substring(0, 8)}...
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              DB: {payslip.id}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {parseFloat(payslip.hours_worked || 0).toFixed(2)} hrs
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-semibold text-blue-600">
+                              {formatCurrency(payslip.wages)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-semibold text-red-600">
+                              {formatCurrency(payslip.tax_deducted)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-lg font-bold text-green-600">
+                              {formatCurrency(payslip.net_pay)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(payslip.created_at)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => handlePreviewPayslip(payslip)}
+                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700"
+                                title="Preview"
+                              >
+                                <FaEye />
+                              </button>
+                              <button
+                                onClick={() => fetchEmployeeHistory(payslip.employee_xero_connection_id)}
+                                className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700"
+                                title="History"
+                              >
+                                <FaHistory />
+                              </button>
+                              <button
+                                className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700"
+                                title="Download"
+                              >
+                                <FaDownload />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
                 {filteredPayslips.length === 0 && (
                   <div className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <FaFileInvoice className="text-4xl text-gray-300 mb-3" />
-                      <p className="text-lg font-medium text-gray-900 mb-1">No payslips found</p>
-                      <p className="text-gray-500">Sync payslips or select a pay run</p>
-                    </div>
+                    <FaPayslipIcon className="text-4xl text-gray-300 mx-auto mb-3" />
+                    <p className="text-lg font-medium text-gray-900 mb-1">No payslips found</p>
+                    <p className="text-gray-500">
+                      {payslipViewMode === 'byPayRun'
+                        ? 'Select a pay run and click "Payslips" to view payslips'
+                        : 'No payslips found for this organization'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1214,18 +1317,16 @@ useEffect(() => {
           </div>
         )}
 
+        {/* ============ MODALS ============ */}
         {/* Pay Run Details Modal */}
         {showPayRunDetails && selectedPayRunDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">
-                  Pay Run Details
+                  Pay Run Details #{selectedPayRunDetails.id}
                 </h2>
-                <button
-                  onClick={() => setShowPayRunDetails(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={() => setShowPayRunDetails(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                   <FaTimesCircle className="text-gray-500" />
                 </button>
               </div>
@@ -1236,27 +1337,24 @@ useEffect(() => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-500 mb-2">Pay Run Information</h3>
                       <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                        <p><strong>Database ID:</strong> {selectedPayRunDetails.id}</p>
+                        <p><strong>Xero ID:</strong> {selectedPayRunDetails.xero_pay_run_id}</p>
                         <p><strong>Calendar:</strong> {selectedPayRunDetails.calendar_name}</p>
-                        <p><strong>Pay Run ID:</strong> {selectedPayRunDetails.xero_pay_run_id}</p>
                         <p><strong>Status:</strong> 
                           <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(selectedPayRunDetails.status)}`}>
                             {selectedPayRunDetails.status}
                           </span>
                         </p>
-                        <p><strong>Type:</strong> {selectedPayRunDetails.pay_run_type}</p>
                       </div>
                     </div>
-
                     <div>
                       <h3 className="text-sm font-medium text-gray-500 mb-2">Dates</h3>
                       <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                         <p><strong>Period:</strong> {formatDate(selectedPayRunDetails.period_start_date)} - {formatDate(selectedPayRunDetails.period_end_date)}</p>
                         <p><strong>Payment Date:</strong> {formatDate(selectedPayRunDetails.payment_date)}</p>
-                        <p><strong>Last Synced:</strong> {formatDate(selectedPayRunDetails.last_synced_at)}</p>
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-medium text-gray-500 mb-2">Financial Summary</h3>
@@ -1269,50 +1367,22 @@ useEffect(() => {
                           <span>Total Tax:</span>
                           <span className="font-bold text-red-600">{formatCurrency(selectedPayRunDetails.total_tax)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Total Super:</span>
-                          <span className="font-bold text-purple-600">{formatCurrency(selectedPayRunDetails.total_super)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Total Deductions:</span>
-                          <span className="font-bold text-orange-600">{formatCurrency(selectedPayRunDetails.total_deductions)}</span>
-                        </div>
                         <div className="flex justify-between border-t pt-2">
                           <span className="font-bold">Net Pay:</span>
                           <span className="font-bold text-green-600">{formatCurrency(selectedPayRunDetails.total_net_pay)}</span>
                         </div>
                       </div>
                     </div>
-
                     <div>
                       <h3 className="text-sm font-medium text-gray-500 mb-2">Employees</h3>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="font-medium">{selectedPayRunDetails.employee_count} employees in this pay run</p>
-                        {selectedPayRunDetails.xero_data?.Payslips && (
-                          <div className="mt-2 text-sm">
-                            {selectedPayRunDetails.xero_data.Payslips.slice(0, 3).map((p, i) => (
-                              <div key={i} className="flex justify-between">
-                                <span>{p.FirstName} {p.LastName}</span>
-                                <span>{formatCurrency(p.NetPay)}</span>
-                              </div>
-                            ))}
-                            {selectedPayRunDetails.xero_data.Payslips.length > 3 && (
-                              <p className="text-gray-500 text-xs mt-2">
-                                +{selectedPayRunDetails.xero_data.Payslips.length - 3} more employees
-                              </p>
-                            )}
-                          </div>
-                        )}
+                        <p className="font-medium">{selectedPayRunDetails.employee_count || 0} employees</p>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => setShowPayRunDetails(false)}
-                    className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
-                  >
+                <div className="flex justify-end gap-3 pt-6 border-t">
+                  <button onClick={() => setShowPayRunDetails(false)} className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300">
                     Close
                   </button>
                   <button
@@ -1320,9 +1390,9 @@ useEffect(() => {
                       fetchPayslipsByPayRun(selectedPayRunDetails.xero_pay_run_id);
                       setShowPayRunDetails(false);
                     }}
-                    className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2"
                   >
-                    <FaFileInvoice /> View Payslips
+                    <FaPayslipIcon /> View Payslips
                   </button>
                   {selectedPayRunDetails.status === 'DRAFT' && (
                     <button
@@ -1330,11 +1400,76 @@ useEffect(() => {
                         approvePayRun(selectedPayRunDetails.xero_pay_run_id);
                         setShowPayRunDetails(false);
                       }}
-                      className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                      disabled={loading.approving}
+                      className="px-4 py-2.5 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 flex items-center gap-2 disabled:opacity-50"
                     >
-                      <FaCheck /> Approve Pay Run
+                      {loading.approving ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                      Approve
                     </button>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Employee History Modal */}
+        {showEmployeeHistory && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Employee Payslip History
+                </h2>
+                <button onClick={() => setShowEmployeeHistory(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <FaTimesCircle className="text-gray-500" />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pay Run</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Period</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Hours</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Wages</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tax</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Net Pay</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employeeHistory.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium">Pay Run #{item.pay_run?.id}</div>
+                            <div className="text-xs text-gray-500">{item.pay_run?.status}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm">{formatDate(item.pay_run?.period_start_date)}</div>
+                            <div className="text-xs text-gray-500">to {formatDate(item.pay_run?.period_end_date)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {parseFloat(item.hours_worked || 0).toFixed(2)} hrs
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                            {formatCurrency(item.wages)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                            {formatCurrency(item.tax_deducted)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                            {formatCurrency(item.net_pay)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(item.created_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1347,55 +1482,46 @@ useEffect(() => {
             <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">Payslip Preview</h2>
-                <button
-                  onClick={() => setShowPreview(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                   <FaTimesCircle className="text-gray-500" />
                 </button>
               </div>
               
               <div className="p-6">
                 <div className="border-2 border-gray-300 p-8">
-                  {/* Payslip Content */}
                   <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800">{selectedOrganization?.name || "COMPANY NAME"}</h1>
-                    <p className="text-gray-600 text-lg">Salary Payslip</p>
-                    <p className="text-gray-500">Pay Period: {formatDate(payRunDateRange.from_date)} - {formatDate(payRunDateRange.to_date)}</p>
+                    <p className="text-gray-600 text-lg">Fortnightly Payslip</p>
                   </div>
 
-                  {/* Employee Details */}
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
                       <h3 className="font-semibold mb-3 text-gray-700">Employee Details</h3>
                       <div className="space-y-2">
                         <p><strong>Name:</strong> {previewPayslip.employee_connection?.employee?.first_name} {previewPayslip.employee_connection?.employee?.last_name}</p>
                         <p><strong>Employee ID:</strong> {previewPayslip.employee_connection?.employee?.employee_code}</p>
-                        <p><strong>Department:</strong> {previewPayslip.employee_connection?.employee?.department_id}</p>
                       </div>
                     </div>
                     <div>
                       <h3 className="font-semibold mb-3 text-gray-700">Pay Details</h3>
                       <div className="space-y-2">
-                        <p><strong>Hours Worked:</strong> {previewPayslip.hours_worked || 0} hours</p>
-                        <p><strong>Pay Slip ID:</strong> {previewPayslip.xero_payslip_id?.substring(0, 12)}...</p>
-                        <p><strong>Generated:</strong> {formatDate(previewPayslip.created_at)}</p>
+                        <p><strong>Period:</strong> {formatDate(previewPayslip.pay_run?.period_start_date)} - {formatDate(previewPayslip.pay_run?.period_end_date)}</p>
+                        <p><strong>Payment Date:</strong> {formatDate(previewPayslip.pay_run?.payment_date)}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Earnings and Deductions */}
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
                       <h3 className="font-semibold mb-3 text-gray-700 border-b pb-2">Earnings</h3>
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span>Basic Wages</span>
+                          <span>Wages</span>
                           <span className="font-medium">{formatCurrency(previewPayslip.wages)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t pt-2">
                           <span>Total Earnings</span>
-                          <span>{formatCurrency(previewPayslip.total_earnings || previewPayslip.wages)}</span>
+                          <span>{formatCurrency(previewPayslip.wages)}</span>
                         </div>
                       </div>
                     </div>
@@ -1404,22 +1530,17 @@ useEffect(() => {
                       <h3 className="font-semibold mb-3 text-gray-700 border-b pb-2">Deductions</h3>
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span>Tax</span>
+                          <span>Tax Deducted</span>
                           <span className="font-medium text-red-600">-{formatCurrency(previewPayslip.tax_deducted)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Superannuation</span>
-                          <span className="font-medium text-red-600">-{formatCurrency(previewPayslip.super_deducted)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t pt-2">
                           <span>Total Deductions</span>
-                          <span className="text-red-600">-{formatCurrency(previewPayslip.total_deductions)}</span>
+                          <span className="text-red-600">-{formatCurrency(previewPayslip.tax_deducted)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Net Pay */}
                   <div className="bg-gray-100 p-6 rounded-lg text-center">
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">
                       Net Pay: {formatCurrency(previewPayslip.net_pay)}
@@ -1428,22 +1549,16 @@ useEffect(() => {
                       {convertToWords(parseFloat(previewPayslip.net_pay) || 0)}
                     </p>
                   </div>
-
-                  {/* Footer */}
-                  <div className="mt-8 pt-8 border-t border-gray-300 text-center text-sm text-gray-500">
-                    <p>This is a computer-generated payslip. No signature is required.</p>
-                    <p className="mt-2">Generated on: {formatDate(previewPayslip.created_at)}</p>
-                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
-                  <button className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+                  <button className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 flex items-center gap-2">
                     <FaPrint /> Print
                   </button>
-                  <button className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                  <button className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2">
                     <FaDownload /> Download PDF
                   </button>
-                  <button className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                  <button className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 flex items-center gap-2">
                     <FaPaperPlane /> Send Email
                   </button>
                 </div>
