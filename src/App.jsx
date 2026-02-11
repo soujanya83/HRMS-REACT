@@ -46,9 +46,9 @@ import NotificationsPage from "./pages/Rostering/NotificationsPage";
 import RosterPeriods from "./pages/Rostering/RosterPeriods";
 
 // --- Import Payroll Pages ---
-import RunPayroll from "./pages/Payroll/ReviewPayroll";
-import ReviewPayroll from "./pages/Payroll/ReviewPayroll";
-import Payslip from "./pages/Payroll/Payslip";
+import RunPayroll from "./pages/Payroll/RunPayroll";
+// import ReviewPayroll from "./pages/Payroll/ReviewPayroll";
+import PayslipGeneration from "./pages/Payroll/PayslipGeneration";
 
 
 // --- Import Performance Pages ---
@@ -180,8 +180,9 @@ function App() {
   path: "payroll",
   children: [
     { path: "run", element: <RunPayroll /> },
-    { path: "review", element: <ReviewPayroll /> },
-    { path: "payslip", element: <Payslip /> },
+    // { path: "review", element: <ReviewPayroll /> },
+    // Change line 184 in App.jsx:
+{ path: "payslip", element: <PayslipGeneration /> },  // Changed from <Payslip />
 
     // default route
     { index: true, element: <Navigate to="run" replace /> },

@@ -5,7 +5,6 @@ import {
   FaEdit,
   FaTrash,
   FaLock,
-  FaEye,
   FaCheckCircle,
   FaTimesCircle,
   FaSpinner,
@@ -13,20 +12,16 @@ import {
   FaCalendarCheck,
   FaCalendarDay,
   FaCalendarWeek,
-  FaCalendar,
   FaExclamationTriangle,
   FaInfoCircle,
-  FaPrint,
   FaDownload,
-  FaFilter,
-  FaSearch,
   FaUsers,
-  FaUserPlus,
   FaList,
   FaChevronDown,
   FaClock,
   FaUserCheck,
-  FaUserClock
+  FaUserClock,
+  FaCalendarMinus
 } from "react-icons/fa";
 import { rosterPeriodService } from "../../services/rosterPeriodService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
@@ -34,7 +29,10 @@ import axios from "axios";
 
 const RosterPeriods = () => {
   const [rosterPeriods, setRosterPeriods] = useState([]);
+  const [payPeriods, setPayPeriods] = useState([]);
+  const [fortnightCalendars, setFortnightCalendars] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payPeriodsLoading, setPayPeriodsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,8 +53,9 @@ const RosterPeriods = () => {
 
   // Form state
   const [formData, setFormData] = useState({
-    type: "weekly",
+    type: "fortnightly",
     start_date: "",
+    created_by: 4
   });
 
   // Bulk assign form state
@@ -68,13 +67,6 @@ const RosterPeriods = () => {
   });
 
   const { selectedOrganization } = useOrganizations();
-
-  // Roster period types
-  const periodTypes = [
-    { value: "weekly", label: "Weekly", icon: FaCalendarDay },
-    { value: "fortnightly", label: "Fortnightly", icon: FaCalendarWeek },
-    { value: "monthly", label: "Monthly", icon: FaCalendar }
-  ];
 
   // Status colors
   const getStatusColor = (status) => {
@@ -95,7 +87,32 @@ const RosterPeriods = () => {
     }
   };
 
-  // Fetch roster periods
+  // Format date function
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    try {
+      const dateOnly = dateString.split('T')[0];
+      const date = new Date(dateOnly);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      type: "fortnightly",
+      start_date: "",
+      created_by: 4
+    });
+  };
+
+  // Fetch roster periods from /periods endpoint
   const fetchRosterPeriods = async () => {
     try {
       setLoading(true);
@@ -112,7 +129,10 @@ const RosterPeriods = () => {
       console.log("Roster periods response:", response.data);
 
       if (response.data?.success === true) {
-        setRosterPeriods(response.data.data || []);
+        const fortnightPeriods = response.data.data.filter(period => 
+          period.type === "fortnightly"
+        );
+        setRosterPeriods(fortnightPeriods || []);
       } else {
         setRosterPeriods([]);
       }
@@ -125,11 +145,60 @@ const RosterPeriods = () => {
     }
   };
 
-  // Fetch available employees from your employees API
+  // Fetch pay periods (for calendar data)
+  const fetchPayPeriods = async () => {
+    try {
+      setPayPeriodsLoading(true);
+      setError(null);
+
+      if (!selectedOrganization?.id) {
+        setPayPeriods([]);
+        setFortnightCalendars([]);
+        return;
+      }
+
+      const response = await rosterPeriodService.getPayPeriods({
+        organization_id: selectedOrganization.id
+      });
+
+      console.log("Pay periods response:", response.data);
+
+      if (response.data?.status === true) {
+        setPayPeriods(response.data.data || []);
+        
+        // Extract unique fortnightly calendars
+        const fortnightCalendars = response.data.data.reduce((acc, period) => {
+          if (period.calendar_type === "FORTNIGHTLY" && 
+              !acc.find(c => c.calendar_id === period.calendar_id)) {
+            acc.push({
+              calendar_id: period.calendar_id,
+              calendar_name: period.calendar_name,
+              calendar_type: period.calendar_type,
+              number_of_days: period.number_of_days
+            });
+          }
+          return acc;
+        }, []);
+        
+        setFortnightCalendars(fortnightCalendars);
+        console.log("Fortnight calendars extracted:", fortnightCalendars);
+      } else {
+        setPayPeriods([]);
+        setFortnightCalendars([]);
+      }
+    } catch (err) {
+      console.error("Error fetching pay periods:", err);
+      setPayPeriods([]);
+      setFortnightCalendars([]);
+    } finally {
+      setPayPeriodsLoading(false);
+    }
+  };
+
+  // Fetch available employees
   const fetchAvailableEmployees = async () => {
     try {
       setEmployeesLoading(true);
-      setError(null);
 
       if (!selectedOrganization?.id) {
         setAvailableEmployees([]);
@@ -147,10 +216,7 @@ const RosterPeriods = () => {
         }
       });
 
-      console.log("Employees response:", response.data);
-
       if (response.data?.success === true) {
-        // Filter only active employees
         const activeEmployees = response.data.data.filter(emp => 
           emp.status === "Active" || emp.status === "active"
         );
@@ -160,26 +226,16 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error fetching employees:", err);
-      // If API fails, show a sample list based on your data
-      setAvailableEmployees([
-        { id: 15, first_name: "test", last_name: "ing", employee_code: "TEST001", status: "Active" },
-        { id: 13, first_name: "Sonia", last_name: "Michaels", employee_code: "TEST007", status: "Active" },
-        { id: 12, first_name: "Sally", last_name: "Martin", employee_code: "test002", status: "Active" },
-        { id: 11, first_name: "Oliver", last_name: "Gray", employee_code: "TEST003", status: "Active" },
-        { id: 14, first_name: "Tracy", last_name: "Green", employee_code: "TEST004", status: "Active" },
-        { id: 10, first_name: "Odette", last_name: "Garrison", employee_code: "TEST005", status: "Active" },
-        { id: 9, first_name: "James", last_name: "Lebron", employee_code: "TEST006", status: "Active" }
-      ]);
+      setAvailableEmployees([]);
     } finally {
       setEmployeesLoading(false);
     }
   };
 
-  // Fetch available shifts (if you have a shifts API)
+  // Fetch available shifts
   const fetchAvailableShifts = async () => {
     try {
       setShiftsLoading(true);
-      setError(null);
 
       if (!selectedOrganization?.id) {
         setAvailableShifts([]);
@@ -197,28 +253,14 @@ const RosterPeriods = () => {
         }
       });
 
-      console.log("Shifts response:", response.data);
-
       if (response.data?.success === true) {
         setAvailableShifts(response.data.data || []);
       } else {
-        // If API fails or returns no data, use default shifts
-        setAvailableShifts([
-          { id: 1, name: "Morning Shift", start_time: "09:00", end_time: "17:00" },
-          { id: 2, name: "Afternoon Shift", start_time: "13:00", end_time: "21:00" },
-          { id: 3, name: "Night Shift", start_time: "21:00", end_time: "05:00" },
-          { id: 4, name: "General Shift", start_time: "08:00", end_time: "16:00" }
-        ]);
+        setAvailableShifts([]);
       }
     } catch (err) {
       console.error("Error fetching shifts:", err);
-      // Use default shifts if API fails
-      setAvailableShifts([
-        { id: 1, name: "Morning Shift", start_time: "09:00", end_time: "17:00" },
-        { id: 2, name: "Afternoon Shift", start_time: "13:00", end_time: "21:00" },
-        { id: 3, name: "Night Shift", start_time: "21:00", end_time: "05:00" },
-        { id: 4, name: "General Shift", start_time: "08:00", end_time: "16:00" }
-      ]);
+      setAvailableShifts([]);
     } finally {
       setShiftsLoading(false);
     }
@@ -235,7 +277,6 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error fetching rosters:", err);
-      setError("Failed to load roster details");
       setRosters([]);
     }
   };
@@ -244,36 +285,51 @@ const RosterPeriods = () => {
   useEffect(() => {
     if (selectedOrganization) {
       fetchRosterPeriods();
+      fetchPayPeriods();
       fetchAvailableEmployees();
       fetchAvailableShifts();
-      setFormData(prev => ({
-        ...prev,
-        start_date: new Date().toISOString().split('T')[0]
-      }));
     }
   }, [selectedOrganization]);
 
-  // Handle form input changes
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Handle bulk assign form changes
-  const handleBulkAssignChange = (e) => {
-    const { name, value } = e.target;
-    setBulkAssignForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Open create modal with fortnightly periods like timesheet
+  const openCreateModal = async () => {
+    if (!selectedOrganization) {
+      alert("Please select an organization first");
+      return;
+    }
+    
+    resetForm();
+    
+    // Fetch pay periods if not already loaded
+    if (payPeriods.length === 0) {
+      await fetchPayPeriods();
+    }
+    
+    // Set default selection to current fortnightly period
+    const currentFortnightly = payPeriods.find(p => 
+      p.calendar_type === 'FORTNIGHTLY' && p.is_current === true
+    );
+    
+    if (currentFortnightly && currentFortnightly.start_date) {
+      setFormData(prev => ({
+        ...prev,
+        start_date: currentFortnightly.start_date.split('T')[0]
+      }));
+    } else if (payPeriods.filter(p => p.calendar_type === 'FORTNIGHTLY').length > 0) {
+      const firstFortnightly = payPeriods.find(p => p.calendar_type === 'FORTNIGHTLY');
+      if (firstFortnightly?.start_date) {
+        setFormData(prev => ({
+          ...prev,
+          start_date: firstFortnightly.start_date.split('T')[0]
+        }));
+      }
+    }
+    
+    setShowCreateModal(true);
   };
 
   // Handle create roster period
-  const handleCreatePeriod = async (e) => {
-    e.preventDefault();
+  const handleCreatePeriod = async () => {
     setIsSubmitting(true);
     setError(null);
 
@@ -283,20 +339,26 @@ const RosterPeriods = () => {
       return;
     }
 
+    if (!formData.start_date) {
+      setError("Please select a fortnightly pay period");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const dataToSend = {
         organization_id: parseInt(selectedOrganization.id, 10),
-        type: formData.type,
+        type: "fortnightly",
         start_date: formData.start_date,
         created_by: 4
       };
 
-      console.log("Creating roster period with data:", dataToSend);
+      console.log("Creating fortnightly roster period with data:", dataToSend);
 
       const response = await rosterPeriodService.createRosterPeriod(dataToSend);
 
       if (response.data?.success === true) {
-        setSuccessMessage("Roster period created successfully!");
+        setSuccessMessage("Fortnightly roster period created successfully!");
         setShowCreateModal(false);
         resetForm();
         fetchRosterPeriods();
@@ -322,7 +384,6 @@ const RosterPeriods = () => {
     setError(null);
 
     try {
-      // Get the period ID
       let rosterPeriodId;
       
       if (selectedPeriod?.id) {
@@ -333,16 +394,13 @@ const RosterPeriods = () => {
         throw new Error("Please select a roster period first");
       }
 
-      // Check if period is in draft status
       if (selectedPeriod && selectedPeriod.status !== 'draft') {
         throw new Error(`Cannot assign to a ${selectedPeriod.status} period. Only draft periods can be modified.`);
       }
 
-      // Get employee IDs from the array
       let employeeIdsArray = [];
       
       if (Array.isArray(bulkAssignForm.employee_ids)) {
-        // Map each ID to integer
         employeeIdsArray = bulkAssignForm.employee_ids.map(id => {
           const numId = parseInt(id, 10);
           if (isNaN(numId)) {
@@ -350,18 +408,6 @@ const RosterPeriods = () => {
           }
           return numId;
         });
-      } else if (typeof bulkAssignForm.employee_ids === 'string') {
-        employeeIdsArray = bulkAssignForm.employee_ids
-          .split(',')
-          .map(id => id.trim())
-          .filter(id => id)
-          .map(id => {
-            const numId = parseInt(id, 10);
-            if (isNaN(numId)) {
-              throw new Error(`Invalid employee ID: ${id}`);
-            }
-            return numId;
-          });
       }
       
       if (employeeIdsArray.length === 0) {
@@ -372,7 +418,6 @@ const RosterPeriods = () => {
         throw new Error("Please select a shift");
       }
 
-      // Prepare data in exact format that API expects
       const dataToSend = {
         roster_period_id: parseInt(rosterPeriodId, 10),
         employee_ids: employeeIdsArray,
@@ -380,11 +425,7 @@ const RosterPeriods = () => {
         created_by: 4
       };
 
-      console.log("📤 Sending bulk assign data:", JSON.stringify(dataToSend, null, 2));
-
       const response = await rosterPeriodService.bulkAssignRoster(dataToSend);
-
-      console.log("📥 Bulk assign response:", response.data);
 
       if (response.data?.success === true) {
         setSuccessMessage(`✅ Successfully assigned ${response.data.count} rosters!`);
@@ -396,7 +437,6 @@ const RosterPeriods = () => {
           created_by: 4
         });
         
-        // Refresh the roster periods to update counts
         fetchRosterPeriods();
         
         setTimeout(() => {
@@ -407,9 +447,7 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("❌ Error bulk assigning rosters:", err);
-      console.error("❌ Error response data:", err.response?.data);
       
-      // Show specific error message from API
       if (err.response?.data?.errors) {
         const errorMessages = Object.entries(err.response.data.errors)
           .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -435,9 +473,6 @@ const RosterPeriods = () => {
     setError(null);
     
     try {
-      console.log("Attempting to publish period ID:", selectedPeriod.id);
-      
-      // Check if period can be published
       if (selectedPeriod.status === 'published') {
         throw new Error("This period is already published");
       }
@@ -447,8 +482,6 @@ const RosterPeriods = () => {
       }
 
       const response = await rosterPeriodService.publishRosterPeriod(selectedPeriod.id);
-
-      console.log("Publish response:", response.data);
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period published successfully!");
@@ -463,7 +496,6 @@ const RosterPeriods = () => {
       }
     } catch (err) {
       console.error("Error publishing roster period:", err);
-      console.error("Error details:", err.response?.data);
       
       if (err.response?.data?.errors) {
         const errorMessages = Object.entries(err.response.data.errors)
@@ -484,61 +516,53 @@ const RosterPeriods = () => {
 
   // Handle lock period
   const handleLockPeriod = async () => {
-  if (!selectedPeriod) return;
+    if (!selectedPeriod) return;
 
-  setActionLoading(true);
-  setError(null);
-  
-  try {
-    console.log("Attempting to lock period ID:", selectedPeriod.id);
+    setActionLoading(true);
+    setError(null);
     
-    // Check if period can be locked (API says only published can be locked)
-    if (selectedPeriod.status === 'locked') {
-      throw new Error("This period is already locked");
-    }
-    
-    // Updated: Only published periods can be locked
-    if (selectedPeriod.status !== 'published') {
-      throw new Error(`Only published periods can be locked. Current status: ${selectedPeriod.status}`);
-    }
-
-    const response = await rosterPeriodService.lockRosterPeriod(selectedPeriod.id);
-
-    console.log("Lock response:", response.data);
-
-    if (response.data?.success === true) {
-      setSuccessMessage("Roster period locked successfully!");
-      fetchRosterPeriods();
-      setShowLockModal(false);
+    try {
+      if (selectedPeriod.status === 'locked') {
+        throw new Error("This period is already locked");
+      }
       
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
-    } else {
-      setError(response.data?.message || "Failed to lock roster period");
+      if (selectedPeriod.status !== 'published') {
+        throw new Error(`Only published periods can be locked. Current status: ${selectedPeriod.status}`);
+      }
+
+      const response = await rosterPeriodService.lockRosterPeriod(selectedPeriod.id);
+
+      if (response.data?.success === true) {
+        setSuccessMessage("Roster period locked successfully!");
+        fetchRosterPeriods();
+        setShowLockModal(false);
+        
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
+      } else {
+        setError(response.data?.message || "Failed to lock roster period");
+      }
+    } catch (err) {
+      console.error("Error locking roster period:", err);
+      
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join(' | ');
+        setError(`Validation errors: ${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to lock roster period. Please try again.");
+      }
+    } finally {
+      setActionLoading(false);
     }
-  } catch (err) {
-    console.error("Error locking roster period:", err);
-    console.error("Error details:", err.response?.data);
-    
-    if (err.response?.data?.errors) {
-      const errorMessages = Object.entries(err.response.data.errors)
-        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-        .join(' | ');
-      setError(`Validation errors: ${errorMessages}`);
-    } else if (err.response?.data?.message) {
-      setError(err.response.data.message);
-    } else if (err.response?.data?.error) {
-      setError(err.response.data.error); // Added this line
-    } else if (err.message) {
-      setError(err.message);
-    } else {
-      setError("Failed to lock roster period. Please try again.");
-    }
-  } finally {
-    setActionLoading(false);
-  }
-};
+  };
+
   // Handle delete period
   const handleDeletePeriod = async () => {
     if (!selectedPeriod) return;
@@ -547,7 +571,6 @@ const RosterPeriods = () => {
     setError(null);
     
     try {
-      // Check if period can be deleted
       if (selectedPeriod.status !== 'draft') {
         throw new Error(`Cannot delete a ${selectedPeriod.status} period. Only draft periods can be deleted.`);
       }
@@ -573,67 +596,9 @@ const RosterPeriods = () => {
     }
   };
 
-  // Reset form
-  const resetForm = () => {
-    setFormData({
-      type: "weekly",
-      start_date: new Date().toISOString().split('T')[0]
-    });
-  };
-
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Calculate end date based on type and start date
-  const calculateEndDate = (startDate, type) => {
-    if (!startDate) return "-";
-    
-    const start = new Date(startDate);
-    const end = new Date(start);
-    
-    switch (type) {
-      case 'weekly':
-        end.setDate(start.getDate() + 6);
-        break;
-      case 'fortnightly':
-        end.setDate(start.getDate() + 13);
-        break;
-      case 'monthly':
-        end.setMonth(start.getMonth() + 1);
-        end.setDate(start.getDate() - 1);
-        break;
-      default:
-        return "-";
-    }
-    
-    return formatDate(end);
-  };
-
-  // Get period type icon
-  const getPeriodTypeIcon = (type) => {
-    const typeObj = periodTypes.find(t => t.value === type);
-    return typeObj ? typeObj.icon : FaCalendarAlt;
-  };
-
-  // Get period type label
-  const getPeriodTypeLabel = (type) => {
-    const typeObj = periodTypes.find(t => t.value === type);
-    return typeObj ? typeObj.label : type;
-  };
-
   // Toggle period dropdown
-  const togglePeriodDropdown = (periodId) => {
+  const togglePeriodDropdown = (periodId, e) => {
+    if (e) e.stopPropagation();
     if (showPeriodDropdown === periodId) {
       setShowPeriodDropdown(null);
     } else {
@@ -649,7 +614,6 @@ const RosterPeriods = () => {
       const currentIds = prev.employee_ids.map(id => parseInt(id, 10));
       
       if (isChecked) {
-        // Add employee if checked
         if (!currentIds.includes(idInt)) {
           return {
             ...prev,
@@ -657,7 +621,6 @@ const RosterPeriods = () => {
           };
         }
       } else {
-        // Remove employee if unchecked
         return {
           ...prev,
           employee_ids: currentIds.filter(id => id !== idInt).map(id => id.toString())
@@ -678,13 +641,11 @@ const RosterPeriods = () => {
   // Handle select all employees
   const handleSelectAllEmployees = () => {
     if (bulkAssignForm.employee_ids.length === availableEmployees.length) {
-      // If all are selected, deselect all
       setBulkAssignForm(prev => ({
         ...prev,
         employee_ids: []
       }));
     } else {
-      // Select all employees
       const allEmployeeIds = availableEmployees.map(emp => emp.id.toString());
       setBulkAssignForm(prev => ({
         ...prev,
@@ -710,7 +671,7 @@ const RosterPeriods = () => {
       <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading roster periods...</p>
+          <p className="text-gray-600">Loading fortnightly roster periods...</p>
         </div>
       </div>
     );
@@ -723,26 +684,25 @@ const RosterPeriods = () => {
         <div className="mb-8 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Roster Periods
+              Fortnightly Roster Periods
             </h1>
             <p className="text-gray-600">
-              Create and manage roster periods for shift scheduling
+              Create and manage fortnightly roster periods for shift scheduling
             </p>
             <div className="mt-2 text-sm text-gray-500">
               <span className="font-medium">Organization:</span> {selectedOrganization?.name || "Not selected"} | 
-              <span className="font-medium ml-2">Total Periods:</span> {rosterPeriods.length}
+              <span className="font-medium ml-2">Total Fortnightly Periods:</span> {rosterPeriods.length}
             </div>
           </div>
           
           {/* Action Buttons */}
           <div className="flex gap-2">
-            
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={openCreateModal}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <FaPlus className="h-4 w-4" />
-              Create Period
+              Create Fortnightly Period
             </button>
           </div>
         </div>
@@ -775,19 +735,47 @@ const RosterPeriods = () => {
           </div>
         )}
 
+        {/* Calendar Info */}
+        {fortnightCalendars.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FaCalendarWeek className="text-blue-500 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    Available Fortnightly Calendars
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    {fortnightCalendars.length} calendar(s) found
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-blue-700">
+                  Calendar ID: {fortnightCalendars[0]?.calendar_id}
+                </p>
+                <p className="text-xs text-blue-600">
+                  {fortnightCalendars[0]?.calendar_name}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Refresh Button */}
         <div className="mb-6 flex justify-end">
           <button
             onClick={() => {
               fetchRosterPeriods();
+              fetchPayPeriods();
               fetchAvailableEmployees();
               fetchAvailableShifts();
             }}
-            disabled={loading}
+            disabled={loading || payPeriodsLoading}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FaSync className={loading ? "animate-spin" : ""} />
-            {loading ? "Refreshing..." : "Refresh"}
+            <FaSync className={loading || payPeriodsLoading ? "animate-spin" : ""} />
+            {loading || payPeriodsLoading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
 
@@ -801,7 +789,7 @@ const RosterPeriods = () => {
                     Period Details
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Type & Dates
+                    Dates (14 Days)
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
@@ -819,19 +807,18 @@ const RosterPeriods = () => {
                   <tr>
                     <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                       <div className="flex flex-col items-center">
-                        <FaCalendarAlt className="text-4xl text-gray-300 mb-3" />
+                        <FaCalendarWeek className="text-4xl text-gray-300 mb-3" />
                         <p className="text-lg font-medium text-gray-900 mb-1">
-                          No roster periods found
+                          No fortnightly roster periods found
                         </p>
                         <p className="text-gray-500">
-                          Create your first roster period to get started
+                          Create your first fortnightly roster period to get started
                         </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   rosterPeriods.map((period) => {
-                    const PeriodTypeIcon = getPeriodTypeIcon(period.type);
                     const StatusIcon = getStatusIcon(period.status);
                     
                     return (
@@ -839,11 +826,11 @@ const RosterPeriods = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <PeriodTypeIcon className="h-5 w-5 text-blue-600" />
+                              <FaCalendarWeek className="h-5 w-5 text-blue-600" />
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {getPeriodTypeLabel(period.type)} Period #{period.id}
+                                Fortnightly Period #{period.id}
                               </div>
                               <div className="text-sm text-gray-500">
                                 Created: {formatDate(period.created_at)}
@@ -868,8 +855,7 @@ const RosterPeriods = () => {
                               </span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              Duration: {period.type === 'weekly' ? '7 days' : 
-                                       period.type === 'fortnightly' ? '14 days' : '1 month'}
+                              Duration: 14 days (Fortnightly)
                             </div>
                           </div>
                         </td>
@@ -885,20 +871,7 @@ const RosterPeriods = () => {
                           <div className="mt-2 text-xs text-gray-500">
                             {period.status === 'draft' && 'Can be edited and scheduled'}
                             {period.status === 'locked' && 'Read-only, cannot be modified'}
-                            {/* Lock - only for published */}
-{period.status === 'published' && (
-  <button
-    className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2"
-    onClick={() => {
-      setSelectedPeriod(period);
-      setShowLockModal(true);
-      setShowPeriodDropdown(null);
-    }}
-  >
-    <FaLock className="text-yellow-500" />
-    Lock Period
-  </button>
-)}
+                            {period.status === 'published' && 'Visible to employees'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -911,11 +884,10 @@ const RosterPeriods = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="relative">
-                            {/* Action Dropdown Button */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                togglePeriodDropdown(period.id);
+                                togglePeriodDropdown(period.id, e);
                               }}
                               className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
                             >
@@ -923,11 +895,9 @@ const RosterPeriods = () => {
                               <FaChevronDown className={`h-3 w-3 transition-transform ${showPeriodDropdown === period.id ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {/* Dropdown Menu */}
                             {showPeriodDropdown === period.id && (
-                              <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                              <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10" onClick={(e) => e.stopPropagation()}>
                                 <div className="py-1">
-                                  {/* View Rosters */}
                                   <button
                                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
@@ -941,7 +911,6 @@ const RosterPeriods = () => {
                                     View Rosters
                                   </button>
 
-                                  {/* Bulk Assign - only for draft */}
                                   {period.status === 'draft' && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
@@ -961,10 +930,8 @@ const RosterPeriods = () => {
                                     </button>
                                   )}
 
-                                  {/* Divider */}
                                   <div className="border-t border-gray-100 my-1"></div>
 
-                                  {/* Publish - only for draft */}
                                   {period.status === 'draft' && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
@@ -979,27 +946,10 @@ const RosterPeriods = () => {
                                     </button>
                                   )}
 
-                                  {/* Lock - only for draft */}
-                                  {period.status === 'draft' && (
-                                    <button
-                                      className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2"
-                                      onClick={() => {
-                                        setSelectedPeriod(period);
-                                        setShowLockModal(true);
-                                        setShowPeriodDropdown(null);
-                                      }}
-                                    >
-                                      <FaLock className="text-yellow-500" />
-                                      Lock Period
-                                    </button>
-                                  )}
-
-                                  {/* Divider for delete */}
                                   {period.status === 'draft' && (
                                     <div className="border-t border-gray-100 my-1"></div>
                                   )}
 
-                                  {/* Delete - only for draft */}
                                   {period.status === 'draft' && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
@@ -1014,7 +964,6 @@ const RosterPeriods = () => {
                                     </button>
                                   )}
 
-                                  {/* Export */}
                                   <div className="border-t border-gray-100 my-1"></div>
                                   <button
                                     className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2"
@@ -1041,26 +990,28 @@ const RosterPeriods = () => {
         </div>
 
         {/* Info Footer */}
-    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-  <div className="flex items-start">
-    <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
-    <div>
-      <h4 className="font-medium text-blue-900 mb-1">About Roster Periods</h4>
-      <p className="text-sm text-blue-700">
-        • <strong>Draft</strong> periods can be edited and scheduled<br />
-        • <strong>Published</strong> periods are visible to employees<br />
-        • <strong>Locked</strong> periods are read-only and cannot be modified (Only published periods can be locked)<br />
-        • Workflow: Draft → Publish → Lock
-      </p>
-    </div>
-  </div>
-</div>
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-start">
+            <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-blue-900 mb-1">About Fortnightly Roster Periods</h4>
+              <p className="text-sm text-blue-700">
+                • <strong>Draft</strong> periods can be edited and scheduled<br />
+                • <strong>Published</strong> periods are visible to employees<br />
+                • <strong>Locked</strong> periods are read-only and cannot be modified<br />
+                • Workflow: Draft → Publish → Lock<br />
+                • All periods are <strong>14 days (fortnightly)</strong><br />
+                • Based on system calendar: {fortnightCalendars[0]?.calendar_name || 'Fortnightly Calendar'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Create Roster Period Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p=0">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
@@ -1074,7 +1025,7 @@ const RosterPeriods = () => {
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">
-                      Create Roster Period
+                      Create Fortnightly Roster Period
                     </h3>
                     <p className="text-gray-600 mt-1">
                       {selectedOrganization?.name || "No organization selected"}
@@ -1083,127 +1034,201 @@ const RosterPeriods = () => {
                   <button
                     onClick={() => setShowCreateModal(false)}
                     className="text-gray-400 hover:text-gray-500 transition-colors"
+                    disabled={isSubmitting}
                   >
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
                 </div>
 
-                <form onSubmit={handleCreatePeriod}>
-                  <div className="space-y-4">
-                    {/* Period Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Period Type *
-                      </label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {periodTypes.map((type) => {
-                          const Icon = type.icon;
-                          const isSelected = formData.type === type.value;
-                          return (
-                            <button
-                              type="button"
-                              key={type.value}
-                              onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
-                              className={`p-4 border rounded-lg flex flex-col items-center justify-center transition-all ${
-                                isSelected
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700'
-                              }`}
-                            >
-                              <Icon className="h-6 w-6 mb-2" />
-                              <span className="text-sm font-medium">{type.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Select a fortnightly pay period to create a roster period.
+                  </p>
+                  
+                  {payPeriodsLoading ? (
+                    <div className="text-center py-8">
+                      <FaSpinner className="mx-auto h-8 w-8 text-blue-600 animate-spin mb-4" />
+                      <p className="text-gray-600">Loading fortnightly periods...</p>
                     </div>
-
-                    {/* Start Date */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Start Date *
-                      </label>
-                      <div className="relative">
-                        <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                        <input
-                          type="date"
-                          name="start_date"
-                          value={formData.start_date}
-                          onChange={handleFormChange}
-                          required
-                          className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        />
-                      </div>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Roster will {formData.type === 'weekly' ? 'end 6 days after start date' : 
-                                   formData.type === 'fortnightly' ? 'end 13 days after start date' : 
-                                   'end on the last day of the month'}
+                  ) : payPeriods.filter(p => p.calendar_type === 'FORTNIGHTLY').length === 0 ? (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                      <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">No Fortnightly Periods Found</h3>
+                      <p className="text-gray-600">
+                        No fortnightly pay periods available for this organization.
                       </p>
                     </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Fortnightly Pay Period
+                      </label>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        {payPeriods
+                          .filter(p => p.calendar_type === 'FORTNIGHTLY')
+                          .map((period) => (
+                          <div
+                            key={period.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
+                              formData.start_date === period.start_date?.split('T')[0]
+                                ? 'border-blue-300 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                            onClick={() => {
+                              if (period.start_date) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  start_date: period.start_date.split('T')[0]
+                                }));
+                              }
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-gray-900 flex items-center gap-2">
+                                  {period.calendar_name}
+                                  {period.is_current && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                      • Current
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  {formatDate(period.start_date)} - {formatDate(period.end_date)}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
+                                {formData.start_date === period.start_date?.split('T')[0] && (
+                                  <div className="text-xs text-blue-600 font-medium mt-1">• Selected</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                    {/* Preview */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-gray-900 mb-2">Period Preview</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Start Date</p>
-                          <p className="font-medium text-gray-900">{formatDate(formData.start_date)}</p>
+                {formData.start_date && (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Selected Period Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">Start Date</div>
+                        <div className="text-sm font-medium">{formatDate(formData.start_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">End Date</div>
+                        <div className="text-sm font-medium">
+                          {(() => {
+                            if (!formData.start_date) return "-";
+                            const start = new Date(formData.start_date);
+                            const end = new Date(start);
+                            end.setDate(start.getDate() + 13);
+                            return formatDate(end.toISOString());
+                          })()}
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">End Date</p>
-                          <p className="font-medium text-gray-900">{calculateEndDate(formData.start_date, formData.type)}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-600">Duration</p>
-                          <p className="font-medium text-gray-900">
-                            {formData.type === 'weekly' ? '7 days (1 week)' : 
-                             formData.type === 'fortnightly' ? '14 days (2 weeks)' : 
-                             'Approx. 1 month'}
-                          </p>
-                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Duration</div>
+                        <div className="text-sm font-medium">14 days (Fortnightly)</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Initial Status</div>
+                        <div className="text-sm font-medium text-blue-600">Draft</div>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Form Actions */}
-                  <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateModal(false)}
-                      className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !selectedOrganization}
-                      className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <FaSpinner className="animate-spin" />
-                          Creating...
-                        </>
-                      ) : (
-                        <>
-                          <FaCalendarAlt />
-                          Create Period
-                        </>
-                      )}
-                    </button>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Period Type
+                  </label>
+                  <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg flex items-center gap-4">
+                    <FaCalendarWeek className="h-8 w-8 text-blue-600 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-blue-700">Fortnightly</div>
+                      <div className="text-sm text-blue-600">14 days period</div>
+                    </div>
                   </div>
-                </form>
+                </div>
+
+                {fortnightCalendars.length > 0 && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-medium text-blue-900 mb-2">Calendar Information</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-blue-700">Calendar Name</p>
+                        <p className="text-sm font-medium text-blue-900">{fortnightCalendars[0]?.calendar_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-blue-700">Calendar ID</p>
+                        <p className="text-sm font-medium text-blue-900 truncate">{fortnightCalendars[0]?.calendar_id}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-blue-700">Type</p>
+                        <p className="text-sm font-medium text-blue-900">{fortnightCalendars[0]?.calendar_type} ({fortnightCalendars[0]?.number_of_days} days)</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-start">
+                    <FaInfoCircle className="text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-green-700">
+                        <strong>Note:</strong> Roster periods are 14 days (fortnightly) based on the selected pay period's start date.
+                        After creation, you can assign shifts to employees using the Bulk Assign feature.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreatePeriod}
+                    disabled={isSubmitting || !selectedOrganization || !formData.start_date}
+                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${
+                      selectedOrganization && formData.start_date && !isSubmitting
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <FaSpinner className="animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <FaCalendarWeek />
+                        Create Fortnightly Period
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Bulk Assign Modal - FIXED VERSION with Employee Checkboxes */}
+      {/* Bulk Assign Modal */}
       {showBulkAssignModal && selectedPeriod && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p=0">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
@@ -1220,7 +1245,7 @@ const RosterPeriods = () => {
                       Bulk Assign Rosters
                     </h3>
                     <p className="text-gray-600 mt-1">
-                      Assign shifts to employees for Period #{selectedPeriod.id}
+                      Assign shifts to employees for Fortnightly Period #{selectedPeriod.id}
                     </p>
                   </div>
                   <button
@@ -1234,6 +1259,7 @@ const RosterPeriods = () => {
                       });
                     }}
                     className="text-gray-400 hover:text-gray-500 transition-colors"
+                    disabled={isSubmitting}
                   >
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
@@ -1241,7 +1267,6 @@ const RosterPeriods = () => {
 
                 <form onSubmit={handleBulkAssign}>
                   <div className="space-y-6">
-                    {/* Period Information (Read-only) */}
                     <div className={`p-4 rounded-lg border ${
                       selectedPeriod.status === 'draft' 
                         ? 'bg-blue-50 border-blue-200' 
@@ -1255,7 +1280,7 @@ const RosterPeriods = () => {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Period Type</p>
-                          <p className="text-sm font-medium text-gray-900">{getPeriodTypeLabel(selectedPeriod.type)}</p>
+                          <p className="text-sm font-medium text-gray-900">Fortnightly</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Start Date</p>
@@ -1277,6 +1302,14 @@ const RosterPeriods = () => {
                           <p className="text-sm text-gray-600">Existing Rosters</p>
                           <p className="text-sm font-medium text-gray-900">{selectedPeriod.rosters_count || 0}</p>
                         </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Duration</p>
+                          <p className="text-sm font-medium text-gray-900">14 days</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Organization</p>
+                          <p className="text-sm font-medium text-gray-900">ID: {selectedPeriod.organization_id}</p>
+                        </div>
                       </div>
                       {selectedPeriod.status !== 'draft' && (
                         <div className="mt-2 p-2 bg-red-100 rounded text-sm text-red-600">
@@ -1285,7 +1318,6 @@ const RosterPeriods = () => {
                       )}
                     </div>
 
-                    {/* Employees Selection with Checkboxes */}
                     <div>
                       <div className="flex justify-between items-center mb-3">
                         <label className="block text-sm font-medium text-gray-700">
@@ -1303,7 +1335,6 @@ const RosterPeriods = () => {
                         </div>
                       ) : availableEmployees.length > 0 ? (
                         <div className="border border-gray-300 rounded-lg overflow-hidden">
-                          {/* Select All Header */}
                           <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
                             <div className="flex items-center">
                               <input
@@ -1319,7 +1350,6 @@ const RosterPeriods = () => {
                             </div>
                           </div>
 
-                          {/* Employees List */}
                           <div className="max-h-60 overflow-y-auto p-2">
                             <div className="space-y-1">
                               {availableEmployees.map((employee) => (
@@ -1381,11 +1411,10 @@ const RosterPeriods = () => {
                       )}
                       
                       <p className="mt-2 text-sm text-gray-500">
-                        Select employees to assign rosters for the entire period
+                        Select employees to assign rosters for the entire fortnight period
                       </p>
                     </div>
 
-                    {/* Shift Selection */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
                         Select Shift *
@@ -1442,14 +1471,13 @@ const RosterPeriods = () => {
                       )}
                     </div>
 
-                    {/* Summary Preview */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <h4 className="font-medium text-gray-900 mb-3">Assignment Summary</h4>
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Selected Period:</span>
                           <span className="text-sm font-medium text-gray-900">
-                            Period #{selectedPeriod.id} ({getPeriodTypeLabel(selectedPeriod.type)})
+                            Fortnightly Period #{selectedPeriod.id}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -1476,22 +1504,20 @@ const RosterPeriods = () => {
                           <span className="text-sm text-gray-600">Total Rosters to Create:</span>
                           <span className="text-sm font-medium text-blue-600">
                             {selectedPeriod && bulkAssignForm.employee_ids.length > 0 
-                              ? (selectedPeriod.type === 'weekly' ? 7 : 
-                                 selectedPeriod.type === 'fortnightly' ? 14 : 30) * bulkAssignForm.employee_ids.length
+                              ? 14 * bulkAssignForm.employee_ids.length
                               : 0} roster entries
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Warning */}
                     <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                       <div className="flex items-start">
                         <FaExclamationTriangle className="text-yellow-500 mt-0.5 mr-3 flex-shrink-0" />
                         <div>
                           <p className="text-sm text-yellow-700">
-                            <strong>Important:</strong> This will create roster entries for each day in the period 
-                            for all selected employees with the chosen shift. This action cannot be undone.
+                            <strong>Important:</strong> This will create roster entries for each day in the fortnight 
+                            period for all selected employees with the chosen shift. This action cannot be undone.
                           </p>
                           <p className="text-sm text-yellow-700 mt-2">
                             <strong>Note:</strong> Only employees with "Active" status can be assigned rosters.
@@ -1501,7 +1527,6 @@ const RosterPeriods = () => {
                     </div>
                   </div>
 
-                  {/* Form Actions */}
                   <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
                     <button
                       type="button"
@@ -1561,7 +1586,7 @@ const RosterPeriods = () => {
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">
-                      Rosters for {getPeriodTypeLabel(selectedPeriod.type)} Period #{selectedPeriod.id}
+                      Rosters for Fortnightly Period #{selectedPeriod.id}
                     </h3>
                     <p className="text-gray-600 mt-1">
                       {formatDate(selectedPeriod.start_date)} to {formatDate(selectedPeriod.end_date)}
@@ -1649,7 +1674,6 @@ const RosterPeriods = () => {
                   </table>
                 </div>
 
-                {/* Summary */}
                 {rosters.length > 0 && (
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
@@ -1666,8 +1690,7 @@ const RosterPeriods = () => {
                       <div>
                         <p className="text-sm text-gray-600">Period Days</p>
                         <p className="text-lg font-bold text-gray-900">
-                          {selectedPeriod.type === 'weekly' ? '7' : 
-                           selectedPeriod.type === 'fortnightly' ? '14' : '30'}
+                          14 (Fortnightly)
                         </p>
                       </div>
                     </div>
@@ -1709,12 +1732,12 @@ const RosterPeriods = () => {
                 </div>
                 
                 <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-                  Publish Roster Period
+                  Publish Fortnightly Roster Period
                 </h3>
                 
                 <p className="text-gray-600 text-center mb-6">
-                  Are you sure you want to publish this roster period?<br />
-                  <span className="font-medium">{getPeriodTypeLabel(selectedPeriod.type)} Period #{selectedPeriod.id}</span>
+                  Are you sure you want to publish this fortnightly roster period?<br />
+                  <span className="font-medium">Fortnightly Period #{selectedPeriod.id}</span>
                 </p>
 
                 <div className="bg-yellow-50 p-4 rounded-lg mb-6">
@@ -1783,12 +1806,12 @@ const RosterPeriods = () => {
                 </div>
                 
                 <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-                  Lock Roster Period
+                  Lock Fortnightly Roster Period
                 </h3>
                 
                 <p className="text-gray-600 text-center mb-6">
-                  Are you sure you want to lock this roster period?<br />
-                  <span className="font-medium">{getPeriodTypeLabel(selectedPeriod.type)} Period #{selectedPeriod.id}</span>
+                  Are you sure you want to lock this fortnightly roster period?<br />
+                  <span className="font-medium">Fortnightly Period #{selectedPeriod.id}</span>
                 </p>
 
                 <div className="bg-yellow-50 p-4 rounded-lg mb-6">
@@ -1796,7 +1819,7 @@ const RosterPeriods = () => {
                     <FaExclamationTriangle className="text-yellow-500 mt-0.5 mr-3 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-yellow-700">
-                        <strong>Important:</strong> Locked periods become read-only and cannot be edited. You can still publish them later.
+                        <strong>Important:</strong> Locked periods become read-only and cannot be edited.
                       </p>
                     </div>
                   </div>
@@ -1850,19 +1873,19 @@ const RosterPeriods = () => {
 
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
-                                <div className="flex items-center justify-center mb-4">
+                <div className="flex items-center justify-center mb-4">
                   <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
                     <FaTrash className="h-6 w-6 text-red-600" />
                   </div>
                 </div>
                 
                 <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-                  Delete Roster Period
+                  Delete Fortnightly Roster Period
                 </h3>
                 
                 <p className="text-gray-600 text-center mb-6">
-                  Are you sure you want to delete this roster period?<br />
-                  <span className="font-medium">{getPeriodTypeLabel(selectedPeriod.type)} Period #{selectedPeriod.id}</span>
+                  Are you sure you want to delete this fortnightly roster period?<br />
+                  <span className="font-medium">Fortnightly Period #{selectedPeriod.id}</span>
                 </p>
 
                 <div className="bg-red-50 p-4 rounded-lg mb-6">
@@ -1915,10 +1938,10 @@ const RosterPeriods = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Periods</p>
+              <p className="text-sm text-gray-600">Fortnightly Periods</p>
               <p className="text-2xl font-bold text-gray-800">{rosterPeriods.length}</p>
             </div>
-            <FaCalendarAlt className="text-blue-500 text-2xl" />
+            <FaCalendarWeek className="text-blue-500 text-2xl" />
           </div>
         </div>
 
@@ -1963,7 +1986,7 @@ const RosterPeriods = () => {
       <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
         <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
           <FaInfoCircle className="text-blue-500" />
-          Quick Guide
+          Quick Guide - Fortnightly Rosters
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -1971,12 +1994,13 @@ const RosterPeriods = () => {
               <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <FaPlus className="h-4 w-4 text-blue-600" />
               </div>
-              <h5 className="font-medium text-gray-900">Create Period</h5>
+              <h5 className="font-medium text-gray-900">Create Fortnightly Period</h5>
             </div>
             <p className="text-sm text-gray-600">
-              1. Select period type (Weekly/Fortnightly/Monthly)<br />
-              2. Choose start date<br />
-              3. Click "Create Period"
+              1. Click "Create Fortnightly Period"<br />
+              2. Select a fortnightly pay period<br />
+              3. Review period details<br />
+              4. Click "Create Fortnightly Period"
             </p>
           </div>
           
@@ -1988,10 +2012,10 @@ const RosterPeriods = () => {
               <h5 className="font-medium text-gray-900">Bulk Assign</h5>
             </div>
             <p className="text-sm text-gray-600">
-              1. Select a draft period<br />
+              1. Select a draft fortnight period<br />
               2. Choose employees (checkboxes)<br />
               3. Select a shift<br />
-              4. Click "Assign Rosters"
+              4. Click "Assign Rosters" (14 days per employee)
             </p>
           </div>
           
@@ -2000,12 +2024,13 @@ const RosterPeriods = () => {
               <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
                 <FaCheckCircle className="h-4 w-4 text-purple-600" />
               </div>
-              <h5 className="font-medium text-gray-900">Publish</h5>
+              <h5 className="font-medium text-gray-900">Publish & Lock</h5>
             </div>
             <p className="text-sm text-gray-600">
-              1. Ensure all schedules are set<br />
+              1. Ensure all schedules are set for 14 days<br />
               2. Review period details<br />
-              3. Click "Publish" to make it visible to employees
+              3. Click "Publish" to make it visible<br />
+              4. Lock published periods for read-only
             </p>
           </div>
         </div>
@@ -2014,8 +2039,7 @@ const RosterPeriods = () => {
       {/* Help Text */}
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-500">
-          Need help? Contact support if you encounter any issues with roster management.
-          <br />
+          Note: Only fortnightly (14-day) roster periods are supported. All periods are based on system calendars.<br />
           Current Organization: <span className="font-medium">{selectedOrganization?.name || "None selected"}</span>
         </p>
       </div>

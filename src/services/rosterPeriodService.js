@@ -2,7 +2,12 @@ import axiosClient from '../axiosClient';
 
 // Roster Period APIs
 export const rosterPeriodService = {
-  // Get all roster periods
+  // Get all pay periods (for calendar data)
+  getPayPeriods: (params = {}) => {
+    return axiosClient.get('/pay-periods', { params });
+  },
+
+  // Get all roster periods (from /periods endpoint)
   getRosterPeriods: (params = {}) => {
     return axiosClient.get('/periods', { params });
   },

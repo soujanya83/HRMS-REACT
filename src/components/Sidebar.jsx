@@ -215,11 +215,11 @@ const navLinks = [
       path: "/dashboard/payroll/run",
       icon: HiOutlineCash,
     },
-    {
-      name: "Review Payroll",
-      path: "/dashboard/payroll/review",
-      icon: HiOutlineDocumentReport,
-    },
+    // {
+    //   name: "Review Payroll",
+    //   path: "/dashboard/payroll/review",
+    //   icon: HiOutlineDocumentReport,
+    // },
     {
       name: "Payslip",
       path: "/dashboard/payroll/payslip",

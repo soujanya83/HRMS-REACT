@@ -1,3 +1,4 @@
+// components/TimesheetApprovals.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   FaCheckCircle, 
@@ -18,7 +19,9 @@ import {
   FaFileInvoiceDollar,
   FaPaperPlane,
   FaSyncAlt,
-  FaFilter
+  FaFilter,
+  FaExclamationTriangle,
+  FaInfoCircle
 } from 'react-icons/fa';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import { timesheetService } from '../../services/timesheetService';
@@ -38,6 +41,8 @@ const TimesheetApprovals = () => {
   const [pushToXeroLoading, setPushToXeroLoading] = useState(false);
   const [selectedTimesheetIds, setSelectedTimesheetIds] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [pushResults, setPushResults] = useState(null);
+  const [showPushResults, setShowPushResults] = useState(false);
 
   useEffect(() => {
     fetchTimesheets();
@@ -68,6 +73,10 @@ const TimesheetApprovals = () => {
   const handleApprove = async (id) => {
     if (window.confirm('Are you sure you want to approve this timesheet?')) {
       try {
+        // Call API to approve
+        await timesheetService.approveTimesheet(id);
+        
+        // Update local state
         setTimesheets(prev => prev.map(ts => 
           ts.id === id ? { 
             ...ts, 
@@ -79,6 +88,7 @@ const TimesheetApprovals = () => {
         
         alert('Timesheet approved successfully!');
         
+        // Refresh data
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1);
         }, 1000);
@@ -93,6 +103,10 @@ const TimesheetApprovals = () => {
     const reason = prompt('Please enter rejection reason:');
     if (reason) {
       try {
+        // Call API to reject
+        await timesheetService.rejectTimesheet(id, reason);
+        
+        // Update local state
         setTimesheets(prev => prev.map(ts => 
           ts.id === id ? { 
             ...ts, 
@@ -105,6 +119,7 @@ const TimesheetApprovals = () => {
         
         alert('Timesheet rejected successfully!');
         
+        // Refresh data
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1);
         }, 1000);
@@ -120,6 +135,7 @@ const TimesheetApprovals = () => {
     setShowDetailModal(true);
   };
 
+  // Bulk push to Xero (Selected timesheets)
   const handlePushToXero = async () => {
     if (!selectedOrganization?.id) {
       alert('Please select an organization first');
@@ -131,20 +147,209 @@ const TimesheetApprovals = () => {
       return;
     }
 
-    if (window.confirm(`Push ${selectedTimesheetIds.length} timesheet(s) to Xero?`)) {
+    // Get unique employee IDs from selected timesheets
+    const selectedTimesheets = timesheets.filter(t => selectedTimesheetIds.includes(t.id));
+    const employeeIds = [...new Set(selectedTimesheets.map(t => t.employee_id || t.employee?.id).filter(id => id))];
+    
+    if (employeeIds.length === 0) {
+      alert('No valid employee IDs found in selected timesheets');
+      return;
+    }
+
+    if (window.confirm(`Push ${employeeIds.length} employee(s) to Xero?\n\nThis will push timesheets for ${employeeIds.length} employee(s) to Xero.`)) {
+      setPushToXeroLoading(true);
+      setPushResults(null);
+      setShowPushResults(false);
+      
+      try {
+        console.log('📤 Pushing SELECTED employees to Xero:', {
+          organizationId: selectedOrganization.id,
+          employeeIds,
+          selectedTimesheetIds,
+          selectedTimesheetCount: selectedTimesheets.length
+        });
+        
+        // Push all employees
+        const results = await timesheetService.pushEmployeesToXero(selectedOrganization.id, employeeIds);
+        console.log('✅ Push results:', results);
+        
+        setPushResults(results);
+        
+        // Count successes and failures
+        const successCount = results.filter(r => r.success).length;
+        const failureCount = results.filter(r => !r.success).length;
+        
+        // Update UI for successful pushes
+        const successfulEmployeeIds = results.filter(r => r.success).map(r => r.employeeId);
+        setTimesheets(prev => prev.map(ts => {
+          const employeeId = ts.employee_id || ts.employee?.id;
+          if (selectedTimesheetIds.includes(ts.id) && successfulEmployeeIds.includes(employeeId)) {
+            return {
+              ...ts,
+              xero_status: 'pushed',
+              xero_synced_at: new Date().toISOString(),
+              status: 'approved'
+            };
+          }
+          return ts;
+        }));
+        
+        // Clear selection
+        setSelectedTimesheetIds([]);
+        
+        // Show results
+        if (failureCount === 0) {
+          alert(`✅ Successfully pushed ${successCount} employee(s) to Xero!`);
+        } else {
+          setShowPushResults(true);
+          alert(`⚠️ Push completed with ${successCount} successes and ${failureCount} failures. Click "View Results" for details.`);
+        }
+        
+        // Refresh data
+        setTimeout(() => {
+          setRefreshTrigger(prev => prev + 1);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error pushing to Xero:', error);
+        alert('Failed to push to Xero. Please check console for details.');
+      } finally {
+        setPushToXeroLoading(false);
+      }
+    }
+  };
+
+  // Push ALL timesheets to Xero
+  const handlePushAllToXero = async () => {
+    if (!selectedOrganization?.id) {
+      alert('Please select an organization first');
+      return;
+    }
+
+    // Get ALL employee IDs with submitted timesheets
+    const allEmployeeIds = [...new Set(
+      timesheets
+        .filter(t => 
+          t.status === 'submitted' && 
+          (t.xero_status === null || t.xero_status !== 'pushed')
+        )
+        .map(t => t.employee_id || t.employee?.id)
+        .filter(id => id) // Remove undefined/null
+    )];
+    
+    if (allEmployeeIds.length === 0) {
+      alert('No timesheets ready for Xero push');
+      return;
+    }
+
+    if (window.confirm(`Push ALL ${allEmployeeIds.length} employee(s) to Xero?\n\nThis will push all submitted timesheets to Xero.`)) {
+      setPushToXeroLoading(true);
+      setPushResults(null);
+      setShowPushResults(false);
+      
+      try {
+        console.log('📤 Pushing ALL employees to Xero:', {
+          organizationId: selectedOrganization.id,
+          employeeIds: allEmployeeIds,
+          count: allEmployeeIds.length
+        });
+        
+        // Push all employees
+        const results = await timesheetService.pushEmployeesToXero(selectedOrganization.id, allEmployeeIds);
+        console.log('✅ Push ALL results:', results);
+        
+        setPushResults(results);
+        
+        // Count successes and failures
+        const successCount = results.filter(r => r.success).length;
+        const failureCount = results.filter(r => !r.success).length;
+        
+        // Update UI for successful pushes
+        const successfulEmployeeIds = results.filter(r => r.success).map(r => r.employeeId);
+        setTimesheets(prev => prev.map(ts => {
+          const employeeId = ts.employee_id || ts.employee?.id;
+          if (ts.status === 'submitted' && successfulEmployeeIds.includes(employeeId)) {
+            return {
+              ...ts,
+              xero_status: 'pushed',
+              xero_synced_at: new Date().toISOString(),
+              status: 'approved'
+            };
+          }
+          return ts;
+        }));
+        
+        // Clear selection
+        setSelectedTimesheetIds([]);
+        
+        // Show results
+        if (failureCount === 0) {
+          alert(`✅ Successfully pushed ALL ${successCount} employee(s) to Xero!`);
+        } else {
+          setShowPushResults(true);
+          alert(`⚠️ Push completed with ${successCount} successes and ${failureCount} failures. Click "View Results" for details.`);
+        }
+        
+        // Refresh data
+        setTimeout(() => {
+          setRefreshTrigger(prev => prev + 1);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error pushing ALL to Xero:', error);
+        alert('Failed to push ALL to Xero. Please check console for details.');
+      } finally {
+        setPushToXeroLoading(false);
+      }
+    }
+  };
+
+  // Single push to Xero
+  const handlePushSingleToXero = async (timesheetId) => {
+    const timesheet = timesheets.find(t => t.id === timesheetId);
+    if (!timesheet) {
+      alert('Timesheet not found');
+      return;
+    }
+
+    const employeeId = timesheet.employee_id || timesheet.employee?.id;
+    if (!employeeId) {
+      alert('Employee ID not found for this timesheet');
+      return;
+    }
+
+    // Check if timesheet has hours
+    const hasHours = parseFloat(timesheet.regular_hours || 0) > 0;
+    if (!hasHours) {
+      if (!window.confirm(`⚠️ Warning: This timesheet has 0.00 hours. Still push to Xero?`)) {
+        return;
+      }
+    }
+
+    if (window.confirm(`Push timesheet for ${timesheet.employee?.first_name || 'Employee'} (ID: ${employeeId}) to Xero?`)) {
       setPushToXeroLoading(true);
       try {
-        console.log('📤 Pushing to Xero with selected IDs:', selectedTimesheetIds);
+        console.log('📤 Pushing single timesheet to Xero:', {
+          organizationId: selectedOrganization.id,
+          employeeId,
+          timesheetId,
+          timesheetDetails: {
+            employeeName: `${timesheet.employee?.first_name} ${timesheet.employee?.last_name}`,
+            period: `${formatDate(timesheet.from_date)} - ${formatDate(timesheet.to_date)}`,
+            hours: timesheet.regular_hours,
+            status: timesheet.status
+          }
+        });
         
-        const response = await timesheetService.pushToXero(selectedOrganization.id);
-        console.log('✅ Push to Xero response:', response);
+        const response = await timesheetService.pushEmployeeToXero(selectedOrganization.id, employeeId);
+        console.log('✅ Push response:', response);
         
-        if (response.status) {
-          const pushedCount = response.employees_pushed || response.data?.employees_pushed || 0;
-          alert(`Successfully pushed ${pushedCount} timesheets to Xero`);
+        if (response.success || response.status === 'success') {
+          alert(`✅ Successfully pushed ${timesheet.employee?.first_name}'s timesheet to Xero!`);
           
+          // Update the specific timesheet
           setTimesheets(prev => prev.map(ts => 
-            selectedTimesheetIds.includes(ts.id) 
+            ts.id === timesheetId 
               ? { 
                   ...ts, 
                   xero_status: 'pushed', 
@@ -154,18 +359,30 @@ const TimesheetApprovals = () => {
               : ts
           ));
           
-          setSelectedTimesheetIds([]);
+          // Remove from selection if present
+          setSelectedTimesheetIds(prev => prev.filter(id => id !== timesheetId));
           
+          // Refresh data
           setTimeout(() => {
             setRefreshTrigger(prev => prev + 1);
-          }, 2000);
+          }, 1000);
         } else {
-          alert(response.message || 'Failed to push to Xero');
+          alert(`❌ Failed: ${response.message || 'Unable to push to Xero'}`);
         }
       } catch (error) {
-        console.error('Error pushing to Xero:', error);
-        console.error('Error details:', error.response?.data || error.message);
-        alert('Failed to push to Xero. Please check console for details.');
+        console.error('Error pushing single timesheet to Xero:', error);
+        console.error('Error response data:', error.response?.data);
+        
+        // Show specific error message
+        let errorMessage = 'Failed to push timesheet to Xero.';
+        if (error.response?.data?.message) {
+          errorMessage += `\n\nError: ${error.response.data.message}`;
+        }
+        if (error.response?.data?.errors) {
+          errorMessage += `\n\nDetails: ${JSON.stringify(error.response.data.errors)}`;
+        }
+        
+        alert(errorMessage);
       } finally {
         setPushToXeroLoading(false);
       }
@@ -184,8 +401,7 @@ const TimesheetApprovals = () => {
     const allIds = timesheets
       .filter(t => 
         t.status === 'submitted' && 
-        (t.xero_status === null || t.xero_status !== 'pushed') &&
-        parseFloat(t.regular_hours || 0) > 0
+        (t.xero_status === null || t.xero_status !== 'pushed')
       )
       .map(t => t.id);
     
@@ -228,8 +444,7 @@ const TimesheetApprovals = () => {
     total: timesheets.length,
     readyForXero: timesheets.filter(ts => 
       ts.status === 'submitted' && 
-      (ts.xero_status === null || ts.xero_status !== 'pushed') &&
-      parseFloat(ts.regular_hours || 0) > 0
+      (ts.xero_status === null || ts.xero_status !== 'pushed')
     ).length
   };
 
@@ -242,8 +457,96 @@ const TimesheetApprovals = () => {
         year: 'numeric'
       });
     } catch (error) {
-      return 'Invalid Date';
+      return 'Invalid Date' (error);
     }
+  };
+
+  // Push Results Modal
+  const PushResultsModal = () => {
+    if (!pushResults || !showPushResults) return null;
+
+    const successCount = pushResults.filter(r => r.success).length;
+    const failureCount = pushResults.filter(r => !r.success).length;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-800">Xero Push Results</h2>
+            <button
+              onClick={() => setShowPushResults(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FaTimes className="text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-6">
+            <div className="mb-6 grid grid-cols-2 gap-4">
+              <div className={`p-4 rounded-lg ${successCount > 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+                <div className="text-3xl font-bold text-green-600 mb-1">{successCount}</div>
+                <div className="text-sm font-medium text-green-800">Successful</div>
+              </div>
+              <div className={`p-4 rounded-lg ${failureCount > 0 ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                <div className="text-3xl font-bold text-red-600 mb-1">{failureCount}</div>
+                <div className="text-sm font-medium text-red-800">Failed</div>
+              </div>
+            </div>
+
+            {failureCount > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
+                  <FaExclamationTriangle /> Failed Pushes
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {pushResults.filter(r => !r.success).map((result, index) => (
+                    <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="text-sm font-medium text-red-800">
+                        Employee ID: {result.employeeId}
+                      </div>
+                      <div className="text-sm text-red-600 mt-1">
+                        {typeof result.error === 'object' ? 
+                          (result.error.message || JSON.stringify(result.error)) : 
+                          result.error}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {successCount > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                  <FaCheckCircle /> Successful Pushes
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {pushResults.filter(r => r.success).map((result, index) => (
+                    <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="text-sm font-medium text-green-800">
+                        Employee ID: {result.employeeId}
+                      </div>
+                      <div className="text-sm text-green-600 mt-1">
+                        Successfully pushed to Xero
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowPushResults(false)}
+                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -260,6 +563,8 @@ const TimesheetApprovals = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto">
+        {/* Push Results Modal */}
+        <PushResultsModal />
         
         {/* Header */}
         <div className="mb-8">
@@ -327,8 +632,23 @@ const TimesheetApprovals = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="flex gap-2">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-wrap gap-2">
+            {/* Push ALL button */}
+            <button
+              onClick={handlePushAllToXero}
+              disabled={stats.readyForXero === 0 || pushToXeroLoading}
+              className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                stats.readyForXero > 0 && !pushToXeroLoading
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+              {pushToXeroLoading ? 'Pushing All...' : `Push All (${stats.readyForXero})`}
+            </button>
+            
+            {/* Push SELECTED button */}
             <button
               onClick={handlePushToXero}
               disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
@@ -339,35 +659,42 @@ const TimesheetApprovals = () => {
               }`}
             >
               <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
-              {pushToXeroLoading ? 'Pushing to Xero...' : `Push to Xero (${selectedTimesheetIds.length})`}
+              {pushToXeroLoading ? 'Pushing...' : `Push Selected (${selectedTimesheetIds.length})`}
             </button>
             
+            {/* View Results button */}
+            {pushResults && (
+              <button
+                onClick={() => setShowPushResults(true)}
+                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <FaInfoCircle /> View Results
+              </button>
+            )}
+            
+            {/* Refresh button */}
             <button 
               onClick={() => setRefreshTrigger(prev => prev + 1)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <FaSyncAlt /> Refresh
             </button>
-            
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
-              <FaDownload /> Export
-            </button>
           </div>
 
           {selectedTimesheetIds.length > 0 && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-blue-600 font-medium">
                 {selectedTimesheetIds.length} timesheet(s) selected
               </span>
               <button
                 onClick={selectAllTimesheets}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
               >
-                {selectedTimesheetIds.length === stats.readyForXero ? 'Deselect All' : 'Select All'}
+                {selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0 ? 'Deselect All' : 'Select All'}
               </button>
               <button
                 onClick={() => setSelectedTimesheetIds([])}
-                className="text-sm text-red-600 hover:text-red-800"
+                className="text-sm text-red-600 hover:text-red-800 hover:underline"
               >
                 Clear Selection
               </button>
@@ -480,8 +807,7 @@ const TimesheetApprovals = () => {
                       {/* Checkbox for Xero Push */}
                       <td className="px-4 py-3">
                         {timesheet.status === 'submitted' && 
-                         (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') &&
-                         parseFloat(timesheet.regular_hours || 0) > 0 && (
+                         (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
                           <input
                             type="checkbox"
                             checked={selectedTimesheetIds.includes(timesheet.id)}
@@ -505,7 +831,7 @@ const TimesheetApprovals = () => {
                               {timesheet.employee?.employee_code || 'N/A'}
                             </div>
                             <div className="text-xs text-gray-400">
-                              Submitted: {formatDate(timesheet.created_at)}
+                              ID: {timesheet.employee_id || timesheet.employee?.id || 'N/A'}
                             </div>
                           </div>
                         </div>
@@ -577,7 +903,7 @@ const TimesheetApprovals = () => {
 
                       {/* Actions */}
                       <td className="px-4 py-3 text-sm font-medium">
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => handleViewDetails(timesheet)}
                             className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
@@ -585,6 +911,19 @@ const TimesheetApprovals = () => {
                           >
                             <FaEye /> Details
                           </button>
+                          
+                          {/* Single Push to Xero Button */}
+                          {timesheet.status === 'submitted' && 
+                           (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
+                            <button
+                              onClick={() => handlePushSingleToXero(timesheet.id)}
+                              className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1"
+                              title="Push to Xero"
+                            >
+                              <FaSyncAlt /> Push
+                            </button>
+                          )}
+                          
                           {timesheet.status === 'submitted' && (
                             <>
                               <button
@@ -658,6 +997,9 @@ const TimesheetApprovals = () => {
                         <div className="text-sm text-gray-600">
                           {selectedTimesheet.employee?.employee_code || 'N/A'}
                         </div>
+                        <div className="text-xs text-gray-500">
+                          Employee ID: {selectedTimesheet.employee_id || selectedTimesheet.employee?.id}
+                        </div>
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
@@ -723,7 +1065,13 @@ const TimesheetApprovals = () => {
 
                 {/* Action Buttons */}
                 {selectedTimesheet.status === 'submitted' && (
-                  <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+                    <button
+                      onClick={() => handlePushSingleToXero(selectedTimesheet.id)}
+                      className="px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <FaSyncAlt /> Push to Xero
+                    </button>
                     <button
                       onClick={() => {
                         handleReject(selectedTimesheet.id);
@@ -738,7 +1086,7 @@ const TimesheetApprovals = () => {
                         handleApprove(selectedTimesheet.id);
                         setShowDetailModal(false);
                       }}
-                      className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
+                      className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
                     >
                       <FaSave /> Approve Timesheet
                     </button>
