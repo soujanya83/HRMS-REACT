@@ -196,8 +196,6 @@ const PayslipGeneration = () => {
     }
   };
 
-  // ============ PAYSLIPS APIS ============
-  // NEW: Fetch ALL payslips for organization
   const fetchAllPayslipsForOrganization = async () => {
     try {
       setLoading(prev => ({ ...prev, allPayslips: true }));

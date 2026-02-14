@@ -24,6 +24,103 @@ import {
   deleteDesignation,
 } from "../services/organizationService";
 
+// Timezone data with Australian timezones prioritized
+const TIMEZONES = [
+  // Australian timezones (prioritized)
+  "Australia/Sydney",
+  "Australia/Melbourne",
+  "Australia/Brisbane",
+  "Australia/Perth",
+  "Australia/Adelaide",
+  "Australia/Canberra",
+  "Australia/Hobart",
+  "Australia/Darwin",
+  // Other timezones
+  "Pacific/Auckland",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "Africa/Johannesburg",
+  "Africa/Cairo",
+];
+
+// Industry types with childcare-related options prioritized
+const INDUSTRY_TYPES = [
+  // Childcare related (prioritized)
+  "Child Care Center",
+  "Preschool",
+  "Daycare",
+  "Early Learning Center",
+  "Kindergarten",
+  "Nursery School",
+  "Montessori School",
+  "Family Day Care",
+  "After School Care",
+  "Child Development Center",
+  // Other related industries
+  "Education",
+  "Healthcare",
+  "Social Assistance",
+  "Youth Services",
+  "Community Services",
+  // Other industries
+  "Technology",
+  "Finance",
+  "Retail",
+  "Manufacturing",
+  "Construction",
+  "Real Estate",
+  "Hospitality",
+  "Transportation",
+  "Agriculture",
+  "Energy",
+  "Telecommunications",
+  "Media",
+  "Entertainment",
+  "Consulting",
+  "Legal Services",
+  "Marketing",
+  "Human Resources",
+  "Other",
+];
+
+// Color options for rooms
+const COLOR_OPTIONS = [
+  { value: "#EF4444", label: "Red", class: "bg-red-500" },
+  { value: "#F97316", label: "Orange", class: "bg-orange-500" },
+  { value: "#F59E0B", label: "Amber", class: "bg-amber-500" },
+  { value: "#EAB308", label: "Yellow", class: "bg-yellow-500" },
+  { value: "#84CC16", label: "Lime", class: "bg-lime-500" },
+  { value: "#10B981", label: "Green", class: "bg-green-500" },
+  { value: "#14B8A6", label: "Teal", class: "bg-teal-500" },
+  { value: "#06B6D4", label: "Cyan", class: "bg-cyan-500" },
+  { value: "#3B82F6", label: "Blue", class: "bg-blue-500" },
+  { value: "#8B5CF6", label: "Violet", class: "bg-violet-500" },
+  { value: "#A855F7", label: "Purple", class: "bg-purple-500" },
+  { value: "#EC4899", label: "Pink", class: "bg-pink-500" },
+  { value: "#F43F5E", label: "Rose", class: "bg-rose-500" },
+];
+
+// Age group options
+const AGE_GROUPS = [
+  "Infants (0-12 months)",
+  "Toddlers (1-2 years)",
+  "Twos (2-3 years)",
+  "Preschool (3-4 years)",
+  "Pre-K (4-5 years)",
+  "School Age (5+ years)",
+  "Mixed Age Group",
+];
+
 // Reusable Form Components
 const FormInput = ({ label, name, error, ...props }) => (
   <div>
@@ -78,6 +175,39 @@ const FormTextarea = ({ label, name, error, ...props }) => (
   </div>
 );
 
+const ColorPicker = ({ label, name, value, onChange, error }) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+      {label}
+    </label>
+    <div className="mt-1 flex items-center gap-2">
+      <div className="flex-1">
+        <select
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={`block w-full px-3 py-2 bg-white border ${
+            error ? "border-red-500" : "border-gray-300"
+          } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+        >
+          {COLOR_OPTIONS.map((color) => (
+            <option key={color.value} value={color.value}>
+              {color.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div
+        className="w-10 h-10 rounded-full border-2 border-gray-300"
+        style={{ backgroundColor: value }}
+        title="Selected color"
+      />
+    </div>
+    {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
+  </div>
+);
+
 // Create a context for modal management
 const DesignationModalContext = React.createContext();
 
@@ -102,73 +232,42 @@ function OrganizationsPage() {
 
   // Fetch organizations with proper response handling
   const fetchOrganizations = useCallback(async () => {
-  setIsLoading(true);
-  setError(null);
-  
-  console.log('🔄 Starting to fetch organizations...');
-  
-  try {
-    const response = await getOrganizations();
-    console.log('📥 Raw GET response:', response);
+    setIsLoading(true);
+    setError(null);
     
-    // THIS IS THE CRITICAL PART - Check what your response structure actually is:
-    console.log('🔍 Response structure check:', {
-      hasSuccess: 'success' in response,
-      successValue: response?.success,
-      hasData: 'data' in response,
-      dataIsObject: typeof response?.data === 'object',
-      dataHasData: response?.data?.data !== undefined,
-      dataDataIsArray: Array.isArray(response?.data?.data)
-    });
+    console.log('🔄 Starting to fetch organizations...');
     
-    let organizationsData = [];
-    
-    // Your API returns: {success: true, data: {data: [...], pagination...}}
-    if (response && response.success === true) {
-      console.log('✅ API returned success');
+    try {
+      const response = await getOrganizations();
+      console.log('📥 Raw GET response:', response);
       
-      // Check if we have the nested data structure
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        organizationsData = response.data.data;
-        console.log(`🎯 Found ${organizationsData.length} organizations in response.data.data`);
-      } 
-      // Check for direct array in data
-      else if (response.data && Array.isArray(response.data)) {
-        organizationsData = response.data;
-        console.log(`🎯 Found ${organizationsData.length} organizations in response.data`);
+      let organizationsData = [];
+      
+      if (response && response.success === true) {
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          organizationsData = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          organizationsData = response.data;
+        } else if (Array.isArray(response)) {
+          organizationsData = response;
+        }
       }
-      // Check for array at root level (unlikely but possible)
-      else if (Array.isArray(response)) {
-        organizationsData = response;
-        console.log(`🎯 Found ${organizationsData.length} organizations in direct response`);
-      }
+      
+      setOrganizations(organizationsData);
+    } catch (err) {
+      console.error('💥 Error fetching organizations:', err);
+      setError(err.response?.data?.message || "Failed to fetch organizations.");
+      setOrganizations([]);
+    } finally {
+      setIsLoading(false);
     }
-    
-    console.log(`📊 Setting ${organizationsData.length} organizations to state`);
-    console.log('Organization names:', organizationsData.map(org => org.name));
-    
-    // Update the state
-    setOrganizations(organizationsData);
-    
-    // Log the state AFTER update (using a setTimeout to see it after the render)
-    setTimeout(() => {
-      console.log('📝 Current organizations in state:', organizations);
-    }, 100);
-    
-  } catch (err) {
-    console.error('💥 Error fetching organizations:', err);
-    setError(err.response?.data?.message || "Failed to fetch organizations.");
-    setOrganizations([]);
-  } finally {
-    setIsLoading(false);
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  // Handle save organization - FIXED VERSION
+  // Handle save organization
   const handleSave = async (orgData) => {
     setIsSubmitting(true);
     console.log('🔧 handleSave called with data:', orgData);
@@ -177,37 +276,25 @@ function OrganizationsPage() {
       let apiResponse;
       
       if (editingOrg) {
-        console.log(`📝 Editing organization ID: ${editingOrg.id}`);
         apiResponse = await updateOrganization(editingOrg.id, orgData);
       } else {
-        console.log('➕ Creating new organization');
         apiResponse = await createOrganization(orgData);
       }
       
-      console.log('🎉 Service returned:', apiResponse);
-      
-      // Check if API returned success
       if (apiResponse.success !== true) {
         throw new Error(apiResponse.message || 'API returned unsuccessful');
       }
       
-      console.log('✅ API success confirmed');
-      
-      // Refresh the organizations list
       await fetchOrganizations();
       
-      // Update selected org if we're editing it
       if (selectedOrg && editingOrg && selectedOrg.id === editingOrg.id) {
         const updatedOrgData = apiResponse.data;
-        console.log('🔄 Updating selected org with:', updatedOrgData);
         setSelectedOrg(updatedOrgData);
       }
       
-      // Close modal and reset
       setIsModalOpen(false);
       setEditingOrg(null);
       
-      // Show success message
       alert(apiResponse.message || (editingOrg ? 'Organization updated successfully!' : 'Organization created successfully!'));
       
     } catch (err) {
@@ -382,7 +469,7 @@ function OrganizationsPage() {
           setOrgToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Organization"
+        title="Delete Center"
         message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
       />
 
@@ -423,19 +510,19 @@ function OrganizationListView({
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Organizations</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Centers</h1>
         <button
           onClick={onAdd}
           className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
         >
-          <HiPlus /> Add Workspace
+          <HiPlus /> Add New Center
         </button>
       </div>
 
       {isLoading && (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading organizations...</span>
+          <span className="ml-3 text-gray-600">Loading Centers...</span>
         </div>
       )}
       
@@ -470,16 +557,16 @@ function OrganizationListView({
           <div className="text-center py-16 bg-white rounded-lg shadow-md">
             <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No organizations found
+              No Centers found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Get started by adding a new organization.
+              Get started by adding a new Center.
             </p>
             <button
               onClick={onAdd}
               className="mt-4 inline-flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition"
             >
-              <HiPlus /> Add Your First Organization
+              <HiPlus /> Add Your First Center
             </button>
           </div>
         )
@@ -488,7 +575,7 @@ function OrganizationListView({
   );
 }
 
-function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
+function OrganizationCard({ organization, onSelectOrg, onEdit }) {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
       <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
@@ -522,20 +609,10 @@ function OrganizationCard({ organization, onSelectOrg, onEdit, onDelete }) {
                   onEdit(organization);
                 }}
                 className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors"
-                title="Edit Organization"
+                title="Edit Center"
               >
                 <HiPencil />
               </button>
-              {/* <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(organization);
-                }}
-                className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
-                title="Delete Organization"
-              >
-                <HiTrash />
-              </button> */}
             </div>
             
             <button
@@ -558,7 +635,7 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
         onClick={onBack}
         className="flex items-center gap-2 text-blue-600 hover:underline mb-6 font-semibold"
       >
-        <HiArrowLeft /> Back to Organizations
+        <HiArrowLeft /> Back to Centers
       </button>
 
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8 relative">
@@ -572,7 +649,7 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
               </h1>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 <div>
-                  <p className="text-sm text-gray-500">Registration Number</p>
+                  <p className="text-sm text-gray-500">Service ID</p>
                   <p className="font-medium">{organization.registration_number || 'Not specified'}</p>
                 </div>
                 <div>
@@ -593,7 +670,7 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Timezone</p>
-                  <p className="font-medium">{organization.timezone || 'Asia/Kolkata'}</p>
+                  <p className="font-medium">{organization.timezone || 'Australia/Sydney'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Created Date</p>
@@ -619,92 +696,92 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
         </div>
       </div>
 
-      <DepartmentsManager orgId={organization.id} />
+      <RoomsManager orgId={organization.id} />
     </div>
   );
 }
 
-function DepartmentsManager({ orgId }) {
-  const [departments, setDepartments] = useState([]);
+function RoomsManager({ orgId }) {
+  const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [deptError, setDeptError] = useState(null);
+  const [roomError, setRoomError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDept, setEditingDept] = useState(null);
+  const [editingRoom, setEditingRoom] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [deptToDelete, setDeptToDelete] = useState(null);
+  const [roomToDelete, setRoomToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchDepts = useCallback(async () => {
+  const fetchRooms = useCallback(async () => {
     setIsLoading(true);
-    setDeptError(null);
+    setRoomError(null);
     
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      console.log('Departments response:', response);
+      console.log('Rooms response:', response);
       
-      let departmentsData = [];
+      let roomsData = [];
       
       if (response && response.success === true) {
         if (response.data && response.data.data) {
-          departmentsData = response.data.data;
+          roomsData = response.data.data;
         } else if (Array.isArray(response.data)) {
-          departmentsData = response.data;
+          roomsData = response.data;
         }
       } else if (Array.isArray(response)) {
-        departmentsData = response;
+        roomsData = response;
       }
       
-      setDepartments(departmentsData);
+      setRooms(roomsData);
     } catch (error) {
-      console.error("Failed to fetch departments", error);
-      setDeptError(error.response?.data?.message || "Failed to load departments");
-      setDepartments([]);
+      console.error("Failed to fetch rooms", error);
+      setRoomError(error.response?.data?.message || "Failed to load rooms");
+      setRooms([]);
     } finally {
       setIsLoading(false);
     }
   }, [orgId]);
 
   useEffect(() => {
-    fetchDepts();
-  }, [fetchDepts]);
+    fetchRooms();
+  }, [fetchRooms]);
 
-  const handleSave = async (deptData) => {
+  const handleSave = async (roomData) => {
     setIsSubmitting(true);
     try {
       let response;
-      if (editingDept) {
-        response = await updateDepartment(editingDept.id, deptData);
+      if (editingRoom) {
+        response = await updateDepartment(editingRoom.id, roomData);
       } else {
-        response = await createDepartment(orgId, deptData);
+        response = await createDepartment(orgId, roomData);
       }
       
       if (response.success === true) {
-        await fetchDepts();
+        await fetchRooms();
         setIsModalOpen(false);
-        setEditingDept(null);
-        alert(response.message || 'Department saved successfully!');
+        setEditingRoom(null);
+        alert(response.message || 'Room saved successfully!');
       } else {
-        throw new Error(response.message || 'Failed to save department');
+        throw new Error(response.message || 'Failed to save room');
       }
     } catch (error) {
-      console.error("Failed to save department", error);
-      alert(error.response?.data?.message || error.message || 'Failed to save department');
+      console.error("Failed to save room", error);
+      alert(error.response?.data?.message || error.message || 'Failed to save room');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (deptToDelete) {
+    if (roomToDelete) {
       try {
-        await deleteDepartment(deptToDelete.id);
-        await fetchDepts();
+        await deleteDepartment(roomToDelete.id);
+        await fetchRooms();
         setIsConfirmOpen(false);
-        setDeptToDelete(null);
-        alert('Department deleted successfully!');
+        setRoomToDelete(null);
+        alert('Room deleted successfully!');
       } catch (error) {
-        console.error("Failed to delete department", error);
-        alert(error.response?.data?.message || 'Failed to delete department');
+        console.error("Failed to delete room", error);
+        alert(error.response?.data?.message || 'Failed to delete room');
       }
     }
   };
@@ -712,60 +789,60 @@ function DepartmentsManager({ orgId }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Departments</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
         <button
           onClick={() => {
-            setEditingDept(null);
+            setEditingRoom(null);
             setIsModalOpen(true);
           }}
           className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
         >
-          <HiPlus /> Add Department
+          <HiPlus /> Add Room
         </button>
       </div>
 
-      {deptError && (
+      {roomError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-600">{deptError}</p>
+          <p className="text-red-600">{roomError}</p>
         </div>
       )}
 
       {isLoading ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Loading departments...</span>
+          <span className="ml-2 text-gray-600">Loading Rooms...</span>
         </div>
       ) : (
         <div className="space-y-4">
-          {departments.map((dept) => (
-            <DepartmentItem
-              key={dept.id}
-              department={dept}
+          {rooms.map((room) => (
+            <RoomItem
+              key={room.id}
+              room={room}
               onEdit={() => {
-                setEditingDept(dept);
+                setEditingRoom(room);
                 setIsModalOpen(true);
               }}
               onDelete={() => {
-                setDeptToDelete(dept);
+                setRoomToDelete(room);
                 setIsConfirmOpen(true);
               }}
             />
           ))}
-          {departments.length === 0 && (
+          {rooms.length === 0 && (
             <div className="text-center py-8 bg-white rounded-lg shadow-md">
               <HiOutlineOfficeBuilding className="mx-auto h-8 w-8 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No departments found</h3>
-              <p className="mt-1 text-sm text-gray-500">Add a department to get started.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No Rooms found</h3>
+              <p className="mt-1 text-sm text-gray-500">Add a room to get started.</p>
             </div>
           )}
         </div>
       )}
 
-      <DepartmentModal
+      <RoomModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
-        department={editingDept}
+        room={editingRoom}
         isSubmitting={isSubmitting}
       />
 
@@ -773,24 +850,45 @@ function DepartmentsManager({ orgId }) {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Department"
-        message={`Are you sure you want to delete "${deptToDelete?.name}"?`}
+        title="Delete Room"
+        message={`Are you sure you want to delete "${roomToDelete?.name}"?`}
       />
     </div>
   );
 }
 
-function DepartmentItem({ department, onEdit, onDelete }) {
+function RoomItem({ room, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Get color class from COLOR_OPTIONS
+  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
+  
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+      <div 
+        className="absolute top-0 left-0 w-2 h-full" 
+        style={{ backgroundColor: room.color_code || '#3B82F6' }}
+      ></div>
       
       <div className="p-6 pl-8">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
           <div className="flex-1 pr-4">
-            <h3 className="text-lg font-bold text-gray-900">{department.name}</h3>
-            <p className="text-gray-600 text-sm mt-1">{department.description}</p>
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
+              <span 
+                className="inline-block w-4 h-4 rounded-full" 
+                style={{ backgroundColor: room.color_code || '#3B82F6' }}
+                title={colorOption.label}
+              />
+            </div>
+            {room.age_group && (
+              <p className="text-gray-600 text-sm mt-1">
+                <span className="font-medium">Age Group:</span> {room.age_group}
+              </p>
+            )}
+            {room.description && (
+              <p className="text-gray-500 text-sm mt-1">{room.description}</p>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -800,17 +898,17 @@ function DepartmentItem({ department, onEdit, onDelete }) {
                   onEdit();
                 }}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                title="Edit Department"
+                title="Edit Room"
               >
                 <HiPencil />
               </button>
               <button
-                onClick={(e) => {j
+                onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
                 }}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
-                title="Delete Department"
+                title="Delete Room"
               >
                 <HiTrash />
               </button>
@@ -822,7 +920,7 @@ function DepartmentItem({ department, onEdit, onDelete }) {
             />
           </div>
         </div>
-        {isOpen && <DesignationsList departmentId={department.id} />}
+        {isOpen && <DesignationsList departmentId={room.id} />}
       </div>
     </div>
   );
@@ -946,8 +1044,8 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
         address: "",
         contact_email: "",
         contact_phone: "",
-        industry_type: "",
-        timezone: "Asia/Kolkata",
+        industry_type: "Child Care Center",
+        timezone: "Australia/Sydney",
       }
     );
     setErrors({});
@@ -972,7 +1070,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
       } else if (error.response?.data?.message) {
         setSubmitError(error.response.data.message);
       } else {
-        setSubmitError('Failed to save organization. Please try again.');
+        setSubmitError('Failed to save Center. Please try again.');
       }
     }
   };
@@ -984,7 +1082,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {organization ? "Edit Organization" : "Add New Organization"}
+            {organization ? "Edit Center" : "Add New Center"}
           </h2>
           <button
             onClick={onClose}
@@ -1005,33 +1103,38 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="sm:col-span-2">
                 <FormInput
-                  label="Organization Name *"
+                  label="Center Name *"
                   name="name"
                   value={formData.name || ""}
                   onChange={handleChange}
-                  placeholder="Enter organization name"
+                  placeholder="Enter Center name"
                   required
                   error={errors.name}
                 />
               </div>
               
               <FormInput
-                label="Registration Number"
+                label="Service ID"
                 name="registration_number"
                 value={formData.registration_number || ""}
                 onChange={handleChange}
-                placeholder="Enter registration number"
+                placeholder="Enter Service ID"
                 error={errors.registration_number}
               />
               
-              <FormInput
+              <FormSelect
                 label="Industry Type"
                 name="industry_type"
-                value={formData.industry_type || ""}
+                value={formData.industry_type || "Child Care Center"}
                 onChange={handleChange}
-                placeholder="Enter industry type"
                 error={errors.industry_type}
-              />
+              >
+                {INDUSTRY_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </FormSelect>
               
               <FormInput
                 type="email"
@@ -1053,14 +1156,19 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 error={errors.contact_phone}
               />
               
-              <FormInput
+              <FormSelect
                 label="Timezone"
                 name="timezone"
-                value={formData.timezone || "Asia/Kolkata"}
+                value={formData.timezone || "Australia/Sydney"}
                 onChange={handleChange}
-                placeholder="Enter timezone"
                 error={errors.timezone}
-              />
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz.replace('_', ' ')}
+                  </option>
+                ))}
+              </FormSelect>
               
               <div className="sm:col-span-2">
                 <FormTextarea
@@ -1096,7 +1204,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                   : "Creating..."
                 : organization
                 ? "Save Changes"
-                : "Create Organization"}
+                : "Create Center"}
             </button>
           </div>
         </form>
@@ -1105,26 +1213,55 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
   );
 }
 
-function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) {
+function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
   
   useEffect(() => {
-    setFormData(department || { name: "", description: "" });
+    // Initialize with default values including age_group and color_code
+    setFormData(room || { 
+      name: "", 
+      description: "", 
+      age_group: AGE_GROUPS[0], // Default to first age group
+      color_code: COLOR_OPTIONS[0].value // Default to Red
+    });
     setError('');
-  }, [department, isOpen]);
+  }, [room, isOpen]);
   
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: value 
+    }));
+    // Log to verify values are being set
+    console.log(`Setting ${name}:`, value);
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
+    // Log the complete form data before submitting
+    console.log('Submitting room data:', {
+      name: formData.name,
+      description: formData.description,
+      age_group: formData.age_group,
+      color_code: formData.color_code
+    });
+    
+    // Ensure all fields are included
+    const submitData = {
+      name: formData.name,
+      description: formData.description || '',
+      age_group: formData.age_group || AGE_GROUPS[0],
+      color_code: formData.color_code || COLOR_OPTIONS[0].value
+    };
+    
     try {
-      await onSave(formData);
+      await onSave(submitData);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to save department');
+      setError(err.response?.data?.message || err.message || 'Failed to save room');
     }
   };
   
@@ -1135,7 +1272,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {department ? "Edit Department" : "Add New Department"}
+            {room ? "Edit Room" : "Add New Room"}
           </h2>
           <button
             onClick={onClose}
@@ -1155,12 +1292,32 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
           <div className="p-6">
             <div className="space-y-4">
               <FormInput
-                label="Department Name *"
+                label="Room Name *"
                 name="name"
                 value={formData.name || ""}
                 onChange={handleChange}
-                placeholder="Enter department name"
+                placeholder="Enter room name"
                 required
+              />
+              
+              <FormSelect
+                label="Age Group"
+                name="age_group"
+                value={formData.age_group || AGE_GROUPS[0]}
+                onChange={handleChange}
+              >
+                {AGE_GROUPS.map((ageGroup) => (
+                  <option key={ageGroup} value={ageGroup}>
+                    {ageGroup}
+                  </option>
+                ))}
+              </FormSelect>
+              
+              <ColorPicker
+                label="Room Color"
+                name="color_code"
+                value={formData.color_code || COLOR_OPTIONS[0].value}
+                onChange={handleChange}
               />
               
               <FormTextarea
@@ -1168,7 +1325,7 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
                 name="description"
                 value={formData.description || ""}
                 onChange={handleChange}
-                placeholder="Enter department description"
+                placeholder="Enter room description"
                 rows="3"
               />
             </div>
@@ -1189,12 +1346,12 @@ function DepartmentModal({ isOpen, onClose, onSave, department, isSubmitting }) 
               className="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:opacity-90 transition"
             >
               {isSubmitting
-                ? department
+                ? room
                   ? "Saving..."
                   : "Creating..."
-                : department
+                : room
                 ? "Save Changes"
-                : "Create Department"}
+                : "Create Room"}
             </button>
           </div>
         </form>
@@ -1261,7 +1418,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                 required
               />
               
-              <FormSelect
+              {/* <FormSelect
                 label="Level"
                 name="level"
                 value={formData.level || "Junior"}
@@ -1273,7 +1430,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                 <option value="Lead">Lead</option>
                 <option value="Manager">Manager</option>
                 <option value="Director">Director</option>
-              </FormSelect>
+              </FormSelect> */}
             </div>
           </div>
 

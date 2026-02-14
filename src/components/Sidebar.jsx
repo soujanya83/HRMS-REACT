@@ -51,7 +51,7 @@ import {
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
   {
-    name: "Organizations",
+    name: "Centers",
     path: "/dashboard/organizations",
     icon: HiOutlineOfficeBuilding,
   },

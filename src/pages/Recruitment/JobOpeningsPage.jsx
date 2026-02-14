@@ -462,7 +462,7 @@ function JobOpeningDetailPage() {
                 {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
               </div>
               <div>
-                <span className="font-semibold">Department:</span>{' '}
+                <span className="font-semibold">Room:</span>{' '}
                 {job.department?.name || 'Not specified'}
               </div>
               <div>
@@ -532,7 +532,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
           );
         }
       }).catch(err => {
-        console.error("Failed to load departments:", err);
+        console.error("Failed to load Rooms:", err);
         setDepartments([]);
       });
     }
@@ -585,7 +585,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="sm:col-span-2">
+              {/* <div className="sm:col-span-2">
                 <FormInput
                   label="Job Title"
                   name="title"
@@ -594,16 +594,16 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   error={errors?.title}
                   required
                 />
-              </div>
+              </div> */}
               <FormSelect
-                label="Department"
+                label="Room "
                 name="department_id"
                 value={formData.department_id || ""}
                 onChange={handleChange}
                 error={errors?.department_id}
                 required
               >
-                <option value="">Select a Department</option>
+                <option value="">Select a Room</option>
                 {departments.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
@@ -641,10 +641,11 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.employment_type}
               >
-                <option value="full-time">full-time</option>
-                <option value="part-time">part-time</option>
-                <option value="contract">contract</option>
-                <option value="internship">internship</option>
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Casual</option>
+                <option value="fixed-term">Fixed Term</option>
+                <option value="trainee">Trainee</option>
               </FormSelect>
               <div className="sm:col-span-2">
                 <FormTextarea
