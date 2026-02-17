@@ -234,5 +234,24 @@ export const employeeService = {
   // All other functions remain available as separate exports
 };
 
+
+// Create basic employee (personal info only)
+export const createEmployeeBasic = (employeeData) => {
+  return axiosClient.post("/employees/basic/store-update", employeeData, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+// Update basic employee info
+export const updateEmployeeBasic = (id, employeeData) => {
+  return axiosClient.put(`/employees/basic/${id}`, employeeData, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
 // Default export for convenience
 export default employeeService;
