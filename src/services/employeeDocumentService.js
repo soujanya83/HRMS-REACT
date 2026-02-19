@@ -13,6 +13,14 @@ export const getEmployeeDocument = (documentId) => {
 
 // Create new employee document
 export const createEmployeeDocument = (employeeId, formData) => {
+  console.log('🔵 createEmployeeDocument - URL:', `/employees/${employeeId}/documents`);
+  
+  // Double-check FormData before sending
+  console.log('🔵 FormData before send:');
+  for (let pair of formData.entries()) {
+    console.log(`  ${pair[0]}:`, pair[1] instanceof File ? `FILE: ${pair[1].name}` : `"${pair[1]}"`);
+  }
+  
   return axiosClient.post(`/employees/${employeeId}/documents`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

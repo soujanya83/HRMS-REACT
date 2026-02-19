@@ -3,17 +3,20 @@ import {
   getEmployee,
   updateEmployee,
   getEmployees,
+  createEmployeeBasic, // FIXED: Import the correct function
 } from "../../services/employeeService.js";
+
 import {
   getDepartmentsByOrgId,
   getDesignationsByDeptId,
 } from "../../services/organizationService.js";
-import { 
-  getDocumentsByEmployee, 
-  createEmployeeDocument, 
-  deleteEmployeeDocument 
+import {
+  getDocumentsByEmployee,
+  createEmployeeDocument,
+  deleteEmployeeDocument,
+  updateEmployeeDocument
 } from "../../services/employeeDocumentService.js";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   FaUser,
   FaBriefcase,
@@ -38,163 +41,9 @@ import {
   FaFileWord,
   FaFileImage,
   FaPlus,
+  FaEdit,
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
-
-// Reusable Input Component
-const InputField = ({
-  label,
-  name,
-  value,
-  onChange,
-  error,
-  type = "text",
-  required = false,
-  placeholder = "",
-  disabled = false,
-}) => (
-  <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value || ""}
-      onChange={onChange}
-      required={required}
-      disabled={disabled}
-      placeholder={placeholder}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-    />
-    {error && (
-      <div className="mt-1 flex items-center text-red-600 text-sm">
-        <FaTimes className="mr-1 text-xs" />
-        {error[0]}
-      </div>
-    )}
-  </div>
-);
-
-// Reusable Select Component
-const SelectField = ({
-  label,
-  name,
-  value,
-  onChange,
-  options,
-  error,
-  required = false,
-  placeholder = "-- Select --",
-  disabled = false,
-}) => (
-  <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-    <select
-      id={name}
-      name={name}
-      value={value || ""}
-      onChange={onChange}
-      required={required}
-      disabled={disabled}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-    {error && (
-      <div className="mt-1 flex items-center text-red-600 text-sm">
-        <FaTimes className="mr-1 text-xs" />
-        {error[0]}
-      </div>
-    )}
-  </div>
-);
-
-// Reusable TextArea Component
-const TextAreaField = ({
-  label,
-  name,
-  value,
-  onChange,
-  error,
-  required = false,
-  placeholder = "",
-  rows = 3,
-}) => (
-  <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-    <textarea
-      id={name}
-      name={name}
-      value={value || ""}
-      onChange={onChange}
-      required={required}
-      placeholder={placeholder}
-      rows={rows}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
-    />
-    {error && (
-      <div className="mt-1 flex items-center text-red-600 text-sm">
-        <FaTimes className="mr-1 text-xs" />
-        {error[0]}
-      </div>
-    )}
-  </div>
-);
-
-// Tab Component
-const TabButton = ({ active, onClick, icon, label, step, completed }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${
-      active
-        ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
-        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-    }`}
-  >
-    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-      active ? "bg-blue-100 text-blue-600" : completed ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-    }`}>
-      {completed && !active ? <FaCheck className="text-sm" /> : icon}
-    </div>
-    <div className="flex flex-col items-start">
-      <span className={`text-sm font-medium ${active ? "text-blue-700" : completed ? "text-green-700" : "text-gray-600"}`}>
-        {label}
-      </span>
-      <span className={`text-xs ${active ? "text-blue-500" : "text-gray-400"}`}>
-        Step {step}
-      </span>
-    </div>
-  </button>
-);
-
-// Section Header Component
-const SectionHeader = ({ title, description }) => (
-  <div className="mb-8">
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
-    {description && <p className="text-gray-600">{description}</p>}
-  </div>
-);
 
 // Document Type Options
 const DOCUMENT_TYPES = [
@@ -233,13 +82,15 @@ const FileIcon = ({ fileName }) => {
 };
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
+// Document Upload Modal
+// Document Upload Modal - UPDATED with correct field names from EmployeeProfile
+const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {}, employeeId }) => {
   const [formData, setFormData] = useState({
-    document_type: '',
-    issue_date: '',
-    expiry_date: '',
+    document_type: initialData.document_type || '',
+    issue_date: initialData.issue_date || '',
+    expiry_date: initialData.expiry_date || '',
     file: null,
-    file_name: '',
+    file_name: initialData.file_name || '',
   });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -247,15 +98,15 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        document_type: '',
-        issue_date: '',
-        expiry_date: '',
+        document_type: initialData.document_type || '',
+        issue_date: initialData.issue_date || '',
+        expiry_date: initialData.expiry_date || '',
         file: null,
-        file_name: '',
+        file_name: initialData.file_name || '',
       });
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -275,59 +126,82 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!formData.file && !isEdit) {
+    setError('Please select a file to upload');
+    return;
+  }
+
+  if (!formData.document_type) {
+    setError('Please select a document type');
+    return;
+  }
+
+  if (!formData.file_name) {
+    setError('Please enter a document name');
+    return;
+  }
+
+  setUploading(true);
+  setError('');
+
+  try {
+    const data = new FormData();
     
-    if (!formData.file) {
-      setError('Please select a file to upload');
-      return;
+    // EXACT FIELD NAMES based on error message
+    data.append('document_type', formData.document_type);  // lowercase with underscore
+    data.append('document_name', formData.file_name);      // lowercase with underscore - THIS IS THE KEY FIELD
+    
+    if (formData.file) {
+      data.append('document', formData.file);              // lowercase - just 'document'
+    }
+    
+    if (formData.issue_date) {
+      data.append('issue_date', formData.issue_date);      // lowercase with underscore
+    }
+    if (formData.expiry_date) {
+      data.append('expiry_date', formData.expiry_date);    // lowercase with underscore
     }
 
-    if (!formData.document_type) {
-      setError('Please select a document type');
-      return;
+    if (isEdit) {
+      data.append('_method', 'PUT');
     }
 
-    setUploading(true);
-    setError('');
-
-    try {
-      const data = new FormData();
-      data.append('employee_id', employeeId);
-      data.append('document_type', formData.document_type);
-      data.append('file', formData.file);
-      data.append('file_name', formData.file_name || formData.file.name || 'document');
-      
-      if (formData.issue_date) {
-        data.append('issue_date', formData.issue_date);
-      }
-      if (formData.expiry_date) {
-        data.append('expiry_date', formData.expiry_date);
-      }
-
-      console.log('Uploading document with data:', {
-        employeeId,
-        document_type: formData.document_type,
-        file_name: formData.file_name,
-        issue_date: formData.issue_date,
-        expiry_date: formData.expiry_date,
-        file: formData.file?.name
-      });
-
-      await onSubmit(employeeId, data);
-      onClose();
-    } catch (err) {
-      console.error('Upload error:', err);
-      if (err.response?.status === 422) {
-        const errors = err.response.data?.errors || {};
-        const errorMessages = Object.values(errors).flat();
-        setError(errorMessages.join(', ') || 'Validation failed');
-      } else {
-        setError(err.response?.data?.message || 'Failed to upload document');
-      }
-    } finally {
-      setUploading(false);
+    // DEBUG: Check EXACT field names and values
+    console.log('🔍 EXACT FORM DATA FIELDS BEING SENT:');
+    const fields = {};
+    for (let pair of data.entries()) {
+      fields[pair[0]] = pair[1] instanceof File ? `FILE: ${pair[1].name}` : pair[1];
+      console.log(`  "${pair[0]}" =`, pair[1] instanceof File ? `FILE: ${pair[1].name}` : `"${pair[1]}"`);
     }
-  };
+    console.log('📦 Fields object:', fields);
+    
+    // Specifically check if document_name exists
+    if (!data.has('document_name')) {
+      console.error('❌ CRITICAL: document_name field is missing from FormData!');
+    } else {
+      console.log('✅ document_name field exists with value:', data.get('document_name'));
+    }
+
+    await onSubmit(employeeId, data, isEdit);
+    onClose();
+  } catch (err) {
+    console.error('Upload error:', err);
+    if (err.response?.status === 422) {
+      const errors = err.response.data?.errors || {};
+      const errorMessages = Object.values(errors).flat();
+      setError(errorMessages.join(', ') || 'Validation failed');
+    } else if (err.response?.status === 500) {
+      setError('Server error. Please check the console for details.');
+      console.error('Server error details:', err.response?.data);
+    } else {
+      setError(err.response?.data?.message || 'Failed to upload document');
+    }
+  } finally {
+    setUploading(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -335,7 +209,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">Upload New Document</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{isEdit ? 'Edit Document' : 'Upload New Document'}</h2>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6">
@@ -364,23 +238,24 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
               </select>
             </div>
 
-            {/* File Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                File Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.file_name}
-                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
-                placeholder="Enter a descriptive file name"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                This will be the name shown in the documents list
-              </p>
-            </div>
+            {/* File Name - IMPORTANT: This is the display name */}
+           {/* Document Name - This maps to API's document_name */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Document Name <span className="text-red-500">*</span>
+  </label>
+  <input
+    type="text"
+    value={formData.file_name}
+    onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+    placeholder="Enter a descriptive document name"
+    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    required
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    This will be the name shown in the documents list
+  </p>
+</div>
 
             {/* Dates Row */}
             <div className="grid grid-cols-2 gap-4">
@@ -408,39 +283,41 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
               </div>
             </div>
 
-            {/* File Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Document File <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  required
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  {formData.file ? (
-                    <div className="text-green-600">
-                      <FaCheck className="h-8 w-8 mx-auto mb-2" />
-                      <p className="font-medium">{formData.file.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {(formData.file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">
-                      <FaUpload className="h-8 w-8 mx-auto mb-2" />
-                      <p className="font-medium">Click to select file</p>
-                      <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
-                    </div>
-                  )}
+            {/* File Upload - The actual file */}
+            {!isEdit && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Document File <span className="text-red-500">*</span>
                 </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    required={!isEdit}
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    {formData.file ? (
+                      <div className="text-green-600">
+                        <FaCheck className="h-8 w-8 mx-auto mb-2" />
+                        <p className="font-medium">{formData.file.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {(formData.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">
+                        <FaUpload className="h-8 w-8 mx-auto mb-2" />
+                        <p className="font-medium">Click to select file</p>
+                        <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
@@ -458,7 +335,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {uploading && <FaSpinner className="animate-spin" />}
-              Upload Document
+              {isEdit ? 'Update Document' : 'Upload Document'}
             </button>
           </div>
         </form>
@@ -466,6 +343,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, employeeId }) => {
     </div>
   );
 };
+  
 
 // Confirmation Modal
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
@@ -501,7 +379,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Document Card Component
-const DocumentCard = ({ document, onDelete }) => {
+const DocumentCard = ({ document, onDelete, onEdit }) => {
   const today = new Date();
   const expiryDate = document.expiry_date ? new Date(document.expiry_date) : null;
   
@@ -603,6 +481,13 @@ const DocumentCard = ({ document, onDelete }) => {
           </>
         )}
         <button
+          onClick={() => onEdit(document)}
+          className="flex items-center gap-2 px-3 py-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors text-sm"
+        >
+          <FaEdit />
+          Edit
+        </button>
+        <button
           onClick={() => onDelete(document.id)}
           className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm"
         >
@@ -618,27 +503,186 @@ const DocumentCard = ({ document, onDelete }) => {
   );
 };
 
+// Reusable Input Component
+const InputField = ({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  type = "text",
+  required = false,
+  placeholder = "",
+  disabled = false,
+}) => (
+  <div className="w-full">
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <input
+      type={type}
+      id={name}
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      required={required}
+      disabled={disabled}
+      placeholder={placeholder}
+      className={`w-full px-4 py-2.5 rounded-lg border ${
+        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+    />
+    {error && (
+      <div className="mt-1 flex items-center text-red-600 text-sm">
+        <FaTimes className="mr-1 text-xs" />
+        {error}
+      </div>
+    )}
+  </div>
+);
+
+// Reusable Select Component
+const SelectField = ({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  error,
+  required = false,
+  placeholder = "-- Select --",
+  disabled = false,
+}) => (
+  <div className="w-full">
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <select
+      id={name}
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      required={required}
+      disabled={disabled}
+      className={`w-full px-4 py-2.5 rounded-lg border ${
+        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+    {error && (
+      <div className="mt-1 flex items-center text-red-600 text-sm">
+        <FaTimes className="mr-1 text-xs" />
+        {error}
+      </div>
+    )}
+  </div>
+);
+
+// Reusable TextArea Component
+const TextAreaField = ({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  required = false,
+  placeholder = "",
+  rows = 3,
+}) => (
+  <div className="w-full">
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <textarea
+      id={name}
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      required={required}
+      placeholder={placeholder}
+      rows={rows}
+      className={`w-full px-4 py-2.5 rounded-lg border ${
+        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
+    />
+    {error && (
+      <div className="mt-1 flex items-center text-red-600 text-sm">
+        <FaTimes className="mr-1 text-xs" />
+        {error}
+      </div>
+    )}
+  </div>
+);
+
+// Tab Component
+const TabButton = ({ active, onClick, icon, label, step, completed }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${
+      active
+        ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
+        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+    }`}
+  >
+    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+      active ? "bg-blue-100 text-blue-600" : completed ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+    }`}>
+      {completed && !active ? <FaCheck className="text-sm" /> : icon}
+    </div>
+    <div className="flex flex-col items-start">
+      <span className={`text-sm font-medium ${active ? "text-blue-700" : completed ? "text-green-700" : "text-gray-600"}`}>
+        {label}
+      </span>
+      <span className={`text-xs ${active ? "text-blue-500" : "text-gray-400"}`}>
+        Step {step}
+      </span>
+    </div>
+  </button>
+);
+
+// Section Header Component
+const SectionHeader = ({ title, description }) => (
+  <div className="mb-8">
+    <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+    {description && <p className="text-gray-600">{description}</p>}
+  </div>
+);
+
 export default function EmployeeForm() {
   const { id } = useParams();
-  const isEdit = Boolean(id);
+  const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [formErrors, setFormErrors] = useState({});
   const [completedTabs, setCompletedTabs] = useState(new Set());
-  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [employeeId, setEmployeeId] = useState(null);
+
+  // Document states
   const [certificates, setCertificates] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
   const [certificateError, setCertificateError] = useState('');
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [editingDocument, setEditingDocument] = useState(null);
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
 
   const [formData, setFormData] = useState({
-    // Personal Info - Basic fields for the basic API
+    // Personal Info - Basic fields
     first_name: "",
     last_name: "",
     personal_email: "",
@@ -650,7 +694,7 @@ export default function EmployeeForm() {
     emergency_contact_phone: "",
     emergency_contact_relationship: "",
     
-    // Employment - These will be added in the edit mode
+    // Employment
     employee_code: "",
     joining_date: "",
     room_id: "",
@@ -683,65 +727,86 @@ export default function EmployeeForm() {
 
   // Tab descriptions
   const tabDescriptions = {
-    personal: "Personal details and emergency contact information",
-    certificates: "Manage employee certificates and documents with expiry tracking",
-    employment: "Employment details, room assignment, and wage information",
-    payroll: "Payroll and financial information",
+    personal: "Step 1: Enter basic personal details to create the employee",
+    certificates: "Step 2: Upload certificates and documents",
+    employment: "Step 3: Add employment details",
+    payroll: "Step 4: Add payroll information",
   };
 
-  // Fetch employee data
+  // Check for employee ID in URL params and set state
   useEffect(() => {
-    if (isEdit) {
-      setLoading(true);
-      getEmployee(id)
-        .then(({ data }) => {
-          console.log('Employee data:', data);
-          setFormData(data.data);
-          setCompletedTabs(new Set(["personal", "certificates", "employment", "payroll"]));
-        })
-        .catch((err) => console.error("Failed to fetch employee", err))
-        .finally(() => setLoading(false));
+    if (id) {
+      console.log('URL has ID param:', id);
+      setEmployeeId(id);
     }
-  }, [id, isEdit]);
+  }, [id]);
 
-  // Fetch certificates/documents when in edit mode
+  // Check for tab in URL query params
   useEffect(() => {
-    if (isEdit && id) {
-      fetchCertificates();
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+      console.log('Setting active tab from URL:', tabParam);
+      setActiveTab(tabParam);
     }
-  }, [id, isEdit]);
+  }, [location.search]);
+
+  // Fetch employee data when employeeId changes
+  useEffect(() => {
+    if (employeeId) {
+      console.log('Employee ID changed to:', employeeId, '- fetching data');
+      fetchEmployeeData();
+      fetchCertificates();
+      setCompletedTabs(prev => new Set([...prev, "personal"]));
+    }
+  }, [employeeId]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (employeeId) {
+      const params = new URLSearchParams(location.search);
+      params.set('tab', activeTab);
+      navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+      console.log('URL updated with tab:', activeTab);
+    }
+  }, [activeTab, employeeId, navigate, location.pathname]);
+
+  const fetchEmployeeData = async () => {
+    setLoading(true);
+    try {
+      const response = await getEmployee(employeeId);
+      setFormData(response.data.data);
+    } catch (err) {
+      console.error("Failed to fetch employee", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCertificates = async () => {
+    if (!employeeId) return;
+    
     setLoadingCertificates(true);
     setCertificateError('');
     
     try {
-      console.log(`Fetching documents for employee ID: ${id}`);
-      const response = await getDocumentsByEmployee(id);
-      console.log('API Response:', response);
-      
-      // Handle different response structures
+      console.log('Fetching certificates for employee:', employeeId);
+      const response = await getDocumentsByEmployee(employeeId);
       let documentsData = [];
       
       if (response.data) {
         if (response.data.success === true && response.data.data) {
           documentsData = response.data.data;
-        } 
-        else if (Array.isArray(response.data)) {
+        } else if (Array.isArray(response.data)) {
           documentsData = response.data;
-        }
-        else if (response.data.data && Array.isArray(response.data.data)) {
+        } else if (response.data.data && Array.isArray(response.data.data)) {
           documentsData = response.data.data;
         }
-      } 
-      else if (Array.isArray(response)) {
+      } else if (Array.isArray(response)) {
         documentsData = response;
       }
       
-      console.log('Documents data extracted:', documentsData);
-      
       setCertificates(Array.isArray(documentsData) ? documentsData : []);
-      setCertificateError(null);
     } catch (error) {
       console.error('Error fetching certificates:', error);
       setCertificates([]);
@@ -751,9 +816,9 @@ export default function EmployeeForm() {
     }
   };
 
-  // Fetch dynamic data (only in edit mode)
+  // Fetch departments and managers when we have an ID and organizationId
   useEffect(() => {
-    if (isEdit && organizationId) {
+    if (employeeId && organizationId) {
       // Fetch departments (rooms)
       getDepartmentsByOrgId(organizationId)
         .then((res) => {
@@ -763,8 +828,6 @@ export default function EmployeeForm() {
               roomsData.map((r) => ({ 
                 value: r.id, 
                 label: r.name,
-                age_group: r.age_group,
-                color_code: r.color_code
               }))
             );
           } else {
@@ -793,11 +856,11 @@ export default function EmployeeForm() {
         })
         .catch((err) => console.error("Failed to fetch managers", err));
     }
-  }, [isEdit, organizationId]);
+  }, [employeeId, organizationId]);
 
-  // Fetch designations when room changes (only in edit mode)
+  // Fetch designations when room changes
   useEffect(() => {
-    if (isEdit && formData.room_id) {
+    if (employeeId && formData.room_id) {
       setFormData((prev) => ({ ...prev, designation_id: "" }));
       
       getDesignationsByDeptId(formData.room_id)
@@ -821,7 +884,7 @@ export default function EmployeeForm() {
     } else {
       setDesignations([]);
     }
-  }, [isEdit, formData.room_id]);
+  }, [employeeId, formData.room_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -831,25 +894,60 @@ export default function EmployeeForm() {
     }
   };
 
-  const handleUploadDocument = async (employeeId, formData) => {
-    try {
-      console.log('Submitting document with FormData:');
-      await createEmployeeDocument(employeeId, formData);
-      await fetchCertificates();
-      alert('Document uploaded successfully!');
-    } catch (error) {
-      console.error('Error in document upload:', error);
-      if (error.response?.data?.message) {
-        setCertificateError(error.response.data.message);
-      } else if (error.response?.data?.errors) {
+  // Then update your handleUploadDocument function:
+const handleUploadDocument = async (empId, formData, isEdit = false) => {
+  try {
+    console.log('Uploading document with employee ID:', empId);
+    console.log('Is edit mode:', isEdit);
+    
+    // Log FormData contents
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[0] === 'file' ? '[File: ' + pair[1].name + ']' : pair[1]));
+    }
+    
+    let response;
+    if (isEdit && editingDocument) {
+      console.log('Updating document with ID:', editingDocument.id);
+      response = await updateEmployeeDocument(editingDocument.id, formData);
+    } else {
+      console.log('Creating new document');
+      // Make sure the FormData already has employee_id appended
+      // If not, add it here
+      if (!formData.has('employee_id')) {
+        formData.append('employee_id', empId);
+      }
+      
+      // Use the correct service
+      response = await createEmployeeDocument(empId, formData);
+    }
+    
+    console.log('Upload response:', response);
+    
+    await fetchCertificates();
+    alert(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
+  } catch (error) {
+    console.error('Error in document operation:', error);
+    
+    // Log the full error response
+    if (error.response) {
+      console.error('Error response status:', error.response.status);
+      console.error('Error response data:', error.response.data);
+      
+      if (error.response.data?.errors) {
         const errorMessages = Object.values(error.response.data.errors).flat();
         setCertificateError(errorMessages.join(', '));
+      } else if (error.response.data?.message) {
+        setCertificateError(error.response.data.message);
       } else {
-        setCertificateError(error.message || 'Upload failed');
+        setCertificateError('Upload failed. Please try again.');
       }
-      throw error;
+    } else {
+      setCertificateError(error.message || 'Operation failed');
     }
-  };
+    
+    throw error;
+  }
+};
 
   const handleDeleteDocument = async () => {
     if (!documentToDelete) return;
@@ -866,220 +964,256 @@ export default function EmployeeForm() {
     }
   };
 
-  // Validate current tab
-  const validateCurrentTab = () => {
+  // Validate personal tab
+  const validatePersonalTab = () => {
     const errors = {};
+    
+    if (!formData.first_name?.trim())
+      errors.first_name = "First Name is required";
+    if (!formData.last_name?.trim())
+      errors.last_name = "Last Name is required";
+    if (!formData.personal_email?.trim())
+      errors.personal_email = "Personal Email is required";
+    else if (!/^\S+@\S+\.\S+$/.test(formData.personal_email))
+      errors.personal_email = "Please enter a valid email address";
+    if (!formData.phone_number?.trim())
+      errors.phone_number = "Phone Number is required";
+    if (!formData.date_of_birth)
+      errors.date_of_birth = "Date of Birth is required";
+    if (!formData.gender)
+      errors.gender = "Gender is required";
+    if (!formData.address?.trim())
+      errors.address = "Address is required";
+    
+    return errors;
+  };
 
-    if (activeTab === "personal") {
-      if (!formData.first_name.trim())
-        errors.first_name = ["First Name is required"];
-      if (!formData.last_name.trim())
-        errors.last_name = ["Last Name is required"];
-      if (!formData.personal_email.trim())
-        errors.personal_email = ["Personal Email is required"];
-      else if (!/^\S+@\S+\.\S+$/.test(formData.personal_email))
-        errors.personal_email = ["Please enter a valid email address"];
-      if (!formData.phone_number.trim())
-        errors.phone_number = ["Phone Number is required"];
-      if (!formData.date_of_birth)
-        errors.date_of_birth = ["Date of Birth is required"];
-      if (!formData.gender)
-        errors.gender = ["Gender is required"];
-      if (!formData.address.trim())
-        errors.address = ["Address is required"];
-    } else if (activeTab === "employment" && isEdit) {
-      if (!formData.employee_code.trim())
-        errors.employee_code = ["Employee Code is required"];
-      if (!formData.joining_date)
-        errors.joining_date = ["Joining Date is required"];
-      if (!formData.room_id)
-        errors.room_id = ["Room is required"];
-      if (!formData.designation_id)
-        errors.designation_id = ["Designation is required"];
-      if (!formData.employment_type)
-        errors.employment_type = ["Employment Type is required"];
-      if (!formData.status)
-        errors.status = ["Status is required"];
+ const  handleCreateEmployee = async () => {
+  // Validate personal tab
+  const errors = validatePersonalTab();
+  
+  if (Object.keys(errors).length > 0) {
+    setFormErrors(errors);
+    
+    const firstErrorField = Object.keys(errors)[0];
+    const element = document.getElementById(firstErrorField);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.focus();
     }
+    
+    alert("Please fill in all required personal information fields marked with *");
+    return;
+  }
+  
+  setIsSubmitting(true);
+  setFormErrors({});
 
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      const firstErrorField = Object.keys(errors)[0];
-      const element = document.getElementById(firstErrorField);
-      if (element) {
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-          element.focus();
-        }, 100);
+  const basicEmployeeData = {
+    organization_id: organizationId,
+    first_name: formData.first_name,
+    last_name: formData.last_name,
+    personal_email: formData.personal_email,
+    phone_number: formData.phone_number,
+    date_of_birth: formData.date_of_birth,
+    gender: formData.gender,
+    address: formData.address,
+    emergency_contact_name: formData.emergency_contact_name || '',
+    emergency_contact_phone: formData.emergency_contact_phone || '',
+    emergency_contact_relationship: formData.emergency_contact_relationship || '',
+  };
+
+  try {
+    console.log('Creating employee with data:', basicEmployeeData);
+    const response = await createEmployeeBasic(basicEmployeeData);
+    console.log('Create employee response:', response);
+    
+    // Get the new employee ID from the response
+    const newEmployeeId = response.data?.data?.employee?.id || 
+                          response.data?.data?.id || 
+                          response.data?.id;
+    
+    if (newEmployeeId) {
+      // Set the employee ID in state
+      setEmployeeId(newEmployeeId);
+      
+      // Mark personal tab as completed
+      setCompletedTabs(prev => new Set([...prev, "personal"]));
+      
+      // Switch to certificates tab
+      setActiveTab("certificates");
+      
+      // Update the URL to include the ID and certificates tab
+      // This uses replace so it doesn't add to history
+      navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=certificates`, { replace: true });
+      
+      // Show success message
+      alert('Employee created successfully! Now you can upload documents.');
+    } else {
+      console.error('No employee ID in response:', response);
+      alert('Employee created but no ID returned. Please check the employee list.');
+      navigate("/dashboard/employees");
+    }
+  } catch (error) {
+    console.error("Failed to create employee", error);
+    if (error.response && error.response.status === 422) {
+      setFormErrors(error.response.data.errors || {});
+      alert("Please correct the validation errors below.");
+    } else {
+      alert(error.response?.data?.message || "An unexpected error occurred. Please try again.");
+    }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  const handleUpdateEmployee = async () => {
+    if (!employeeId) return;
+    
+    setIsSubmitting(true);
+    setFormErrors({});
+
+    const data = new FormData();
+    for (const key in formData) {
+      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+        data.append(key, formData[key]);
       }
-      return false;
     }
-    return true;
+    if (organizationId) {
+      data.append("organization_id", organizationId);
+    }
+
+    try {
+      await updateEmployee(employeeId, data);
+      
+      setCompletedTabs(prev => new Set([...prev, activeTab]));
+      
+      if (activeTab === "employment") {
+        alert('Employment details saved! Now add payroll information.');
+        setActiveTab("payroll");
+      } else if (activeTab === "payroll") {
+        alert('Employee profile completed successfully!');
+        navigate("/dashboard/employees");
+      }
+    } catch (error) {
+      console.error("Failed to update employee", error);
+      if (error.response && error.response.status === 422) {
+        setFormErrors(error.response.data.errors || {});
+        alert("Please correct the validation errors below.");
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEmploymentSubmit = async () => {
+    if (!employeeId) return;
+    
+    const employmentErrors = {};
+    
+    if (!formData.employee_code?.trim())
+      employmentErrors.employee_code = "Employee Code is required";
+    if (!formData.joining_date)
+      employmentErrors.joining_date = "Joining Date is required";
+    if (!formData.room_id)
+      employmentErrors.room_id = "Room is required";
+    if (!formData.designation_id)
+      employmentErrors.designation_id = "Designation is required";
+    if (!formData.employment_type)
+      employmentErrors.employment_type = "Employment Type is required";
+    if (!formData.status)
+      employmentErrors.status = "Status is required";
+
+    if (Object.keys(employmentErrors).length > 0) {
+      setFormErrors(employmentErrors);
+      alert("Please fill in all required employment fields marked with *");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormErrors({});
+
+    const data = new FormData();
+    for (const key in formData) {
+      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+        data.append(key, formData[key]);
+      }
+    }
+    if (organizationId) {
+      data.append("organization_id", organizationId);
+    }
+
+    try {
+      await updateEmployee(employeeId, data);
+      
+      setCompletedTabs(prev => new Set([...prev, "employment"]));
+      
+      alert('Employment details saved! Now add payroll information.');
+      setActiveTab("payroll");
+      
+    } catch (error) {
+      console.error("Failed to update employee", error);
+      if (error.response && error.response.status === 422) {
+        setFormErrors(error.response.data.errors || {});
+        alert("Please correct the validation errors below.");
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePayrollSubmit = async () => {
+    if (!employeeId) return;
+    
+    setIsSubmitting(true);
+
+    const data = new FormData();
+    for (const key in formData) {
+      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+        data.append(key, formData[key]);
+      }
+    }
+    if (organizationId) {
+      data.append("organization_id", organizationId);
+    }
+
+    try { 
+      await updateEmployee(employeeId, data);
+      
+      setCompletedTabs(prev => new Set([...prev, "payroll"]));
+      
+      alert('Employee profile completed successfully!');
+      navigate("/dashboard/employees");
+    } catch (error) {
+      console.error("Failed to update employee", error);
+      if (error.response && error.response.status === 422) {
+        setFormErrors(error.response.data.errors || {});
+        alert("Please correct the validation errors below.");
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const goToPreviousTab = () => {
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(tabs[currentIndex - 1].id);
+    }
   };
 
   const goToNextTab = () => {
-    if (validateCurrentTab()) {
-      setCompletedTabs(prev => new Set([...prev, activeTab]));
-      
-      const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
-      if (currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1].id);
-      }
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].id);
     }
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (isEdit) {
-      // For edit mode - use FormData for all fields
-      let isValid = true;
-      const allErrors = {};
-      
-      if (!formData.first_name.trim()) {
-        allErrors.first_name = ["First Name is required"];
-        isValid = false;
-      }
-      if (!formData.last_name.trim()) {
-        allErrors.last_name = ["Last Name is required"];
-        isValid = false;
-      }
-      if (!formData.personal_email.trim()) {
-        allErrors.personal_email = ["Personal Email is required"];
-        isValid = false;
-      }
-      if (!formData.employee_code.trim()) {
-        allErrors.employee_code = ["Employee Code is required"];
-        isValid = false;
-      }
-      if (!formData.room_id) {
-        allErrors.room_id = ["Room is required"];
-        isValid = false;
-      }
-      
-      if (!isValid) {
-        setFormErrors(allErrors);
-        setActiveTab("personal");
-        alert("Please fill in all required fields marked with *");
-        return;
-      }
-      
-      setIsSubmitting(true);
-      setFormErrors({});
-
-      const data = new FormData();
-      for (const key in formData) {
-        if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
-          data.append(key, formData[key]);
-        }
-      }
-      if (organizationId) {
-        data.append("organization_id", organizationId);
-      }
-
-      try {
-        await updateEmployee(id, data);
-        navigate("/dashboard/employees");
-      } catch (error) {
-        console.error("Failed to update employee", error);
-        if (error.response && error.response.status === 422) {
-          setFormErrors(error.response.data.errors);
-          alert("Please correct the validation errors below.");
-        } else {
-          alert("An unexpected error occurred. Please try again.");
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      // For create mode - use basic employee API
-      let isValid = true;
-      const allErrors = {};
-      
-      if (!formData.first_name.trim()) {
-        allErrors.first_name = ["First Name is required"];
-        isValid = false;
-      }
-      if (!formData.last_name.trim()) {
-        allErrors.last_name = ["Last Name is required"];
-        isValid = false;
-      }
-      if (!formData.personal_email.trim()) {
-        allErrors.personal_email = ["Personal Email is required"];
-        isValid = false;
-      }
-      if (!formData.phone_number.trim()) {
-        allErrors.phone_number = ["Phone Number is required"];
-        isValid = false;
-      }
-      if (!formData.date_of_birth) {
-        allErrors.date_of_birth = ["Date of Birth is required"];
-        isValid = false;
-      }
-      if (!formData.gender) {
-        allErrors.gender = ["Gender is required"];
-        isValid = false;
-      }
-      if (!formData.address.trim()) {
-        allErrors.address = ["Address is required"];
-        isValid = false;
-      }
-      
-      if (!isValid) {
-        setFormErrors(allErrors);
-        setActiveTab("personal");
-        alert("Please fill in all required personal information fields marked with *");
-        return;
-      }
-      
-      setIsSubmitting(true);
-      setFormErrors({});
-
-      // Create payload for basic employee API
-      const basicEmployeeData = {
-        organization_id: organizationId,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        personal_email: formData.personal_email,
-        phone_number: formData.phone_number,
-        date_of_birth: formData.date_of_birth,
-        gender: formData.gender,
-        address: formData.address,
-        emergency_contact_name: formData.emergency_contact_name || '',
-        emergency_contact_phone: formData.emergency_contact_phone || '',
-        emergency_contact_relationship: formData.emergency_contact_relationship || '',
-      };
-
-      try {
-        console.log('Creating basic employee with data:', basicEmployeeData);
-        
-        // You need to import createEmployeeBasic at the top
-        const { createEmployeeBasic } = await import("../../services/employeeService.js");
-        const response = await createEmployeeBasic(basicEmployeeData);
-        console.log('Create employee response:', response);
-        
-        const newEmployeeId = response.data?.data?.id || response.data?.id;
-        
-        if (newEmployeeId) {
-          navigate(`/dashboard/employees/edit/${newEmployeeId}`);
-        } else {
-          navigate("/dashboard/employees");
-        }
-      } catch (error) {
-        console.error("Failed to create employee", error);
-        if (error.response && error.response.status === 422) {
-          setFormErrors(error.response.data.errors);
-          alert("Please correct the validation errors below.");
-        } else {
-          alert(error.response?.data?.message || "An unexpected error occurred. Please try again.");
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const isLastTab = activeTab === tabs[tabs.length - 1].id;
 
   if (loading)
     return (
@@ -1093,6 +1227,30 @@ export default function EmployeeForm() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
+      <DocumentUploadModal
+        isOpen={isCertificateModalOpen}
+        onClose={() => {
+          setIsCertificateModalOpen(false);
+          setEditingDocument(null);
+          setCertificateError(null);
+        }}
+        onSubmit={handleUploadDocument}
+        isEdit={!!editingDocument}
+        initialData={editingDocument || {}}
+        employeeId={employeeId}
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDocumentToDelete(null);
+        }}
+        onConfirm={handleDeleteDocument}
+        title="Delete Document"
+        message="Are you sure you want to delete this document? This action cannot be undone."
+      />
+
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -1105,13 +1263,24 @@ export default function EmployeeForm() {
           </button>
           
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {isEdit ? "Edit Employee" : "Add New Employee"}
+            {!employeeId ? "Add New Employee" : "Complete Employee Profile"}
           </h1>
           <p className="text-gray-600">
-            {isEdit 
-              ? "Update employee information" 
-              : "Fill in the basic details to add a new employee. You can add employment and payroll information after creation."}
+            {!employeeId 
+              ? "Step 1: Enter basic information to create the employee" 
+              : activeTab === "certificates" 
+                ? "Step 2: Upload certificates and documents" 
+                : activeTab === "employment"
+                  ? "Step 3: Add employment details"
+                  : activeTab === "payroll"
+                    ? "Step 4: Add payroll information"
+                    : "Edit employee information"}
           </p>
+          {employeeId && (
+            <p className="text-sm text-blue-600 mt-2">
+              Employee ID: <span className="font-mono font-bold">{employeeId}</span>
+            </p>
+          )}
         </div>
 
         {/* Main Container */}
@@ -1123,7 +1292,18 @@ export default function EmployeeForm() {
                 <TabButton
                   key={tab.id}
                   active={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (!employeeId && tab.id !== "personal") {
+                      alert("Please create the employee first by completing Step 1");
+                      return;
+                    }
+                    
+                    if (tab.id === "personal") {
+                      setActiveTab(tab.id);
+                    } else if (employeeId) {
+                      setActiveTab(tab.id);
+                    }
+                  }}
                   icon={tab.icon}
                   label={tab.label}
                   step={tab.step}
@@ -1134,7 +1314,7 @@ export default function EmployeeForm() {
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="p-6 md:p-8">
+          <div className="p-6 md:p-8">
             {/* Tab Description */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
@@ -1146,231 +1326,260 @@ export default function EmployeeForm() {
             </div>
 
             {/* Personal Information Tab */}
-            <div className={`space-y-8 ${activeTab === "personal" ? "block" : "hidden"} tab-personal`}>
-              <SectionHeader 
-                title="Personal Information" 
-                description="Basic personal details about the employee"
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputField
-                  label="First Name"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  error={formErrors.first_name}
-                  required
-                  placeholder="Enter first name"
+            {activeTab === "personal" && (
+              <div className="space-y-8">
+                <SectionHeader 
+                  title="Personal Information" 
+                  description="Basic personal details about the employee"
                 />
                 
-                <InputField
-                  label="Last Name"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  error={formErrors.last_name}
-                  required
-                  placeholder="Enter last name"
-                />
-                
-                <InputField
-                  label="Email Address"
-                  name="personal_email"
-                  type="email"
-                  value={formData.personal_email}
-                  onChange={handleChange}
-                  error={formErrors.personal_email}
-                  required
-                  placeholder="employee@company.com"
-                />
-                
-                <InputField
-                  label="Phone Number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  error={formErrors.phone_number}
-                  required
-                  placeholder="+61 123 456 789"
-                />
-                
-                <InputField
-                  label="Date of Birth"
-                  name="date_of_birth"
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={handleChange}
-                  error={formErrors.date_of_birth}
-                  required
-                />
-                
-                <SelectField
-                  label="Gender"
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  options={[
-                    { value: "Male", label: "Male" },
-                    { value: "Female", label: "Female" },
-                    { value: "Other", label: "Other" },
-                    { value: "Prefer not to say", label: "Prefer not to say" },
-                  ]}
-                  error={formErrors.gender}
-                  required
-                  placeholder="-- Select --"
-                />
-                
-                <div className="md:col-span-2">
-                  <TextAreaField
-                    label="Address"
-                    name="address"
-                    value={formData.address}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField
+                    label="First Name"
+                    name="first_name"
+                    id="first_name"
+                    value={formData.first_name}
                     onChange={handleChange}
-                    error={formErrors.address}
+                    error={formErrors.first_name}
                     required
-                    placeholder="Enter complete address"
-                    rows={3}
+                    placeholder="Enter first name"
+                  />
+                  
+                  <InputField
+                    label="Last Name"
+                    name="last_name"
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    error={formErrors.last_name}
+                    required
+                    placeholder="Enter last name"
+                  />
+                  
+                  <InputField
+                    label="Email Address"
+                    name="personal_email"
+                    id="personal_email"
+                    type="email"
+                    value={formData.personal_email}
+                    onChange={handleChange}
+                    error={formErrors.personal_email}
+                    required
+                    placeholder="employee@company.com"
+                  />
+                  
+                  <InputField
+                    label="Phone Number"
+                    name="phone_number"
+                    id="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    error={formErrors.phone_number}
+                    required
+                    placeholder="+61 123 456 789"
+                  />
+                  
+                  <InputField
+                    label="Date of Birth"
+                    name="date_of_birth"
+                    id="date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={handleChange}
+                    error={formErrors.date_of_birth}
+                    required
+                  />
+                  
+                  <SelectField
+                    label="Gender"
+                    name="gender"
+                    id="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    options={[
+                      { value: "Male", label: "Male" },
+                      { value: "Female", label: "Female" },
+                      { value: "Other", label: "Other" },
+                      { value: "Prefer not to say", label: "Prefer not to say" },
+                    ]}
+                    error={formErrors.gender}
+                    required
+                    placeholder="-- Select --"
+                  />
+                  
+                  <div className="md:col-span-2">
+                    <TextAreaField
+                      label="Address"
+                      name="address"
+                      id="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      error={formErrors.address}
+                      required
+                      placeholder="Enter complete address"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                <SectionHeader 
+                  title="Emergency Contact" 
+                  description="Emergency contact details (optional)"
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField
+                    label="Emergency Contact Name"
+                    name="emergency_contact_name"
+                    id="emergency_contact_name"
+                    value={formData.emergency_contact_name}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_name}
+                    placeholder="Enter contact name"
+                  />
+                  
+                  <InputField
+                    label="Emergency Contact Phone"
+                    name="emergency_contact_phone"
+                    id="emergency_contact_phone"
+                    value={formData.emergency_contact_phone}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_phone}
+                    placeholder="Enter contact phone"
+                  />
+                  
+                  <InputField
+                    label="Emergency Contact Relationship"
+                    name="emergency_contact_relationship"
+                    id="emergency_contact_relationship"
+                    value={formData.emergency_contact_relationship}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_relationship}
+                    placeholder="e.g., Spouse, Parent, Sibling"
                   />
                 </div>
               </div>
-
-              <SectionHeader 
-                title="Emergency Contact" 
-                description="Emergency contact details"
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <InputField
-                  label="Emergency Contact Name"
-                  name="emergency_contact_name"
-                  value={formData.emergency_contact_name}
-                  onChange={handleChange}
-                  error={formErrors.emergency_contact_name}
-                  placeholder="Enter contact name"
-                />
-                
-                <InputField
-                  label="Emergency Contact Phone"
-                  name="emergency_contact_phone"
-                  value={formData.emergency_contact_phone}
-                  onChange={handleChange}
-                  error={formErrors.emergency_contact_phone}
-                  placeholder="Enter contact phone"
-                />
-                
-                <InputField
-                  label="Emergency Contact Relationship"
-                  name="emergency_contact_relationship"
-                  value={formData.emergency_contact_relationship}
-                  onChange={handleChange}
-                  error={formErrors.emergency_contact_relationship}
-                  placeholder="e.g., Spouse, Parent, Sibling"
-                />
-              </div>
-            </div>
+            )}
 
             {/* Certificates Tab */}
-            <div className={`space-y-8 ${activeTab === "certificates" ? "block" : "hidden"} tab-certificates`}>
-              <div className="flex justify-between items-center mb-6">
-                <SectionHeader 
-                  title="Certificates & Documents" 
-                  description="Manage employee certificates and track expiry dates"
-                />
-                {isEdit && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCertificateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <FaPlus /> Upload Document
-                  </button>
-                )}
-              </div>
+            {activeTab === "certificates" && (
+              <div className="space-y-8">
+                <div className="flex justify-between items-center mb-6">
+                  <SectionHeader 
+                    title="Certificates & Documents" 
+                    description="Upload and manage employee certificates"
+                  />
+                  {employeeId ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDocument(null);
+                        setIsCertificateModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <FaPlus /> Upload Document
+                    </button>
+                  ) : (
+                    <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
+                      Create employee first to upload documents
+                    </div>
+                  )}
+                </div>
 
-              {certificateError && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <FaExclamationTriangle className="text-red-500 mt-0.5" />
-                    <div>
-                      <p className="text-red-700 font-medium">Error</p>
-                      <p className="text-red-600 text-sm">{certificateError}</p>
-                      {isEdit && (
-                        <button
-                          onClick={fetchCertificates}
-                          className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                        >
-                          Try reloading documents
-                        </button>
-                      )}
+                {certificateError && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <FaExclamationTriangle className="text-red-500 mt-0.5" />
+                      <div>
+                        <p className="text-red-700 font-medium">Error</p>
+                        <p className="text-red-600 text-sm">{certificateError}</p>
+                        {employeeId && (
+                          <button
+                            onClick={fetchCertificates}
+                            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                          >
+                            Try reloading documents
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {!isEdit ? (
-                <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                  <FaInfoCircle className="mx-auto text-gray-400 text-5xl mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Save Employee First</h3>
-                  <p className="text-gray-500 max-w-md mx-auto">
-                    Complete the basic employee information first, then you'll be able to upload and manage certificates.
-                  </p>
-                </div>
-              ) : loadingCertificates ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Loading certificates...</span>
-                </div>
-              ) : certificates.length > 0 ? (
-                <>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                      {certificates.length} {certificates.length === 1 ? 'document' : 'documents'}
-                    </span>
+                {!employeeId ? (
+                  <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <FaInfoCircle className="mx-auto text-gray-400 text-5xl mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Create Employee First</h3>
+                    <p className="text-gray-500 max-w-md mx-auto">
+                      Please complete Step 1 (Personal Information) first to create the employee.
+                    </p>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {certificates.map((cert) => (
-                      <DocumentCard
-                        key={cert.id}
-                        document={cert}
-                        onDelete={(id) => {
-                          setDocumentToDelete(id);
-                          setIsDeleteModalOpen(true);
-                        }}
-                      />
-                    ))}
+                ) : loadingCertificates ? (
+                  <div className="flex justify-center items-center py-16">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Loading certificates...</span>
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                  <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
-                    <FaFileAlt className="text-4xl text-gray-400" />
+                ) : certificates.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                        {certificates.length} {certificates.length === 1 ? 'document' : 'documents'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {certificates.map((cert) => (
+                        <DocumentCard
+                          key={cert.id}
+                          document={cert}
+                          onDelete={(id) => {
+                            setDocumentToDelete(id);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          onEdit={(doc) => {
+                            setEditingDocument(doc);
+                            setIsCertificateModalOpen(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
+                      <FaFileAlt className="text-4xl text-gray-400" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
+                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                      Upload certificates and documents for this employee.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setEditingDocument(null);
+                        setIsCertificateModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                    >
+                      <FaUpload /> Upload First Document
+                    </button>
                   </div>
-                  <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
-                  <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                    This employee doesn't have any documents yet. Upload important documents like IDs, contracts, certificates, etc.
-                  </p>
-                  <button
-                    onClick={() => setIsCertificateModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                  >
-                    <FaUpload /> Upload First Document
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-            {/* Employment Tab - Only show in edit mode */}
-            {isEdit && (
-              <div className={`space-y-8 ${activeTab === "employment" ? "block" : "hidden"} tab-employment`}>
+            {/* Employment Tab */}
+            {activeTab === "employment" && employeeId && (
+              <div className="space-y-8">
                 <SectionHeader 
                   title="Employment Details" 
-                  description="Employment information, room assignment, and wage details"
+                  description="Add employment information"
                 />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     label="Employee Code"
                     name="employee_code"
+                    id="employee_code"
                     value={formData.employee_code}
                     onChange={handleChange}
                     error={formErrors.employee_code}
@@ -1381,6 +1590,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Joining Date"
                     name="joining_date"
+                    id="joining_date"
                     type="date"
                     value={formData.joining_date}
                     onChange={handleChange}
@@ -1391,6 +1601,7 @@ export default function EmployeeForm() {
                   <SelectField
                     label="Room"
                     name="room_id"
+                    id="room_id"
                     value={formData.room_id}
                     onChange={handleChange}
                     options={departments}
@@ -1402,6 +1613,7 @@ export default function EmployeeForm() {
                   <SelectField
                     label="Designation"
                     name="designation_id"
+                    id="designation_id"
                     value={formData.designation_id}
                     onChange={handleChange}
                     options={designations}
@@ -1414,6 +1626,7 @@ export default function EmployeeForm() {
                   <SelectField
                     label="Employment Type"
                     name="employment_type"
+                    id="employment_type"
                     value={formData.employment_type}
                     onChange={handleChange}
                     options={[
@@ -1431,6 +1644,7 @@ export default function EmployeeForm() {
                   <SelectField
                     label="Status"
                     name="status"
+                    id="status"
                     value={formData.status}
                     onChange={handleChange}
                     options={[
@@ -1448,6 +1662,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Hourly Wage (AUD)"
                     name="hourly_wage"
+                    id="hourly_wage"
                     type="number"
                     value={formData.hourly_wage}
                     onChange={handleChange}
@@ -1461,6 +1676,7 @@ export default function EmployeeForm() {
                     <SelectField
                       label="Reporting Manager (Optional)"
                       name="reporting_manager_id"
+                      id="reporting_manager_id"
                       value={formData.reporting_manager_id}
                       onChange={handleChange}
                       options={managers}
@@ -1472,18 +1688,19 @@ export default function EmployeeForm() {
               </div>
             )}
 
-            {/* Payroll Tab - Only show in edit mode */}
-            {isEdit && (
-              <div className={`space-y-8 ${activeTab === "payroll" ? "block" : "hidden"} tab-payroll`}>
+            {/* Payroll Tab */}
+            {activeTab === "payroll" && employeeId && (
+              <div className="space-y-8">
                 <SectionHeader 
                   title="Payroll Information" 
-                  description="Payroll, tax, and superannuation details (AU specific)"
+                  description="Add payroll and financial details (optional)"
                 />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     label="Tax File Number (TFN)"
                     name="tax_file_number"
+                    id="tax_file_number"
                     value={formData.tax_file_number}
                     onChange={handleChange}
                     error={formErrors.tax_file_number}
@@ -1493,6 +1710,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Superannuation Fund Name"
                     name="superannuation_fund_name"
+                    id="superannuation_fund_name"
                     value={formData.superannuation_fund_name}
                     onChange={handleChange}
                     error={formErrors.superannuation_fund_name}
@@ -1502,6 +1720,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Superannuation Member Number"
                     name="superannuation_member_number"
+                    id="superannuation_member_number"
                     value={formData.superannuation_member_number}
                     onChange={handleChange}
                     error={formErrors.superannuation_member_number}
@@ -1511,6 +1730,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Bank BSB"
                     name="bank_bsb"
+                    id="bank_bsb"
                     value={formData.bank_bsb}
                     onChange={handleChange}
                     error={formErrors.bank_bsb}
@@ -1520,6 +1740,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Bank Account Number"
                     name="bank_account_number"
+                    id="bank_account_number"
                     value={formData.bank_account_number}
                     onChange={handleChange}
                     error={formErrors.bank_account_number}
@@ -1529,6 +1750,7 @@ export default function EmployeeForm() {
                   <InputField
                     label="Visa Type"
                     name="visa_type"
+                    id="visa_type"
                     value={formData.visa_type}
                     onChange={handleChange}
                     error={formErrors.visa_type}
@@ -1539,6 +1761,7 @@ export default function EmployeeForm() {
                     <InputField
                       label="Visa Expiry Date"
                       name="visa_expiry_date"
+                      id="visa_expiry_date"
                       type="date"
                       value={formData.visa_expiry_date}
                       onChange={handleChange}
@@ -1550,85 +1773,116 @@ export default function EmployeeForm() {
             )}
 
             {/* Form Actions */}
-            <div className="mt-12 pt-8 border-t border-gray-200 flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => navigate("/dashboard/employees")}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Cancel
-              </button>
+            <div className="mt-12 pt-8 border-t border-gray-200 flex justify-between items-center">
+              <div>
+                {activeTab !== "personal" && employeeId && (
+                  <button
+                    type="button"
+                    onClick={goToPreviousTab}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+                  >
+                    <FaArrowLeft className="text-sm" />
+                    Previous
+                  </button>
+                )}
+              </div>
               
-              {activeTab !== "payroll" && isEdit ? (
+              <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={goToNextTab}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                  onClick={() => navigate("/dashboard/employees")}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
-                  Next
-                  <FaArrowLeft className="text-sm rotate-180" />
+                  Cancel
                 </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      {isEdit ? "Updating..." : "Creating..."}
-                    </>
-                  ) : (
-                    <>
-                      <FaCheck className="text-sm" />
-                      {isEdit ? "Update Employee" : "Create Employee"}
-                    </>
-                  )}
-                </button>
-              )}
+                
+                {!employeeId && activeTab === "personal" ? (
+                  <button
+                    type="button"
+                    onClick={handleCreateEmployee}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <FaCheck className="text-sm" />
+                        Create Employee
+                      </>
+                    )}
+                  </button>
+                ) : employeeId && activeTab === "certificates" ? (
+                  <button
+                    type="button"
+                    onClick={goToNextTab}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                  >
+                    Next: Employment
+                    <FaArrowLeft className="text-sm rotate-180" />
+                  </button>
+                ) : employeeId && activeTab === "employment" ? (
+                  <button
+                    type="button"
+                    onClick={handleEmploymentSubmit}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <FaCheck className="text-sm" />
+                        Save & Go to Payroll
+                      </>
+                    )}
+                  </button>
+                ) : employeeId && activeTab === "payroll" ? (
+                  <button
+                    type="button"
+                    onClick={handlePayrollSubmit}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Completing...
+                      </>
+                    ) : (
+                      <>
+                        <FaCheck className="text-sm" />
+                        Complete & Finish
+                      </>
+                    )}
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </form>
+          </div>
         </div>
 
-        {/* Required Fields Note */}
+        {/* Progress Note */}
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
           <FaInfoCircle className="text-blue-600 mt-0.5" />
           <div>
             <p className="text-sm text-blue-800">
-              <span className="font-medium">Note:</span> Fields marked with <span className="text-red-500">*</span> are required.
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              {!isEdit ? "After creating the basic profile, you'll be redirected to add employment and payroll details." : "Update employee information as needed."}
+              <span className="font-medium">Progress:</span> 
+              {!employeeId && " Step 1 of 4 - Create employee first"}
+              {employeeId && activeTab === "personal" && " Step 1 of 4 - Edit personal information"}
+              {employeeId && activeTab === "certificates" && " Step 2 of 4 - Upload documents"}
+              {employeeId && activeTab === "employment" && " Step 3 of 4 - Add employment details"}
+              {employeeId && activeTab === "payroll" && " Step 4 of 4 - Complete payroll information"}
             </p>
           </div>
         </div>
       </div>
-
-      {/* Document Upload Modal */}
-      {isEdit && (
-        <DocumentUploadModal
-          isOpen={isCertificateModalOpen}
-          onClose={() => {
-            setIsCertificateModalOpen(false);
-            setCertificateError(null);
-          }}
-          onSubmit={handleUploadDocument}
-          employeeId={id}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setDocumentToDelete(null);
-        }}
-        onConfirm={handleDeleteDocument}
-        title="Delete Document"
-        message="Are you sure you want to delete this document? This action cannot be undone."
-      />
     </div>
   );
 }
