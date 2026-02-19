@@ -3,19 +3,14 @@ import {
   getEmployee,
   updateEmployee,
   getEmployees,
-  createEmployeeBasic, // FIXED: Import the correct function
-} from "../../services/employeeService.js";
-
-import {
-  getDepartmentsByOrgId,
-  getDesignationsByDeptId,
-} from "../../services/organizationService.js";
-import {
-  getDocumentsByEmployee,
-  createEmployeeDocument,
+  createEmployeeBasic,
+  getEmployeeDocuments,
+  uploadEmployeeDocument,
   deleteEmployeeDocument,
-  updateEmployeeDocument
-} from "../../services/employeeDocumentService.js";
+  updateEmployeeDocument,
+  getDepartmentsByOrganization,
+  getDesignationsByDeptId,
+} from "../../services/employeeService.js";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   FaUser,
@@ -82,9 +77,6 @@ const FileIcon = ({ fileName }) => {
 };
 
 // Document Upload Modal
-// Document Upload Modal
-// Document Upload Modal - UPDATED with correct field names from EmployeeProfile
-// Document Upload Modal - UPDATED with EmployeeProfile logic
 const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {}, employeeId }) => {
   const [formData, setFormData] = useState({
     document_type: initialData.document_type || '',
@@ -140,7 +132,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
   }
 
   if (!formData.file_name) {
-    setError('Please enter a document name');
+    setError('Please enter a file name');
     return;
   }
 
@@ -150,10 +142,16 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
   try {
     const data = new FormData();
     
-    // THIS API EXPECTS:
-    data.append('document_type', formData.document_type);  // ✓ Same
-    data.append('document_name', formData.file_name);      // ✓ Use document_name (not file_name)
-    data.append('document', formData.file);                // ✓ Use document (not file)
+    // ✅ IMPORTANT: Add employee_id to the FormData
+    data.append('employee_id', employeeId);  // <-- ADD THIS LINE
+    
+    // CORRECT FIELDS FOR /employee-documents ENDPOINT
+    data.append('document_type', formData.document_type);
+    data.append('file_name', formData.file_name);
+    
+    if (formData.file) {
+      data.append('file', formData.file);
+    }
     
     if (formData.issue_date) {
       data.append('issue_date', formData.issue_date);
@@ -166,7 +164,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
       data.append('_method', 'PUT');
     }
 
-    console.log('🔍 SENDING TO /employees/{id}/documents API:');
+    console.log('🔍 SENDING TO /employee-documents API:');
     for (let pair of data.entries()) {
       console.log(`  "${pair[0]}" =`, pair[1] instanceof File ? `FILE: ${pair[1].name}` : `"${pair[1]}"`);
     }
@@ -222,7 +220,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </select>
             </div>
 
-            {/* File Name - THIS IS THE KEY FIELD */}
+            {/* File Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 File Name <span className="text-red-500">*</span>
@@ -326,7 +324,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
     </div>
   );
 };
-  
 
 // Confirmation Modal
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
@@ -774,7 +771,9 @@ export default function EmployeeForm() {
     
     try {
       console.log('Fetching certificates for employee:', employeeId);
-      const response = await getDocumentsByEmployee(employeeId);
+      const response = await getEmployeeDocuments(employeeId);
+      console.log('Documents response:', response);
+      
       let documentsData = [];
       
       if (response.data) {
@@ -803,12 +802,19 @@ export default function EmployeeForm() {
   useEffect(() => {
     if (employeeId && organizationId) {
       // Fetch departments (rooms)
-      getDepartmentsByOrgId(organizationId)
+      getDepartmentsByOrganization(organizationId)
         .then((res) => {
-          if (res && res.success === true) {
-            const roomsData = res.data || [];
+          if (res && res.data && res.data.success === true) {
+            const roomsData = res.data.data || [];
             setDepartments(
               roomsData.map((r) => ({ 
+                value: r.id, 
+                label: r.name,
+              }))
+            );
+          } else if (res && res.data && Array.isArray(res.data)) {
+            setDepartments(
+              res.data.map((r) => ({ 
                 value: r.id, 
                 label: r.name,
               }))
@@ -833,6 +839,13 @@ export default function EmployeeForm() {
                 label: `${e.first_name} ${e.last_name}`,
               }))
             );
+          } else if (response.data && Array.isArray(response.data)) {
+            setManagers(
+              response.data.map((e) => ({
+                value: e.id,
+                label: `${e.first_name} ${e.last_name}`,
+              }))
+            );
           } else {
             setManagers([]);
           }
@@ -848,10 +861,17 @@ export default function EmployeeForm() {
       
       getDesignationsByDeptId(formData.room_id)
         .then((res) => {
-          if (res && res.success === true) {
-            const designationsData = res.data || [];
+          if (res && res.data && res.data.success === true) {
+            const designationsData = res.data.data || [];
             setDesignations(
               designationsData.map((d) => ({ 
+                value: d.id, 
+                label: d.title 
+              }))
+            );
+          } else if (res && res.data && Array.isArray(res.data)) {
+            setDesignations(
+              res.data.map((d) => ({ 
                 value: d.id, 
                 label: d.title 
               }))
@@ -877,8 +897,7 @@ export default function EmployeeForm() {
     }
   };
 
-  // Then update your handleUploadDocument function:
-const handleUploadDocument = async (empId, formData, isEdit = false) => {
+  const handleUploadDocument = async (empId, formData, isEdit = false) => {
   try {
     console.log('Uploading document with employee ID:', empId);
     console.log('Is edit mode:', isEdit);
@@ -894,14 +913,7 @@ const handleUploadDocument = async (empId, formData, isEdit = false) => {
       response = await updateEmployeeDocument(editingDocument.id, formData);
     } else {
       console.log('Creating new document');
-      // Make sure the FormData already has employee_id appended
-      // If not, add it here
-      if (!formData.has('employee_id')) {
-        formData.append('employee_id', empId);
-      }
-      
-      // Use the correct service
-      response = await createEmployeeDocument(empId, formData);
+      response = await uploadEmployeeDocument(formData);
     }
     
     console.log('Upload response:', response);
@@ -971,84 +983,83 @@ const handleUploadDocument = async (empId, formData, isEdit = false) => {
     return errors;
   };
 
- const  handleCreateEmployee = async () => {
-  // Validate personal tab
-  const errors = validatePersonalTab();
-  
-  if (Object.keys(errors).length > 0) {
-    setFormErrors(errors);
+  const handleCreateEmployee = async () => {
+    // Validate personal tab
+    const errors = validatePersonalTab();
     
-    const firstErrorField = Object.keys(errors)[0];
-    const element = document.getElementById(firstErrorField);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
-      element.focus();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      
+      const firstErrorField = Object.keys(errors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.focus();
+      }
+      
+      alert("Please fill in all required personal information fields marked with *");
+      return;
     }
     
-    alert("Please fill in all required personal information fields marked with *");
-    return;
-  }
-  
-  setIsSubmitting(true);
-  setFormErrors({});
+    setIsSubmitting(true);
+    setFormErrors({});
 
-  const basicEmployeeData = {
-    organization_id: organizationId,
-    first_name: formData.first_name,
-    last_name: formData.last_name,
-    personal_email: formData.personal_email,
-    phone_number: formData.phone_number,
-    date_of_birth: formData.date_of_birth,
-    gender: formData.gender,
-    address: formData.address,
-    emergency_contact_name: formData.emergency_contact_name || '',
-    emergency_contact_phone: formData.emergency_contact_phone || '',
-    emergency_contact_relationship: formData.emergency_contact_relationship || '',
+    const basicEmployeeData = {
+      organization_id: organizationId,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      personal_email: formData.personal_email,
+      phone_number: formData.phone_number,
+      date_of_birth: formData.date_of_birth,
+      gender: formData.gender,
+      address: formData.address,
+      emergency_contact_name: formData.emergency_contact_name || '',
+      emergency_contact_phone: formData.emergency_contact_phone || '',
+      emergency_contact_relationship: formData.emergency_contact_relationship || '',
+    };
+
+    try {
+      console.log('Creating employee with data:', basicEmployeeData);
+      const response = await createEmployeeBasic(basicEmployeeData);
+      console.log('Create employee response:', response);
+      
+      // Get the new employee ID from the response
+      const newEmployeeId = response.data?.data?.employee?.id || 
+                            response.data?.data?.id || 
+                            response.data?.id;
+      
+      if (newEmployeeId) {
+        // Set the employee ID in state
+        setEmployeeId(newEmployeeId);
+        
+        // Mark personal tab as completed
+        setCompletedTabs(prev => new Set([...prev, "personal"]));
+        
+        // Switch to certificates tab
+        setActiveTab("certificates");
+        
+        // Update the URL to include the ID and certificates tab
+        navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=certificates`, { replace: true });
+        
+        // Show success message
+        alert('Employee created successfully! Now you can upload documents.');
+      } else {
+        console.error('No employee ID in response:', response);
+        alert('Employee created but no ID returned. Please check the employee list.');
+        navigate("/dashboard/employees");
+      }
+    } catch (error) {
+      console.error("Failed to create employee", error);
+      if (error.response && error.response.status === 422) {
+        setFormErrors(error.response.data.errors || {});
+        alert("Please correct the validation errors below.");
+      } else {
+        alert(error.response?.data?.message || "An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  try {
-    console.log('Creating employee with data:', basicEmployeeData);
-    const response = await createEmployeeBasic(basicEmployeeData);
-    console.log('Create employee response:', response);
-    
-    // Get the new employee ID from the response
-    const newEmployeeId = response.data?.data?.employee?.id || 
-                          response.data?.data?.id || 
-                          response.data?.id;
-    
-    if (newEmployeeId) {
-      // Set the employee ID in state
-      setEmployeeId(newEmployeeId);
-      
-      // Mark personal tab as completed
-      setCompletedTabs(prev => new Set([...prev, "personal"]));
-      
-      // Switch to certificates tab
-      setActiveTab("certificates");
-      
-      // Update the URL to include the ID and certificates tab
-      // This uses replace so it doesn't add to history
-      navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=certificates`, { replace: true });
-      
-      // Show success message
-      alert('Employee created successfully! Now you can upload documents.');
-    } else {
-      console.error('No employee ID in response:', response);
-      alert('Employee created but no ID returned. Please check the employee list.');
-      navigate("/dashboard/employees");
-    }
-  } catch (error) {
-    console.error("Failed to create employee", error);
-    if (error.response && error.response.status === 422) {
-      setFormErrors(error.response.data.errors || {});
-      alert("Please correct the validation errors below.");
-    } else {
-      alert(error.response?.data?.message || "An unexpected error occurred. Please try again.");
-    }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
   const handleUpdateEmployee = async () => {
     if (!employeeId) return;
@@ -1203,7 +1214,7 @@ const handleUploadDocument = async (empId, formData, isEdit = false) => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading employee data...</p>
+          <p className="mt-4 text-gray-600">Loading employee data...</p>
         </div>
       </div>
     );

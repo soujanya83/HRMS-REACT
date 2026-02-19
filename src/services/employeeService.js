@@ -1,18 +1,42 @@
 // services/employeeService.js
 import axiosClient from '../axiosClient';
 
-// Your existing export functions remain unchanged
+// ============================================
+// BASIC EMPLOYEE OPERATIONS
+// ============================================
+
+// Get all employees with optional filters
 export const getEmployees = (params = {}) => {
   return axiosClient.get("/employees", { params });
 };
 
+// Get single employee by ID
 export const getEmployee = (id) => {
   const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
   console.log('EmployeeService - Fetching employee with cleaned ID:', cleanId);
   return axiosClient.get(`/employees/${cleanId}`);
 };
 
-// Create a new employee
+// Create a new employee (basic info only) - MATCHES YOUR API
+export const createEmployeeBasic = (employeeData) => {
+  console.log('Creating employee with data:', employeeData);
+  return axiosClient.post("/employees/basic/store-update", employeeData, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+// Update basic employee info
+export const updateEmployeeBasic = (id, employeeData) => {
+  return axiosClient.put(`/employees/basic/${id}`, employeeData, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+// Create a new employee with full details (including file uploads)
 export const createEmployee = (employeeData) => {
   return axiosClient.post("/employees", employeeData, {
     headers: {
@@ -21,7 +45,7 @@ export const createEmployee = (employeeData) => {
   });
 };
 
-// Update an existing employee
+// Update an existing employee with full details
 export const updateEmployee = (id, employeeData) => {
   employeeData.append('_method', 'PUT');
   return axiosClient.post(`/employees/${id}`, employeeData, {
@@ -36,7 +60,9 @@ export const deleteEmployee = (id) => {
   return axiosClient.delete(`/employees/${id}`);
 };
 
-// --- Soft Deletes & Trashed Data ---
+// ============================================
+// SOFT DELETES & TRASHED DATA
+// ============================================
 
 // Get a list of soft-deleted employees
 export const getTrashedEmployees = (params = {}) => {
@@ -53,7 +79,9 @@ export const forceDeleteEmployee = (id) => {
   return axiosClient.delete(`/employees/${id}/force-delete`);
 };
 
-// --- Filtering & Searching ---
+// ============================================
+// FILTERING & SEARCHING
+// ============================================
 
 // List employees by department
 export const getEmployeesByDepartment = (departmentId, params = {}) => {
@@ -80,7 +108,9 @@ export const searchEmployees = (searchParams = {}) => {
   return axiosClient.get('/employees/search', { params: searchParams });
 };
 
-// --- Employee Status & Management ---
+// ============================================
+// EMPLOYEE STATUS & MANAGEMENT
+// ============================================
 
 // Change employee status
 export const updateEmployeeStatus = (id, status) => {
@@ -98,48 +128,78 @@ export const getEmployeeProfile = (id) => {
   return axiosClient.get(`/employees/${cleanId}/profile`);
 };
 
-// Get an employee's documents
+// ============================================
+// DOCUMENT MANAGEMENT
+// ============================================
+
+// Get employee documents
 export const getEmployeeDocuments = (employeeId) => {
-  return axiosClient.get(`/employees/${employeeId}/documents`);
+  console.log(`Fetching documents for employee ID: ${employeeId}`);
+  return axiosClient.get(`/employee-documents`, { 
+    params: { employee_id: employeeId } 
+  });
 };
 
-// Upload new employee document
-// services/employeeService.js
-
-// Upload new employee document - CORRECTED VERSION
+// Upload new employee document - CORRECTED FIELD NAMES
 export const uploadEmployeeDocument = (documentData) => {
   console.log('DEBUG - uploadEmployeeDocument called with data:');
   
   // Log FormData contents for debugging
   if (documentData instanceof FormData) {
     for (let pair of documentData.entries()) {
-      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
+      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1]);
     }
   }
   
   // The API expects: document_type, file_name, file, issue_date, expiry_date
-  // This matches the database schema
   return axiosClient.post('/employee-documents', documentData, {
     headers: {
-      // Let browser set Content-Type with boundary
       'Accept': 'application/json',
     },
   });
 };
 
+// Delete employee document
+export const deleteEmployeeDocument = (documentId) => {
+  console.log(`Deleting document ID: ${documentId}`);
+  return axiosClient.delete(`/employee-documents/${documentId}`);
+};
 
-// --- Departments ---
-// Get departments for a specific organization - ADD THIS MISSING FUNCTION
+// Update employee document
+export const updateEmployeeDocument = (documentId, documentData) => {
+  console.log(`Updating document ID: ${documentId}`);
+  documentData.append('_method', 'PUT');
+  return axiosClient.post(`/employee-documents/${documentId}`, documentData, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+};
+
+// ============================================
+// DEPARTMENTS & ORGANIZATIONS
+// ============================================
+
+// Get departments for a specific organization
 export const getDepartmentsByOrganization = (orgId) => {
+  console.log(`Fetching departments for organization ID: ${orgId}`);
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
 
-// ============= ADDING NEW FUNCTIONS FOR PERFORMANCE REVIEWS =============
+// Get designations by department ID
+export const getDesignationsByDeptId = (deptId) => {
+  console.log(`Fetching designations for department ID: ${deptId}`);
+  return axiosClient.get(`/departments/${deptId}/designations`);
+};
 
-// Get all employees with async/await (for performance reviews)
-export const getAllEmployees = async () => {
+// ============================================
+// PERFORMANCE REVIEWS & ADDITIONAL FUNCTIONS
+// ============================================
+
+// Get all employees with async/await
+export const getAllEmployees = async (params = {}) => {
   try {
-    const response = await axiosClient.get('/employees');
+    const response = await axiosClient.get('/employees', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -147,7 +207,7 @@ export const getAllEmployees = async () => {
   }
 };
 
-// Get employee by ID with async/await (for performance reviews)
+// Get employee by ID with async/await
 export const getEmployeeById = async (id) => {
   try {
     const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
@@ -159,10 +219,10 @@ export const getEmployeeById = async (id) => {
   }
 };
 
-// Get managers (employees who can be reviewers) with async/await
-export const getManagers = async () => {
+// Get managers (employees who can be reviewers)
+export const getManagers = async (params = {}) => {
   try {
-    const response = await axiosClient.get('/employees');
+    const response = await axiosClient.get('/employees', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching managers:', error);
@@ -170,7 +230,7 @@ export const getManagers = async () => {
   }
 };
 
-// Get managers with filters (designation-based if needed)
+// Get managers with filters
 export const getManagersWithFilters = async (filters = {}) => {
   try {
     const response = await axiosClient.get('/employees', { params: filters });
@@ -192,71 +252,53 @@ export const getEmployeesByStatus = async (status) => {
   }
 };
 
-// Export as employeeService object for components that need it (with new functions)
+// ============================================
+// EXPORT AS OBJECT FOR CONVENIENCE
+// ============================================
+
 export const employeeService = {
-  // Original functions
+  // Basic Operations
   getEmployees,
   getEmployee,
-  getDepartmentsByOrganization, // Now this is defined
+  createEmployeeBasic,
+  updateEmployeeBasic,
   createEmployee,
   updateEmployee,
-   uploadEmployeeDocument,
   deleteEmployee,
+  
+  // Soft Deletes
   getTrashedEmployees,
   restoreEmployee,
+  forceDeleteEmployee,
   
-  // New async functions for performance reviews
-  getAllEmployees: async (params = {}) => {
-    try {
-      const response = await axiosClient.get('/employees', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      throw error;
-    }
-  },
+  // Filtering
+  getEmployeesByDepartment,
+  getEmployeesByDesignation,
+  getEmployeesByManager,
+  getEmployeesByOrganization,
+  searchEmployees,
   
-  getEmployeeById: async (id) => {
-    try {
-      const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
-      const response = await axiosClient.get(`/employees/${cleanId}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching employee ${id}:`, error);
-      throw error;
-    }
-  },
+  // Status Management
+  updateEmployeeStatus,
+  updateEmployeeManager,
+  getEmployeeProfile,
   
-  getManagers: async (params = {}) => {
-    try {
-      const response = await axiosClient.get('/employees', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching managers:', error);
-      throw error;
-    }
-  },
+  // Document Management
+  getEmployeeDocuments,
+  uploadEmployeeDocument,
+  deleteEmployeeDocument,
+  updateEmployeeDocument,
   
-  // All other functions remain available as separate exports
-};
-
-
-// Create basic employee (personal info only)
-export const createEmployeeBasic = (employeeData) => {
-  return axiosClient.post("/employees/basic/store-update", employeeData, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-};
-
-// Update basic employee info
-export const updateEmployeeBasic = (id, employeeData) => {
-  return axiosClient.put(`/employees/basic/${id}`, employeeData, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  // Departments
+  getDepartmentsByOrganization,
+  getDesignationsByDeptId,
+  
+  // Performance Reviews
+  getAllEmployees,
+  getEmployeeById,
+  getManagers,
+  getManagersWithFilters,
+  getEmployeesByStatus,
 };
 
 // Default export for convenience
