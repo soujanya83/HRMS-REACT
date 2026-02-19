@@ -84,6 +84,7 @@ const FileIcon = ({ fileName }) => {
 // Document Upload Modal
 // Document Upload Modal
 // Document Upload Modal - UPDATED with correct field names from EmployeeProfile
+// Document Upload Modal - UPDATED with EmployeeProfile logic
 const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {}, employeeId }) => {
   const [formData, setFormData] = useState({
     document_type: initialData.document_type || '',
@@ -149,39 +150,25 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
   try {
     const data = new FormData();
     
-    // EXACT FIELD NAMES based on error message
-    data.append('document_type', formData.document_type);  // lowercase with underscore
-    data.append('document_name', formData.file_name);      // lowercase with underscore - THIS IS THE KEY FIELD
-    
-    if (formData.file) {
-      data.append('document', formData.file);              // lowercase - just 'document'
-    }
+    // THIS API EXPECTS:
+    data.append('document_type', formData.document_type);  // ✓ Same
+    data.append('document_name', formData.file_name);      // ✓ Use document_name (not file_name)
+    data.append('document', formData.file);                // ✓ Use document (not file)
     
     if (formData.issue_date) {
-      data.append('issue_date', formData.issue_date);      // lowercase with underscore
+      data.append('issue_date', formData.issue_date);
     }
     if (formData.expiry_date) {
-      data.append('expiry_date', formData.expiry_date);    // lowercase with underscore
+      data.append('expiry_date', formData.expiry_date);
     }
 
     if (isEdit) {
       data.append('_method', 'PUT');
     }
 
-    // DEBUG: Check EXACT field names and values
-    console.log('🔍 EXACT FORM DATA FIELDS BEING SENT:');
-    const fields = {};
+    console.log('🔍 SENDING TO /employees/{id}/documents API:');
     for (let pair of data.entries()) {
-      fields[pair[0]] = pair[1] instanceof File ? `FILE: ${pair[1].name}` : pair[1];
       console.log(`  "${pair[0]}" =`, pair[1] instanceof File ? `FILE: ${pair[1].name}` : `"${pair[1]}"`);
-    }
-    console.log('📦 Fields object:', fields);
-    
-    // Specifically check if document_name exists
-    if (!data.has('document_name')) {
-      console.error('❌ CRITICAL: document_name field is missing from FormData!');
-    } else {
-      console.log('✅ document_name field exists with value:', data.get('document_name'));
     }
 
     await onSubmit(employeeId, data, isEdit);
@@ -192,9 +179,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
       const errors = err.response.data?.errors || {};
       const errorMessages = Object.values(errors).flat();
       setError(errorMessages.join(', ') || 'Validation failed');
-    } else if (err.response?.status === 500) {
-      setError('Server error. Please check the console for details.');
-      console.error('Server error details:', err.response?.data);
     } else {
       setError(err.response?.data?.message || 'Failed to upload document');
     }
@@ -238,24 +222,23 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </select>
             </div>
 
-            {/* File Name - IMPORTANT: This is the display name */}
-           {/* Document Name - This maps to API's document_name */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Document Name <span className="text-red-500">*</span>
-  </label>
-  <input
-    type="text"
-    value={formData.file_name}
-    onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
-    placeholder="Enter a descriptive document name"
-    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-    required
-  />
-  <p className="text-xs text-gray-500 mt-1">
-    This will be the name shown in the documents list
-  </p>
-</div>
+            {/* File Name - THIS IS THE KEY FIELD */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                File Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.file_name}
+                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                placeholder="Enter a descriptive file name"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This will be the name shown in the documents list
+              </p>
+            </div>
 
             {/* Dates Row */}
             <div className="grid grid-cols-2 gap-4">
@@ -283,7 +266,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </div>
             </div>
 
-            {/* File Upload - The actual file */}
+            {/* File Upload */}
             {!isEdit && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

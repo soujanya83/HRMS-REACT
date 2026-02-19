@@ -16,7 +16,10 @@ import {
   FaRedo,
   FaExclamationTriangle,
   FaPalette,
-  FaRandom
+  FaRandom,
+  FaCoffee,
+  FaHourglassHalf,
+  FaMoneyBillWave
 } from 'react-icons/fa';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import shiftSchedulingService from '../../services/shiftSchedulingService';
@@ -27,7 +30,7 @@ const ShiftScheduling = () => {
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [editingShift, setEditingShift] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [view, setView] = useState('list'); // 'list', 'calendar', 'week'
+  const [view, setView] = useState('list');
   const [showDeleted, setShowDeleted] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -40,18 +43,43 @@ const ShiftScheduling = () => {
     name: '',
     start_time: '09:00',
     end_time: '17:00',
+    break_start: '13:00',
+    break_end: '14:00',
+    break_duration: 60,
     color_code: '#4CAF50',
     notes: '',
-    shift_type: 'custom' // 'predefined' or 'custom'
+    shift_type: 'custom'
   });
 
-  // Predefined shift options
+  // Predefined shift options with break times
   const predefinedShifts = [
-    { name: 'Morning Shift', color: '#4CAF50', start_time: '09:00', end_time: '17:00' }, // Green
-    { name: 'Mid Shift', color: '#2196F3', start_time: '12:00', end_time: '20:00' }, // Blue
-    { name: 'Late Shift', color: '#FF9800', start_time: '15:00', end_time: '23:00' }, // Orange
-    // { name: 'Night Shift', color: '#9C27B0', start_time: '21:00', end_time: '05:00' }, // Purple
-    // { name: 'Weekend Shift', color: '#F44336', start_time: '10:00', end_time: '18:00' }, // Red
+    { 
+      name: 'Morning Shift', 
+      color: '#4CAF50', 
+      start_time: '09:00', 
+      end_time: '17:00',
+      break_start: '13:00',
+      break_end: '14:00',
+      break_duration: 60
+    },
+    { 
+      name: 'Mid Shift', 
+      color: '#2196F3', 
+      start_time: '12:00', 
+      end_time: '20:00',
+      break_start: '16:00',
+      break_end: '17:00',
+      break_duration: 60
+    },
+    { 
+      name: 'Late Shift', 
+      color: '#FF9800', 
+      start_time: '15:00', 
+      end_time: '23:00',
+      break_start: '19:00',
+      break_end: '20:00',
+      break_duration: 60
+    },
   ];
 
   // Color options
@@ -77,7 +105,7 @@ const ShiftScheduling = () => {
     }
   }, [organizationId]);
 
-  // Fetch shifts when organization changes or when switching views
+  // Fetch shifts when organization changes
   useEffect(() => {
     if (organizationId && !orgLoading) {
       fetchShifts();
@@ -101,12 +129,10 @@ const ShiftScheduling = () => {
         response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
       }
       
-      // Handle API response structure correctly
       if (response && response.success) {
         const shiftsData = response.data || [];
         setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
       } else {
-        // Handle unexpected response format
         const shiftsData = response?.data || response || [];
         setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
       }
@@ -118,10 +144,57 @@ const ShiftScheduling = () => {
       setLoading(false);
     }
   };
-  
+
+  // Calculate break duration
+  const calculateBreakDuration = (breakStart, breakEnd) => {
+    if (!breakStart || !breakEnd) return 0;
+    
+    const start = new Date(`2000-01-01T${breakStart}`);
+    const end = new Date(`2000-01-01T${breakEnd}`);
+    
+    let diff = (end - start) / (1000 * 60);
+    if (diff < 0) diff += 24 * 60;
+    
+    return Math.round(diff);
+  };
+
+  // Calculate total shift duration
+  const calculateTotalDuration = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    
+    let diff = (end - start) / (1000 * 60 * 60);
+    if (diff < 0) diff += 24;
+    
+    return parseFloat(diff.toFixed(1));
+  };
+
+  // Calculate net working hours (excluding breaks)
+  const calculateNetWorkingHours = (startTime, endTime, breakStart, breakEnd) => {
+    const totalDuration = calculateTotalDuration(startTime, endTime);
+    const breakMinutes = calculateBreakDuration(breakStart, breakEnd);
+    const breakHours = breakMinutes / 60;
+    
+    return parseFloat((totalDuration - breakHours).toFixed(1));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewShift(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'break_start' || name === 'break_end') {
+      const newBreakStart = name === 'break_start' ? value : newShift.break_start;
+      const newBreakEnd = name === 'break_end' ? value : newShift.break_end;
+      
+      setNewShift(prev => ({
+        ...prev,
+        [name]: value,
+        break_duration: calculateBreakDuration(newBreakStart, newBreakEnd)
+      }));
+    } else {
+      setNewShift(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handlePredefinedShiftSelect = (shift) => {
@@ -131,6 +204,9 @@ const ShiftScheduling = () => {
       color_code: shift.color,
       start_time: shift.start_time,
       end_time: shift.end_time,
+      break_start: shift.break_start,
+      break_end: shift.break_end,
+      break_duration: shift.break_duration,
       shift_type: 'predefined'
     });
   };
@@ -140,7 +216,10 @@ const ShiftScheduling = () => {
       ...prev, 
       name: '',
       shift_type: 'custom',
-      color_code: '#4CAF50' // Reset to default green
+      color_code: '#4CAF50',
+      break_start: '13:00',
+      break_end: '14:00',
+      break_duration: 60
     }));
   };
 
@@ -159,7 +238,6 @@ const ShiftScheduling = () => {
     setError(null);
     setSuccessMessage('');
 
-    // Validate form
     if (!newShift.name.trim()) {
       setError('Shift name is required');
       return;
@@ -175,28 +253,33 @@ const ShiftScheduling = () => {
       return;
     }
 
+    // Validate break times
+    if (newShift.break_start && newShift.break_end) {
+      const totalDuration = calculateTotalDuration(newShift.start_time, newShift.end_time);
+      const breakHours = newShift.break_duration / 60;
+      
+      if (breakHours >= totalDuration) {
+        setError('Break duration cannot be longer than total shift duration');
+        return;
+      }
+    }
+
     try {
       if (editingShift) {
-        // Update existing shift
         const { organization, shift_type, ...updateData } = newShift;
         await shiftSchedulingService.updateShift(editingShift.id, updateData);
         setSuccessMessage('Shift updated successfully!');
       } else {
-        // Create new shift
         const { shift_type, ...createData } = newShift;
         await shiftSchedulingService.createShift(createData);
         setSuccessMessage('Shift created successfully!');
       }
 
-      // Refresh shifts list
       await fetchShifts();
-      
-      // Reset form
       resetForm();
       setShowShiftForm(false);
       setEditingShift(null);
       
-      // Auto-clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error saving shift:', error);
@@ -214,6 +297,9 @@ const ShiftScheduling = () => {
       name: shift.name,
       start_time: formatTimeForInput(shift.start_time),
       end_time: formatTimeForInput(shift.end_time),
+      break_start: shift.break_start ? formatTimeForInput(shift.break_start) : '13:00',
+      break_end: shift.break_end ? formatTimeForInput(shift.break_end) : '14:00',
+      break_duration: shift.break_duration || 60,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
       shift_type: 'custom'
@@ -254,6 +340,9 @@ const ShiftScheduling = () => {
       name: `${shift.name} (Copy)`,
       start_time: formatTimeForInput(shift.start_time),
       end_time: formatTimeForInput(shift.end_time),
+      break_start: shift.break_start ? formatTimeForInput(shift.break_start) : '13:00',
+      break_end: shift.break_end ? formatTimeForInput(shift.break_end) : '14:00',
+      break_duration: shift.break_duration || 60,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
       shift_type: 'custom'
@@ -268,6 +357,9 @@ const ShiftScheduling = () => {
       name: '',
       start_time: '09:00',
       end_time: '17:00',
+      break_start: '13:00',
+      break_end: '14:00',
+      break_duration: 60,
       color_code: '#4CAF50',
       notes: '',
       shift_type: 'custom'
@@ -276,21 +368,7 @@ const ShiftScheduling = () => {
 
   const formatTimeForInput = (timeString) => {
     if (!timeString) return '09:00';
-    // Convert "09:00:00" to "09:00"
     return timeString.substring(0, 5);
-  };
-
-  const calculateHours = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-    
-    // Handle overnight shifts
-    let diff = (end - start) / (1000 * 60 * 60);
-    if (diff < 0) diff += 24;
-    
-    return Math.max(diff, 0);
   };
 
   const formatTime = (timeString) => {
@@ -302,6 +380,12 @@ const ShiftScheduling = () => {
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minute} ${period}`;
+  };
+
+  const formatMinutes = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const exportShifts = () => {
@@ -338,24 +422,6 @@ const ShiftScheduling = () => {
     );
   }
 
-  if (loading && shifts.length === 0) {
-    return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded"></div>
-              ))}
-            </div>
-            <div className="h-64 bg-gray-300 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto">
@@ -366,28 +432,9 @@ const ShiftScheduling = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Shift Management</h1>
               <p className="text-gray-600">
-                {selectedOrganization?.name ? `Managing shifts for ${selectedOrganization.name}` : 'Create and manage shift schedules'}
+                {selectedOrganization?.name ? `Managing shifts for ${selectedOrganization.name}` : 'Create and manage shift schedules with break times'}
               </p>
             </div>
-            {/* {organizations.length > 1 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Organization:</span>
-                <select
-                  value={organizationId || ''}
-                  onChange={(e) => {
-                    const newOrgId = parseInt(e.target.value);
-                    if (newOrgId !== organizationId) {
-                      window.location.reload(); // Force refresh to reload context
-                    }
-                  }}
-                  className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-                >
-                  {organizations.map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
-                  ))}
-                </select>
-              </div>
-            )} */}
           </div>
         </div>
 
@@ -418,26 +465,30 @@ const ShiftScheduling = () => {
           <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Duration</p>
+                <p className="text-sm text-gray-600">Avg Net Hours</p>
                 <p className="text-2xl font-bold text-gray-800">
                   {shifts.length > 0 
-                    ? (shifts.reduce((total, shift) => total + calculateHours(shift.start_time, shift.end_time), 0) / shifts.length).toFixed(1)
+                    ? (shifts.reduce((total, shift) => total + calculateNetWorkingHours(
+                        shift.start_time, shift.end_time, shift.break_start, shift.break_end
+                      ), 0) / shifts.length).toFixed(1)
                     : '0'}h
                 </p>
               </div>
-              <FaClock className="text-green-500 text-xl" />
+              <FaHourglassHalf className="text-green-500 text-xl" />
             </div>
           </div>
           
           <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Coverage</p>
+                <p className="text-sm text-gray-600">Avg Break</p>
                 <p className="text-2xl font-bold text-gray-800">
-                  {shifts.length > 0 ? 'Full' : 'None'}
+                  {shifts.length > 0 
+                    ? formatMinutes(shifts.reduce((total, shift) => total + (shift.break_duration || 0), 0) / shifts.length)
+                    : '0'}
                 </p>
               </div>
-              <FaExchangeAlt className="text-purple-500 text-xl" />
+              <FaCoffee className="text-purple-500 text-xl" />
             </div>
           </div>
           
@@ -467,46 +518,9 @@ const ShiftScheduling = () => {
             >
               List View
             </button>
-            {/* <button
-              onClick={() => setView('calendar')}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                view === 'calendar' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Calendar
-            </button> */}
-            {/* <button
-              onClick={() => setView('week')}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                view === 'week' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Week View
-            </button> */}
           </div>
 
           <div className="flex gap-2">
-            {/* <button
-              onClick={() => setShowDeleted(!showDeleted)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                showDeleted 
-                  ? 'bg-red-600 text-white hover:bg-red-700' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              {showDeleted ? <FaUndo /> : <FaTrash />}
-              {showDeleted ? 'View Active' : 'View Deleted'}
-            </button> */}
-            {/* <button
-              onClick={exportShifts}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <FaDownload /> Export
-            </button> */}
             <button
               onClick={() => setShowShiftForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -525,9 +539,6 @@ const ShiftScheduling = () => {
               <input 
                 type="text"
                 placeholder="Search shifts by name..."
-                onChange={(e) => {
-                  // Search functionality would go here
-                }}
                 className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -551,7 +562,8 @@ const ShiftScheduling = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Shift Name</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Timing</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Duration</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Break</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Net Hours</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Color</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -560,7 +572,7 @@ const ShiftScheduling = () => {
               <tbody className="divide-y divide-gray-200">
                 {shifts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                       <FaCalendarAlt className="mx-auto h-12 w-12 text-gray-300 mb-4" />
                       <p className="text-lg font-medium">No shifts found</p>
                       <p className="text-sm text-gray-400 mt-1">
@@ -569,128 +581,124 @@ const ShiftScheduling = () => {
                     </td>
                   </tr>
                 ) : (
-                  shifts.map((shift) => (
-                    <tr key={shift.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold border border-gray-200"
-                            style={{ backgroundColor: shift.color_code || '#4CAF50' }}
-                          >
-                            {shift.name ? shift.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'S'}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {shift.name || 'Unnamed Shift'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {shift.organization?.name || selectedOrganization?.name || 'Organization'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {calculateHours(shift.start_time, shift.end_time).toFixed(1)} hours
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-blue-600">
-                          {calculateHours(shift.start_time, shift.end_time).toFixed(1)}h
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="h-6 w-6 rounded-full border border-gray-300"
-                            style={{ backgroundColor: shift.color_code || '#4CAF50' }}
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            {shift.color_code || '#4CAF50'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          showDeleted 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {showDeleted ? 'Deleted' : 'Active'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          {showDeleted ? (
-                            <button
-                              onClick={() => handleRestore(shift.id)}
-                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
-                              title="Restore"
+                  shifts.map((shift) => {
+                    const netHours = calculateNetWorkingHours(
+                      shift.start_time, shift.end_time, shift.break_start, shift.break_end
+                    );
+                    
+                    return (
+                      <tr key={shift.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div 
+                              className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold border border-gray-200"
+                              style={{ backgroundColor: shift.color_code || '#4CAF50' }}
                             >
-                              <FaUndo /> Restore
-                            </button>
-                          ) : (
+                              {shift.name ? shift.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'S'}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {shift.name || 'Unnamed Shift'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {shift.organization?.name || selectedOrganization?.name || 'Organization'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {calculateTotalDuration(shift.start_time, shift.end_time)}h total
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {shift.break_start && shift.break_end ? (
                             <>
-                              <button
-                                onClick={() => handleEdit(shift)}
-                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
-                                title="Edit"
-                              >
-                                <FaEdit /> Edit
-                              </button>
-                              <button
-                                onClick={() => handleCopyShift(shift)}
-                                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
-                                title="Copy"
-                              >
-                                <FaCopy /> Copy
-                              </button>
-                              <button
-                                onClick={() => handleDelete(shift.id)}
-                                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors flex items-center gap-1"
-                                title="Delete"
-                              >
-                                <FaTrash /> Delete
-                              </button>
+                              <div className="text-sm text-gray-900">
+                                {formatTime(shift.break_start)} - {formatTime(shift.break_end)}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {formatMinutes(shift.break_duration || 60)}
+                              </div>
                             </>
+                          ) : (
+                            <span className="text-sm text-gray-400">No break</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-blue-600">
+                            {netHours.toFixed(1)}h
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            working hours
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div 
+                              className="h-6 w-6 rounded-full border border-gray-300"
+                              style={{ backgroundColor: shift.color_code || '#4CAF50' }}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">
+                              {shift.color_code || '#4CAF50'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            showDeleted 
+                              ? 'bg-red-100 text-red-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {showDeleted ? 'Deleted' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            {showDeleted ? (
+                              <button
+                                onClick={() => handleRestore(shift.id)}
+                                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                                title="Restore"
+                              >
+                                <FaUndo /> Restore
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleEdit(shift)}
+                                  className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                  title="Edit"
+                                >
+                                  <FaEdit /> Edit
+                                </button>
+                                <button
+                                  onClick={() => handleCopyShift(shift)}
+                                  className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                                  title="Copy"
+                                >
+                                  <FaCopy /> Copy
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(shift.id)}
+                                  className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors flex items-center gap-1"
+                                  title="Delete"
+                                >
+                                  <FaTrash /> Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
-          </div>
-        )}
-
-        {/* Calendar and Week Views (simplified for now) */}
-        {(view === 'calendar' || view === 'week') && (
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                {view === 'calendar' ? 'Calendar View' : 'Week View'}
-              </h2>
-              <p className="text-gray-600">
-                {view === 'calendar' ? 'Shift schedule calendar view' : 'Weekly shift schedule'}
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                This view will be fully implemented with calendar/week scheduling features
-              </p>
-            </div>
-            <div className="p-8 text-center">
-              <FaCalendarAlt className="mx-auto h-16 w-16 text-gray-300 mb-4" />
-              <p className="text-gray-600">Calendar/Week view coming soon</p>
-              <button
-                onClick={() => setView('list')}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Back to List View
-              </button>
-            </div>
           </div>
         )}
 
@@ -752,7 +760,8 @@ const ShiftScheduling = () => {
                               <div>
                                 <div className="font-medium text-gray-800">{shift.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)} 
+                                  (Break: {formatTime(shift.break_start)}-{formatTime(shift.break_end)})
                                 </div>
                               </div>
                             </div>
@@ -829,76 +838,109 @@ const ShiftScheduling = () => {
                               title="Enter a hex color code (e.g., #4CAF50)"
                             />
                           </div>
-                          <div className="grid grid-cols-4 gap-2">
-                            {colorOptions.map((color, index) => (
-                              <button
-                                key={index}
-                                type="button"
-                                onClick={() => handleColorSelect(color.value)}
-                                className={`h-8 rounded border ${
-                                  newShift.color_code === color.value
-                                    ? 'border-blue-500 ring-2 ring-blue-300'
-                                    : 'border-gray-300'
-                                }`}
-                                style={{ backgroundColor: color.value }}
-                                title={color.name}
-                              />
-                            ))}
-                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-t pt-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Start Time *
-                      </label>
-                      <input
-                        type="time"
-                        name="start_time"
-                        value={newShift.start_time}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                  {/* Shift Times Section */}
+                  <div className="border-t pt-6 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Shift Times</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Time *
+                        </label>
+                        <input
+                          type="time"
+                          name="start_time"
+                          value={newShift.start_time}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Time *
+                        </label>
+                        <input
+                          type="time"
+                          name="end_time"
+                          value={newShift.end_time}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        End Time *
-                      </label>
-                      <input
-                        type="time"
-                        name="end_time"
-                        value={newShift.end_time}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                    {/* Break Times Section */}
+                    <h4 className="text-md font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <FaCoffee className="text-purple-500" />
+                      Break Time (Optional)
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Break Start
+                        </label>
+                        <input
+                          type="time"
+                          name="break_start"
+                          value={newShift.break_start}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Break End
+                        </label>
+                        <input
+                          type="time"
+                          name="break_end"
+                          value={newShift.break_end}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-700">Duration</div>
-                            <div className="text-lg font-semibold text-blue-600">
-                              {calculateHours(newShift.start_time, newShift.end_time).toFixed(1)} hours
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-gray-700">
-                              {formatTime(newShift.start_time)} - {formatTime(newShift.end_time)}
-                            </div>
-                            <div className="text-xs text-gray-500">Time format</div>
-                          </div>
+                    {/* Duration Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <div className="text-sm font-medium text-blue-700">Total Duration</div>
+                        <div className="text-lg font-bold text-blue-800">
+                          {calculateTotalDuration(newShift.start_time, newShift.end_time)}h
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-purple-50 rounded-lg">
+                        <div className="text-sm font-medium text-purple-700">Break Duration</div>
+                        <div className="text-lg font-bold text-purple-800">
+                          {formatMinutes(newShift.break_duration)}
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <div className="text-sm font-medium text-green-700">Net Working Hours</div>
+                        <div className="text-lg font-bold text-green-800">
+                          {calculateNetWorkingHours(
+                            newShift.start_time, 
+                            newShift.end_time, 
+                            newShift.break_start, 
+                            newShift.break_end
+                          )}h
                         </div>
                       </div>
                     </div>
 
-                    <div className="md:col-span-2">
+                    <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Notes (Optional)
                       </label>

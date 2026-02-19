@@ -104,7 +104,9 @@ export const getEmployeeDocuments = (employeeId) => {
 };
 
 // Upload new employee document
-// FIXED VERSION in employeeService.js
+// services/employeeService.js
+
+// Upload new employee document - CORRECTED VERSION
 export const uploadEmployeeDocument = (documentData) => {
   console.log('DEBUG - uploadEmployeeDocument called with data:');
   
@@ -115,13 +117,16 @@ export const uploadEmployeeDocument = (documentData) => {
     }
   }
   
-  // The FormData should already contain employee_id, so we don't need it as a separate parameter
+  // The API expects: document_type, file_name, file, issue_date, expiry_date
+  // This matches the database schema
   return axiosClient.post('/employee-documents', documentData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      // Let browser set Content-Type with boundary
+      'Accept': 'application/json',
     },
   });
 };
+
 
 // --- Departments ---
 // Get departments for a specific organization - ADD THIS MISSING FUNCTION
@@ -195,6 +200,7 @@ export const employeeService = {
   getDepartmentsByOrganization, // Now this is defined
   createEmployee,
   updateEmployee,
+   uploadEmployeeDocument,
   deleteEmployee,
   getTrashedEmployees,
   restoreEmployee,
