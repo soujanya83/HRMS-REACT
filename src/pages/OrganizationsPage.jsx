@@ -7,6 +7,8 @@ import {
   HiArrowLeft,
   HiOutlineOfficeBuilding,
   HiX,
+  HiViewList,
+  HiViewGrid,
 } from "react-icons/hi";
 
 import {
@@ -110,15 +112,15 @@ const COLOR_OPTIONS = [
   { value: "#F43F5E", label: "Rose", class: "bg-rose-500" },
 ];
 
-// Age group options
+// Age group options with icons
 const AGE_GROUPS = [
-  "Infants (0-12 months)",
-  "Toddlers (1-2 years)",
-  "Twos (2-3 years)",
-  "Preschool (3-4 years)",
-  "Pre-K (4-5 years)",
-  "School Age (5+ years)",
-  "Mixed Age Group",
+  { value: "Infants (0-12 months)", label: "Infants (0-12 months)", icon: "🍼" },
+  { value: "Toddlers (1-2 years)", label: "Toddlers (1-2 years)", icon: "🧸" },
+  { value: "Twos (2-3 years)", label: "Twos (2-3 years)", icon: "🐻" },
+  { value: "Preschool (3-4 years)", label: "Preschool (3-4 years)", icon: "🎨" },
+  { value: "Pre-K (4-5 years)", label: "Pre-K (4-5 years)", icon: "✏️" },
+  { value: "School Age (5+ years)", label: "School Age (5+ years)", icon: "📚" },
+  { value: "Mixed Age Group", label: "Mixed Age Group", icon: "👥" },
 ];
 
 // Reusable Form Components
@@ -199,7 +201,7 @@ const ColorPicker = ({ label, name, value, onChange, error }) => (
         </select>
       </div>
       <div
-        className="w-10 h-10 rounded-full border-2 border-gray-300"
+        className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-sm"
         style={{ backgroundColor: value }}
         title="Selected color"
       />
@@ -510,7 +512,7 @@ function OrganizationListView({
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Centers</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Childcare Centers</h1>
         <button
           onClick={onAdd}
           className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
@@ -547,7 +549,6 @@ function OrganizationListView({
               organization={org}
               onSelectOrg={onSelectOrg}
               onEdit={onEdit}
-              onDelete={onDelete}
             />
           ))}
         </div>
@@ -619,7 +620,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
               onClick={() => onSelectOrg(organization)}
               className="text-sm font-semibold text-blue-600 hover:underline transition-colors"
             >
-              View Details &rarr;
+              View Rooms &rarr;
             </button>
           </div>
         </div>
@@ -696,11 +697,250 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
         </div>
       </div>
 
+      {/* Rooms Section - Shows rooms under this organization */}
       <RoomsManager orgId={organization.id} />
     </div>
   );
 }
 
+// Helper function to get color with opacity
+const getColorWithOpacity = (colorCode, opacity = 0.1) => {
+  if (colorCode.startsWith('#')) {
+    const r = parseInt(colorCode.slice(1, 3), 16);
+    const g = parseInt(colorCode.slice(3, 5), 16);
+    const b = parseInt(colorCode.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  return colorCode;
+};
+
+// Get age group icon
+const getAgeGroupIcon = (ageGroup) => {
+  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
+  return found ? found.icon : '👶';
+};
+
+// Room Item Component - Shows room with color and age group
+function RoomItem({ room, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Get color details
+  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
+  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden transition hover:shadow-lg">
+      {/* Room Header with Color Strip */}
+      <div className="flex">
+        {/* Color Strip */}
+        <div 
+          className="w-2 flex-shrink-0" 
+          style={{ backgroundColor: room.color_code || '#3B82F6' }}
+        ></div>
+        
+        {/* Main Content */}
+        <div className="flex-1 p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              {/* Room Name with Color Indicator */}
+              <div className="flex items-center gap-3 mb-3">
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
+                  style={{ backgroundColor: room.color_code || '#3B82F6' }}
+                >
+                  {room.name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span 
+                      className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
+                      style={{ 
+                        backgroundColor: getColorWithOpacity(room.color_code || '#3B82F6', 0.15),
+                        color: room.color_code || '#3B82F6'
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: room.color_code || '#3B82F6' }}></span>
+                      {colorOption.label}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Age Group Badge */}
+              {room.age_group && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-medium text-gray-500">Age Group:</span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                    <span>{ageGroupIcon}</span>
+                    {room.age_group}
+                  </span>
+                </div>
+              )}
+
+              {/* Description */}
+              {room.description && (
+                <p className="text-gray-600 text-sm mt-2 bg-gray-50 p-3 rounded-lg border-l-2" 
+                   style={{ borderLeftColor: room.color_code || '#3B82F6' }}>
+                  {room.description}
+                </p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
+                title="Edit Room"
+              >
+                <HiPencil size={18} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
+                title="Delete Room"
+              >
+                <HiTrash size={18} />
+              </button>
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
+                title={isOpen ? "Hide Roles" : "Show Roles"}
+              >
+                <HiChevronDown
+                  className={`transition-transform duration-300 text-xl ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Designations Section */}
+      {isOpen && (
+        <div className="border-t border-gray-200 bg-gray-50">
+          <DesignationsList departmentId={room.id} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Room Card Component - Grid view alternative
+function RoomCard({ room, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
+  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+
+  return (
+    <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg">
+      {/* Colored Header */}
+      <div 
+        className="h-2 w-full" 
+        style={{ backgroundColor: room.color_code || '#3B82F6' }}
+      ></div>
+      
+      <div className="p-5">
+        {/* Room Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {/* Color Circle */}
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md"
+              style={{ backgroundColor: room.color_code || '#3B82F6' }}
+            >
+              {room.name?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span 
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ 
+                    backgroundColor: getColorWithOpacity(room.color_code || '#3B82F6', 0.15),
+                    color: room.color_code || '#3B82F6'
+                  }}
+                >
+                  {colorOption.label}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onEdit}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
+              title="Edit Room"
+            >
+              <HiPencil size={16} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
+              title="Delete Room"
+            >
+              <HiTrash size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Age Group Badge */}
+        {room.age_group && (
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+              <span className="text-2xl">{ageGroupIcon}</span>
+              <div>
+                <p className="text-xs text-gray-500">Age Group</p>
+                <p className="text-sm font-semibold text-gray-800">{room.age_group}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {room.description && (
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2">{room.description}</p>
+        )}
+
+        {/* Toggle Roles Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <span className="text-sm font-medium text-gray-700">
+            {isOpen ? 'Hide Roles' : 'Show Roles'}
+          </span>
+          <HiChevronDown
+            className={`transition-transform duration-300 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Designations Section */}
+        {isOpen && (
+          <div className="mt-4">
+            <DesignationsList departmentId={room.id} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Rooms Manager Component
 function RoomsManager({ orgId }) {
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -710,6 +950,7 @@ function RoomsManager({ orgId }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
   const fetchRooms = useCallback(async () => {
     setIsLoading(true);
@@ -786,19 +1027,60 @@ function RoomsManager({ orgId }) {
     }
   };
 
+  // Group rooms by age group for better organization
+  const roomsByAgeGroup = rooms.reduce((acc, room) => {
+    const ageGroup = room.age_group || 'Uncategorized';
+    if (!acc[ageGroup]) acc[ageGroup] = [];
+    acc[ageGroup].push(room);
+    return acc;
+  }, {});
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
-        <button
-          onClick={() => {
-            setEditingRoom(null);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
-        >
-          <HiPlus /> Add Room
-        </button>
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      {/* Header with View Toggle */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} in this center
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                viewMode === 'list' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <HiViewList className="inline mr-1" /> List
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                viewMode === 'grid' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <HiViewGrid className="inline mr-1" /> Grid
+            </button>
+          </div>
+          
+          <button
+            onClick={() => {
+              setEditingRoom(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+          >
+            <HiPlus /> Add New Room
+          </button>
+        </div>
       </div>
 
       {roomError && (
@@ -808,39 +1090,92 @@ function RoomsManager({ orgId }) {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Loading Rooms...</span>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading Rooms...</span>
         </div>
+      ) : rooms.length > 0 ? (
+        viewMode === 'list' ? (
+          // List View - Grouped by Age Group
+          <div className="space-y-6">
+            {Object.entries(roomsByAgeGroup).map(([ageGroup, ageGroupRooms]) => (
+              <div key={ageGroup} className="space-y-3">
+                {ageGroup !== 'Uncategorized' && (
+                  <h3 className="text-md font-semibold text-gray-700 px-2 flex items-center gap-2">
+                    <span>{getAgeGroupIcon(ageGroup)}</span>
+                    {ageGroup}
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      ({ageGroupRooms.length} {ageGroupRooms.length === 1 ? 'room' : 'rooms'})
+                    </span>
+                  </h3>
+                )}
+                <div className="space-y-3">
+                  {ageGroupRooms.map((room) => (
+                    <RoomItem
+                      key={room.id}
+                      room={room}
+                      onEdit={() => {
+                        setEditingRoom(room);
+                        setIsModalOpen(true);
+                      }}
+                      onDelete={() => {
+                        setRoomToDelete(room);
+                        setIsConfirmOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Grid View
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {rooms.map((room) => (
+              <RoomCard
+                key={room.id}
+                room={room}
+                onEdit={() => {
+                  setEditingRoom(room);
+                  setIsModalOpen(true);
+                }}
+                onDelete={() => {
+                  setRoomToDelete(room);
+                  setIsConfirmOpen(true);
+                }}
+              />
+            ))}
+          </div>
+        )
       ) : (
-        <div className="space-y-4">
-          {rooms.map((room) => (
-            <RoomItem
-              key={room.id}
-              room={room}
-              onEdit={() => {
-                setEditingRoom(room);
-                setIsModalOpen(true);
-              }}
-              onDelete={() => {
-                setRoomToDelete(room);
-                setIsConfirmOpen(true);
-              }}
-            />
-          ))}
-          {rooms.length === 0 && (
-            <div className="text-center py-8 bg-white rounded-lg shadow-md">
-              <HiOutlineOfficeBuilding className="mx-auto h-8 w-8 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No Rooms found</h3>
-              <p className="mt-1 text-sm text-gray-500">Add a room to get started.</p>
-            </div>
-          )}
+        // Empty State
+        <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+            <HiOutlineOfficeBuilding className="text-3xl text-blue-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Rooms Added Yet</h3>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Add your first room to start organizing your center's spaces and assigning staff.
+          </p>
+          <button
+            onClick={() => {
+              setEditingRoom(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:opacity-90 transition"
+          >
+            <HiPlus /> Add Your First Room
+          </button>
         </div>
       )}
 
+      {/* Room Modal */}
       <RoomModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingRoom(null);
+        }}
         onSave={handleSave}
         room={editingRoom}
         isSubmitting={isSubmitting}
@@ -848,80 +1183,14 @@ function RoomsManager({ orgId }) {
 
       <ConfirmationModal
         isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setRoomToDelete(null);
+        }}
         onConfirm={handleDelete}
         title="Delete Room"
-        message={`Are you sure you want to delete "${roomToDelete?.name}"?`}
+        message={`Are you sure you want to delete "${roomToDelete?.name}"? This will also delete all roles in this room.`}
       />
-    </div>
-  );
-}
-
-function RoomItem({ room, onEdit, onDelete }) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  // Get color class from COLOR_OPTIONS
-  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
-  
-  return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      <div 
-        className="absolute top-0 left-0 w-2 h-full" 
-        style={{ backgroundColor: room.color_code || '#3B82F6' }}
-      ></div>
-      
-      <div className="p-6 pl-8">
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-          <div className="flex-1 pr-4">
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
-              <span 
-                className="inline-block w-4 h-4 rounded-full" 
-                style={{ backgroundColor: room.color_code || '#3B82F6' }}
-                title={colorOption.label}
-              />
-            </div>
-            {room.age_group && (
-              <p className="text-gray-600 text-sm mt-1">
-                <span className="font-medium">Age Group:</span> {room.age_group}
-              </p>
-            )}
-            {room.description && (
-              <p className="text-gray-500 text-sm mt-1">{room.description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                title="Edit Room"
-              >
-                <HiPencil />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
-                title="Delete Room"
-              >
-                <HiTrash />
-              </button>
-            </div>
-            <HiChevronDown
-              className={`transition-transform duration-300 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        </div>
-        {isOpen && <DesignationsList departmentId={room.id} />}
-      </div>
     </div>
   );
 }
@@ -967,14 +1236,17 @@ function DesignationsList({ departmentId }) {
   }, [fetchDesigs]);
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-200">
-      <div className="flex justify-between items-center mb-3">
-        <h4 className="text-md font-semibold text-gray-700">Designations</h4>
+    <div className="p-5">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-md font-semibold text-gray-700 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+          Roles & Designations
+        </h4>
         <button
           onClick={() => designationModalContext.openDesignationModal(departmentId)}
-          className="flex items-center gap-1 text-sm bg-blue-600 text-white font-semibold py-1 px-3 rounded-full hover:opacity-90 transition"
+          className="flex items-center gap-1 text-sm bg-blue-50 text-blue-700 font-semibold py-1.5 px-3 rounded-lg hover:bg-blue-100 transition"
         >
-          <HiPlus /> Add Designation
+          <HiPlus /> Add Role
         </button>
       </div>
 
@@ -987,43 +1259,47 @@ function DesignationsList({ departmentId }) {
       {isLoading ? (
         <div className="flex justify-center py-4">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-sm text-gray-600">Loading...</span>
+          <span className="ml-2 text-sm text-gray-600">Loading roles...</span>
         </div>
       ) : (
-        <ul className="space-y-2">
+        <div className="space-y-2">
           {designations.map((desig) => (
-            <li
+            <div
               key={desig.id}
-              className="flex justify-between items-center bg-gray-50 p-3 rounded-md hover:bg-gray-100 transition"
+              className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
             >
               <div>
                 <p className="font-semibold text-gray-800">{desig.title}</p>
-                <p className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full inline-block">
-                  {desig.level}
-                </p>
+                {desig.level && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Level: <span className="bg-gray-100 px-2 py-0.5 rounded-full">{desig.level}</span>
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => designationModalContext.openDesignationModal(departmentId, desig)}
-                  className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
-                  title="Edit Designation"
+                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                  title="Edit Role"
                 >
-                  <HiPencil />
+                  <HiPencil size={14} />
                 </button>
                 <button
                   onClick={() => designationModalContext.deleteDesignation(desig)}
-                  className="p-1 rounded-full hover:bg-gray-200 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete Designation"
+                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete Role"
                 >
-                  <HiTrash />
+                  <HiTrash size={14} />
                 </button>
               </div>
-            </li>
+            </div>
           ))}
           {designations.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">No designations found.</p>
+            <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
+              No roles added yet. Click "Add Role" to create one.
+            </p>
           )}
-        </ul>
+        </div>
       )}
     </div>
   );
@@ -1222,7 +1498,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
     setFormData(room || { 
       name: "", 
       description: "", 
-      age_group: AGE_GROUPS[0], // Default to first age group
+      age_group: AGE_GROUPS[0].value, // Default to first age group
       color_code: COLOR_OPTIONS[0].value // Default to Red
     });
     setError('');
@@ -1234,27 +1510,17 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
       ...prev, 
       [name]: value 
     }));
-    // Log to verify values are being set
-    console.log(`Setting ${name}:`, value);
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    // Log the complete form data before submitting
-    console.log('Submitting room data:', {
-      name: formData.name,
-      description: formData.description,
-      age_group: formData.age_group,
-      color_code: formData.color_code
-    });
-    
     // Ensure all fields are included
     const submitData = {
       name: formData.name,
       description: formData.description || '',
-      age_group: formData.age_group || AGE_GROUPS[0],
+      age_group: formData.age_group || AGE_GROUPS[0].value,
       color_code: formData.color_code || COLOR_OPTIONS[0].value
     };
     
@@ -1296,19 +1562,19 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 name="name"
                 value={formData.name || ""}
                 onChange={handleChange}
-                placeholder="Enter room name"
+                placeholder="Enter room name (e.g., Sunshine Room)"
                 required
               />
               
               <FormSelect
                 label="Age Group"
                 name="age_group"
-                value={formData.age_group || AGE_GROUPS[0]}
+                value={formData.age_group || AGE_GROUPS[0].value}
                 onChange={handleChange}
               >
                 {AGE_GROUPS.map((ageGroup) => (
-                  <option key={ageGroup} value={ageGroup}>
-                    {ageGroup}
+                  <option key={ageGroup.value} value={ageGroup.value}>
+                    {ageGroup.icon} {ageGroup.label}
                   </option>
                 ))}
               </FormSelect>
@@ -1325,7 +1591,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 name="description"
                 value={formData.description || ""}
                 onChange={handleChange}
-                placeholder="Enter room description"
+                placeholder="Enter room description (e.g., capacity, special features)"
                 rows="3"
               />
             </div>
@@ -1365,7 +1631,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
   const [error, setError] = useState('');
   
   useEffect(() => {
-    setFormData(designation || { title: "", level: "Junior" });
+    setFormData(designation || { title: "", level: "Educator" });
     setError('');
   }, [designation, isOpen]);
   
@@ -1390,7 +1656,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {designation ? "Edit Designation" : "Add New Designation"}
+            {designation ? "Edit Role" : "Add New Role"}
           </h2>
           <button
             onClick={onClose}
@@ -1410,27 +1676,29 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
           <div className="p-6">
             <div className="space-y-4">
               <FormInput
-                label="Designation Title *"
+                label="Role Title *"
                 name="title"
                 value={formData.title || ""}
                 onChange={handleChange}
-                placeholder="Enter designation title"
+                placeholder="Enter role title (e.g., Room Leader)"
                 required
               />
               
-              {/* <FormSelect
+              <FormSelect
                 label="Level"
                 name="level"
-                value={formData.level || "Junior"}
+                value={formData.level || "Educator"}
                 onChange={handleChange}
               >
-                <option value="Junior">Junior</option>
-                <option value="Mid">Mid</option>
-                <option value="Senior">Senior</option>
-                <option value="Lead">Lead</option>
-                <option value="Manager">Manager</option>
-                <option value="Director">Director</option>
-              </FormSelect> */}
+                <option value="Assistant Educator">Assistant Educator</option>
+                <option value="Educator">Educator</option>
+                <option value="Senior Educator">Senior Educator</option>
+                <option value="Room Leader">Room Leader</option>
+                <option value="Educational Leader">Educational Leader</option>
+                <option value="Assistant Director">Assistant Director</option>
+                <option value="Center Director">Center Director</option>
+                <option value="Area Manager">Area Manager</option>
+              </FormSelect>
             </div>
           </div>
 
@@ -1454,7 +1722,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                   : "Creating..."
                 : designation
                 ? "Save Changes"
-                : "Create Designation"}
+                : "Create Role"}
             </button>
           </div>
         </form>

@@ -37,30 +37,260 @@ import {
   FaFileImage,
   FaPlus,
   FaEdit,
+  FaChevronDown,
+  FaChevronUp,
+  FaShieldAlt,
+  FaMedkit,
+  FaGavel,
+  FaUserShield,
+  FaClipboardList,
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
-// Document Type Options
-const DOCUMENT_TYPES = [
-  'Aadhaar Card',
-  'PAN Card',
-  'Passport',
-  'Driving License',
-  'Visa',
-  'Work Permit',
-  'Employment Contract',
-  'Offer Letter',
-  'Experience Letter',
-  'Salary Slip',
-  'Bank Statement',
-  'Tax Document',
-  'Education Certificate',
-  'Professional Certificate',
-  'Working with Children Check',
-  'First Aid Certificate',
-  'CPR Certificate',
-  'Police Check',
-  'Other'
+// ============================================
+// MANDATORY CERTIFICATES CONSTANTS
+// Based on Childcare Worker Compliance Checklist (Victoria, Australia)
+// ============================================
+
+const MANDATORY_CERTIFICATES = {
+  // Mandatory Certificates & Checks
+  mandatory_checks: {
+    title: "🛡️ Mandatory Certificates & Checks",
+    icon: <FaShieldAlt />,
+    color: "purple",
+    items: [
+      {
+        id: "wwcc",
+        name: "Working With Children Check",
+        type: "Working With Children Check",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 5,
+        description: "Employee type, linked to service",
+        regulatoryBody: "Department of Justice and Community Safety",
+        icon: "🆔"
+      },
+      {
+        id: "first_aid",
+        name: "First Aid Certification (HLTAID012)",
+        type: "First Aid Certificate",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 3,
+        includes: ["CPR", "Asthma", "Anaphylaxis"],
+        description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
+        icon: "🚑"
+      },
+      {
+        id: "police_check",
+        name: "National Police Check",
+        type: "Police Check",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 3,
+        description: "Current National Police Check",
+        icon: "👮"
+      },
+      {
+        id: "mandatory_reporting",
+        name: "Mandatory Reporting Training",
+        type: "Mandatory Reporting",
+        required: true,
+        hasExpiry: false,
+        description: "Protecting Children – Victoria",
+        icon: "📋"
+      },
+      {
+        id: "child_safe",
+        name: "Child Safe Standards Awareness",
+        type: "Child Safe Standards",
+        required: true,
+        hasExpiry: false,
+        description: "Child Safe Standards Awareness Training",
+        icon: "🛡️"
+      }
+    ]
+  },
+
+  // Qualifications
+  qualifications: {
+    title: "🎓 Qualifications",
+    icon: <FaGraduationCap />,
+    color: "blue",
+    items: [
+      {
+        id: "cert_3",
+        name: "Certificate III in Early Childhood Education & Care",
+        type: "Certificate III",
+        required: true,
+        hasExpiry: false,
+        description: "Minimum qualification for educators",
+        icon: "🎓",
+        qualificationCode: "CHC30121"
+      },
+      {
+        id: "diploma",
+        name: "Diploma in Early Childhood Education & Care",
+        type: "Diploma",
+        required: false,
+        hasExpiry: false,
+        description: "Advanced qualification for room leaders",
+        icon: "📜",
+        qualificationCode: "CHC50121"
+      },
+      {
+        id: "enrollment_proof",
+        name: "Currently Enrolled towards Certificate III",
+        type: "Enrollment Proof",
+        required: false,
+        hasExpiry: true,
+        expiryYears: 1,
+        description: "Proof of current enrollment in qualification",
+        icon: "📝"
+      }
+    ]
+  },
+
+  // Health & Safety Compliance
+  health_safety: {
+    title: "🏥 Health & Safety Compliance",
+    icon: <FaMedkit />,
+    color: "green",
+    items: [
+      {
+        id: "immunisation",
+        name: "Immunisation Record",
+        type: "Immunisation Record",
+        required: true,
+        hasExpiry: false,
+        recommendations: ["Flu", "Pertussis", "MMR", "Hepatitis B"],
+        description: "Flu and Pertussis recommended for childcare workers",
+        icon: "💉"
+      },
+      {
+        id: "medical_fitness",
+        name: "Medical Fitness Declaration",
+        type: "Medical Fitness",
+        required: true,
+        hasExpiry: false,
+        description: "Medical fitness to work with children",
+        icon: "🩺"
+      }
+    ]
+  },
+
+  // Identity & Legal
+  identity_legal: {
+    title: "🪪 Identity & Legal",
+    icon: <FaIdCard />,
+    color: "orange",
+    items: [
+      {
+        id: "proof_of_identity",
+        name: "Proof of Identity",
+        type: "Proof of Identity",
+        required: true,
+        hasExpiry: false,
+        description: "Passport or Driver's Licence",
+        icon: "🛂",
+        options: ["Passport", "Driver's Licence", "Birth Certificate"]
+      },
+      {
+        id: "right_to_work",
+        name: "Right to Work in Australia",
+        type: "Right to Work",
+        required: true,
+        hasExpiry: false,
+        description: "Proof of Australian citizenship or valid work visa",
+        icon: "🇦🇺"
+      },
+      {
+        id: "visa",
+        name: "Visa (if applicable)",
+        type: "Visa",
+        required: false,
+        hasExpiry: true,
+        description: "Current visa for non-citizens",
+        icon: "🛂"
+      }
+    ]
+  },
+
+  // Professional Compliance
+  professional: {
+    title: "📋 Professional Compliance",
+    icon: <FaGavel />,
+    color: "red",
+    items: [
+      {
+        id: "code_of_conduct",
+        name: "Signed Code of Conduct",
+        type: "Code of Conduct",
+        required: true,
+        hasExpiry: false,
+        description: "Signed Code of Conduct agreement",
+        icon: "📄"
+      },
+      {
+        id: "confidentiality",
+        name: "Signed Confidentiality Agreement",
+        type: "Confidentiality Agreement",
+        required: true,
+        hasExpiry: false,
+        description: "Signed Confidentiality Agreement",
+        icon: "🔒"
+      }
+    ]
+  },
+
+  // Operational Readiness
+  operational: {
+    title: "⚙️ Operational Readiness",
+    icon: <FaClipboardList />,
+    color: "teal",
+    items: [
+      {
+        id: "induction",
+        name: "Completed Induction",
+        type: "Induction",
+        required: true,
+        hasExpiry: false,
+        description: "Emergency procedures, supervision, child protection",
+        icon: "📋"
+      },
+      {
+        id: "food_safety",
+        name: "Food Safety Awareness",
+        type: "Food Safety",
+        required: false,
+        hasExpiry: false,
+        description: "If handling food",
+        icon: "🍽️"
+      },
+      {
+        id: "safe_sleep",
+        name: "Safe Sleep & SIDS Training",
+        type: "Safe Sleep Training",
+        required: true,
+        hasExpiry: false,
+        description: "Safe Sleep & SIDS Training",
+        icon: "😴"
+      }
+    ]
+  }
+};
+
+// Staff File Requirements
+const STAFF_FILE_REQUIREMENTS = [
+  { id: "wwcc_copy", name: "WWCC Copy", required: true },
+  { id: "qualification", name: "Qualification Certificate", required: true },
+  { id: "first_aid_copy", name: "First Aid Certificate", required: true },
+  { id: "police_check_copy", name: "Police Check", required: true },
+  { id: "id_proof", name: "ID Proof", required: true },
+  { id: "immunisation_record", name: "Immunisation Record", required: true },
+  { id: "training_certs", name: "Training Certificates", required: true },
+  { id: "signed_policies", name: "Signed Policies", required: true },
+  { id: "induction_checklist", name: "Induction Checklist", required: true }
 ];
 
 // File Icon Component
@@ -84,9 +314,20 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
     expiry_date: initialData.expiry_date || '',
     file: null,
     file_name: initialData.file_name || '',
+    category: initialData.category || '',
   });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Get all certificate types flattened for dropdown
+  const allCertificateTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(category => 
+    category.items.map(item => ({
+      ...item,
+      category: category.title,
+      categoryColor: category.color
+    }))
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -96,6 +337,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
         expiry_date: initialData.expiry_date || '',
         file: null,
         file_name: initialData.file_name || '',
+        category: initialData.category || '',
       });
       setError('');
     }
@@ -109,83 +351,93 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
       setFormData(prev => ({
         ...prev,
         file,
-        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        document_type: prev.document_type || 
-          fileNameWithoutExt
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase())
+        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
       }));
     }
   };
 
+  const handleDocumentTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    const selectedCert = allCertificateTypes.find(cert => cert.type === selectedValue);
+    
+    setFormData(prev => ({
+      ...prev,
+      document_type: selectedValue,
+      category: selectedCert?.category || '',
+      // Auto-set expiry date suggestion if the certificate has expiry
+      expiry_date: prev.expiry_date || (selectedCert?.hasExpiry ? 
+        new Date(Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '')
+    }));
+  };
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!formData.file && !isEdit) {
-    setError('Please select a file to upload');
-    return;
-  }
-
-  if (!formData.document_type) {
-    setError('Please select a document type');
-    return;
-  }
-
-  if (!formData.file_name) {
-    setError('Please enter a file name');
-    return;
-  }
-
-  setUploading(true);
-  setError('');
-
-  try {
-    const data = new FormData();
+    e.preventDefault();
     
-    // ✅ IMPORTANT: Add employee_id to the FormData
-    data.append('employee_id', employeeId);  // <-- ADD THIS LINE
-    
-    // CORRECT FIELDS FOR /employee-documents ENDPOINT
-    data.append('document_type', formData.document_type);
-    data.append('file_name', formData.file_name);
-    
-    if (formData.file) {
-      data.append('file', formData.file);
-    }
-    
-    if (formData.issue_date) {
-      data.append('issue_date', formData.issue_date);
-    }
-    if (formData.expiry_date) {
-      data.append('expiry_date', formData.expiry_date);
+    if (!formData.file && !isEdit) {
+      setError('Please select a file to upload');
+      return;
     }
 
-    if (isEdit) {
-      data.append('_method', 'PUT');
+    if (!formData.document_type) {
+      setError('Please select a document type');
+      return;
     }
 
-    console.log('🔍 SENDING TO /employee-documents API:');
-    for (let pair of data.entries()) {
-      console.log(`  "${pair[0]}" =`, pair[1] instanceof File ? `FILE: ${pair[1].name}` : `"${pair[1]}"`);
+    if (!formData.file_name) {
+      setError('Please enter a file name');
+      return;
     }
 
-    await onSubmit(employeeId, data, isEdit);
-    onClose();
-  } catch (err) {
-    console.error('Upload error:', err);
-    if (err.response?.status === 422) {
-      const errors = err.response.data?.errors || {};
-      const errorMessages = Object.values(errors).flat();
-      setError(errorMessages.join(', ') || 'Validation failed');
-    } else {
-      setError(err.response?.data?.message || 'Failed to upload document');
+    setUploading(true);
+    setError('');
+
+    try {
+      const data = new FormData();
+      
+      // Add employee_id to the FormData
+      data.append('employee_id', employeeId);
+      data.append('document_type', formData.document_type);
+      data.append('file_name', formData.file_name);
+      data.append('category', formData.category);
+      
+      if (formData.file) {
+        data.append('file', formData.file);
+      }
+      
+      if (formData.issue_date) {
+        data.append('issue_date', formData.issue_date);
+      }
+      if (formData.expiry_date) {
+        data.append('expiry_date', formData.expiry_date);
+      }
+
+      if (isEdit) {
+        data.append('_method', 'PUT');
+      }
+
+      await onSubmit(employeeId, data, isEdit);
+      onClose();
+    } catch (err) {
+      console.error('Upload error:', err);
+      if (err.response?.status === 422) {
+        const errors = err.response.data?.errors || {};
+        const errorMessages = Object.values(errors).flat();
+        setError(errorMessages.join(', ') || 'Validation failed');
+      } else {
+        setError(err.response?.data?.message || 'Failed to upload document');
+      }
+    } finally {
+      setUploading(false);
     }
-  } finally {
-    setUploading(false);
-  }
-};
+  };
 
   if (!isOpen) return null;
+
+  // Group certificate types by category for the dropdown
+  const groupedTypes = Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => ({
+    ...category,
+    key
+  }));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -202,22 +454,33 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
           )}
 
           <div className="space-y-6">
-            {/* Document Type */}
+            {/* Document Type with Categories */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Document Type <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                onChange={handleDocumentTypeChange}
                 required
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Document Type</option>
-                {DOCUMENT_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {groupedTypes.map((category) => (
+                  <optgroup key={category.key} label={category.title}>
+                    {category.items.map((item) => (
+                      <option key={item.id} value={item.type}>
+                        {item.icon} {item.name} {item.required ? '(Required)' : ''}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
+              {formData.category && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Category: <span className="font-medium">{formData.category}</span>
+                </p>
+              )}
             </div>
 
             {/* File Name */}
@@ -404,6 +667,19 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
 
   const baseUrl = 'https://api.chrispp.com';
 
+  // Find matching certificate type for additional info
+  const findCertType = () => {
+    for (const category of Object.values(MANDATORY_CERTIFICATES)) {
+      const found = category.items.find(item => 
+        item.type === document.document_type || item.name.includes(document.document_type)
+      );
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const certType = findCertType();
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200">
       <div className="flex items-start justify-between mb-4">
@@ -414,6 +690,18 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
           <div>
             <h4 className="font-semibold text-gray-900">{document.document_type || 'Document'}</h4>
             <p className="text-sm text-gray-500">{document.file_name}</p>
+            {certType?.includes && (
+              <div className="flex gap-1 mt-1">
+                {certType.includes.map((item, idx) => (
+                  <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            )}
+            {document.category && (
+              <span className="text-xs text-gray-400 mt-1 block">{document.category}</span>
+            )}
           </div>
         </div>
         {expiryDate && (
@@ -434,9 +722,27 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
           <div>
             <p className="text-xs text-gray-500">Expiry Date</p>
             <p className="text-sm font-medium">{formatDate(document.expiry_date)}</p>
+            {daysRemaining > 0 && daysRemaining <= 90 && (
+              <p className="text-xs text-orange-600 mt-1">{daysRemaining} days remaining</p>
+            )}
           </div>
         )}
       </div>
+
+      {/* Progress Bar for Expiring Documents */}
+      {expiryDate && daysRemaining > 0 && daysRemaining <= 90 && (
+        <div className="mb-4">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full ${
+                daysRemaining <= 30 ? 'bg-red-500' : 
+                daysRemaining <= 60 ? 'bg-orange-500' : 'bg-yellow-500'
+              }`}
+              style={{ width: `${Math.min(100, (daysRemaining / 90) * 100)}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
       
       <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
         {document.file_url && (
@@ -479,6 +785,208 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
       <div className="mt-3 text-xs text-gray-400">
         Uploaded: {formatDate(document.created_at)}
       </div>
+    </div>
+  );
+};
+
+// Compliance Checklist Component
+const ComplianceChecklist = ({ certificates = [] }) => {
+  const [expandedCategories, setExpandedCategories] = useState(
+    Object.keys(MANDATORY_CERTIFICATES).reduce((acc, key) => ({ ...acc, [key]: true }), {})
+  );
+
+  const toggleCategory = (categoryKey) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryKey]: !prev[categoryKey]
+    }));
+  };
+
+  // Check if a certificate is uploaded
+  const isCertificateUploaded = (certType) => {
+    return certificates.some(doc => 
+      doc.document_type === certType || 
+      doc.document_type?.includes(certType) ||
+      (certType === "Working With Children Check" && doc.document_type?.includes("WWCC")) ||
+      (certType === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+    );
+  };
+
+  // Get uploaded certificate details
+  const getUploadedCertificate = (certType) => {
+    return certificates.find(doc => 
+      doc.document_type === certType || 
+      doc.document_type?.includes(certType) ||
+      (certType === "Working With Children Check" && doc.document_type?.includes("WWCC")) ||
+      (certType === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+    );
+  };
+
+  // Calculate compliance percentage
+  const totalRequired = Object.values(MANDATORY_CERTIFICATES)
+    .flatMap(cat => cat.items.filter(item => item.required)).length;
+  
+  const uploadedRequired = Object.values(MANDATORY_CERTIFICATES)
+    .flatMap(cat => cat.items.filter(item => item.required))
+    .filter(item => isCertificateUploaded(item.type)).length;
+
+  const compliancePercentage = Math.round((uploadedRequired / totalRequired) * 100) || 0;
+
+  const getStatusColor = (percentage) => {
+    if (percentage >= 80) return 'text-green-600';
+    if (percentage >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Compliance Summary */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Compliance Summary</h3>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-gray-600">Overall Compliance</span>
+              <span className={`text-sm font-bold ${getStatusColor(compliancePercentage)}`}>
+                {compliancePercentage}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className={`h-3 rounded-full ${
+                  compliancePercentage >= 80 ? 'bg-green-500' : 
+                  compliancePercentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${compliancePercentage}%` }}
+              ></div>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-gray-800">{uploadedRequired}/{totalRequired}</p>
+            <p className="text-xs text-gray-500">Required Documents</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Staff File Requirements */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-md font-semibold text-gray-800">Staff File Requirements</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {STAFF_FILE_REQUIREMENTS.map(req => {
+              const isUploaded = certificates.some(doc => 
+                doc.document_type?.includes(req.name) ||
+                (req.name === "WWCC Copy" && doc.document_type?.includes("WWCC")) ||
+                (req.name === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+              );
+              
+              return (
+                <div key={req.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                  {isUploaded ? (
+                    <FaCheck className="text-green-500 flex-shrink-0" />
+                  ) : (
+                    <FaTimes className="text-red-500 flex-shrink-0" />
+                  )}
+                  <span className={`text-sm ${isUploaded ? 'text-gray-800' : 'text-gray-500'}`}>
+                    {req.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Category-wise Checklist */}
+      {Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => {
+        const uploadedInCategory = category.items.filter(item => 
+          isCertificateUploaded(item.type)
+        ).length;
+
+        return (
+          <div key={key} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => toggleCategory(key)}
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`text-${category.color}-600 text-xl`}>{category.icon}</span>
+                <div>
+                  <h3 className="text-md font-semibold text-gray-800 text-left">{category.title}</h3>
+                  <p className="text-xs text-gray-500 text-left">
+                    {uploadedInCategory}/{category.items.length} documents
+                  </p>
+                </div>
+              </div>
+              {expandedCategories[key] ? <FaChevronUp /> : <FaChevronDown />}
+            </button>
+            
+            {expandedCategories[key] && (
+              <div className="px-6 pb-6 pt-2 border-t border-gray-200">
+                <div className="space-y-3">
+                  {category.items.map((item) => {
+                    const uploaded = isCertificateUploaded(item.type);
+                    const uploadedDoc = getUploadedCertificate(item.type);
+                    
+                    return (
+                      <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="mt-1">
+                          {uploaded ? (
+                            <FaCheck className="text-green-500" />
+                          ) : item.required ? (
+                            <FaExclamationTriangle className="text-red-500" />
+                          ) : (
+                            <FaInfoCircle className="text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{item.icon}</span>
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                {item.name}
+                                {item.required && <span className="text-red-500 ml-1">*</span>}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                            </div>
+                          </div>
+                          {uploaded && uploadedDoc && (
+                            <div className="mt-2 pl-7">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-gray-500">Uploaded:</span>
+                                <span className="font-medium text-gray-700">{uploadedDoc.file_name}</span>
+                                {uploadedDoc.expiry_date && (
+                                  <>
+                                    <span className="text-gray-400">|</span>
+                                    <span className={`${
+                                      new Date(uploadedDoc.expiry_date) < new Date() 
+                                        ? 'text-red-600' 
+                                        : 'text-green-600'
+                                    }`}>
+                                      Exp: {new Date(uploadedDoc.expiry_date).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {item.recommendations && (
+                            <p className="text-xs text-gray-400 mt-1 pl-7">
+                              Recommended: {item.recommendations.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -648,6 +1156,7 @@ export default function EmployeeForm() {
   const [formErrors, setFormErrors] = useState({});
   const [completedTabs, setCompletedTabs] = useState(new Set());
   const [employeeId, setEmployeeId] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'checklist'
 
   // Document states
   const [certificates, setCertificates] = useState([]);
@@ -708,7 +1217,7 @@ export default function EmployeeForm() {
   // Tab descriptions
   const tabDescriptions = {
     personal: "Step 1: Enter basic personal details to create the employee",
-    certificates: "Step 2: Upload certificates and documents",
+    certificates: "Step 2: Upload certificates and documents - View by list or compliance checklist",
     employment: "Step 3: Add employment details",
     payroll: "Step 4: Add payroll information",
   };
@@ -898,51 +1407,45 @@ export default function EmployeeForm() {
   };
 
   const handleUploadDocument = async (empId, formData, isEdit = false) => {
-  try {
-    console.log('Uploading document with employee ID:', empId);
-    console.log('Is edit mode:', isEdit);
-    
-    // Log FormData contents
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + (pair[0] === 'file' ? '[File: ' + pair[1].name + ']' : pair[1]));
-    }
-    
-    let response;
-    if (isEdit && editingDocument) {
-      console.log('Updating document with ID:', editingDocument.id);
-      response = await updateEmployeeDocument(editingDocument.id, formData);
-    } else {
-      console.log('Creating new document');
-      response = await uploadEmployeeDocument(formData);
-    }
-    
-    console.log('Upload response:', response);
-    
-    await fetchCertificates();
-    alert(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
-  } catch (error) {
-    console.error('Error in document operation:', error);
-    
-    // Log the full error response
-    if (error.response) {
-      console.error('Error response status:', error.response.status);
-      console.error('Error response data:', error.response.data);
+    try {
+      console.log('Uploading document with employee ID:', empId);
+      console.log('Is edit mode:', isEdit);
       
-      if (error.response.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        setCertificateError(errorMessages.join(', '));
-      } else if (error.response.data?.message) {
-        setCertificateError(error.response.data.message);
+      let response;
+      if (isEdit && editingDocument) {
+        console.log('Updating document with ID:', editingDocument.id);
+        response = await updateEmployeeDocument(editingDocument.id, formData);
       } else {
-        setCertificateError('Upload failed. Please try again.');
+        console.log('Creating new document');
+        response = await uploadEmployeeDocument(formData);
       }
-    } else {
-      setCertificateError(error.message || 'Operation failed');
+      
+      console.log('Upload response:', response);
+      
+      await fetchCertificates();
+      alert(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
+    } catch (error) {
+      console.error('Error in document operation:', error);
+      
+      if (error.response) {
+        console.error('Error response status:', error.response.status);
+        console.error('Error response data:', error.response.data);
+        
+        if (error.response.data?.errors) {
+          const errorMessages = Object.values(error.response.data.errors).flat();
+          setCertificateError(errorMessages.join(', '));
+        } else if (error.response.data?.message) {
+          setCertificateError(error.response.data.message);
+        } else {
+          setCertificateError('Upload failed. Please try again.');
+        }
+      } else {
+        setCertificateError(error.message || 'Operation failed');
+      }
+      
+      throw error;
     }
-    
-    throw error;
-  }
-};
+  };
 
   const handleDeleteDocument = async () => {
     if (!documentToDelete) return;
@@ -1263,7 +1766,7 @@ export default function EmployeeForm() {
             {!employeeId 
               ? "Step 1: Enter basic information to create the employee" 
               : activeTab === "certificates" 
-                ? "Step 2: Upload certificates and documents" 
+                ? "Step 2: Upload certificates and documents - View by list or compliance checklist" 
                 : activeTab === "employment"
                   ? "Step 3: Add employment details"
                   : activeTab === "payroll"
@@ -1458,27 +1961,53 @@ export default function EmployeeForm() {
             {/* Certificates Tab */}
             {activeTab === "certificates" && (
               <div className="space-y-8">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <SectionHeader 
                     title="Certificates & Documents" 
-                    description="Upload and manage employee certificates"
+                    description="Upload and manage employee certificates - View by list or compliance checklist"
                   />
-                  {employeeId ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingDocument(null);
-                        setIsCertificateModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <FaPlus /> Upload Document
-                    </button>
-                  ) : (
-                    <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
-                      Create employee first to upload documents
+                  <div className="flex items-center gap-3">
+                    {/* View Toggle */}
+                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                          viewMode === 'list' 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        List View
+                      </button>
+                      <button
+                        onClick={() => setViewMode('checklist')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                          viewMode === 'checklist' 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Compliance Checklist
+                      </button>
                     </div>
-                  )}
+                    
+                    {employeeId ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingDocument(null);
+                          setIsCertificateModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <FaPlus /> Upload Document
+                      </button>
+                    ) : (
+                      <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
+                        Create employee first to upload documents
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {certificateError && (
@@ -1514,49 +2043,55 @@ export default function EmployeeForm() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     <span className="ml-3 text-gray-600">Loading certificates...</span>
                   </div>
-                ) : certificates.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                        {certificates.length} {certificates.length === 1 ? 'document' : 'documents'}
-                      </span>
+                ) : viewMode === 'list' ? (
+                  // List View
+                  certificates.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                          {certificates.length} {certificates.length === 1 ? 'document' : 'documents'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {certificates.map((cert) => (
+                          <DocumentCard
+                            key={cert.id}
+                            document={cert}
+                            onDelete={(id) => {
+                              setDocumentToDelete(id);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            onEdit={(doc) => {
+                              setEditingDocument(doc);
+                              setIsCertificateModalOpen(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                      <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
+                        <FaFileAlt className="text-4xl text-gray-400" />
+                      </div>
+                      <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
+                      <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                        Upload certificates and documents for this employee.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setEditingDocument(null);
+                          setIsCertificateModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                      >
+                        <FaUpload /> Upload First Document
+                      </button>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {certificates.map((cert) => (
-                        <DocumentCard
-                          key={cert.id}
-                          document={cert}
-                          onDelete={(id) => {
-                            setDocumentToDelete(id);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          onEdit={(doc) => {
-                            setEditingDocument(doc);
-                            setIsCertificateModalOpen(true);
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </>
+                  )
                 ) : (
-                  <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                    <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
-                      <FaFileAlt className="text-4xl text-gray-400" />
-                    </div>
-                    <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
-                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                      Upload certificates and documents for this employee.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setEditingDocument(null);
-                        setIsCertificateModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                    >
-                      <FaUpload /> Upload First Document
-                    </button>
-                  </div>
+                  // Compliance Checklist View
+                  <ComplianceChecklist certificates={certificates} />
                 )}
               </div>
             )}
