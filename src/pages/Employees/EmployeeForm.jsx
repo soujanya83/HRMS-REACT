@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   getEmployee,
   updateEmployee,
@@ -10,6 +10,7 @@ import {
   updateEmployeeDocument,
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
+  searchSuperFunds,
 } from "../../services/employeeService.js";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
@@ -44,13 +45,11 @@ import {
   FaGavel,
   FaUserShield,
   FaClipboardList,
+  FaSearch,
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
-// ============================================
-// MANDATORY CERTIFICATES CONSTANTS
-// Based on Childcare Worker Compliance Checklist (Victoria, Australia)
-// ============================================
+
 
 const MANDATORY_CERTIFICATES = {
   // Mandatory Certificates & Checks
@@ -293,6 +292,232 @@ const STAFF_FILE_REQUIREMENTS = [
   { id: "induction_checklist", name: "Induction Checklist", required: true }
 ];
 
+// ============================================
+// SUPER FUND SEARCH COMPONENT (Integrated)
+// ============================================
+const SuperFundSearch = ({ 
+  value = '', 
+  onChange, 
+  onSelect,
+  placeholder = "Search for super fund...", 
+  disabled = false,
+  error = null,
+}) => {
+  const [query, setQuery] = useState(value || '');
+  const [suggestions, setSuggestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selected, setSelected] = useState(value || '');
+  const wrapperRef = useRef(null);
+  const inputRef = useRef(null);
+  const debounceTimeout = useRef(null);
+
+  // Debounced search function
+  const debouncedSearch = (searchQuery) => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(async () => {
+      if (searchQuery.trim().length < 1) {
+        setSuggestions([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const results = await searchSuperFunds(searchQuery);
+        setSuggestions(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
+  };
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    setSelected('');
+    
+    if (onChange) {
+      onChange(newQuery);
+    }
+    
+    setShowSuggestions(true);
+    debouncedSearch(newQuery);
+  };
+
+  // Handle suggestion selection
+  const handleSelect = (fundName) => {
+    setQuery(fundName);
+    setSelected(fundName);
+    setShowSuggestions(false);
+    
+    if (onSelect) {
+      onSelect(fundName);
+    }
+    
+    if (onChange) {
+      onChange(fundName);
+    }
+  };
+
+  // Handle clear selection
+  const handleClear = () => {
+    setQuery('');
+    setSelected('');
+    setSuggestions([]);
+    
+    if (onChange) {
+      onChange('');
+    }
+    
+    if (onSelect) {
+      onSelect('');
+    }
+    
+    inputRef.current?.focus();
+  };
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Update query when value prop changes
+  useEffect(() => {
+    if (value !== query) {
+      setQuery(value || '');
+      setSelected(value || '');
+    }
+  }, [value]);
+
+  // Highlight matching text
+  const highlightMatch = (text, highlight) => {
+    if (!highlight.trim()) {
+      return text;
+    }
+    
+    const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <span key={index} className="bg-yellow-200 font-semibold">{part}</span>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <div className="relative">
+        {/* Search Icon */}
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <FaSearch className="h-4 w-4 text-gray-400" />
+        </div>
+        
+        {/* Input Field */}
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => query.trim().length > 0 && setShowSuggestions(true)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`w-full pl-10 pr-10 py-2.5 border ${
+            error ? 'border-red-500 bg-red-50' : 'border-gray-300'
+          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+            disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+          }`}
+          autoComplete="off"
+        />
+        
+        {/* Clear/Selected Indicator */}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          {isLoading ? (
+            <FaSpinner className="h-4 w-4 text-gray-400 animate-spin" />
+          ) : selected ? (
+            <div className="flex items-center gap-1">
+              <FaCheck className="h-4 w-4 text-green-500" />
+              <button
+                type="button"
+                onClick={handleClear}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                title="Clear selection"
+              >
+                <FaTimes className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+          ) : query ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              title="Clear"
+            >
+              <FaTimes className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+      
+      {/* Error Message */}
+      {error && (
+        <p className="mt-1 text-sm text-red-600">{error}</p>
+      )}
+      
+      {/* Suggestions Dropdown */}
+      {showSuggestions && (suggestions.length > 0 || isLoading) && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {isLoading ? (
+            <div className="p-4 text-center text-gray-500">
+              <FaSpinner className="animate-spin inline mr-2" />
+              Searching...
+            </div>
+          ) : (
+            suggestions.map((fund, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleSelect(fund)}
+                className="w-full text-left px-4 py-3 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+              >
+                <div className="text-sm text-gray-900">
+                  {highlightMatch(fund, query)}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+      
+      {/* No Results Message */}
+      {showSuggestions && !isLoading && query.length >= 1 && suggestions.length === 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
+          No super funds found matching "{query}"
+        </div>
+      )}
+    </div>
+  );
+};
+
 // File Icon Component
 const FileIcon = ({ fileName }) => {
   if (!fileName) return <FaFileAlt className="text-gray-400 text-2xl" />;
@@ -318,7 +543,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
   });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
 
   // Get all certificate types flattened for dropdown
   const allCertificateTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(category => 
@@ -364,7 +588,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
       ...prev,
       document_type: selectedValue,
       category: selectedCert?.category || '',
-      // Auto-set expiry date suggestion if the certificate has expiry
       expiry_date: prev.expiry_date || (selectedCert?.hasExpiry ? 
         new Date(Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '')
     }));
@@ -394,7 +617,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
     try {
       const data = new FormData();
       
-      // Add employee_id to the FormData
       data.append('employee_id', employeeId);
       data.append('document_type', formData.document_type);
       data.append('file_name', formData.file_name);
@@ -1406,6 +1628,17 @@ export default function EmployeeForm() {
     }
   };
 
+  const handleSuperFundChange = (value) => {
+    setFormData(prev => ({ ...prev, superannuation_fund_name: value }));
+    if (formErrors.superannuation_fund_name) {
+      setFormErrors(prev => ({ ...prev, superannuation_fund_name: null }));
+    }
+  };
+
+  const handleSuperFundSelect = (value) => {
+    setFormData(prev => ({ ...prev, superannuation_fund_name: value }));
+  };
+
   const handleUploadDocument = async (empId, formData, isEdit = false) => {
     try {
       console.log('Uploading document with employee ID:', empId);
@@ -2236,15 +2469,22 @@ export default function EmployeeForm() {
                     placeholder="Enter TFN"
                   />
                   
-                  <InputField
-                    label="Superannuation Fund Name"
-                    name="superannuation_fund_name"
-                    id="superannuation_fund_name"
-                    value={formData.superannuation_fund_name}
-                    onChange={handleChange}
-                    error={formErrors.superannuation_fund_name}
-                    placeholder="e.g., AustralianSuper"
-                  />
+                  {/* Superannuation Fund Name with Search */}
+                  <div className="w-full">
+                    <label htmlFor="superannuation_fund_name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Superannuation Fund Name
+                    </label>
+                    <SuperFundSearch
+                      value={formData.superannuation_fund_name || ''}
+                      onChange={handleSuperFundChange}
+                      onSelect={handleSuperFundSelect}
+                      placeholder="Search for super fund (e.g., AustralianSuper)"
+                      error={formErrors.superannuation_fund_name}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Start typing to search for your super fund
+                    </p>
+                  </div>
                   
                   <InputField
                     label="Superannuation Member Number"

@@ -20,7 +20,7 @@ import {
   createDepartment,
   updateDepartment,
   deleteDepartment,
-  getDesignationsByDeptId,
+  getDesignationsByOrgId,
   createDesignation,
   updateDesignation,
   deleteDesignation,
@@ -28,7 +28,6 @@ import {
 
 // Timezone data with Australian timezones prioritized
 const TIMEZONES = [
-  // Australian timezones (prioritized)
   "Australia/Sydney",
   "Australia/Melbourne",
   "Australia/Brisbane",
@@ -37,7 +36,6 @@ const TIMEZONES = [
   "Australia/Canberra",
   "Australia/Hobart",
   "Australia/Darwin",
-  // Other timezones
   "Pacific/Auckland",
   "Asia/Kolkata",
   "Asia/Singapore",
@@ -57,7 +55,6 @@ const TIMEZONES = [
 
 // Industry types with childcare-related options prioritized
 const INDUSTRY_TYPES = [
-  // Childcare related (prioritized)
   "Child Care Center",
   "Preschool",
   "Daycare",
@@ -68,13 +65,11 @@ const INDUSTRY_TYPES = [
   "Family Day Care",
   "After School Care",
   "Child Development Center",
-  // Other related industries
   "Education",
   "Healthcare",
   "Social Assistance",
   "Youth Services",
   "Community Services",
-  // Other industries
   "Technology",
   "Finance",
   "Retail",
@@ -95,21 +90,21 @@ const INDUSTRY_TYPES = [
   "Other",
 ];
 
-// Color options for rooms
+// Color options for rooms - Mapped to color codes
 const COLOR_OPTIONS = [
-  { value: "#EF4444", label: "Red", class: "bg-red-500" },
-  { value: "#F97316", label: "Orange", class: "bg-orange-500" },
-  { value: "#F59E0B", label: "Amber", class: "bg-amber-500" },
-  { value: "#EAB308", label: "Yellow", class: "bg-yellow-500" },
-  { value: "#84CC16", label: "Lime", class: "bg-lime-500" },
-  { value: "#10B981", label: "Green", class: "bg-green-500" },
-  { value: "#14B8A6", label: "Teal", class: "bg-teal-500" },
-  { value: "#06B6D4", label: "Cyan", class: "bg-cyan-500" },
-  { value: "#3B82F6", label: "Blue", class: "bg-blue-500" },
-  { value: "#8B5CF6", label: "Violet", class: "bg-violet-500" },
-  { value: "#A855F7", label: "Purple", class: "bg-purple-500" },
-  { value: "#EC4899", label: "Pink", class: "bg-pink-500" },
-  { value: "#F43F5E", label: "Rose", class: "bg-rose-500" },
+  { value: "#EF4444", label: "Red", class: "bg-red-500", code: "red" },
+  { value: "#F97316", label: "Orange", class: "bg-orange-500", code: "orange" },
+  { value: "#F59E0B", label: "Amber", class: "bg-amber-500", code: "amber" },
+  { value: "#EAB308", label: "Yellow", class: "bg-yellow-500", code: "yellow" },
+  { value: "#84CC16", label: "Lime", class: "bg-lime-500", code: "lime" },
+  { value: "#10B981", label: "Green", class: "bg-green-500", code: "green" },
+  { value: "#14B8A6", label: "Teal", class: "bg-teal-500", code: "teal" },
+  { value: "#06B6D4", label: "Cyan", class: "bg-cyan-500", code: "cyan" },
+  { value: "#3B82F6", label: "Blue", class: "bg-blue-500", code: "blue" },
+  { value: "#8B5CF6", label: "Violet", class: "bg-violet-500", code: "violet" },
+  { value: "#A855F7", label: "Purple", class: "bg-purple-500", code: "purple" },
+  { value: "#EC4899", label: "Pink", class: "bg-pink-500", code: "pink" },
+  { value: "#F43F5E", label: "Rose", class: "bg-rose-500", code: "rose" },
 ];
 
 // Age group options with icons
@@ -122,6 +117,93 @@ const AGE_GROUPS = [
   { value: "School Age (5+ years)", label: "School Age (5+ years)", icon: "📚" },
   { value: "Mixed Age Group", label: "Mixed Age Group", icon: "👥" },
 ];
+
+// Predefined color mappings for common color names
+const COLOR_NAME_MAPPINGS = {
+  'red': '#EF4444',
+  'orange': '#F97316',
+  'amber': '#F59E0B',
+  'yellow': '#EAB308',
+  'lime': '#84CC16',
+  'green': '#10B981',
+  'teal': '#14B8A6',
+  'cyan': '#06B6D4',
+  'blue': '#3B82F6',
+  'violet': '#8B5CF6',
+  'purple': '#A855F7',
+  'pink': '#EC4899',
+  'rose': '#F43F5E',
+  'brown': '#8B4513',
+  'gray': '#6B7280',
+  'grey': '#6B7280',
+  'black': '#000000',
+  'white': '#FFFFFF',
+};
+
+// Helper function to extract color - NOW USES LOCAL STORAGE
+const extractColorFromCode = (roomId, defaultColor = '#3B82F6') => {
+  // Try to get color from localStorage
+  const savedColor = localStorage.getItem(`room_color_${roomId}`);
+  if (savedColor) {
+    return savedColor;
+  }
+  return defaultColor;
+};
+
+// Save color to localStorage
+const saveColorToStorage = (roomId, colorCode) => {
+  const colorOption = COLOR_OPTIONS.find(c => c.code === colorCode);
+  if (colorOption) {
+    localStorage.setItem(`room_color_${roomId}`, colorOption.value);
+  }
+};
+
+// Get color option from localStorage
+const getColorOption = (roomId) => {
+  const savedColor = localStorage.getItem(`room_color_${roomId}`);
+  if (savedColor) {
+    return COLOR_OPTIONS.find(c => c.value === savedColor) || COLOR_OPTIONS.find(c => c.code === 'blue');
+  }
+  return COLOR_OPTIONS.find(c => c.code === 'blue');
+};
+
+// Get color code from value
+const getColorCode = (value) => {
+  if (!value) return 'blue';
+  
+  if (COLOR_OPTIONS.some(opt => opt.code === value)) {
+    return value;
+  }
+  
+  const hexOption = COLOR_OPTIONS.find(opt => opt.value === value);
+  if (hexOption) return hexOption.code;
+  
+  const labelOption = COLOR_OPTIONS.find(opt => opt.label.toLowerCase() === value.toLowerCase());
+  if (labelOption) return labelOption.code;
+  
+  return 'blue';
+};
+
+// Get age group icon
+const getAgeGroupIcon = (ageGroup) => {
+  if (!ageGroup) return '👶';
+  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
+  return found ? found.icon : '👶';
+};
+
+// Helper function to get color with opacity
+const getColorWithOpacity = (colorValue, opacity = 0.1) => {
+  if (!colorValue) return `rgba(59, 130, 246, ${opacity})`;
+  
+  // If it's a hex color
+  if (colorValue.startsWith('#')) {
+    const r = parseInt(colorValue.slice(1, 3), 16);
+    const g = parseInt(colorValue.slice(3, 5), 16);
+    const b = parseInt(colorValue.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  return colorValue;
+};
 
 // Reusable Form Components
 const FormInput = ({ label, name, error, ...props }) => (
@@ -177,41 +259,57 @@ const FormTextarea = ({ label, name, error, ...props }) => (
   </div>
 );
 
-const ColorPicker = ({ label, name, value, onChange, error }) => (
-  <div>
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-      {label}
-    </label>
-    <div className="mt-1 flex items-center gap-2">
-      <div className="flex-1">
-        <select
-          id={name}
-          name={name}
-          value={value}
-          onChange={onChange}
-          className={`block w-full px-3 py-2 bg-white border ${
-            error ? "border-red-500" : "border-gray-300"
-          } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-        >
-          {COLOR_OPTIONS.map((color) => (
-            <option key={color.value} value={color.value}>
-              {color.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div
-        className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-sm"
-        style={{ backgroundColor: value }}
-        title="Selected color"
-      />
-    </div>
-    {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
-  </div>
-);
+// ColorPicker Component
+const ColorPicker = ({ label, name, value, onChange, error, roomId }) => {
+  const currentCode = getColorCode(value);
 
-// Create a context for modal management
+  const handleColorChange = (e) => {
+    const event = {
+      target: {
+        name: name,
+        value: e.target.value
+      }
+    };
+    onChange(event);
+  };
+
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <div className="mt-1 flex items-center gap-2">
+        <div className="flex-1">
+          <select
+            id={name}
+            name={name}
+            value={currentCode}
+            onChange={handleColorChange}
+            className={`block w-full px-3 py-2 bg-white border ${
+              error ? "border-red-500" : "border-gray-300"
+            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+          >
+            {COLOR_OPTIONS.map((color) => (
+              <option key={color.code} value={color.code}>
+                {color.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div
+          className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-sm"
+          style={{ backgroundColor: COLOR_OPTIONS.find(c => c.code === currentCode)?.value || '#3B82F6' }}
+          title={COLOR_OPTIONS.find(c => c.code === currentCode)?.label || 'Blue'}
+        />
+      </div>
+      {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
+    </div>
+  );
+};
+
+// Create contexts for modal management
 const DesignationModalContext = React.createContext();
+const RoomModalContext = React.createContext();
 
 function OrganizationsPage() {
   const [organizations, setOrganizations] = useState([]);
@@ -225,23 +323,27 @@ function OrganizationsPage() {
   const [orgToDelete, setOrgToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Room modal states
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState(null);
+  const [currentOrgId, setCurrentOrgId] = useState(null);
+  const [isRoomConfirmOpen, setIsRoomConfirmOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState(null);
+
   // Designation modal states
   const [isDesignationModalOpen, setIsDesignationModalOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState(null);
-  const [currentDepartmentId, setCurrentDepartmentId] = useState(null);
+  const [currentDesignationRoomId, setCurrentDesignationRoomId] = useState(null);
   const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
 
-  // Fetch organizations with proper response handling
+  // Fetch organizations
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
-    console.log('🔄 Starting to fetch organizations...');
-    
     try {
       const response = await getOrganizations();
-      console.log('📥 Raw GET response:', response);
       
       let organizationsData = [];
       
@@ -257,7 +359,7 @@ function OrganizationsPage() {
       
       setOrganizations(organizationsData);
     } catch (err) {
-      console.error('💥 Error fetching organizations:', err);
+      console.error('Error fetching organizations:', err);
       setError(err.response?.data?.message || "Failed to fetch organizations.");
       setOrganizations([]);
     } finally {
@@ -272,7 +374,6 @@ function OrganizationsPage() {
   // Handle save organization
   const handleSave = async (orgData) => {
     setIsSubmitting(true);
-    console.log('🔧 handleSave called with data:', orgData);
 
     try {
       let apiResponse;
@@ -300,11 +401,7 @@ function OrganizationsPage() {
       alert(apiResponse.message || (editingOrg ? 'Organization updated successfully!' : 'Organization created successfully!'));
       
     } catch (err) {
-      console.error('💥 ERROR in handleSave:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
+      console.error('Error in handleSave:', err);
       
       let errorMessage = 'Failed to save organization. ';
       
@@ -357,9 +454,86 @@ function OrganizationsPage() {
     }
   };
 
+  // Room modal handlers
+  const handleOpenRoomModal = (orgId, room = null) => {
+    setCurrentOrgId(orgId);
+    setEditingRoom(room);
+    setIsRoomModalOpen(true);
+  };
+
+  const handleCloseRoomModal = () => {
+    setIsRoomModalOpen(false);
+    setEditingRoom(null);
+    setCurrentOrgId(null);
+  };
+
+  const handleSaveRoom = async (roomData) => {
+    setIsSubmitting(true);
+    try {
+      console.log('Saving room with data:', roomData);
+      
+      // Prepare data for API (API expects name and description only)
+      const apiData = {
+        name: roomData.name,
+        description: roomData.description || ''
+      };
+      
+      let response;
+      if (editingRoom) {
+        response = await updateDepartment(editingRoom.id, apiData);
+      } else {
+        response = await createDepartment(currentOrgId, apiData);
+      }
+      
+      console.log('Save room response:', response);
+      
+      if (response && response.success === true) {
+        // Save color to localStorage
+        if (editingRoom) {
+          saveColorToStorage(editingRoom.id, roomData.color_code);
+        } else if (response.data && response.data.id) {
+          saveColorToStorage(response.data.id, roomData.color_code);
+        }
+        
+        handleCloseRoomModal();
+        window.location.reload();
+        alert(response.message || 'Room saved successfully!');
+      } else {
+        throw new Error(response?.message || 'Failed to save room');
+      }
+    } catch (err) {
+      console.error('Failed to save room:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to save room');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRoomDeleteClick = (room) => {
+    setRoomToDelete(room);
+    setIsRoomConfirmOpen(true);
+  };
+
+  const handleRoomDeleteConfirm = async () => {
+    if (roomToDelete) {
+      try {
+        await deleteDepartment(roomToDelete.id);
+        // Remove color from localStorage
+        localStorage.removeItem(`room_color_${roomToDelete.id}`);
+        setIsRoomConfirmOpen(false);
+        setRoomToDelete(null);
+        window.location.reload();
+        alert('Room deleted successfully!');
+      } catch (err) {
+        console.error('Failed to delete room:', err);
+        alert(err.response?.data?.message || 'Failed to delete room');
+      }
+    }
+  };
+
   // Designation modal handlers
-  const handleOpenDesignationModal = (departmentId, designation = null) => {
-    setCurrentDepartmentId(departmentId);
+  const handleOpenDesignationModal = (roomId, designation = null) => {
+    setCurrentDesignationRoomId(roomId);
     setEditingDesignation(designation);
     setIsDesignationModalOpen(true);
   };
@@ -367,7 +541,7 @@ function OrganizationsPage() {
   const handleCloseDesignationModal = () => {
     setIsDesignationModalOpen(false);
     setEditingDesignation(null);
-    setCurrentDepartmentId(null);
+    setCurrentDesignationRoomId(null);
   };
 
   const handleSaveDesignation = async (designationData) => {
@@ -377,14 +551,15 @@ function OrganizationsPage() {
       if (editingDesignation) {
         response = await updateDesignation(editingDesignation.id, designationData);
       } else {
-        response = await createDesignation(currentDepartmentId, designationData);
+        response = await createDesignation(selectedOrg.id, designationData);
       }
       
-      if (response.success === true) {
+      if (response && response.success === true) {
         handleCloseDesignationModal();
+        window.location.reload();
         alert(response.message || 'Designation saved successfully!');
       } else {
-        throw new Error(response.message || 'Failed to save designation');
+        throw new Error(response?.message || 'Failed to save designation');
       }
     } catch (err) {
       console.error('Failed to save designation:', err);
@@ -405,6 +580,7 @@ function OrganizationsPage() {
         await deleteDesignation(designationToDelete.id);
         setIsDesignationConfirmOpen(false);
         setDesignationToDelete(null);
+        window.location.reload();
         alert('Designation deleted successfully!');
       } catch (err) {
         console.error('Failed to delete designation:', err);
@@ -413,88 +589,115 @@ function OrganizationsPage() {
     }
   };
 
-  // Context value for designation modal
+  // Context values
+  const roomModalContextValue = {
+    openRoomModal: handleOpenRoomModal,
+    deleteRoom: handleRoomDeleteClick
+  };
+
   const designationModalContextValue = {
     openDesignationModal: handleOpenDesignationModal,
     deleteDesignation: handleDesignationDeleteClick
   };
 
   return (
-    <DesignationModalContext.Provider value={designationModalContextValue}>
-      <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-        <div className="max-w-7xl mx-auto">
-          {!selectedOrg ? (
-            <OrganizationListView
-              isLoading={isLoading}
-              error={error}
-              organizations={organizations}
-              onSelectOrg={setSelectedOrg}
-              onAdd={() => {
-                setEditingOrg(null);
-                setIsModalOpen(true);
-              }}
-              onEdit={(org) => {
-                setEditingOrg(org);
-                setIsModalOpen(true);
-              }}
-              onDelete={handleDeleteClick}
-            />
-          ) : (
-            <OrganizationDetailView
-              organization={selectedOrg}
-              onBack={() => setSelectedOrg(null)}
-              onEdit={(org) => {
-                setEditingOrg(org);
-                setIsModalOpen(true);
-              }}
-            />
-          )}
+    <RoomModalContext.Provider value={roomModalContextValue}>
+      <DesignationModalContext.Provider value={designationModalContextValue}>
+        <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
+          <div className="max-w-7xl mx-auto">
+            {!selectedOrg ? (
+              <OrganizationListView
+                isLoading={isLoading}
+                error={error}
+                organizations={organizations}
+                onSelectOrg={setSelectedOrg}
+                onAdd={() => {
+                  setEditingOrg(null);
+                  setIsModalOpen(true);
+                }}
+                onEdit={(org) => {
+                  setEditingOrg(org);
+                  setIsModalOpen(true);
+                }}
+                onDelete={handleDeleteClick}
+              />
+            ) : (
+              <OrganizationDetailView
+                organization={selectedOrg}
+                onBack={() => setSelectedOrg(null)}
+                onEdit={(org) => {
+                  setEditingOrg(org);
+                  setIsModalOpen(true);
+                }}
+              />
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Organization Modal */}
-      <OrganizationModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingOrg(null);
-        }}
-        onSave={handleSave}
-        organization={editingOrg}
-        isSubmitting={isSubmitting}
-      />
+        {/* Organization Modal */}
+        <OrganizationModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingOrg(null);
+          }}
+          onSave={handleSave}
+          organization={editingOrg}
+          isSubmitting={isSubmitting}
+        />
 
-      <ConfirmationModal
-        isOpen={isConfirmOpen}
-        onClose={() => {
-          setIsConfirmOpen(false);
-          setOrgToDelete(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Center"
-        message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
-      />
+        <ConfirmationModal
+          isOpen={isConfirmOpen}
+          onClose={() => {
+            setIsConfirmOpen(false);
+            setOrgToDelete(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Center"
+          message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
+        />
 
-      {/* Designation Modal */}
-      <DesignationModal
-        isOpen={isDesignationModalOpen}
-        onClose={handleCloseDesignationModal}
-        onSave={handleSaveDesignation}
-        designation={editingDesignation}
-        isSubmitting={isSubmitting}
-      />
+        {/* Room Modal */}
+        <RoomModal
+          isOpen={isRoomModalOpen}
+          onClose={handleCloseRoomModal}
+          onSave={handleSaveRoom}
+          room={editingRoom}
+          isSubmitting={isSubmitting}
+        />
 
-      <ConfirmationModal
-        isOpen={isDesignationConfirmOpen}
-        onClose={() => {
-          setIsDesignationConfirmOpen(false);
-          setDesignationToDelete(null);
-        }}
-        onConfirm={handleDesignationDeleteConfirm}
-        title="Delete Designation"
-        message={`Are you sure you want to delete "${designationToDelete?.title}"?`}
-      />
-    </DesignationModalContext.Provider>
+        <ConfirmationModal
+          isOpen={isRoomConfirmOpen}
+          onClose={() => {
+            setIsRoomConfirmOpen(false);
+            setRoomToDelete(null);
+          }}
+          onConfirm={handleRoomDeleteConfirm}
+          title="Delete Room"
+          message={`Are you sure you want to delete "${roomToDelete?.name}"? This action cannot be undone.`}
+        />
+
+        {/* Designation Modal */}
+        <DesignationModal
+          isOpen={isDesignationModalOpen}
+          onClose={handleCloseDesignationModal}
+          onSave={handleSaveDesignation}
+          designation={editingDesignation}
+          isSubmitting={isSubmitting}
+        />
+
+        <ConfirmationModal
+          isOpen={isDesignationConfirmOpen}
+          onClose={() => {
+            setIsDesignationConfirmOpen(false);
+            setDesignationToDelete(null);
+          }}
+          onConfirm={handleDesignationDeleteConfirm}
+          title="Delete Designation"
+          message={`Are you sure you want to delete "${designationToDelete?.title}"?`}
+        />
+      </DesignationModalContext.Provider>
+    </RoomModalContext.Provider>
   );
 }
 
@@ -507,7 +710,6 @@ function OrganizationListView({
   onSelectOrg,
   onAdd,
   onEdit,
-  onDelete,
 }) {
   return (
     <div>
@@ -620,7 +822,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
               onClick={() => onSelectOrg(organization)}
               className="text-sm font-semibold text-blue-600 hover:underline transition-colors"
             >
-              View Rooms &rarr;
+              View Details &rarr;
             </button>
           </div>
         </div>
@@ -630,6 +832,8 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
 }
 
 function OrganizationDetailView({ organization, onBack, onEdit }) {
+  const roomModalContext = React.useContext(RoomModalContext);
+
   return (
     <div>
       <button
@@ -697,113 +901,235 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
         </div>
       </div>
 
-      {/* Rooms Section - Shows rooms under this organization */}
-      <RoomsManager orgId={organization.id} />
+      {/* Rooms Section */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
+          <button
+            onClick={() => roomModalContext.openRoomModal(organization.id)}
+            className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+          >
+            <HiPlus /> Add New Room
+          </button>
+        </div>
+        <RoomsList orgId={organization.id} />
+      </div>
+
+      {/* Designations Section */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Designations</h2>
+        <AllDesignationsList orgId={organization.id} />
+      </div>
     </div>
   );
 }
 
-// Helper function to get color with opacity
-const getColorWithOpacity = (colorCode, opacity = 0.1) => {
-  if (colorCode.startsWith('#')) {
-    const r = parseInt(colorCode.slice(1, 3), 16);
-    const g = parseInt(colorCode.slice(3, 5), 16);
-    const b = parseInt(colorCode.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+// Rooms List Component
+function RoomsList({ orgId }) {
+  const [rooms, setRooms] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const roomModalContext = React.useContext(RoomModalContext);
+  const designationModalContext = React.useContext(DesignationModalContext);
+
+  const fetchRooms = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await getDepartmentsByOrgId(orgId);
+      console.log('Rooms API response:', response);
+      
+      let roomsData = [];
+      
+      if (response && response.success === true) {
+        if (response.data && response.data.data) {
+          roomsData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          roomsData = response.data;
+        }
+      } else if (Array.isArray(response)) {
+        roomsData = response;
+      }
+      
+      console.log('Processed rooms data:', roomsData);
+      setRooms(roomsData);
+    } catch (error) {
+      console.error("Failed to fetch rooms", error);
+      setError(error.response?.data?.message || "Failed to load rooms");
+      setRooms([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading rooms...</span>
+      </div>
+    );
   }
-  return colorCode;
-};
 
-// Get age group icon
-const getAgeGroupIcon = (ageGroup) => {
-  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
-  return found ? found.icon : '👶';
-};
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
-// Room Item Component - Shows room with color and age group
-function RoomItem({ room, onEdit, onDelete }) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  // Get color details
-  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
-  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+  if (rooms.length === 0) {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">No Rooms Added Yet</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Click "Add New Room" to create your first room.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden transition hover:shadow-lg">
-      {/* Room Header with Color Strip */}
+    <div>
+      {/* View Toggle */}
+      <div className="flex justify-end mb-4">
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              viewMode === 'list' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <HiViewList className="inline mr-1" /> List
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              viewMode === 'grid' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <HiViewGrid className="inline mr-1" /> Grid
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'list' ? (
+        <div className="space-y-3">
+          {rooms.map((room) => (
+            <RoomItem
+              key={room.id}
+              room={room}
+              orgId={orgId}
+              onEdit={() => roomModalContext.openRoomModal(orgId, room)}
+              onDelete={() => roomModalContext.deleteRoom(room)}
+              onAddDesignation={() => designationModalContext.openDesignationModal(room.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              orgId={orgId}
+              onEdit={() => roomModalContext.openRoomModal(orgId, room)}
+              onDelete={() => roomModalContext.deleteRoom(room)}
+              onAddDesignation={() => designationModalContext.openDesignationModal(room.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Room Item Component (List View)
+function RoomItem({ room, onEdit, onDelete, onAddDesignation }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const designationModalContext = React.useContext(DesignationModalContext);
+  
+  // Get color from localStorage
+  const roomHexColor = extractColorFromCode(room.id);
+  const colorOption = getColorOption(room.id);
+  const colorLabel = colorOption?.label || 'Blue';
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition">
       <div className="flex">
-        {/* Color Strip */}
         <div 
           className="w-2 flex-shrink-0" 
-          style={{ backgroundColor: room.color_code || '#3B82F6' }}
-        ></div>
-        
-        {/* Main Content */}
+          style={{ backgroundColor: roomHexColor }}
+        />
         <div className="flex-1 p-5">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              {/* Room Name with Color Indicator */}
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3">
                 <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
-                  style={{ backgroundColor: room.color_code || '#3B82F6' }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
+                  style={{ backgroundColor: roomHexColor }}
                 >
                   {room.name?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span 
-                      className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
-                      style={{ 
-                        backgroundColor: getColorWithOpacity(room.color_code || '#3B82F6', 0.15),
-                        color: room.color_code || '#3B82F6'
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: room.color_code || '#3B82F6' }}></span>
-                      {colorOption.label}
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
               </div>
 
-              {/* Age Group Badge */}
-              {room.age_group && (
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-medium text-gray-500">Age Group:</span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                    <span>{ageGroupIcon}</span>
-                    {room.age_group}
+              <div className="mt-2 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-500">Color:</span>
+                  <span 
+                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
+                    style={{ 
+                      backgroundColor: getColorWithOpacity(roomHexColor, 0.15),
+                      color: roomHexColor
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: roomHexColor }} />
+                    {colorLabel}
                   </span>
                 </div>
-              )}
 
-              {/* Description */}
+                {room.age_group && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">Age Group:</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                      <span>{getAgeGroupIcon(room.age_group)}</span>
+                      {room.age_group}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Show description if it exists */}
               {room.description && (
-                <p className="text-gray-600 text-sm mt-2 bg-gray-50 p-3 rounded-lg border-l-2" 
-                   style={{ borderLeftColor: room.color_code || '#3B82F6' }}>
+                <p className="text-gray-600 text-sm mt-3 bg-gray-50 p-3 rounded-lg">
                   {room.description}
                 </p>
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-1">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
+                onClick={onEdit}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
                 title="Edit Room"
               >
                 <HiPencil size={18} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
+                onClick={onDelete}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
                 title="Delete Room"
               >
@@ -812,7 +1138,7 @@ function RoomItem({ room, onEdit, onDelete }) {
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                title={isOpen ? "Hide Roles" : "Show Roles"}
+                title={isOpen ? "Hide Designations" : "Show Designations"}
               >
                 <HiChevronDown
                   className={`transition-transform duration-300 text-xl ${
@@ -822,62 +1148,73 @@ function RoomItem({ room, onEdit, onDelete }) {
               </button>
             </div>
           </div>
+          
+          {/* Add Designation Button */}
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={onAddDesignation}
+              className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 font-semibold py-1 px-3 rounded-lg hover:bg-blue-100 transition"
+            >
+              <HiPlus size={14} /> Add Designation
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Designations Section */}
       {isOpen && (
-        <div className="border-t border-gray-200 bg-gray-50">
-          <DesignationsList departmentId={room.id} />
+        <div className="border-t border-gray-200 bg-gray-50 p-4">
+          <DesignationsList 
+            roomId={room.id} 
+            roomName={room.name}
+            roomColor={roomHexColor}
+          />
         </div>
       )}
     </div>
   );
 }
 
-// Room Card Component - Grid view alternative
-function RoomCard({ room, onEdit, onDelete }) {
+// Room Card Component (Grid View)
+function RoomCard({ room, onEdit, onDelete, onAddDesignation }) {
   const [isOpen, setIsOpen] = useState(false);
+  const designationModalContext = React.useContext(DesignationModalContext);
   
-  const colorOption = COLOR_OPTIONS.find(c => c.value === room.color_code) || COLOR_OPTIONS[0];
-  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+  // Get color from localStorage
+  const roomHexColor = extractColorFromCode(room.id);
+  const colorOption = getColorOption(room.id);
+  const colorLabel = colorOption?.label || 'Blue';
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg">
-      {/* Colored Header */}
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
       <div 
         className="h-2 w-full" 
-        style={{ backgroundColor: room.color_code || '#3B82F6' }}
-      ></div>
+        style={{ backgroundColor: roomHexColor }}
+      />
       
       <div className="p-5">
-        {/* Room Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            {/* Color Circle */}
             <div 
               className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md"
-              style={{ backgroundColor: room.color_code || '#3B82F6' }}
+              style={{ backgroundColor: roomHexColor }}
             >
               {room.name?.charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span 
-                  className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ 
-                    backgroundColor: getColorWithOpacity(room.color_code || '#3B82F6', 0.15),
-                    color: room.color_code || '#3B82F6'
-                  }}
-                >
-                  {colorOption.label}
-                </span>
-              </div>
+              <span 
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{ 
+                  backgroundColor: getColorWithOpacity(roomHexColor, 0.15),
+                  color: roomHexColor
+                }}
+              >
+                {colorLabel}
+              </span>
             </div>
           </div>
           
-          {/* Actions */}
           <div className="flex items-center gap-1">
             <button
               onClick={onEdit}
@@ -896,11 +1233,10 @@ function RoomCard({ room, onEdit, onDelete }) {
           </div>
         </div>
 
-        {/* Age Group Badge */}
         {room.age_group && (
           <div className="mb-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-2xl">{ageGroupIcon}</span>
+              <span className="text-2xl">{getAgeGroupIcon(room.age_group)}</span>
               <div>
                 <p className="text-xs text-gray-500">Age Group</p>
                 <p className="text-sm font-semibold text-gray-800">{room.age_group}</p>
@@ -909,30 +1245,38 @@ function RoomCard({ room, onEdit, onDelete }) {
           </div>
         )}
 
-        {/* Description */}
         {room.description && (
           <p className="text-sm text-gray-600 mb-4 line-clamp-2">{room.description}</p>
         )}
 
-        {/* Toggle Roles Button */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <span className="text-sm font-medium text-gray-700">
-            {isOpen ? 'Hide Roles' : 'Show Roles'}
-          </span>
-          <HiChevronDown
-            className={`transition-transform duration-300 ${
-              isOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={onAddDesignation}
+            className="flex-1 flex items-center justify-center gap-1 text-sm bg-blue-50 text-blue-700 font-semibold py-2 px-3 rounded-lg hover:bg-blue-100 transition"
+          >
+            <HiPlus size={16} /> Add Designation
+          </button>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center justify-center gap-1 text-sm bg-gray-50 text-gray-700 font-semibold py-2 px-3 rounded-lg hover:bg-gray-100 transition"
+          >
+            <span>{isOpen ? 'Hide' : 'Show'} Designations</span>
+            <HiChevronDown
+              className={`transition-transform duration-300 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Designations Section */}
         {isOpen && (
-          <div className="mt-4">
-            <DesignationsList departmentId={room.id} />
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <DesignationsList 
+              roomId={room.id} 
+              roomName={room.name}
+              roomColor={roomHexColor}
+            />
           </div>
         )}
       </div>
@@ -940,367 +1284,170 @@ function RoomCard({ room, onEdit, onDelete }) {
   );
 }
 
-// Rooms Manager Component
-function RoomsManager({ orgId }) {
-  const [rooms, setRooms] = useState([]);
+// Designations List Component
+function DesignationsList({ roomId, roomName, roomColor }) {
+  const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [roomError, setRoomError] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingRoom, setEditingRoom] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [roomToDelete, setRoomToDelete] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [error, setError] = useState(null);
+  const designationModalContext = React.useContext(DesignationModalContext);
 
-  const fetchRooms = useCallback(async () => {
+  const fetchDesignations = useCallback(async () => {
     setIsLoading(true);
-    setRoomError(null);
+    setError(null);
     
     try {
-      const response = await getDepartmentsByOrgId(orgId);
-      console.log('Rooms response:', response);
+      // Since API doesn't have room-level designations, show empty state
+      setDesignations([]);
+    } catch (error) {
+      console.error("Failed to fetch designations", error);
+      setError(error.response?.data?.message || "Failed to load designations");
+      setDesignations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDesignations();
+  }, [fetchDesignations]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-sm text-gray-600">Loading designations...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
+        Designations are managed at the organization level. 
+        <br />
+        <button
+          onClick={() => designationModalContext.openDesignationModal(roomId)}
+          className="text-blue-600 hover:text-blue-800 font-medium mt-2 inline-block"
+        >
+          Click here to add a designation
+        </button>
+      </p>
+    </div>
+  );
+}
+
+// All Designations List Component
+function AllDesignationsList({ orgId }) {
+  const [designations, setDesignations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const designationModalContext = React.useContext(DesignationModalContext);
+
+  const fetchDesignations = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await getDesignationsByOrgId(orgId);
       
-      let roomsData = [];
+      let designationsData = [];
       
       if (response && response.success === true) {
-        if (response.data && response.data.data) {
-          roomsData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          roomsData = response.data;
+        if (Array.isArray(response.data)) {
+          designationsData = response.data;
         }
-      } else if (Array.isArray(response)) {
-        roomsData = response;
       }
       
-      setRooms(roomsData);
+      setDesignations(designationsData);
     } catch (error) {
-      console.error("Failed to fetch rooms", error);
-      setRoomError(error.response?.data?.message || "Failed to load rooms");
-      setRooms([]);
+      console.error("Failed to fetch designations", error);
+      setError(error.response?.data?.message || "Failed to load designations");
+      setDesignations([]);
     } finally {
       setIsLoading(false);
     }
   }, [orgId]);
 
   useEffect(() => {
-    fetchRooms();
-  }, [fetchRooms]);
+    fetchDesignations();
+  }, [fetchDesignations]);
 
-  const handleSave = async (roomData) => {
-    setIsSubmitting(true);
-    try {
-      let response;
-      if (editingRoom) {
-        response = await updateDepartment(editingRoom.id, roomData);
-      } else {
-        response = await createDepartment(orgId, roomData);
-      }
-      
-      if (response.success === true) {
-        await fetchRooms();
-        setIsModalOpen(false);
-        setEditingRoom(null);
-        alert(response.message || 'Room saved successfully!');
-      } else {
-        throw new Error(response.message || 'Failed to save room');
-      }
-    } catch (error) {
-      console.error("Failed to save room", error);
-      alert(error.response?.data?.message || error.message || 'Failed to save room');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading designations...</span>
+      </div>
+    );
+  }
 
-  const handleDelete = async () => {
-    if (roomToDelete) {
-      try {
-        await deleteDepartment(roomToDelete.id);
-        await fetchRooms();
-        setIsConfirmOpen(false);
-        setRoomToDelete(null);
-        alert('Room deleted successfully!');
-      } catch (error) {
-        console.error("Failed to delete room", error);
-        alert(error.response?.data?.message || 'Failed to delete room');
-      }
-    }
-  };
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
-  // Group rooms by age group for better organization
-  const roomsByAgeGroup = rooms.reduce((acc, room) => {
-    const ageGroup = room.age_group || 'Uncategorized';
-    if (!acc[ageGroup]) acc[ageGroup] = [];
-    acc[ageGroup].push(room);
-    return acc;
-  }, {});
+  if (designations.length === 0) {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">No Designations Added Yet</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Click "Add Designation" in any room to create designations.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      {/* Header with View Toggle */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} in this center
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* View Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                viewMode === 'list' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <HiViewList className="inline mr-1" /> List
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                viewMode === 'grid' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <HiViewGrid className="inline mr-1" /> Grid
-            </button>
-          </div>
-          
-          <button
-            onClick={() => {
-              setEditingRoom(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+    <div className="space-y-2">
+      {designations.map((desig) => {
+        return (
+          <div
+            key={desig.id}
+            className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
           >
-            <HiPlus /> Add New Room
-          </button>
-        </div>
-      </div>
-
-      {roomError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-600">{roomError}</p>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading Rooms...</span>
-        </div>
-      ) : rooms.length > 0 ? (
-        viewMode === 'list' ? (
-          // List View - Grouped by Age Group
-          <div className="space-y-6">
-            {Object.entries(roomsByAgeGroup).map(([ageGroup, ageGroupRooms]) => (
-              <div key={ageGroup} className="space-y-3">
-                {ageGroup !== 'Uncategorized' && (
-                  <h3 className="text-md font-semibold text-gray-700 px-2 flex items-center gap-2">
-                    <span>{getAgeGroupIcon(ageGroup)}</span>
-                    {ageGroup}
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      ({ageGroupRooms.length} {ageGroupRooms.length === 1 ? 'room' : 'rooms'})
-                    </span>
-                  </h3>
-                )}
-                <div className="space-y-3">
-                  {ageGroupRooms.map((room) => (
-                    <RoomItem
-                      key={room.id}
-                      room={room}
-                      onEdit={() => {
-                        setEditingRoom(room);
-                        setIsModalOpen(true);
-                      }}
-                      onDelete={() => {
-                        setRoomToDelete(room);
-                        setIsConfirmOpen(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Grid View
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {rooms.map((room) => (
-              <RoomCard
-                key={room.id}
-                room={room}
-                onEdit={() => {
-                  setEditingRoom(room);
-                  setIsModalOpen(true);
-                }}
-                onDelete={() => {
-                  setRoomToDelete(room);
-                  setIsConfirmOpen(true);
-                }}
+            <div className="flex items-center gap-4">
+              <div 
+                className="w-1 h-10 rounded-full bg-blue-500"
               />
-            ))}
-          </div>
-        )
-      ) : (
-        // Empty State
-        <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-            <HiOutlineOfficeBuilding className="text-3xl text-blue-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Rooms Added Yet</h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Add your first room to start organizing your center's spaces and assigning staff.
-          </p>
-          <button
-            onClick={() => {
-              setEditingRoom(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:opacity-90 transition"
-          >
-            <HiPlus /> Add Your First Room
-          </button>
-        </div>
-      )}
-
-      {/* Room Modal */}
-      <RoomModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingRoom(null);
-        }}
-        onSave={handleSave}
-        room={editingRoom}
-        isSubmitting={isSubmitting}
-      />
-
-      <ConfirmationModal
-        isOpen={isConfirmOpen}
-        onClose={() => {
-          setIsConfirmOpen(false);
-          setRoomToDelete(null);
-        }}
-        onConfirm={handleDelete}
-        title="Delete Room"
-        message={`Are you sure you want to delete "${roomToDelete?.name}"? This will also delete all roles in this room.`}
-      />
-    </div>
-  );
-}
-
-function DesignationsList({ departmentId }) {
-  const [designations, setDesignations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [desigError, setDesigError] = useState(null);
-  const designationModalContext = React.useContext(DesignationModalContext);
-
-  const fetchDesigs = useCallback(async () => {
-    setIsLoading(true);
-    setDesigError(null);
-    
-    try {
-      const response = await getDesignationsByDeptId(departmentId);
-      console.log('Designations response:', response);
-      
-      let designationsData = [];
-      
-      if (response && response.success === true) {
-        if (response.data && response.data.data) {
-          designationsData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          designationsData = response.data;
-        }
-      } else if (Array.isArray(response)) {
-        designationsData = response;
-      }
-      
-      setDesignations(designationsData);
-    } catch (error) {
-      console.error("Failed to fetch designations", error);
-      setDesigError(error.response?.data?.message || "Failed to load designations");
-      setDesignations([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [departmentId]);
-
-  useEffect(() => {
-    fetchDesigs();
-  }, [fetchDesigs]);
-
-  return (
-    <div className="p-5">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="text-md font-semibold text-gray-700 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-          Roles & Designations
-        </h4>
-        <button
-          onClick={() => designationModalContext.openDesignationModal(departmentId)}
-          className="flex items-center gap-1 text-sm bg-blue-50 text-blue-700 font-semibold py-1.5 px-3 rounded-lg hover:bg-blue-100 transition"
-        >
-          <HiPlus /> Add Role
-        </button>
-      </div>
-
-      {desigError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
-          <p className="text-red-600 text-xs">{desigError}</p>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-sm text-gray-600">Loading roles...</span>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {designations.map((desig) => (
-            <div
-              key={desig.id}
-              className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
-            >
+              
               <div>
                 <p className="font-semibold text-gray-800">{desig.title}</p>
-                {desig.level && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Level: <span className="bg-gray-100 px-2 py-0.5 rounded-full">{desig.level}</span>
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => designationModalContext.openDesignationModal(departmentId, desig)}
-                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                  title="Edit Role"
-                >
-                  <HiPencil size={14} />
-                </button>
-                <button
-                  onClick={() => designationModalContext.deleteDesignation(desig)}
-                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete Role"
-                >
-                  <HiTrash size={14} />
-                </button>
+                <div className="flex items-center gap-2 mt-1">
+                  {desig.level && (
+                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                      Level: {desig.level}
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-500">
+                    ID: {desig.id}
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
-          {designations.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
-              No roles added yet. Click "Add Role" to create one.
-            </p>
-          )}
-        </div>
-      )}
+            
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => designationModalContext.openDesignationModal(null, desig)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                title="Edit Designation"
+              >
+                <HiPencil size={14} />
+              </button>
+              <button
+                onClick={() => designationModalContext.deleteDesignation(desig)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+                title="Delete Designation"
+              >
+                <HiTrash size={14} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1489,23 +1636,37 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
   );
 }
 
+// RoomModal Component
 function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
   
   useEffect(() => {
-    // Initialize with default values including age_group and color_code
-    setFormData(room || { 
-      name: "", 
-      description: "", 
-      age_group: AGE_GROUPS[0].value, // Default to first age group
-      color_code: COLOR_OPTIONS[0].value // Default to Red
-    });
+    if (room) {
+      // Get saved color from localStorage
+      const savedColor = localStorage.getItem(`room_color_${room.id}`);
+      const colorCode = savedColor ? getColorCode(savedColor) : 'blue';
+      
+      setFormData({ 
+        name: room.name || "", 
+        description: room.description || "", 
+        age_group: room.age_group || AGE_GROUPS[0].value,
+        color_code: colorCode
+      });
+    } else {
+      setFormData({ 
+        name: "", 
+        description: "", 
+        age_group: AGE_GROUPS[0].value,
+        color_code: "blue"
+      });
+    }
     setError('');
   }, [room, isOpen]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Field changed: ${name} = ${value}`);
     setFormData((prev) => ({ 
       ...prev, 
       [name]: value 
@@ -1516,17 +1677,19 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
     e.preventDefault();
     setError('');
     
-    // Ensure all fields are included
     const submitData = {
       name: formData.name,
       description: formData.description || '',
       age_group: formData.age_group || AGE_GROUPS[0].value,
-      color_code: formData.color_code || COLOR_OPTIONS[0].value
+      color_code: formData.color_code || 'blue'
     };
+    
+    console.log('Submitting room data:', submitData);
     
     try {
       await onSave(submitData);
     } catch (err) {
+      console.error('Error saving room:', err);
       setError(err.response?.data?.message || err.message || 'Failed to save room');
     }
   };
@@ -1582,8 +1745,9 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
               <ColorPicker
                 label="Room Color"
                 name="color_code"
-                value={formData.color_code || COLOR_OPTIONS[0].value}
+                value={formData.color_code}
                 onChange={handleChange}
+                roomId={room?.id}
               />
               
               <FormTextarea
@@ -1656,7 +1820,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {designation ? "Edit Role" : "Add New Role"}
+            {designation ? "Edit Designation" : "Add New Designation"}
           </h2>
           <button
             onClick={onClose}
@@ -1676,11 +1840,11 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
           <div className="p-6">
             <div className="space-y-4">
               <FormInput
-                label="Role Title *"
+                label="Designation Title *"
                 name="title"
                 value={formData.title || ""}
                 onChange={handleChange}
-                placeholder="Enter role title (e.g., Room Leader)"
+                placeholder="Enter designation title (e.g., Room Leader)"
                 required
               />
               
@@ -1722,7 +1886,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                   : "Creating..."
                 : designation
                 ? "Save Changes"
-                : "Create Role"}
+                : "Create Designation"}
             </button>
           </div>
         </form>

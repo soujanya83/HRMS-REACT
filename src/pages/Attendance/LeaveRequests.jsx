@@ -1,1111 +1,756 @@
 import React, { useState, useEffect } from "react";
 import {
-  FaCalendarAlt,
-  FaSearch,
-  FaFilter,
-  FaClock,
+  FaSync,
+  FaPaperPlane,
   FaCheckCircle,
   FaTimesCircle,
-  FaExclamationTriangle,
-  FaDownload,
-  FaPlus,
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaUser,
-  FaStethoscope,
-  FaUmbrellaBeach,
-  FaHome,
-  FaBaby,
+  FaClock,
+  FaCalendarAlt,
   FaSpinner,
+  FaInfoCircle,
+  FaFileAlt,
+  FaUser,
+  FaBriefcase,
   FaRedoAlt,
-  FaInfoCircle
 } from "react-icons/fa";
-import { leaveService } from "../../services/leaveService";
-import { attendanceService } from "../../services/attendanceService";
+import axiosClient from "../../axiosClient";
 
-const LeaveRequests = () => {
-  const [leaveRequests, setLeaveRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [showLeaveForm, setShowLeaveForm] = useState(false);
-  const [editingRequest, setEditingRequest] = useState(null);
-  const [employees, setEmployees] = useState([]);
+// Xero Leave Management Component
+const XeroLeaveManagement = () => {
+  // Hardcoded constants (to be replaced with context/props later)
+  const ORGANIZATION_ID = "15";
+  const EMPLOYEE_ID = "101";
+
+  // State for leave types
   const [leaveTypes, setLeaveTypes] = useState([]);
-  
-  const [filters, setFilters] = useState({
-    status: "all",
-    leaveType: "all",
-    department: "all",
-    startDate: "",
-    endDate: "",
-    search: "",
-  });
+  const [loadingSync, setLoadingSync] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(null);
+  const [syncError, setSyncError] = useState(null);
 
-  const [newLeaveRequest, setNewLeaveRequest] = useState({
-    employee_id: "",
-    leave_type: "",
+  // State for leave history
+  const [leaveHistory, setLeaveHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+
+  // State for leave application form
+  const [formData, setFormData] = useState({
+    leave_type_id: "",
     start_date: "",
     end_date: "",
-    reason: "",
-    emergency_contact: "",
-    notes: "",
-    attachment: null,
+    description: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [submitSuccess, setSubmitSuccess] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
   });
 
-  // Stats data
-  const [stats, setStats] = useState({
-    totalRequests: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-  });
-
-  // Default leave types if API doesn't return any
-  const defaultLeaveTypes = [
-    "Annual Leave",
-    "Sick Leave",
-    "Emergency Leave",
-    "Maternity Leave",
-    "Paternity Leave",
-    "Work From Home",
-    "Half Day",
-    "Casual Leave",
-  ];
-
-  // Fetch initial data
+  // Fetch leave history on component mount
   useEffect(() => {
-    fetchInitialData();
+    fetchLeaveHistory();
   }, []);
 
-  // Fetch all initial data
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        fetchLeaveRequests(),
-        fetchEmployees(),
-        fetchLeaveTypes()
-      ]);
-    } catch (error) {
-      console.error('Error fetching initial data:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Show toast notification
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 5000);
   };
 
-  // Fetch leave requests from API
-  const fetchLeaveRequests = async () => {
-    try {
-      console.log('Fetching leave requests...');
-      const response = await leaveService.getLeaves();
-      console.log('Leave API response:', response.data);
+  // Fetch leave history from API using axiosClient
+  const fetchLeaveHistory = async () => {
+    setLoadingHistory(true);
+    setHistoryError(null);
 
-      let leaveData = [];
-      
-      if (response.data?.status === true) {
-        // Your API returns: {status: true, message: "...", data: [...]}
-        if (Array.isArray(response.data.data)) {
-          leaveData = response.data.data;
+    try {
+      console.log("Fetching leave history...");
+      const response = await axiosClient.get('/xero/leaves', {
+        params: {
+          organization_id: ORGANIZATION_ID,
+          employee_id: EMPLOYEE_ID,
         }
-      } else if (Array.isArray(response.data)) {
-        leaveData = response.data;
-      }
+      });
 
-      console.log('Processed leave data:', leaveData);
-      setLeaveRequests(leaveData);
-      calculateStats(leaveData);
-      
-    } catch (error) {
-      console.error('Failed to fetch leave requests:', error);
-      // Fallback to empty array on error
-      setLeaveRequests([]);
-    }
-  };
+      console.log("Leave history response:", response.data);
 
-  // Fetch employees from API
-  const fetchEmployees = async () => {
-    try {
-      const response = await attendanceService.getEmployees();
-      console.log('Employees API response:', response.data);
+      let historyData = [];
 
-      let employeesData = [];
-      
-      if (response.data?.success === true && Array.isArray(response.data.data)) {
-        employeesData = response.data.data;
-      } else if (Array.isArray(response.data?.data)) {
-        employeesData = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        employeesData = response.data;
-      }
-
-      console.log('Processed employees:', employeesData);
-      setEmployees(employeesData);
-      
-    } catch (error) {
-      console.error('Failed to fetch employees:', error);
-      // Use static employees as fallback
-      setEmployees([
-        { id: 1, name: 'John Smith', employee_id: 'EMP001', department: 'Engineering' },
-        { id: 2, name: 'Sarah Johnson', employee_id: 'EMP002', department: 'Marketing' },
-        { id: 3, name: 'Mike Chen', employee_id: 'EMP003', department: 'Sales' }
-      ]);
-    }
-  };
-
-  // Fetch leave types from API
-  const fetchLeaveTypes = async () => {
-    try {
-      const response = await leaveService.getLeaveTypes();
-      console.log('Leave types API response:', response.data);
-
-      let typesData = [];
-      
       if (response.data?.status === true && Array.isArray(response.data.data)) {
-        typesData = response.data.data.map(type => type.name || type);
-      } else if (Array.isArray(response.data?.data)) {
-        typesData = response.data.data.map(type => type.name || type);
+        historyData = response.data.data;
       } else if (Array.isArray(response.data)) {
-        typesData = response.data.map(type => type.name || type);
+        historyData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        historyData = response.data.data;
       }
 
-      // If no types from API, use defaults
-      if (typesData.length === 0) {
-        typesData = defaultLeaveTypes;
-      }
-
-      console.log('Processed leave types:', typesData);
-      setLeaveTypes(typesData);
-      
-      // Set default leave type
-      if (typesData.length > 0 && !newLeaveRequest.leave_type) {
-        setNewLeaveRequest(prev => ({ ...prev, leave_type: typesData[0] }));
-      }
-      
+      setLeaveHistory(historyData);
     } catch (error) {
-      console.error('Failed to fetch leave types:', error);
-      setLeaveTypes(defaultLeaveTypes);
+      console.error("Failed to fetch leave history:", error);
+      setHistoryError(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load leave history"
+      );
+      showToast("Failed to load leave history", "error");
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
-  // Calculate statistics
-  const calculateStats = (data) => {
-    const dataArray = Array.isArray(data) ? data : [];
-    
-    const pending = dataArray.filter(req => 
-      req.status === 'Pending' || req.status === 'pending'
-    ).length;
-    const approved = dataArray.filter(req => 
-      req.status === 'Approved' || req.status === 'approved'
-    ).length;
-    const rejected = dataArray.filter(req => 
-      req.status === 'Rejected' || req.status === 'rejected'
-    ).length;
+  // Sync leave types from Xero using axiosClient
+  const syncLeaveTypes = async () => {
+    setLoadingSync(true);
+    setSyncSuccess(null);
+    setSyncError(null);
 
-    setStats({
-      totalRequests: dataArray.length,
-      pending,
-      approved,
-      rejected,
-    });
-  };
+    try {
+      console.log("Syncing leave types from Xero...");
+      
+      const response = await axiosClient.post('/xero/leaves/sync-types', {
+        organization_id: ORGANIZATION_ID,
+      });
 
-  // Handle filter changes
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+      console.log("Sync types response:", response.data);
+
+      if (response.data?.status === true && Array.isArray(response.data.data)) {
+        setLeaveTypes(response.data.data);
+        setSyncSuccess(`Successfully synced ${response.data.data.length} leave types from Xero`);
+        showToast(`Synced ${response.data.data.length} leave types`, "success");
+        
+        // Set default leave type if available
+        if (response.data.data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            leave_type_id: response.data.data[0].id || response.data.data[0].xero_leave_type_id,
+          }));
+        }
+      } else {
+        throw new Error(response.data?.message || "Failed to sync leave types");
+      }
+    } catch (error) {
+      console.error("Sync error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to sync leave types from Xero";
+      setSyncError(errorMessage);
+      showToast(errorMessage, "error");
+    } finally {
+      setLoadingSync(false);
+    }
   };
 
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewLeaveRequest(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
-  // Handle file change
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setNewLeaveRequest(prev => ({ ...prev, attachment: file }));
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.leave_type_id) {
+      errors.leave_type_id = "Please select a leave type";
+    }
+    if (!formData.start_date) {
+      errors.start_date = "Start date is required";
+    }
+    if (!formData.end_date) {
+      errors.end_date = "End date is required";
+    }
+    if (formData.start_date && formData.end_date) {
+      const start = new Date(formData.start_date);
+      const end = new Date(formData.end_date);
+      if (end < start) {
+        errors.end_date = "End date cannot be before start date";
+      }
+    }
+    if (!formData.description?.trim()) {
+      errors.description = "Description is required";
+    } else if (formData.description.trim().length < 10) {
+      errors.description = "Description must be at least 10 characters";
+    }
+
+    return errors;
   };
 
-  // Calculate total days
-  const calculateTotalDays = (startDate, endDate) => {
+  // Calculate number of days between two dates
+  const calculateDays = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
   };
 
-  // Handle date change
-  const handleDateChange = (field, value) => {
-    setNewLeaveRequest(prev => {
-      const updated = { ...prev, [field]: value };
-      return updated;
-    });
-  };
-
-  // Submit leave request
-  const handleSubmitLeaveRequest = async (e) => {
+  // Handle form submission using axiosClient
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      showToast("Please fix the errors in the form", "error");
+      return;
+    }
+
     setSubmitting(true);
+    setSubmitSuccess(null);
+    setSubmitError(null);
 
     try {
-      // Validate required fields
-      if (!newLeaveRequest.employee_id || !newLeaveRequest.start_date || !newLeaveRequest.end_date || !newLeaveRequest.reason) {
-        alert('❌ Please fill in all required fields');
-        setSubmitting(false);
-        return;
-      }
+      console.log("Submitting leave request...");
+      
+      // Find selected leave type to get its ID
+      const selectedLeaveType = leaveTypes.find(
+        type => (type.id === formData.leave_type_id || type.xero_leave_type_id === formData.leave_type_id)
+      );
+      
+      const leaveTypeId = selectedLeaveType?.xero_leave_type_id || selectedLeaveType?.id || formData.leave_type_id;
 
-      const leaveData = {
-        employee_id: newLeaveRequest.employee_id,
-        leave_type: newLeaveRequest.leave_type || leaveTypes[0],
-        start_date: newLeaveRequest.start_date,
-        end_date: newLeaveRequest.end_date,
-        reason: newLeaveRequest.reason,
-        emergency_contact: newLeaveRequest.emergency_contact || '',
-        notes: newLeaveRequest.notes || '',
-        status: 'pending' // Default status
-      };
+      const response = await axiosClient.post('/xero/leaves/apply', {
+        organization_id: ORGANIZATION_ID,
+        employee_id: EMPLOYEE_ID,
+        leave_type_id: leaveTypeId,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        description: formData.description.trim(),
+      });
 
-      // Calculate total days
-      const totalDays = calculateTotalDays(newLeaveRequest.start_date, newLeaveRequest.end_date);
-      leaveData.total_days = totalDays;
+      console.log("Submit response:", response.data);
 
-      console.log('Submitting leave data:', leaveData);
-
-      let response;
-      if (editingRequest) {
-        // Update existing leave request
-        response = await leaveService.approveLeave(editingRequest.id, {
-          ...leaveData,
-          action: 'update'
+      if (response.data?.status === true) {
+        setSubmitSuccess(response.data.message || "Leave request submitted successfully");
+        showToast("Leave request submitted successfully!", "success");
+        
+        // Reset form
+        setFormData({
+          leave_type_id: leaveTypes.length > 0 ? (leaveTypes[0].id || leaveTypes[0].xero_leave_type_id) : "",
+          start_date: "",
+          end_date: "",
+          description: "",
         });
+        setFormErrors({});
+        
+        // Refresh leave history
+        await fetchLeaveHistory();
       } else {
-        // Create new leave request
-        response = await leaveService.createLeave(newLeaveRequest.employee_id, leaveData);
+        throw new Error(response.data?.message || "Failed to submit leave request");
       }
-
-      console.log('Submit response:', response.data);
-
-      if (response.data?.status === true || response.data?.success === true) {
-        alert('✅ Leave request submitted successfully!');
-        setShowLeaveForm(false);
-        resetForm();
-        fetchLeaveRequests(); // Refresh the list
-      } else {
-        throw new Error(response.data?.message || 'Failed to submit leave request');
-      }
-
     } catch (error) {
-      console.error('Submission error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.errors?.join?.('\n') || 
-                          error.message || 
-                          'Failed to submit leave request';
-      alert(`❌ ${errorMessage}`);
+      console.error("Submit error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to submit leave request";
+      setSubmitError(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Handle approve leave
-  const handleApprove = async (id) => {
-    if (!window.confirm('Are you sure you want to approve this leave request?')) return;
-    
-    try {
-      const response = await leaveService.approveLeave(id, {
-        action: 'approve',
-        notes: 'Leave approved by manager'
-      });
-
-      if (response.data?.status === true || response.data?.success === true) {
-        alert('✅ Leave request approved!');
-        fetchLeaveRequests(); // Refresh the list
-      } else {
-        throw new Error(response.data?.message || 'Failed to approve leave request');
-      }
-    } catch (error) {
-      console.error('Approval error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Failed to approve leave request';
-      alert(`❌ ${errorMessage}`);
-    }
-  };
-
-  // Handle reject leave
-  const handleReject = async (id) => {
-    if (!window.confirm('Are you sure you want to reject this leave request?')) return;
-    
-    try {
-      const response = await leaveService.approveLeave(id, {
-        action: 'reject',
-        notes: 'Leave rejected by manager'
-      });
-
-      if (response.data?.status === true || response.data?.success === true) {
-        alert('✅ Leave request rejected!');
-        fetchLeaveRequests(); // Refresh the list
-      } else {
-        throw new Error(response.data?.message || 'Failed to reject leave request');
-      }
-    } catch (error) {
-      console.error('Rejection error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Failed to reject leave request';
-      alert(`❌ ${errorMessage}`);
-    }
-  };
-
-  // Handle edit leave
-  const handleEdit = (request) => {
-    console.log('Editing request:', request);
-    setEditingRequest(request);
-    setNewLeaveRequest({
-      employee_id: request.employee_id?.toString() || '',
-      leave_type: request.leave_type || leaveTypes[0],
-      start_date: request.start_date || '',
-      end_date: request.end_date || '',
-      reason: request.reason || '',
-      emergency_contact: request.emergency_contact || '',
-      notes: request.notes || '',
-      attachment: null,
-    });
-    setShowLeaveForm(true);
-  };
-
-  // Handle delete leave
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this leave request?')) return;
-
-    try {
-      const response = await leaveService.deleteLeave(id);
-
-      if (response.data?.status === true || response.data?.success === true) {
-        alert('✅ Leave request deleted successfully!');
-        fetchLeaveRequests(); // Refresh the list
-      } else {
-        throw new Error(response.data?.message || 'Failed to delete leave request');
-      }
-    } catch (error) {
-      console.error('Delete error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Failed to delete leave request';
-      alert(`❌ ${errorMessage}`);
-    }
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setNewLeaveRequest({
-      employee_id: "",
-      leave_type: leaveTypes[0] || "",
-      start_date: "",
-      end_date: "",
-      reason: "",
-      emergency_contact: "",
-      notes: "",
-      attachment: null,
-    });
-    setEditingRequest(null);
-  };
-
   // Get status badge styling
   const getStatusBadge = (status) => {
-    const statusLower = status?.toLowerCase();
-    const statusConfig = {
-      'approved': 'bg-green-100 text-green-800',
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'rejected': 'bg-red-100 text-red-800'
+    const statusMap = {
+      'approved': { bg: 'bg-green-100', text: 'text-green-800', icon: <FaCheckCircle className="text-green-500" /> },
+      'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: <FaClock className="text-yellow-500" /> },
+      'rejected': { bg: 'bg-red-100', text: 'text-red-800', icon: <FaTimesCircle className="text-red-500" /> },
     };
-    return `px-2 py-1 text-xs font-semibold rounded-full ${statusConfig[statusLower] || 'bg-gray-100 text-gray-800'}`;
-  };
 
-  // Get status icon
-  const getStatusIcon = (status) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
-      case 'approved': return <FaCheckCircle className="text-green-500" />;
-      case 'pending': return <FaClock className="text-yellow-500" />;
-      case 'rejected': return <FaTimesCircle className="text-red-500" />;
-      default: return <FaExclamationTriangle className="text-gray-500" />;
-    }
-  };
+    const normalizedStatus = status?.toLowerCase() || 'pending';
+    const style = statusMap[normalizedStatus] || statusMap.pending;
 
-  // Get leave type icon
-  const getLeaveTypeIcon = (type) => {
-    const typeLower = type?.toLowerCase();
-    switch (typeLower) {
-      case 'annual leave':
-        return <FaUmbrellaBeach className="text-blue-500" />;
-      case 'sick leave':
-        return <FaStethoscope className="text-red-500" />;
-      case 'emergency leave':
-        return <FaExclamationTriangle className="text-orange-500" />;
-      case 'maternity leave':
-        return <FaBaby className="text-pink-500" />;
-      case 'paternity leave':
-        return <FaBaby className="text-blue-500" />;
-      case 'work from home':
-        return <FaHome className="text-green-500" />;
-      default:
-        return <FaCalendarAlt className="text-gray-500" />;
-    }
-  };
-
-  // Filter leave requests based on filters
-  const filteredLeaveRequests = leaveRequests.filter(request => {
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      const matchesSearch = 
-        request.employee_name?.toLowerCase().includes(searchLower) ||
-        request.employee_id?.toLowerCase().includes(searchLower) ||
-        request.reason?.toLowerCase().includes(searchLower) ||
-        request.department?.toLowerCase().includes(searchLower);
-      if (!matchesSearch) return false;
-    }
-
-    // Status filter
-    if (filters.status !== 'all') {
-      const requestStatus = request.status?.toLowerCase();
-      const filterStatus = filters.status.toLowerCase();
-      if (requestStatus !== filterStatus) return false;
-    }
-
-    // Leave type filter
-    if (filters.leaveType !== 'all') {
-      const requestType = request.leave_type?.toLowerCase();
-      const filterType = filters.leaveType.toLowerCase();
-      if (requestType !== filterType) return false;
-    }
-
-    // Department filter
-    if (filters.department !== 'all') {
-      const requestDept = request.department?.toLowerCase();
-      const filterDept = filters.department.toLowerCase();
-      if (requestDept !== filterDept) return false;
-    }
-
-    // Date range filter
-    if (filters.startDate) {
-      const startDate = new Date(request.start_date);
-      const filterStart = new Date(filters.startDate);
-      if (startDate < filterStart) return false;
-    }
-
-    if (filters.endDate) {
-      const endDate = new Date(request.end_date);
-      const filterEnd = new Date(filters.endDate);
-      if (endDate > filterEnd) return false;
-    }
-
-    return true;
-  });
-
-  // Export leave requests
-  const exportLeaveRequests = () => {
-    const dataStr = JSON.stringify(filteredLeaveRequests, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileName = `leave-requests-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileName);
-    linkElement.click();
-    
-    alert(`✅ Exported ${filteredLeaveRequests.length} leave requests`);
-  };
-
-  // Apply filters
-  const applyFilters = () => {
-    // The filtering is done in real-time via filteredLeaveRequests
-    console.log('Filters applied:', filters);
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      status: "all",
-      leaveType: "all",
-      department: "all",
-      startDate: "",
-      endDate: "",
-      search: "",
-    });
-  };
-
-  // Loading state
-  if (loading && leaveRequests.length === 0) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <FaSpinner className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading leave requests from API...</p>
-        </div>
-      </div>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
+        {style.icon}
+        {status || 'Pending'}
+      </span>
     );
-  }
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Calculate total days for display
+  const totalDays = calculateDays(formData.start_date, formData.end_date);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Leave Requests
-            </h1>
-            <p className="text-gray-600">
-              Manage and approve employee leave applications
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 font-sans">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className={`rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[320px] ${
+            toast.type === 'success' ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            {toast.type === 'success' ? (
+              <FaCheckCircle className="text-green-500 text-xl flex-shrink-0" />
+            ) : (
+              <FaTimesCircle className="text-red-500 text-xl flex-shrink-0" />
+            )}
+            <p className={`text-sm font-medium flex-1 ${
+              toast.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {toast.message}
             </p>
-          </div>
-          <div className="flex gap-2">
             <button
-              onClick={fetchLeaveRequests}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              disabled={loading}
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              className="p-1 hover:bg-black/5 rounded-full transition-colors"
             >
-              <FaRedoAlt className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh Data'}
+              <FaTimesCircle className="text-gray-400 text-sm" />
             </button>
           </div>
         </div>
+      )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.totalRequests}
-                </p>
-              </div>
-              <FaCalendarAlt className="text-blue-500 text-xl" />
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Xero Leave Management
+              </h1>
+              <p className="text-gray-600">
+                Sync leave types, apply for leaves, and track your leave history
+              </p>
             </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.pending}
-                </p>
+            <div className="flex items-center gap-3">
+              <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                <FaUser className="text-gray-400" />
+                <span className="text-sm text-gray-600">Employee ID:</span>
+                <span className="font-semibold text-gray-900">{EMPLOYEE_ID}</span>
               </div>
-              <FaClock className="text-yellow-500 text-xl" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.approved}
-                </p>
+              <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                <FaBriefcase className="text-gray-400" />
+                <span className="text-sm text-gray-600">Org ID:</span>
+                <span className="font-semibold text-gray-900">{ORGANIZATION_ID}</span>
               </div>
-              <FaCheckCircle className="text-green-500 text-xl" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.rejected}
-                </p>
-              </div>
-              <FaTimesCircle className="text-red-500 text-xl" />
             </div>
           </div>
         </div>
 
-        {/* Filters and Actions */}
-        <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Filters</h3>
-            <div className="flex gap-2">
+        {/* Sync Section */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-3 rounded-lg">
+                  <FaSync className="text-white text-xl" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white mb-1">
+                    Sync Xero Leave Types
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    Fetch the latest leave types from your Xero account
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={applyFilters}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={syncLeaveTypes}
+                disabled={loadingSync}
+                className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                Apply Filters
-              </button>
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Reset
+                {loadingSync ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <FaSync />
+                    Sync Leave Types
+                  </>
+                )}
               </button>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search employees..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
 
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+            {/* Sync Status */}
+            {syncSuccess && (
+              <div className="mt-4 bg-green-500/20 text-green-100 p-3 rounded-lg flex items-center gap-2">
+                <FaCheckCircle />
+                <span className="text-sm">{syncSuccess}</span>
+              </div>
+            )}
+            {syncError && (
+              <div className="mt-4 bg-red-500/20 text-red-100 p-3 rounded-lg flex items-center gap-2">
+                <FaTimesCircle />
+                <span className="text-sm">{syncError}</span>
+              </div>
+            )}
 
-            <select
-              value={filters.leaveType}
-              onChange={(e) =>
-                handleFilterChange("leaveType", e.target.value)
-              }
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Leave Types</option>
-              {leaveTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={filters.department}
-              onChange={(e) =>
-                handleFilterChange("department", e.target.value)
-              }
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Departments</option>
-              <option value="Engineering">Engineering</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Sales">Sales</option>
-              <option value="HR">HR</option>
-              <option value="Design">Design</option>
-              <option value="Finance">Finance</option>
-              <option value="Operations">Operations</option>
-            </select>
-
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) =>
-                handleFilterChange("startDate", e.target.value)
-              }
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Start Date"
-            />
-
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) =>
-                handleFilterChange("endDate", e.target.value)
-              }
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="End Date"
-            />
+            {/* Leave Types Summary */}
+            {leaveTypes.length > 0 && (
+              <div className="mt-4 bg-white/10 p-4 rounded-lg">
+                <p className="text-white text-sm mb-2">
+                  {leaveTypes.length} leave types available:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {leaveTypes.slice(0, 5).map((type, index) => (
+                    <span
+                      key={type.id || index}
+                      className="px-3 py-1 bg-white/20 text-white text-xs rounded-full"
+                    >
+                      {type.name || type.leave_type || 'Leave Type'}
+                    </span>
+                  ))}
+                  {leaveTypes.length > 5 && (
+                    <span className="px-3 py-1 bg-white/20 text-white text-xs rounded-full">
+                      +{leaveTypes.length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Showing {filteredLeaveRequests.length} of {leaveRequests.length} leave requests
-            {filteredLeaveRequests.length !== leaveRequests.length && ' (filtered)'}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={exportLeaveRequests}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              disabled={filteredLeaveRequests.length === 0}
-            >
-              <FaDownload /> Export ({filteredLeaveRequests.length})
-            </button>
-            <button
-              onClick={() => setShowLeaveForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FaPlus /> New Request
-            </button>
-          </div>
-        </div>
-
-        {/* Leave Request Form Modal */}
-        {showLeaveForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">
-                  {editingRequest ? "Edit Leave Request" : "New Leave Request"}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Apply Leave Form - Left Side */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-6">
+              {/* Form Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FaPaperPlane />
+                  Apply for Leave
                 </h2>
-                <button
-                  onClick={() => {
-                    setShowLeaveForm(false);
-                    resetForm();
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  ×
-                </button>
+                <p className="text-blue-100 text-xs mt-1">
+                  Submit a new leave request to Xero
+                </p>
               </div>
-              
-              <form onSubmit={handleSubmitLeaveRequest}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+              {/* Form Body */}
+              <form onSubmit={handleSubmit} className="p-6">
+                <div className="space-y-5">
+                  {/* Leave Type Dropdown */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Employee *
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Leave Type <span className="text-red-500">*</span>
                     </label>
                     <select
-                      name="employee_id"
-                      value={newLeaveRequest.employee_id}
+                      name="leave_type_id"
+                      value={formData.leave_type_id}
                       onChange={handleInputChange}
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full border ${
+                        formErrors.leave_type_id ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
                     >
-                      <option value="">Select Employee</option>
-                      {employees.length > 0 ? (
-                        employees.map(emp => (
-                          <option key={emp.id || emp.employee_id} value={emp.id || emp.employee_id}>
-                            {emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim()} ({emp.employee_id})
+                      <option value="">Select a leave type</option>
+                      {leaveTypes.length > 0 ? (
+                        leaveTypes.map((type) => (
+                          <option key={type.id || type.xero_leave_type_id} value={type.id || type.xero_leave_type_id}>
+                            {type.name || type.leave_type || 'Leave Type'}
                           </option>
                         ))
                       ) : (
-                        <option value="" disabled>No employees available</option>
+                        <option value="" disabled>
+                          Please sync leave types first
+                        </option>
                       )}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Leave Type *
-                    </label>
-                    <select
-                      name="leave_type"
-                      value={newLeaveRequest.leave_type}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {leaveTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Date *
-                    </label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={newLeaveRequest.start_date}
-                      onChange={(e) =>
-                        handleDateChange("start_date", e.target.value)
-                      }
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Date *
-                    </label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={newLeaveRequest.end_date}
-                      onChange={(e) =>
-                        handleDateChange("end_date", e.target.value)
-                      }
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Emergency Contact
-                    </label>
-                    <input
-                      type="text"
-                      name="emergency_contact"
-                      value={newLeaveRequest.emergency_contact}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Emergency contact number"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Attachment
-                    </label>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    {newLeaveRequest.attachment && (
-                      <p className="text-xs text-green-600 mt-1">
-                        ✓ File selected: {newLeaveRequest.attachment.name}
+                    {formErrors.leave_type_id && (
+                      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <FaInfoCircle />
+                        {formErrors.leave_type_id}
                       </p>
                     )}
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason for Leave *
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                      name="reason"
-                      value={newLeaveRequest.reason}
-                      onChange={handleInputChange}
-                      required
-                      rows="3"
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Please provide a detailed reason for your leave..."
-                    />
+                    <div className="relative">
+                      <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="date"
+                        name="start_date"
+                        value={formData.start_date}
+                        onChange={handleInputChange}
+                        min={new Date().toISOString().split('T')[0]}
+                        className={`w-full border ${
+                          formErrors.start_date ? 'border-red-500' : 'border-gray-300'
+                        } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                      />
+                    </div>
+                    {formErrors.start_date && (
+                      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <FaInfoCircle />
+                        {formErrors.start_date}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additional Notes
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      End Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="date"
+                        name="end_date"
+                        value={formData.end_date}
+                        onChange={handleInputChange}
+                        min={formData.start_date || new Date().toISOString().split('T')[0]}
+                        className={`w-full border ${
+                          formErrors.end_date ? 'border-red-500' : 'border-gray-300'
+                        } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                      />
+                    </div>
+                    {formErrors.end_date && (
+                      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <FaInfoCircle />
+                        {formErrors.end_date}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Duration Summary */}
+                  {formData.start_date && formData.end_date && totalDays > 0 && (
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        Total duration: <span className="font-bold">{totalDays}</span> day{totalDays !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description/Reason <span className="text-red-500">*</span>
                     </label>
                     <textarea
-                      name="notes"
-                      value={newLeaveRequest.notes}
+                      name="description"
+                      value={formData.description}
                       onChange={handleInputChange}
-                      rows="2"
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Any additional information..."
+                      rows="4"
+                      placeholder="Please provide a detailed reason for your leave request..."
+                      className={`w-full border ${
+                        formErrors.description ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none`}
                     />
+                    {formErrors.description && (
+                      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <FaInfoCircle />
+                        {formErrors.description}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 text-right">
+                      {formData.description.length}/500 characters
+                    </p>
                   </div>
-                </div>
 
-                <div className="flex justify-end gap-4 pt-4 border-t">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLeaveForm(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  {/* Submit Status */}
+                  {submitSuccess && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                      <FaCheckCircle className="text-green-500 flex-shrink-0" />
+                      <p className="text-sm text-green-700">{submitSuccess}</p>
+                    </div>
+                  )}
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                      <FaTimesCircle className="text-red-500 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{submitError}</p>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={submitting}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    disabled={submitting || leaveTypes.length === 0}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                   >
                     {submitting ? (
                       <>
-                        <FaSpinner className="animate-spin" /> Submitting...
+                        <FaSpinner className="animate-spin" />
+                        Submitting...
                       </>
-                    ) : editingRequest ? (
-                      'Update Request'
                     ) : (
-                      'Submit Request'
+                      <>
+                        <FaPaperPlane />
+                        Apply Leave
+                      </>
                     )}
                   </button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    * Required fields. Your request will be sent to Xero for approval.
+                  </p>
                 </div>
               </form>
             </div>
           </div>
-        )}
 
-        {/* Leave Requests Table */}
-        <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Leave Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Duration
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Reason & Notes
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredLeaveRequests.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                    <FaCalendarAlt className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                    <p className="text-lg font-medium">No leave requests found</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      {leaveRequests.length === 0 
-                        ? 'No leave requests in the system' 
-                        : 'Try adjusting your filters'
-                      }
+          {/* Leave History Table - Right Side */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              {/* Table Header */}
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <FaFileAlt />
+                      Leave History
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {leaveHistory.length} leave request{leaveHistory.length !== 1 ? 's' : ''} found
                     </p>
-                    {leaveRequests.length === 0 && (
-                      <button
-                        onClick={() => setShowLeaveForm(true)}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        Create First Request
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                filteredLeaveRequests.map((request) => (
-                  <tr
-                    key={request.id}
-                    className="hover:bg-gray-50 transition-colors"
+                  </div>
+                  <button
+                    onClick={fetchLeaveHistory}
+                    disabled={loadingHistory}
+                    className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {request.employee_name || `Employee ${request.employee_id}`}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {request.employee_id}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {request.department || 'N/A'}
-                      </div>
-                      {request.emergency_contact && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Contact: {request.emergency_contact}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-sm">
-                        {getLeaveTypeIcon(request.leave_type)}
-                        <div>
-                          <div className="font-medium">{request.leave_type}</div>
-                          <div className="text-xs text-gray-500">
-                            Applied:{" "}
-                            {request.applied_date ? new Date(request.applied_date).toLocaleDateString() : 'N/A'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {request.start_date ? new Date(request.start_date).toLocaleDateString() : 'N/A'} -{" "}
-                          {request.end_date ? new Date(request.end_date).toLocaleDateString() : 'N/A'}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {request.total_days || calculateTotalDays(request.start_date, request.end_date)} day
-                          {request.total_days !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700 max-w-xs">
-                        <div className="font-medium">{request.reason}</div>
-                        {request.notes && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {request.notes}
-                          </div>
-                        )}
-                        {request.attachment && (
-                          <div className="text-xs text-blue-600 mt-1">
-                            📎 Attachment provided
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(request.status)}
-                        <span className={getStatusBadge(request.status)}>
-                          {request.status}
-                        </span>
-                      </div>
-                      {request.approved_by && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          By: {request.approved_by}
-                        </div>
-                      )}
-                      {request.approved_date && (
-                        <div className="text-xs text-gray-500">
-                          On:{" "}
-                          {new Date(request.approved_date).toLocaleDateString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        {(request.status === 'pending' || request.status === 'Pending') && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(request.id)}
-                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(request.id)}
-                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => handleEdit(request)}
-                          className="px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(request.id)}
-                          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    <FaRedoAlt className={loadingHistory ? 'animate-spin' : ''} />
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Table Content */}
+              <div className="overflow-x-auto">
+                {loadingHistory ? (
+                  <div className="flex justify-center items-center py-16">
+                    <FaSpinner className="animate-spin h-8 w-8 text-blue-600" />
+                    <span className="ml-3 text-gray-600">Loading leave history...</span>
+                  </div>
+                ) : historyError ? (
+                  <div className="text-center py-12">
+                    <div className="bg-red-50 inline-flex p-4 rounded-full mb-4">
+                      <FaTimesCircle className="h-8 w-8 text-red-500" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Failed to Load History
+                    </h3>
+                    <p className="text-gray-500 mb-4">{historyError}</p>
+                    <button
+                      onClick={fetchLeaveHistory}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : leaveHistory.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="bg-gray-100 inline-flex p-4 rounded-full mb-4">
+                      <FaFileAlt className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No Leave History
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      You haven't applied for any leaves yet.
+                    </p>
+                    <button
+                      onClick={() => {
+                        document.querySelector('input[name="start_date"]')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Apply for Leave
+                    </button>
+                  </div>
+                ) : (
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Leave Title
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Start Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          End Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Duration
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Synced Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {leaveHistory.map((leave, index) => {
+                        const startDate = formatDate(leave.start_date);
+                        const endDate = formatDate(leave.end_date);
+                        const days = calculateDays(leave.start_date, leave.end_date);
+
+                        return (
+                          <tr key={leave.id || index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {leave.description || leave.title || 'Leave Request'}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {leave.leave_type || 'Leave'}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-sm text-gray-900">{startDate}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-sm text-gray-900">{endDate}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-sm text-gray-900">
+                                {days} day{days !== 1 ? 's' : ''}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getStatusBadge(leave.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-sm text-gray-500">
+                                {formatDate(leave.created_at || leave.synced_date)}
+                              </p>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default LeaveRequests;
+export default XeroLeaveManagement;

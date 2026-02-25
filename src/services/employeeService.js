@@ -140,7 +140,7 @@ export const getEmployeeDocuments = (employeeId) => {
   });
 };
 
-// Upload new employee document - CORRECTED FIELD NAMES
+// Upload new employee document
 export const uploadEmployeeDocument = (documentData) => {
   console.log('DEBUG - uploadEmployeeDocument called with data:');
   
@@ -151,7 +151,6 @@ export const uploadEmployeeDocument = (documentData) => {
     }
   }
   
-  // The API expects: document_type, file_name, file, issue_date, expiry_date
   return axiosClient.post('/employee-documents', documentData, {
     headers: {
       'Accept': 'application/json',
@@ -190,6 +189,42 @@ export const getDepartmentsByOrganization = (orgId) => {
 export const getDesignationsByDeptId = (deptId) => {
   console.log(`Fetching designations for department ID: ${deptId}`);
   return axiosClient.get(`/departments/${deptId}/designations`);
+};
+
+// ============================================
+// SUPER FUND SEARCH - NEW API ENDPOINT
+// ============================================
+
+/**
+ * Search for superannuation funds by query
+ * @param {string} query - Search query (minimum 1 character)
+ * @returns {Promise<Array<string>>} - Array of fund names
+ * 
+ * API Response: Returns array of strings directly
+ * Example: ["A G Williams Private Superannuation Fund", "A R Willis Private Superannuation Fund"]
+ */
+export const searchSuperFunds = async (query) => {
+  if (!query || query.trim().length < 1) {
+    return [];
+  }
+  
+  try {
+    console.log(`Searching super funds with query: "${query}"`);
+    const response = await axiosClient.get('/fund-suggestions', {
+      params: { q: query.trim() }
+    });
+    
+    // API returns array of strings directly
+    if (Array.isArray(response.data)) {
+      console.log(`Found ${response.data.length} super funds`);
+      return response.data;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error searching super funds:', error);
+    return [];
+  }
 };
 
 // ============================================
@@ -292,6 +327,9 @@ export const employeeService = {
   // Departments
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
+  
+  // Super Fund Search - NEW
+  searchSuperFunds,
   
   // Performance Reviews
   getAllEmployees,
