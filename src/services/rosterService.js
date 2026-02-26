@@ -47,13 +47,12 @@ export const rosterService = {
     return axiosClient.get('/shifts', { params });
   },
 
-  // Get departments - FIXED: Handle organization ID properly
+  // Get departments
   getDepartments: (organizationId) => {
     if (organizationId) {
       return axiosClient.get(`/organizations/${organizationId}/departments`);
-    } else {
-      return axiosClient.get('/departments');
     }
+    return axiosClient.get('/departments');
   },
 
   // Get organization departments (alternative)
@@ -61,14 +60,22 @@ export const rosterService = {
     return axiosClient.get(`/organizations/${organizationId}/departments`);
   },
 
-  // Get roster statistics
-  getRosterStats: (params = {}) => {
-    return axiosClient.get('/rosters/stats', { params });
-  },
-
   // Get all departments (without organization filter)
   getAllDepartments: () => {
     return axiosClient.get('/departments');
+  },
+
+  // Get rooms - ADDED THIS MISSING METHOD
+  getRooms: (organizationId) => {
+    if (organizationId) {
+      return axiosClient.get(`/organizations/${organizationId}/rooms`);
+    }
+    return axiosClient.get('/rooms');
+  },
+
+  // Get roster statistics
+  getRosterStats: (params = {}) => {
+    return axiosClient.get('/rosters/stats', { params });
   }
 };
 

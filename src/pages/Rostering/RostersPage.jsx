@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import {
   FaCalendarAlt,
   FaSearch,
-  FaFilter,
   FaDownload,
   FaPrint,
   FaUsers,
@@ -36,14 +35,12 @@ const RostersPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState({
     department: "all",
-    room: "all", // Added room filter
     shiftType: "all",
     search: "",
-    dateRange: "",
   });
 
   // Hourly rate state
-  const [hourlyRate, setHourlyRate] = useState(25.00); // Default hourly rate in AUD
+  const [hourlyRate, setHourlyRate] = useState(25.00);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -57,8 +54,6 @@ const RostersPage = () => {
     employee_id: "",
     shift_id: "",
     roster_date: "",
-    start_time: "",
-    end_time: "",
     notes: ""
   });
 
@@ -66,7 +61,6 @@ const RostersPage = () => {
   const [rosters, setRosters] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [rooms, setRooms] = useState([]); // Added rooms state
   const [shifts, setShifts] = useState([]);
 
   // Weekly totals state
@@ -74,11 +68,10 @@ const RostersPage = () => {
     totalHours: 0,
     totalAmount: 0,
     byEmployee: {},
-    byRoom: {},
     byDepartment: {}
   });
 
-  // Calculate net working hours (excluding breaks)
+  // Calculate net working hours
   const calculateNetWorkingHours = (shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 0;
     
@@ -88,7 +81,6 @@ const RostersPage = () => {
     let totalDuration = (end - start) / (1000 * 60 * 60);
     if (totalDuration < 0) totalDuration += 24;
     
-    // Subtract break duration if available
     if (shift.break_duration) {
       totalDuration -= (shift.break_duration / 60);
     }
@@ -116,8 +108,6 @@ const RostersPage = () => {
         backgroundColor: `${shift.color_code}20`,
         color: shift.color_code,
         borderColor: shift.color_code,
-        borderWidth: '1px',
-        borderStyle: 'solid'
       };
     }
 
@@ -128,21 +118,187 @@ const RostersPage = () => {
     };
   };
 
+  // Fetch all data
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setRefreshing(true);
+
+      if (!selectedOrganization?.id) {
+        toast.error("Please select an organization first");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      console.log("Fetching data for organization:", selectedOrganization.id);
+
+      // Helper function to extract data from API response
+      const extractData = (response) => {
+        if (response && response.data) {
+          if (response.data.success && response.data.data) {
+            return response.data.data;
+          }
+          if (Array.isArray(response.data)) {
+            return response.data;
+          }
+          if (response.data.data) {
+            return response.data.data;
+          }
+        }
+        return [];
+      };
+
+      // Fetch all data
+      let rostersData = [];
+      let employeesData = [];
+      let shiftsData = [];
+      let departmentsData = [];
+
+      // Fetch rosters
+      try {
+        const rostersRes = await rosterService.getRosters({ organization_id: selectedOrganization.id });
+        rostersData = extractData(rostersRes);
+        console.log("Rosters loaded:", rostersData.length);
+      } catch (error) {
+        console.error("Error loading rosters:", error);
+      }
+
+      // Fetch employees
+      try {
+        const employeesRes = await rosterService.getEmployees({ organization_id: selectedOrganization.id });
+        employeesData = extractData(employeesRes);
+        console.log("Employees loaded:", employeesData.length);
+      } catch (error) {
+        console.error("Error loading employees:", error);
+      }
+
+      // Fetch shifts
+      try {
+        const shiftsRes = await rosterService.getShifts({ organization_id: selectedOrganization.id });
+        shiftsData = extractData(shiftsRes);
+        console.log("Shifts loaded:", shiftsData.length);
+      } catch (error) {
+        console.error("Error loading shifts:", error);
+      }
+
+      // Fetch departments
+      try {
+        const deptsRes = await rosterService.getDepartments(selectedOrganization.id);
+        departmentsData = extractData(deptsRes);
+        console.log("Departments loaded:", departmentsData.length);
+      } catch (error) {
+        console.error("Error loading departments:", error);
+      }
+
+      // Update all states
+      setRosters(rostersData);
+      setEmployees(employeesData);
+      setShifts(shiftsData);
+      setDepartments(departmentsData);
+
+      // Show success message if we have data
+      if (rostersData.length > 0) {
+        toast.success(`Loaded ${rostersData.length} rosters`);
+      }
+
+    } catch (error) {
+      console.error("Unexpected error in fetchData:", error);
+      toast.error("Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Update weekly totals when data changes
+  useEffect(() => {
+    if (rosters.length > 0 && employees.length > 0 && shifts.length > 0) {
+      const weekDates = getWeekDates();
+      calculateWeeklyTotals(rosters, employees, shifts, weekDates);
+    }
+  }, [rosters, employees, shifts, departments, hourlyRate, currentDate]);
+
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      fetchData();
+    }
+  }, [selectedOrganization]);
+
+  const getWeekDates = () => {
+    const start = new Date(currentDate);
+    start.setHours(0, 0, 0, 0);
+    
+    // Adjust to get Monday as first day
+    const day = start.getDay();
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+    start.setDate(diff);
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      return date;
+    });
+  };
+
+  const getMonthDates = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: lastDay }, (_, i) => new Date(year, month, i + 1));
+  };
+
+  const navigateDate = (direction) => {
+    const newDate = new Date(currentDate);
+    if (view === "week") {
+      newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
+    } else {
+      newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
+    }
+    setCurrentDate(newDate);
+  };
+
+  const getRostersForEmployeeAndDate = (employeeId, date) => {
+    if (!date || !employeeId) return [];
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const targetDateStr = `${year}-${month}-${day}`;
+    
+    return rosters.filter((roster) => {
+      if (roster.employee_id !== employeeId || !roster.roster_date) return false;
+      
+      let rosterDateStr = '';
+      if (typeof roster.roster_date === 'string') {
+        rosterDateStr = roster.roster_date.split('T')[0];
+      } else if (roster.roster_date instanceof Date) {
+        const d = roster.roster_date;
+        rosterDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      
+      return rosterDateStr === targetDateStr;
+    });
+  };
+
   // Calculate weekly totals
   const calculateWeeklyTotals = (rostersList, employeesList, shiftsList, weekDates) => {
-    const weekStart = weekDates[0];
-    const weekEnd = weekDates[6];
+    const weekStart = weekDates[0].toISOString().split('T')[0];
+    const weekEnd = weekDates[6].toISOString().split('T')[0];
     
     const weekRosters = rostersList.filter(roster => {
       if (!roster.roster_date) return false;
-      const rosterDate = new Date(roster.roster_date);
+      const rosterDate = typeof roster.roster_date === 'string' 
+        ? roster.roster_date.split('T')[0]
+        : new Date(roster.roster_date).toISOString().split('T')[0];
       return rosterDate >= weekStart && rosterDate <= weekEnd;
     });
+
+    console.log("Week rosters:", weekRosters.length);
 
     let totalHours = 0;
     let totalAmount = 0;
     const byEmployee = {};
-    const byRoom = {};
     const byDepartment = {};
 
     weekRosters.forEach(roster => {
@@ -160,30 +316,14 @@ const RostersPage = () => {
       if (employee) {
         if (!byEmployee[employee.id]) {
           byEmployee[employee.id] = {
-            name: `${employee.first_name} ${employee.last_name}`,
+            name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown',
             hours: 0,
             amount: 0,
-            department: employee.department_id,
-            room: employee.room_id
+            department: employee.department_id
           };
         }
         byEmployee[employee.id].hours += hours;
         byEmployee[employee.id].amount += amount;
-
-        // Calculate by room
-        const roomId = employee.room_id;
-        if (roomId) {
-          if (!byRoom[roomId]) {
-            const room = rooms.find(r => r.id === roomId);
-            byRoom[roomId] = {
-              name: room?.name || 'Unknown Room',
-              hours: 0,
-              amount: 0
-            };
-          }
-          byRoom[roomId].hours += hours;
-          byRoom[roomId].amount += amount;
-        }
 
         // Calculate by department
         const deptId = employee.department_id;
@@ -206,142 +346,21 @@ const RostersPage = () => {
       totalHours: parseFloat(totalHours.toFixed(2)),
       totalAmount: parseFloat(totalAmount.toFixed(2)),
       byEmployee,
-      byRoom,
       byDepartment
     });
   };
 
-  // Fetch all data
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setRefreshing(true);
-
-      if (!selectedOrganization?.id) {
-        toast.error("Please select an organization first");
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      const [rostersRes, employeesRes, shiftsRes, departmentsRes, roomsRes] = await Promise.all([
-        rosterService.getRosters({ organization_id: selectedOrganization.id }),
-        rosterService.getEmployees({ organization_id: selectedOrganization.id }),
-        rosterService.getShifts({ organization_id: selectedOrganization.id }),
-        rosterService.getDepartments(selectedOrganization.id),
-        rosterService.getRooms(selectedOrganization.id) // New API call for rooms
-      ]);
-
-      if (rostersRes.data?.success) {
-        setRosters(rostersRes.data.data || []);
-      }
-
-      if (employeesRes.data?.success) {
-        setEmployees(employeesRes.data.data || []);
-      }
-
-      if (shiftsRes.data?.success) {
-        setShifts(shiftsRes.data.data || []);
-      }
-
-      if (departmentsRes.data?.success) {
-        setDepartments(departmentsRes.data.data || []);
-      }
-
-      if (roomsRes.data?.success) {
-        setRooms(roomsRes.data.data || []);
-      }
-
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load data. Please try again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Update weekly totals when data changes
-  useEffect(() => {
-    if (rosters.length > 0 && employees.length > 0 && shifts.length > 0) {
-      const weekDates = getWeekDates();
-      calculateWeeklyTotals(rosters, employees, shifts, weekDates);
-    }
-  }, [rosters, employees, shifts, departments, rooms, hourlyRate, view, currentDate]);
-
-  useEffect(() => {
-    if (selectedOrganization?.id) {
-      fetchData();
-    }
-  }, [selectedOrganization]);
-
-  const getWeekDates = () => {
-    const start = new Date(currentDate);
-    // Adjust to get Monday as first day of week (Mon-Sun format)
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday
-    start.setDate(diff);
-    
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      return date;
-    });
-  };
-
-  const getMonthDates = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const dates = [];
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      dates.push(new Date(year, month, day));
-    }
-
-    return dates;
-  };
-
-  const navigateDate = (direction) => {
-    const newDate = new Date(currentDate);
-    if (view === "week") {
-      newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
-    } else {
-      newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
-    }
-    setCurrentDate(newDate);
-  };
-
-  const getRostersForEmployeeAndDate = (employeeId, date) => {
-    if (!date) return [];
-    const dateString = date.toISOString().split("T")[0];
-    
-    return rosters.filter(
-      (roster) => 
-        roster.employee_id === employeeId && 
-        roster.roster_date && 
-        new Date(roster.roster_date).toISOString().split("T")[0] === dateString
-    );
-  };
-
-  // Filter employees based on search, department, and room
+  // Filter employees based on search and department
   const filteredEmployees = employees.filter((employee) => {
-    const matchesDepartment =
-      filters.department === "all" ||
+    const matchesDepartment = filters.department === "all" || 
       employee.department_id?.toString() === filters.department;
     
-    const matchesRoom =
-      filters.room === "all" ||
-      employee.room_id?.toString() === filters.room;
+    const matchesSearch = filters.search === "" ||
+      (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+      (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+      (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
     
-    const matchesSearch =
-      filters.search === "" ||
-      employee.first_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      employee.last_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      employee.employee_code?.toLowerCase().includes(filters.search.toLowerCase());
-    
-    return matchesDepartment && matchesRoom && matchesSearch;
+    return matchesDepartment && matchesSearch;
   });
 
   const formatTime = (timeString) => {
@@ -365,7 +384,6 @@ const RostersPage = () => {
   };
 
   const handleExport = () => {
-    // Enhanced export with weekly totals
     const weekDates = getWeekDates();
     const weekRange = `${weekDates[0].toLocaleDateString()} - ${weekDates[6].toLocaleDateString()}`;
     
@@ -373,12 +391,16 @@ const RostersPage = () => {
       [`Weekly Roster Report - ${weekRange}`],
       [`Hourly Rate: ${formatCurrency(hourlyRate)}`],
       [],
-      ["Employee", "Department", "Room", "Shift", "Date", "Hours", "Amount"],
+      ["Employee", "Department", "Shift", "Date", "Hours", "Amount"],
       ...rosters
         .filter(roster => {
           if (!roster.roster_date) return false;
-          const rosterDate = new Date(roster.roster_date);
-          return rosterDate >= weekDates[0] && rosterDate <= weekDates[6];
+          const rosterDate = typeof roster.roster_date === 'string' 
+            ? roster.roster_date.split('T')[0]
+            : new Date(roster.roster_date).toISOString().split('T')[0];
+          const weekStart = weekDates[0].toISOString().split('T')[0];
+          const weekEnd = weekDates[6].toISOString().split('T')[0];
+          return rosterDate >= weekStart && rosterDate <= weekEnd;
         })
         .map((roster) => {
           const employee = employees.find(e => e.id === roster.employee_id);
@@ -386,10 +408,11 @@ const RostersPage = () => {
           const hours = calculateNetWorkingHours(shift);
           const amount = hours * hourlyRate;
           
+          const dept = departments.find(d => d.id === employee?.department_id);
+          
           return [
-            employee ? `${employee.first_name} ${employee.last_name}` : "Unknown",
-            employee?.department?.name || "N/A",
-            employee?.room?.name || "N/A",
+            employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : "Unknown",
+            dept?.name || "N/A",
             shift?.name || "N/A",
             new Date(roster.roster_date).toLocaleDateString(),
             hours.toFixed(2),
@@ -401,14 +424,6 @@ const RostersPage = () => {
       ["Total Hours", weeklyTotals.totalHours.toFixed(2)],
       ["Total Amount", formatCurrency(weeklyTotals.totalAmount)],
       [],
-      ["TOTALS BY ROOM"],
-      ["Room", "Hours", "Amount"],
-      ...Object.entries(weeklyTotals.byRoom).map(([id, data]) => [
-        data.name,
-        data.hours.toFixed(2),
-        formatCurrency(data.amount)
-      ]),
-      [],
       ["TOTALS BY DEPARTMENT"],
       ["Department", "Hours", "Amount"],
       ...Object.entries(weeklyTotals.byDepartment).map(([id, data]) => [
@@ -418,20 +433,18 @@ const RostersPage = () => {
       ]),
       [],
       ["TOTALS BY EMPLOYEE"],
-      ["Employee", "Hours", "Amount", "Department", "Room"],
+      ["Employee", "Hours", "Amount", "Department"],
       ...Object.entries(weeklyTotals.byEmployee).map(([id, data]) => {
         const dept = departments.find(d => d.id === data.department);
-        const room = rooms.find(r => r.id === data.room);
         return [
           data.name,
           data.hours.toFixed(2),
           formatCurrency(data.amount),
-          dept?.name || "N/A",
-          room?.name || "N/A"
+          dept?.name || "N/A"
         ];
       })
     ]
-      .map((row) => (Array.isArray(row) ? row.join(",") : row))
+      .map(row => Array.isArray(row) ? row.join(",") : row)
       .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -439,11 +452,8 @@ const RostersPage = () => {
     const a = document.createElement("a");
     a.href = url;
     a.download = `roster_report_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    
     toast.success("Report exported successfully!");
   };
 
@@ -462,20 +472,8 @@ const RostersPage = () => {
       employee_id: employeeId,
       shift_id: "",
       roster_date: formattedDate,
-      start_time: "",
-      end_time: "",
       notes: ""
     });
-    
-    const defaultShift = shifts.find(s => s.name === "Morning Shift");
-    if (defaultShift) {
-      setFormData(prev => ({
-        ...prev,
-        shift_id: defaultShift.id,
-        start_time: defaultShift.start_time?.slice(0, 5) || "09:00",
-        end_time: defaultShift.end_time?.slice(0, 5) || "17:00"
-      }));
-    }
     
     setShowModal(true);
   };
@@ -484,14 +482,12 @@ const RostersPage = () => {
     setModalMode("edit");
     setSelectedRoster(roster);
     
-    const shift = shifts.find(s => s.id === roster.shift_id);
-    
     setFormData({
       employee_id: roster.employee_id,
       shift_id: roster.shift_id,
-      roster_date: roster.roster_date.split('T')[0],
-      start_time: shift?.start_time?.slice(0, 5) || "",
-      end_time: shift?.end_time?.slice(0, 5) || "",
+      roster_date: typeof roster.roster_date === 'string' 
+        ? roster.roster_date.split('T')[0]
+        : new Date(roster.roster_date).toISOString().split('T')[0],
       notes: roster.notes || ""
     });
     
@@ -501,56 +497,59 @@ const RostersPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (name === "shift_id" && value) {
-      const selectedShift = shifts.find(s => s.id === parseInt(value));
-      if (selectedShift) {
-        setFormData(prev => ({
-          ...prev,
-          start_time: selectedShift.start_time?.slice(0, 5) || "",
-          end_time: selectedShift.end_time?.slice(0, 5) || ""
-        }));
-      }
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
+      const selectedShift = shifts.find(s => s.id === parseInt(formData.shift_id));
+      if (!selectedShift) {
+        toast.error("Please select a valid shift");
+        return;
+      }
+
       const rosterData = {
         organization_id: selectedOrganization.id,
-        employee_id: formData.employee_id,
-        shift_id: formData.shift_id,
+        employee_id: parseInt(formData.employee_id),
+        shift_id: parseInt(formData.shift_id),
         roster_date: formData.roster_date,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        notes: formData.notes,
+        notes: formData.notes || "",
         created_by: 4
       };
 
+      console.log("Submitting roster data:", rosterData);
+
+      let response;
       if (modalMode === "add") {
-        const response = await rosterService.createRoster(rosterData);
-        if (response.data?.success) {
-          toast.success("Roster created successfully!");
-          fetchData();
-          setShowModal(false);
-        } else {
-          toast.error("Failed to create roster");
-        }
+        response = await rosterService.createRoster(rosterData);
       } else {
-        const response = await rosterService.updateRoster(selectedRoster.id, rosterData);
-        if (response.data?.success) {
-          toast.success("Roster updated successfully!");
-          fetchData();
-          setShowModal(false);
-        } else {
-          toast.error("Failed to update roster");
-        }
+        response = await rosterService.updateRoster(selectedRoster.id, rosterData);
+      }
+
+      if (response.data?.success) {
+        toast.success(`Roster ${modalMode === "add" ? "created" : "updated"} successfully!`);
+        fetchData();
+        setShowModal(false);
+        
+        setFormData({
+          employee_id: "",
+          shift_id: "",
+          roster_date: "",
+          notes: ""
+        });
+      } else {
+        toast.error(`Failed to ${modalMode} roster`);
       }
     } catch (error) {
       console.error("Error saving roster:", error);
-      toast.error("Failed to save roster");
+      
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        toast.error(error.response.data?.message || `Failed to ${modalMode} roster`);
+      } else {
+        toast.error("Failed to save roster");
+      }
     }
   };
 
@@ -573,7 +572,7 @@ const RostersPage = () => {
 
   const getEmployeeName = (employeeId) => {
     const employee = employees.find(emp => emp.id === employeeId);
-    return employee ? `${employee.first_name} ${employee.last_name}` : "Unknown Employee";
+    return employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : "Unknown Employee";
   };
 
   // If no organization is selected
@@ -648,8 +647,8 @@ const RostersPage = () => {
                         <option value="">Select Employee</option>
                         {filteredEmployees.map(employee => (
                           <option key={employee.id} value={employee.id}>
-                            {employee.first_name} {employee.last_name} ({employee.employee_code})
-                            {employee.room && ` - ${employee.room.name}`}
+                            {employee.first_name || ''} {employee.last_name || ''} 
+                            {employee.employee_code ? ` (${employee.employee_code})` : ''}
                           </option>
                         ))}
                       </select>
@@ -684,6 +683,11 @@ const RostersPage = () => {
                         </option>
                       ))}
                     </select>
+                    {formData.shift_id && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        <p>Selected shift: {shifts.find(s => s.id === parseInt(formData.shift_id))?.name}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -700,35 +704,6 @@ const RostersPage = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Start Time
-                      </label>
-                      <input
-                        type="time"
-                        name="start_time"
-                        value={formData.start_time}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        End Time
-                      </label>
-                      <input
-                        type="time"
-                        name="end_time"
-                        value={formData.end_time}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Notes (Optional)
@@ -743,7 +718,6 @@ const RostersPage = () => {
                     />
                   </div>
 
-                  {/* Show calculated amount for selected shift */}
                   {formData.shift_id && (
                     <div className="p-3 bg-green-50 rounded-lg">
                       <div className="flex items-center justify-between">
@@ -756,7 +730,7 @@ const RostersPage = () => {
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        Based on {hourlyRate}/hr rate
+                        Based on {formatCurrency(hourlyRate)}/hr rate
                       </p>
                     </div>
                   )}
@@ -784,7 +758,7 @@ const RostersPage = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Header with Organization Info */}
+        {/* Header */}
         <div className="mb-6">
           <div className="flex justify-between items-start mb-2">
             <div>
@@ -827,9 +801,7 @@ const RostersPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {employees.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{employees.length}</p>
               </div>
               <FaUsers className="text-blue-500 text-xl" />
             </div>
@@ -839,9 +811,7 @@ const RostersPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{view === "week" ? "Hours This Week" : "Hours This Month"}</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {weeklyTotals.totalHours}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{weeklyTotals.totalHours}</p>
               </div>
               <FaClock className="text-green-500 text-xl" />
             </div>
@@ -851,9 +821,7 @@ const RostersPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {formatCurrency(weeklyTotals.totalAmount)}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{formatCurrency(weeklyTotals.totalAmount)}</p>
               </div>
               <FaMoneyBillWave className="text-purple-500 text-xl" />
             </div>
@@ -863,9 +831,7 @@ const RostersPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Different Shifts</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {shifts.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{shifts.length}</p>
               </div>
               <FaExchangeAlt className="text-orange-500 text-xl" />
             </div>
@@ -884,15 +850,13 @@ const RostersPage = () => {
           </div>
         </div>
 
-        {/* View Toggle and Date Navigation */}
+        {/* View Toggle and Navigation */}
         <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex gap-2 p-1 bg-white rounded-lg shadow-sm">
             <button
               onClick={() => setView("week")}
               className={`px-4 py-2 rounded-md transition-colors ${
-                view === "week"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:text-gray-800"
+                view === "week" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Week View (Mon-Sun)
@@ -900,9 +864,7 @@ const RostersPage = () => {
             <button
               onClick={() => setView("month")}
               className={`px-4 py-2 rounded-md transition-colors ${
-                view === "month"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:text-gray-800"
+                view === "month" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Month View
@@ -910,39 +872,24 @@ const RostersPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigateDate("prev")}
-              className="p-2 hover:bg-gray-100 rounded-full border"
-            >
+            <button onClick={() => navigateDate("prev")} className="p-2 hover:bg-gray-100 rounded-full border">
               <FaChevronLeft />
             </button>
             <div className="text-lg font-semibold">
               {view === "week"
                 ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                : currentDate.toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
+                : currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
             </div>
-            <button
-              onClick={() => navigateDate("next")}
-              className="p-2 hover:bg-gray-100 rounded-full border"
-            >
+            <button onClick={() => navigateDate("next")} className="p-2 hover:bg-gray-100 rounded-full border">
               <FaChevronRight />
             </button>
           </div>
 
           <div className="flex gap-2">
-            <button 
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
+            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
               <FaDownload /> Export
             </button>
-            <button 
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               <FaPrint /> Print
             </button>
             <button 
@@ -952,13 +899,11 @@ const RostersPage = () => {
                   employee_id: "",
                   shift_id: "",
                   roster_date: new Date().toISOString().split('T')[0],
-                  start_time: "",
-                  end_time: "",
                   notes: ""
                 });
                 setShowModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               <FaPlus /> Add Roster
             </button>
@@ -967,111 +912,74 @@ const RostersPage = () => {
 
         {/* Filters */}
         <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search employees..."
                 value={filters.search}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, search: e.target.value }))
-                }
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <select
               value={filters.department}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, department: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
               className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Departments</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-
-            {/* New Room Filter */}
-            <select
-              value={filters.room}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, room: e.target.value }))
-              }
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Rooms</option>
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name}
-                </option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
               ))}
             </select>
 
             <select
               value={filters.shiftType}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, shiftType: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, shiftType: e.target.value }))}
               className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All Shift Types</option>
-              {shifts.map((shift) => (
-                <option key={shift.id} value={shift.id}>
-                  {shift.name}
-                </option>
+              <option value="all">All Shifts</option>
+              {shifts.map(shift => (
+                <option key={shift.id} value={shift.id}>{shift.name}</option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Weekly Roster View with Mon-Sun format */}
+        {/* Weekly View */}
         {view === "week" && (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="grid grid-cols-8 border-b">
-              <div className="p-4 font-semibold bg-gray-50 sticky left-0 z-10">Employee</div>
+              <div className="p-4 font-semibold bg-gray-50 sticky left-0">Employee</div>
               {weekDates.map((day, index) => (
-                <div
-                  key={day.toString()}
-                  className={`p-4 text-center font-semibold border-l bg-gray-50 ${
-                    day.toDateString() === new Date().toDateString() ? 'bg-blue-50 border-blue-200' : ''
-                  }`}
-                >
-                  <div className="text-sm">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}
-                  </div>
-                  <div className={`text-xs ${
-                    day.toDateString() === new Date().toDateString() ? 'text-blue-600 font-bold' : 'text-gray-500'
-                  }`}>
-                    {day.getDate()}/{day.getMonth() + 1}
-                  </div>
+                <div key={day.toString()} className={`p-4 text-center font-semibold border-l bg-gray-50 ${
+                  day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
+                }`}>
+                  <div className="text-sm">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</div>
+                  <div className="text-xs text-gray-500">{day.getDate()}/{day.getMonth() + 1}</div>
                 </div>
               ))}
             </div>
 
             <div className="overflow-y-auto max-h-[600px]">
               {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((employee) => {
-                  // Calculate employee weekly totals
+                filteredEmployees.map(employee => {
                   const employeeTotal = weeklyTotals.byEmployee[employee.id] || { hours: 0, amount: 0 };
                   
                   return (
                     <div key={employee.id} className="grid grid-cols-8 border-b hover:bg-gray-50">
-                      <div className="p-4 border-r bg-gray-50 sticky left-0 z-10 min-w-[250px]">
+                      <div className="p-4 border-r bg-gray-50 sticky left-0 min-w-[200px]">
                         <div className="font-medium">
-                          {employee.first_name} {employee.last_name}
+                          {employee.first_name || ''} {employee.last_name || ''}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {employee.employee_code}
+                          {employee.employee_code || ''}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {rooms.find(r => r.id === employee.room_id)?.name || "No Room"} • {departments.find(d => d.id === employee.department_id)?.name || "N/A"}
+                          {departments.find(d => d.id === employee.department_id)?.name || ""}
                         </div>
-                        {/* Employee Weekly Total */}
                         <div className="mt-2 pt-2 border-t border-gray-200">
                           <div className="text-xs font-semibold text-green-600">
                             Week Total: {employeeTotal.hours.toFixed(1)}h
@@ -1081,14 +989,13 @@ const RostersPage = () => {
                           </div>
                         </div>
                       </div>
-                      {weekDates.map((day) => {
+                      {weekDates.map(day => {
                         const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
-
                         return (
                           <div key={day.toString()} className={`p-2 border-l min-h-32 relative ${
                             day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
                           }`}>
-                            {dayRosters.map((roster) => {
+                            {dayRosters.map(roster => {
                               const shift = shifts.find(s => s.id === roster.shift_id);
                               const shiftColor = getShiftColor(roster.shift_id);
                               const hours = calculateNetWorkingHours(shift);
@@ -1099,36 +1006,24 @@ const RostersPage = () => {
                                   key={roster.id}
                                   className="p-2 mb-1 rounded text-xs relative group cursor-pointer"
                                   style={{
-                                    backgroundColor: shiftColor.backgroundColor || shiftColor.bg,
-                                    color: shiftColor.color || shiftColor.text,
-                                    border: `1px solid ${shiftColor.borderColor || shiftColor.border}`
+                                    backgroundColor: shiftColor.backgroundColor,
+                                    color: shiftColor.color,
+                                    border: `1px solid ${shiftColor.borderColor}`
                                   }}
                                   onClick={() => handleEditRoster(roster)}
                                 >
-                                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditRoster(roster);
-                                      }}
-                                      className="p-1 bg-white rounded hover:bg-gray-100"
-                                      title="Edit"
-                                    >
+                                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1 z-10">
+                                    <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }} 
+                                      className="p-1 bg-white rounded hover:bg-gray-100 shadow">
                                       <FaEdit className="text-xs" />
                                     </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteRoster(roster.id);
-                                      }}
-                                      className="p-1 bg-white rounded hover:bg-gray-100"
-                                      title="Delete"
-                                    >
+                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }} 
+                                      className="p-1 bg-white rounded hover:bg-gray-100 shadow">
                                       <FaTrash className="text-xs text-red-500" />
                                     </button>
                                   </div>
                                   <div className="font-medium truncate">{shift?.name || "No Shift"}</div>
-                                  <div className="truncate">
+                                  <div className="truncate text-[10px]">
                                     {shift?.start_time ? formatTime(shift.start_time) : "N/A"} - {shift?.end_time ? formatTime(shift.end_time) : "N/A"}
                                   </div>
                                   <div className="flex justify-between mt-1 text-[10px]">
@@ -1141,8 +1036,7 @@ const RostersPage = () => {
                             {dayRosters.length === 0 && (
                               <button
                                 onClick={() => handleAddRoster(day, employee.id, employee)}
-                                className="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors min-h-[80px]"
-                                title="Add shift"
+                                className="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded min-h-[80px]"
                               >
                                 <FaRegCalendarPlus className="text-lg" />
                               </button>
@@ -1162,30 +1056,30 @@ const RostersPage = () => {
           </div>
         )}
 
-        {/* Monthly Roster View */}
+        {/* Monthly View */}
         {view === "month" && (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="grid grid-cols-7 border-b">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                <div
-                  key={day}
-                  className="p-4 text-center font-semibold bg-gray-50"
-                >
-                  {day}
-                </div>
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                <div key={day} className="p-4 text-center font-semibold bg-gray-50">{day}</div>
               ))}
             </div>
 
             <div className="grid grid-cols-7">
-              {/* Add empty cells for days before the first day of month */}
               {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() === 0 ? 6 : new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() - 1 }).map((_, i) => (
                 <div key={`empty-${i}`} className="min-h-32 border-r border-b p-2 bg-gray-50"></div>
               ))}
               
-              {monthDates.map((date, index) => {
-                // Calculate daily totals
-                const dateString = date.toISOString().split('T')[0];
-                const dayRosters = rosters.filter(r => r.roster_date && new Date(r.roster_date).toISOString().split('T')[0] === dateString);
+              {monthDates.map(date => {
+                const dateStr = date.toISOString().split('T')[0];
+                const dayRosters = rosters.filter(r => {
+                  if (!r.roster_date) return false;
+                  const rosterDate = typeof r.roster_date === 'string' 
+                    ? r.roster_date.split('T')[0]
+                    : new Date(r.roster_date).toISOString().split('T')[0];
+                  return rosterDate === dateStr;
+                });
+                
                 const dayTotalHours = dayRosters.reduce((total, roster) => {
                   const shift = shifts.find(s => s.id === roster.shift_id);
                   return total + calculateNetWorkingHours(shift);
@@ -1193,15 +1087,15 @@ const RostersPage = () => {
                 const dayTotalAmount = dayTotalHours * hourlyRate;
                 
                 return (
-                  <div key={index} className={`min-h-32 border-r border-b p-2 ${
+                  <div key={dateStr} className={`min-h-32 border-r border-b p-2 ${
                     date.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
                   }`}>
                     <div className="flex justify-between items-center mb-2">
-                      <div className={`text-sm font-medium ${
+                      <span className={`text-sm font-medium ${
                         date.toDateString() === new Date().toDateString() ? 'text-blue-600 font-bold' : ''
                       }`}>
                         {date.getDate()}
-                      </div>
+                      </span>
                       <button
                         onClick={() => {
                           setModalMode("add");
@@ -1209,21 +1103,17 @@ const RostersPage = () => {
                           setFormData({
                             employee_id: "",
                             shift_id: "",
-                            roster_date: date.toISOString().split('T')[0],
-                            start_time: "",
-                            end_time: "",
+                            roster_date: dateStr,
                             notes: ""
                           });
                           setShowModal(true);
                         }}
                         className="text-gray-400 hover:text-blue-500"
-                        title="Add roster"
                       >
                         <FaPlus className="text-xs" />
                       </button>
                     </div>
                     
-                    {/* Daily Totals */}
                     {dayRosters.length > 0 && (
                       <div className="mb-2 p-1 bg-green-50 rounded text-[10px]">
                         <div className="font-semibold text-green-700">{dayTotalHours.toFixed(1)}h</div>
@@ -1232,33 +1122,29 @@ const RostersPage = () => {
                     )}
                     
                     <div className="space-y-1 overflow-y-auto max-h-24">
-                      {dayRosters
-                        .slice(0, 3)
-                        .map((roster) => {
-                          const employee = employees.find(
-                            (emp) => emp.id === roster.employee_id
-                          );
-                          const shift = shifts.find(s => s.id === roster.shift_id);
-                          const shiftColor = getShiftColor(roster.shift_id);
-                          
-                          return (
-                            <div
-                              key={roster.id}
-                              className="p-1 rounded text-xs cursor-pointer hover:opacity-90"
-                              style={{
-                                backgroundColor: shiftColor.backgroundColor || shiftColor.bg,
-                                color: shiftColor.color || shiftColor.text,
-                                border: `1px solid ${shiftColor.borderColor || shiftColor.border}`
-                              }}
-                              onClick={() => handleEditRoster(roster)}
-                            >
-                              <div className="font-medium truncate">
-                                {employee?.first_name?.charAt(0)}. {employee?.last_name}
-                              </div>
-                              <div className="truncate">{shift?.name || "No Shift"}</div>
+                      {dayRosters.slice(0, 3).map(roster => {
+                        const employee = employees.find(e => e.id === roster.employee_id);
+                        const shift = shifts.find(s => s.id === roster.shift_id);
+                        const shiftColor = getShiftColor(roster.shift_id);
+                        
+                        return (
+                          <div
+                            key={roster.id}
+                            className="p-1 rounded text-xs cursor-pointer hover:opacity-90"
+                            style={{
+                              backgroundColor: shiftColor.backgroundColor,
+                              color: shiftColor.color,
+                              border: `1px solid ${shiftColor.borderColor}`
+                            }}
+                            onClick={() => handleEditRoster(roster)}
+                          >
+                            <div className="font-medium truncate">
+                              {employee?.first_name?.charAt(0) || ''}. {employee?.last_name || ''}
                             </div>
-                          );
-                        })}
+                            <div className="truncate">{shift?.name || "No Shift"}</div>
+                          </div>
+                        );
+                      })}
                       {dayRosters.length > 3 && (
                         <div className="text-xs text-gray-500 text-center">
                           + {dayRosters.length - 3} more
@@ -1274,7 +1160,7 @@ const RostersPage = () => {
 
         {/* Weekly Totals Summary */}
         {view === "week" && (
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Total Summary */}
             <div className="bg-white p-4 rounded-lg shadow-lg">
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -1296,29 +1182,6 @@ const RostersPage = () => {
                     {formatCurrency(weeklyTotals.totalHours > 0 ? weeklyTotals.totalAmount / weeklyTotals.totalHours : 0)}/hr
                   </span>
                 </div>
-              </div>
-            </div>
-
-            {/* By Room Summary */}
-            <div className="bg-white p-4 rounded-lg shadow-lg">
-              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <FaDoorOpen className="text-purple-500" />
-                Totals by Room
-              </h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {Object.entries(weeklyTotals.byRoom).map(([id, data]) => (
-                  <div key={id} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">{data.name}:</span>
-                    <div className="text-right">
-                      <span className="font-medium text-blue-600">{data.hours.toFixed(1)}h</span>
-                      <span className="mx-1 text-gray-400">|</span>
-                      <span className="font-medium text-green-600">{formatCurrency(data.amount)}</span>
-                    </div>
-                  </div>
-                ))}
-                {Object.keys(weeklyTotals.byRoom).length === 0 && (
-                  <p className="text-sm text-gray-400 text-center">No data available</p>
-                )}
               </div>
             </div>
 
@@ -1349,22 +1212,16 @@ const RostersPage = () => {
 
         {/* Legend */}
         <div className="mt-6 p-4 bg-white rounded-lg shadow-lg">
-          <h3 className="font-semibold text-gray-800 mb-3">
-            Shift Type Legend
-          </h3>
+          <h3 className="font-semibold text-gray-800 mb-3">Shift Type Legend</h3>
           <div className="flex flex-wrap gap-4">
-            {shifts.map((shift) => {
+            {shifts.map(shift => {
               const shiftColor = getShiftColor(shift.id);
-              
               return (
                 <div key={shift.id} className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded border"
-                    style={{
-                      backgroundColor: shiftColor.backgroundColor || shiftColor.bg,
-                      borderColor: shiftColor.borderColor || shiftColor.border
-                    }}
-                  ></div>
+                  <div className="w-4 h-4 rounded border" style={{
+                    backgroundColor: shiftColor.backgroundColor,
+                    borderColor: shiftColor.borderColor
+                  }}></div>
                   <span className="text-sm text-gray-600">{shift.name}</span>
                   {shift.start_time && shift.end_time && (
                     <span className="text-xs text-gray-400">
