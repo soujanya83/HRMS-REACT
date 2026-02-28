@@ -19,7 +19,8 @@ import {
   FaRandom,
   FaCoffee,
   FaHourglassHalf,
-  FaMoneyBillWave
+  FaMoneyBillWave,
+  FaStopwatch
 } from 'react-icons/fa';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import shiftSchedulingService from '../../services/shiftSchedulingService';
@@ -46,6 +47,7 @@ const ShiftScheduling = () => {
     break_start: '13:00',
     break_end: '14:00',
     break_duration: 60,
+    break_grace_minutes: 0,
     color_code: '#4CAF50',
     notes: '',
     shift_type: 'custom'
@@ -60,7 +62,8 @@ const ShiftScheduling = () => {
       end_time: '17:00',
       break_start: '13:00',
       break_end: '14:00',
-      break_duration: 60
+      break_duration: 60,
+      break_grace_minutes: 0
     },
     { 
       name: 'Mid Shift', 
@@ -69,7 +72,8 @@ const ShiftScheduling = () => {
       end_time: '20:00',
       break_start: '16:00',
       break_end: '17:00',
-      break_duration: 60
+      break_duration: 60,
+      break_grace_minutes: 0
     },
     { 
       name: 'Late Shift', 
@@ -78,7 +82,8 @@ const ShiftScheduling = () => {
       end_time: '23:00',
       break_start: '19:00',
       break_end: '20:00',
-      break_duration: 60
+      break_duration: 60,
+      break_grace_minutes: 0
     },
   ];
 
@@ -171,13 +176,23 @@ const ShiftScheduling = () => {
     return parseFloat(diff.toFixed(1));
   };
 
-  // Calculate net working hours (excluding breaks)
-  const calculateNetWorkingHours = (startTime, endTime, breakStart, breakEnd) => {
+  // Calculate net working hours (excluding breaks and considering grace minutes)
+  const calculateNetWorkingHours = (startTime, endTime, breakStart, breakEnd, breakGraceMinutes = 0) => {
     const totalDuration = calculateTotalDuration(startTime, endTime);
     const breakMinutes = calculateBreakDuration(breakStart, breakEnd);
     const breakHours = breakMinutes / 60;
+    const graceHours = breakGraceMinutes / 60;
     
-    return parseFloat((totalDuration - breakHours).toFixed(1));
+    // Grace minutes are usually added to break time (buffer before/after break)
+    // For example, if break is 60 minutes with 10 minutes grace, total break allowance is 70 minutes
+    const totalBreakHours = (breakMinutes + breakGraceMinutes) / 60;
+    
+    return parseFloat((totalDuration - totalBreakHours).toFixed(1));
+  };
+
+  // Calculate total break including grace minutes
+  const calculateTotalBreakWithGrace = (breakDuration, breakGraceMinutes) => {
+    return (breakDuration || 0) + (breakGraceMinutes || 0);
   };
 
   const handleInputChange = (e) => {
@@ -191,6 +206,12 @@ const ShiftScheduling = () => {
         ...prev,
         [name]: value,
         break_duration: calculateBreakDuration(newBreakStart, newBreakEnd)
+      }));
+    } else if (name === 'break_grace_minutes') {
+      const numValue = parseInt(value) || 0;
+      setNewShift(prev => ({
+        ...prev,
+        [name]: Math.max(0, Math.min(120, numValue)) // Limit grace minutes between 0-120
       }));
     } else {
       setNewShift(prev => ({ ...prev, [name]: value }));
@@ -207,6 +228,7 @@ const ShiftScheduling = () => {
       break_start: shift.break_start,
       break_end: shift.break_end,
       break_duration: shift.break_duration,
+      break_grace_minutes: shift.break_grace_minutes || 0,
       shift_type: 'predefined'
     });
   };
@@ -219,7 +241,8 @@ const ShiftScheduling = () => {
       color_code: '#4CAF50',
       break_start: '13:00',
       break_end: '14:00',
-      break_duration: 60
+      break_duration: 60,
+      break_grace_minutes: 0
     }));
   };
 
@@ -256,10 +279,10 @@ const ShiftScheduling = () => {
     // Validate break times
     if (newShift.break_start && newShift.break_end) {
       const totalDuration = calculateTotalDuration(newShift.start_time, newShift.end_time);
-      const breakHours = newShift.break_duration / 60;
+      const totalBreakHours = (newShift.break_duration + newShift.break_grace_minutes) / 60;
       
-      if (breakHours >= totalDuration) {
-        setError('Break duration cannot be longer than total shift duration');
+      if (totalBreakHours >= totalDuration) {
+        setError('Total break duration (including grace minutes) cannot be longer than total shift duration');
         return;
       }
     }
@@ -300,6 +323,7 @@ const ShiftScheduling = () => {
       break_start: shift.break_start ? formatTimeForInput(shift.break_start) : '13:00',
       break_end: shift.break_end ? formatTimeForInput(shift.break_end) : '14:00',
       break_duration: shift.break_duration || 60,
+      break_grace_minutes: shift.break_grace_minutes || 0,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
       shift_type: 'custom'
@@ -343,6 +367,7 @@ const ShiftScheduling = () => {
       break_start: shift.break_start ? formatTimeForInput(shift.break_start) : '13:00',
       break_end: shift.break_end ? formatTimeForInput(shift.break_end) : '14:00',
       break_duration: shift.break_duration || 60,
+      break_grace_minutes: shift.break_grace_minutes || 0,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
       shift_type: 'custom'
@@ -360,6 +385,7 @@ const ShiftScheduling = () => {
       break_start: '13:00',
       break_end: '14:00',
       break_duration: 60,
+      break_grace_minutes: 0,
       color_code: '#4CAF50',
       notes: '',
       shift_type: 'custom'
@@ -469,7 +495,7 @@ const ShiftScheduling = () => {
                 <p className="text-2xl font-bold text-gray-800">
                   {shifts.length > 0 
                     ? (shifts.reduce((total, shift) => total + calculateNetWorkingHours(
-                        shift.start_time, shift.end_time, shift.break_start, shift.break_end
+                        shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
                       ), 0) / shifts.length).toFixed(1)
                     : '0'}h
                 </p>
@@ -583,8 +609,9 @@ const ShiftScheduling = () => {
                 ) : (
                   shifts.map((shift) => {
                     const netHours = calculateNetWorkingHours(
-                      shift.start_time, shift.end_time, shift.break_start, shift.break_end
+                      shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
                     );
+                    const totalBreakWithGrace = calculateTotalBreakWithGrace(shift.break_duration, shift.break_grace_minutes);
                     
                     return (
                       <tr key={shift.id} className="hover:bg-gray-50 transition-colors">
@@ -622,7 +649,17 @@ const ShiftScheduling = () => {
                               </div>
                               <div className="text-sm text-gray-500">
                                 {formatMinutes(shift.break_duration || 60)}
+                                {shift.break_grace_minutes > 0 && (
+                                  <span className="ml-1 text-xs text-purple-600">
+                                    (+{shift.break_grace_minutes}m grace)
+                                  </span>
+                                )}
                               </div>
+                              {shift.break_grace_minutes > 0 && (
+                                <div className="text-xs text-gray-400">
+                                  Total: {formatMinutes(totalBreakWithGrace)}
+                                </div>
+                              )}
                             </>
                           ) : (
                             <span className="text-sm text-gray-400">No break</span>
@@ -911,6 +948,31 @@ const ShiftScheduling = () => {
                       </div>
                     </div>
 
+                    {/* NEW: Break Grace Minutes Input */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                        <FaStopwatch className="text-indigo-500" />
+                        Break Grace Minutes
+                        <span className="text-xs text-gray-500 font-normal">(Buffer time before/after break)</span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          name="break_grace_minutes"
+                          value={newShift.break_grace_minutes}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="120"
+                          step="5"
+                          className="w-32 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-600">minutes (0-120)</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Additional time allowed for break preparation and return
+                      </p>
+                    </div>
+
                     {/* Duration Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div className="p-3 bg-blue-50 rounded-lg">
@@ -925,6 +987,11 @@ const ShiftScheduling = () => {
                         <div className="text-lg font-bold text-purple-800">
                           {formatMinutes(newShift.break_duration)}
                         </div>
+                        {newShift.break_grace_minutes > 0 && (
+                          <div className="text-xs text-purple-600">
+                            +{newShift.break_grace_minutes}m grace
+                          </div>
+                        )}
                       </div>
 
                       <div className="p-3 bg-green-50 rounded-lg">
@@ -934,9 +1001,15 @@ const ShiftScheduling = () => {
                             newShift.start_time, 
                             newShift.end_time, 
                             newShift.break_start, 
-                            newShift.break_end
+                            newShift.break_end,
+                            newShift.break_grace_minutes
                           )}h
                         </div>
+                        {newShift.break_grace_minutes > 0 && (
+                          <div className="text-xs text-green-600">
+                            Total break: {formatMinutes(newShift.break_duration + newShift.break_grace_minutes)}
+                          </div>
+                        )}
                       </div>
                     </div>
 

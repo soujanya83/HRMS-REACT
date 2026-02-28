@@ -239,7 +239,7 @@ const FormTextarea = ({ label, name, error, ...props }) => (
 );
 
 // ColorPicker Component
-const ColorPicker = ({ label, name, value, onChange, error, roomId }) => {
+const ColorPicker = ({ label, name, value, onChange, error }) => {
   const currentCode = getColorCode(value);
 
   const handleColorChange = (e) => {

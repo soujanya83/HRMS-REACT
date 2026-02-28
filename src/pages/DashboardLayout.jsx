@@ -2,19 +2,17 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-// 1. Import the new components
 import { useOrganizations } from '../contexts/OrganizationContext';
 import GlobalLoader from '../components/GlobalLoader';
 
 const DashboardLayout = ({ onLogout, user }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
-    // 2. Get the loading state from the context
+    const [backgroundColor, setBackgroundColor] = useState('#f9fafb'); // Default bg-gray-50
     const { isLoading: isAppLoading } = useOrganizations();
 
     return (
         <div className="relative min-h-screen md:flex">
-            {/* 3. Conditionally render the loader */}
             {isAppLoading && <GlobalLoader />}
 
             <Sidebar 
@@ -32,9 +30,14 @@ const DashboardLayout = ({ onLogout, user }) => {
                     user={user}
                 />
                 
-                <main className="flex-1 bg-gray-50 overflow-y-auto">
+                {/* Main content area with dynamic background color */}
+                <main 
+                    className="flex-1 overflow-y-auto transition-colors duration-300"
+                    style={{ backgroundColor: backgroundColor }}
+                >
                     <div className="p-6">
-                        <Outlet />
+                        {/* Pass backgroundColor and setBackgroundColor to Outlet components */}
+                        <Outlet context={{ backgroundColor, setBackgroundColor }} />
                     </div>
                 </main>
             </div>
