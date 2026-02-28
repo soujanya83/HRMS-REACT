@@ -24,7 +24,7 @@ export const createEmployeeBasic = (employeeData) => {
     headers: {
       'Content-Type': 'application/json',
     },
-  });
+  });   
 };
 
 // Update basic employee info
@@ -77,6 +77,43 @@ export const restoreEmployee = (id) => {
 // Permanently delete an employee from the database
 export const forceDeleteEmployee = (id) => {
   return axiosClient.delete(`/employees/${id}/force-delete`);
+};
+
+// ============================================
+// XERO INTEGRATION - CORRECT IMPLEMENTATION
+// ============================================
+
+/**
+ * Sync a single employee to Xero
+ * @param {number|string} organizationId - The organization ID
+ * @param {number|string} employeeId - The employee ID to sync (REQUIRED)
+ * @returns {Promise} - API response with xero_employee_id
+ * 
+ * API Response (success): 
+ * {
+ *   "status": true,
+ *   "message": "Employee already linked with Xero.",
+ *   "xero_employee_id": "c18f519b-c615-4b72-a9fd-9aeb54844f13"
+ * }
+ * 
+ * API Response (error - missing employee):
+ * {
+ *   "status": false,
+ *   "message": "Sync error",
+ *   "error": "No query results for model [App\\Models\\Employee\\Employee]."
+ * }
+ */
+export const syncEmployeeToXero = (organizationId, employeeId) => {
+  // Validate that employeeId is provided
+  if (!employeeId) {
+    return Promise.reject(new Error("Employee ID is required for sync"));
+  }
+  
+  console.log(`Syncing employee ${employeeId} to Xero...`);
+  return axiosClient.post('/xero/sync-employee', {
+    organization_id: organizationId.toString(),
+    employee_id: employeeId.toString()  // This is REQUIRED
+  });
 };
 
 // ============================================
@@ -305,6 +342,9 @@ export const employeeService = {
   getTrashedEmployees,
   restoreEmployee,
   forceDeleteEmployee,
+  
+  // Xero Integration
+  syncEmployeeToXero,
   
   // Filtering
   getEmployeesByDepartment,

@@ -1,3 +1,4 @@
+// OrganizationsPage.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   HiPlus,
@@ -117,28 +118,6 @@ const AGE_GROUPS = [
   { value: "School Age (5+ years)", label: "School Age (5+ years)", icon: "📚" },
   { value: "Mixed Age Group", label: "Mixed Age Group", icon: "👥" },
 ];
-
-// Predefined color mappings for common color names
-const COLOR_NAME_MAPPINGS = {
-  'red': '#EF4444',
-  'orange': '#F97316',
-  'amber': '#F59E0B',
-  'yellow': '#EAB308',
-  'lime': '#84CC16',
-  'green': '#10B981',
-  'teal': '#14B8A6',
-  'cyan': '#06B6D4',
-  'blue': '#3B82F6',
-  'violet': '#8B5CF6',
-  'purple': '#A855F7',
-  'pink': '#EC4899',
-  'rose': '#F43F5E',
-  'brown': '#8B4513',
-  'gray': '#6B7280',
-  'grey': '#6B7280',
-  'black': '#000000',
-  'white': '#FFFFFF',
-};
 
 // Helper function to extract color - NOW USES LOCAL STORAGE
 const extractColorFromCode = (roomId, defaultColor = '#3B82F6') => {
@@ -316,6 +295,7 @@ function OrganizationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'designations'
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
@@ -333,7 +313,6 @@ function OrganizationsPage() {
   // Designation modal states
   const [isDesignationModalOpen, setIsDesignationModalOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState(null);
-  const [currentDesignationRoomId, setCurrentDesignationRoomId] = useState(null);
   const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
 
@@ -532,8 +511,7 @@ function OrganizationsPage() {
   };
 
   // Designation modal handlers
-  const handleOpenDesignationModal = (roomId, designation = null) => {
-    setCurrentDesignationRoomId(roomId);
+  const handleOpenDesignationModal = (designation = null) => {
     setEditingDesignation(designation);
     setIsDesignationModalOpen(true);
   };
@@ -541,7 +519,6 @@ function OrganizationsPage() {
   const handleCloseDesignationModal = () => {
     setIsDesignationModalOpen(false);
     setEditingDesignation(null);
-    setCurrentDesignationRoomId(null);
   };
 
   const handleSaveDesignation = async (designationData) => {
@@ -629,6 +606,8 @@ function OrganizationsPage() {
                   setEditingOrg(org);
                   setIsModalOpen(true);
                 }}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
               />
             )}
           </div>
@@ -831,8 +810,9 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
   );
 }
 
-function OrganizationDetailView({ organization, onBack, onEdit }) {
+function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTabChange }) {
   const roomModalContext = React.useContext(RoomModalContext);
+  const designationModalContext = React.useContext(DesignationModalContext);
 
   return (
     <div>
@@ -901,25 +881,60 @@ function OrganizationDetailView({ organization, onBack, onEdit }) {
         </div>
       </div>
 
-      {/* Rooms Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="flex gap-8">
           <button
-            onClick={() => roomModalContext.openRoomModal(organization.id)}
-            className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+            onClick={() => onTabChange('rooms')}
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
+              activeTab === 'rooms'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
           >
-            <HiPlus /> Add New Room
+            Rooms
           </button>
-        </div>
-        <RoomsList orgId={organization.id} />
+          <button
+            onClick={() => onTabChange('designations')}
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
+              activeTab === 'designations'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Designations
+          </button>
+        </nav>
       </div>
 
-      {/* Designations Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Designations</h2>
-        <AllDesignationsList orgId={organization.id} />
-      </div>
+      {/* Tab Content */}
+      {activeTab === 'rooms' ? (
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
+            <button
+              onClick={() => roomModalContext.openRoomModal(organization.id)}
+              className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+            >
+              <HiPlus /> Add New Room
+            </button>
+          </div>
+          <RoomsList orgId={organization.id} />
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Designations</h2>
+            <button
+              onClick={() => designationModalContext.openDesignationModal()}
+              className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition"
+            >
+              <HiPlus /> Add New Designation
+            </button>
+          </div>
+          <DesignationsList orgId={organization.id} />
+        </div>
+      )}
     </div>
   );
 }
@@ -931,7 +946,6 @@ function RoomsList({ orgId }) {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('list');
   const roomModalContext = React.useContext(RoomModalContext);
-  const designationModalContext = React.useContext(DesignationModalContext);
 
   const fetchRooms = useCallback(async () => {
     setIsLoading(true);
@@ -1031,10 +1045,8 @@ function RoomsList({ orgId }) {
             <RoomItem
               key={room.id}
               room={room}
-              orgId={orgId}
               onEdit={() => roomModalContext.openRoomModal(orgId, room)}
               onDelete={() => roomModalContext.deleteRoom(room)}
-              onAddDesignation={() => designationModalContext.openDesignationModal(room.id)}
             />
           ))}
         </div>
@@ -1044,10 +1056,8 @@ function RoomsList({ orgId }) {
             <RoomCard
               key={room.id}
               room={room}
-              orgId={orgId}
               onEdit={() => roomModalContext.openRoomModal(orgId, room)}
               onDelete={() => roomModalContext.deleteRoom(room)}
-              onAddDesignation={() => designationModalContext.openDesignationModal(room.id)}
             />
           ))}
         </div>
@@ -1057,10 +1067,7 @@ function RoomsList({ orgId }) {
 }
 
 // Room Item Component (List View)
-function RoomItem({ room, onEdit, onDelete, onAddDesignation }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const designationModalContext = React.useContext(DesignationModalContext);
-  
+function RoomItem({ room, onEdit, onDelete }) {
   // Get color from localStorage
   const roomHexColor = extractColorFromCode(room.id);
   const colorOption = getColorOption(room.id);
@@ -1135,51 +1142,16 @@ function RoomItem({ room, onEdit, onDelete, onAddDesignation }) {
               >
                 <HiTrash size={18} />
               </button>
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                title={isOpen ? "Hide Designations" : "Show Designations"}
-              >
-                <HiChevronDown
-                  className={`transition-transform duration-300 text-xl ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
             </div>
-          </div>
-          
-          {/* Add Designation Button */}
-          <div className="mt-3 flex justify-end">
-            <button
-              onClick={onAddDesignation}
-              className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 font-semibold py-1 px-3 rounded-lg hover:bg-blue-100 transition"
-            >
-              <HiPlus size={14} /> Add Designation
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Designations Section */}
-      {isOpen && (
-        <div className="border-t border-gray-200 bg-gray-50 p-4">
-          <DesignationsList 
-            roomId={room.id} 
-            roomName={room.name}
-            roomColor={roomHexColor}
-          />
-        </div>
-      )}
     </div>
   );
 }
 
 // Room Card Component (Grid View)
-function RoomCard({ room, onEdit, onDelete, onAddDesignation }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const designationModalContext = React.useContext(DesignationModalContext);
-  
+function RoomCard({ room, onEdit, onDelete }) {
   // Get color from localStorage
   const roomHexColor = extractColorFromCode(room.id);
   const colorOption = getColorOption(room.id);
@@ -1248,96 +1220,13 @@ function RoomCard({ room, onEdit, onDelete, onAddDesignation }) {
         {room.description && (
           <p className="text-sm text-gray-600 mb-4 line-clamp-2">{room.description}</p>
         )}
-
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={onAddDesignation}
-            className="flex-1 flex items-center justify-center gap-1 text-sm bg-blue-50 text-blue-700 font-semibold py-2 px-3 rounded-lg hover:bg-blue-100 transition"
-          >
-            <HiPlus size={16} /> Add Designation
-          </button>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center justify-center gap-1 text-sm bg-gray-50 text-gray-700 font-semibold py-2 px-3 rounded-lg hover:bg-gray-100 transition"
-          >
-            <span>{isOpen ? 'Hide' : 'Show'} Designations</span>
-            <HiChevronDown
-              className={`transition-transform duration-300 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Designations Section */}
-        {isOpen && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <DesignationsList 
-              roomId={room.id} 
-              roomName={room.name}
-              roomColor={roomHexColor}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 // Designations List Component
-function DesignationsList({ roomId, roomName, roomColor }) {
-  const [designations, setDesignations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const designationModalContext = React.useContext(DesignationModalContext);
-
-  const fetchDesignations = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Since API doesn't have room-level designations, show empty state
-      setDesignations([]);
-    } catch (error) {
-      console.error("Failed to fetch designations", error);
-      setError(error.response?.data?.message || "Failed to load designations");
-      setDesignations([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDesignations();
-  }, [fetchDesignations]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-sm text-gray-600">Loading designations...</span>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
-        Designations are managed at the organization level. 
-        <br />
-        <button
-          onClick={() => designationModalContext.openDesignationModal(roomId)}
-          className="text-blue-600 hover:text-blue-800 font-medium mt-2 inline-block"
-        >
-          Click here to add a designation
-        </button>
-      </p>
-    </div>
-  );
-}
-
-// All Designations List Component
-function AllDesignationsList({ orgId }) {
+function DesignationsList({ orgId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1395,7 +1284,7 @@ function AllDesignationsList({ orgId }) {
         <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">No Designations Added Yet</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Click "Add Designation" in any room to create designations.
+          Click "Add New Designation" to create your first designation.
         </p>
       </div>
     );
@@ -1431,7 +1320,7 @@ function AllDesignationsList({ orgId }) {
             
             <div className="flex items-center gap-1">
               <button
-                onClick={() => designationModalContext.openDesignationModal(null, desig)}
+                onClick={() => designationModalContext.openDesignationModal(desig)}
                 className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                 title="Edit Designation"
               >

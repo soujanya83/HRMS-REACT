@@ -1,3 +1,4 @@
+// EmployeeList.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -8,12 +9,9 @@ import {
   FaUndo,
   FaTrashAlt,
   FaSearch,
-  FaFilter,
   FaDownload,
   FaUpload,
-  FaHistory,
   FaFileAlt,
-  FaUserPlus,
   FaUserCheck,
   FaUserTimes,
   FaEnvelope,
@@ -21,19 +19,18 @@ import {
   FaBuilding,
   FaBriefcase,
   FaUser,
-  FaArrowLeft,
   FaChartBar,
   FaRedoAlt,
   FaFileDownload,
   FaSync,
   FaCheckCircle,
-  FaExclamationTriangle,
   FaLink,
+  FaCopy,
+  FaTimes,
+  FaSpinner,
 } from "react-icons/fa";
 import {
   HiOutlineArchive,
-  HiOutlineUserGroup,
-  HiOutlineDocumentReport,
 } from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
@@ -43,8 +40,9 @@ import {
   restoreEmployee,
   forceDeleteEmployee,
   updateEmployeeStatus,
+  syncEmployeeToXero,
 } from "../../services/employeeService";
-import { syncEmployeeToXero } from "../../services/xeroService"; // You'll need to create this service
+import axiosClient from "../../axiosClient";
 
 // Confirmation Modal Component
 const ConfirmationModal = ({
@@ -60,7 +58,6 @@ const ConfirmationModal = ({
   const buttonColors = {
     delete: "bg-red-600 hover:bg-red-700",
     restore: "bg-green-600 hover:bg-green-700",
-    archive: "bg-yellow-600 hover:bg-yellow-700",
   };
 
   return (
@@ -112,16 +109,16 @@ const XeroStatusBadge = ({ employee, onClick, syncing }) => {
   if (syncing) {
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+        <FaSpinner className="animate-spin h-3 w-3" />
         Syncing...
       </div>
     );
   }
 
-  if (employee.xero_employee_id) {
+  const hasXeroConnection = employee.xero_employee_connection || employee.xero_employee_id;
+  const xeroStatus = employee.xero_synced_status || employee.xero_status;
+
+  if (hasXeroConnection || xeroStatus === "synced" || xeroStatus === "Synced") {
     return (
       <div 
         className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full cursor-pointer hover:bg-green-200 transition-colors"
@@ -151,6 +148,13 @@ const XeroStatusBadge = ({ employee, onClick, syncing }) => {
 const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
   if (!isOpen || !employee) return null;
 
+  const xeroEmployeeId = 
+    employee.xero_employee_connection?.xero_employee_id || 
+    employee.xero_employee_id || 
+    'N/A';
+
+  const xeroStatus = employee.xero_synced_status || employee.xero_status || 'synced';
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
@@ -168,7 +172,7 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            ✕
+            <FaTimes />
           </button>
         </div>
 
@@ -176,18 +180,18 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Employee</p>
             <p className="text-gray-900">{employee.first_name} {employee.last_name}</p>
-            <p className="text-sm text-gray-500">{employee.employee_code}</p>
+            <p className="text-sm text-gray-500">{employee.employee_code || 'No Code'}</p>
           </div>
           
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Xero Employee ID</p>
             <div className="flex items-center gap-2">
               <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono break-all">
-                {employee.xero_employee_id}
+                {xeroEmployeeId}
               </code>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(employee.xero_employee_id);
+                  navigator.clipboard.writeText(xeroEmployeeId);
                   alert('Copied to clipboard!');
                 }}
                 className="text-blue-600 hover:text-blue-800"
@@ -196,6 +200,14 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
                 <FaCopy className="h-4 w-4" />
               </button>
             </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Sync Status</p>
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+              <FaCheckCircle className="h-3 w-3" />
+              {xeroStatus}
+            </span>
           </div>
 
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -262,22 +274,10 @@ const StatusBadge = ({ status }) => {
 };
 
 // Quick Stats Card Component
-const StatsCard = ({ title, value, icon, color, trend }) => (
+const StatsCard = ({ title, value, icon, color }) => (
   <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between mb-3">
       <div className={`p-3 rounded-lg ${color}`}>{icon}</div>
-      {trend && (
-        <span
-          className={`text-xs font-medium px-2 py-1 rounded-full ${
-            trend > 0
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {trend > 0 ? "+" : ""}
-          {trend}%
-        </span>
-      )}
     </div>
     <h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3>
     <p className="text-sm text-gray-600">{title}</p>
@@ -310,6 +310,8 @@ export default function EmployeeList() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [view, setView] = useState("active");
+  const [syncingAll, setSyncingAll] = useState(false);
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -363,6 +365,34 @@ export default function EmployeeList() {
     },
   ];
 
+  // Apply filters function
+  const applyFilters = useCallback((employeesList, search, status, department) => {
+    let filtered = [...employeesList];
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter((employee) =>
+        employee.first_name?.toLowerCase().includes(searchLower) ||
+        employee.last_name?.toLowerCase().includes(searchLower) ||
+        employee.personal_email?.toLowerCase().includes(searchLower) ||
+        employee.employee_code?.toLowerCase().includes(searchLower) ||
+        employee.phone_number?.includes(search)
+      );
+    }
+
+    if (status !== "all") {
+      filtered = filtered.filter((employee) => employee.status === status);
+    }
+
+    if (department !== "all") {
+      filtered = filtered.filter((employee) => 
+        employee.department?.name === department
+      );
+    }
+
+    setFilteredEmployees(filtered);
+  }, []);
+
   // Fetch employees
   const fetchEmployees = useCallback(async () => {
     if (!selectedOrganization?.id) {
@@ -372,24 +402,29 @@ export default function EmployeeList() {
 
     setLoading(true);
     try {
-      const params = {
-        organization_id: selectedOrganization.id,
-        search: searchTerm,
-        status: selectedStatus !== "all" ? selectedStatus : undefined,
-        department_id:
-          selectedDepartment !== "all" ? selectedDepartment : undefined,
-      };
+      let response;
+      let employeesData = [];
+      
+      if (view === "active") {
+        response = await getEmployees({
+          organization_id: selectedOrganization.id,
+        });
+        employeesData = response.data?.data || [];
+      } else {
+        response = await axiosClient.post('/employees/trashed', {
+          organization_id: selectedOrganization.id
+        });
+        
+        if (response.data?.success === true && Array.isArray(response.data.data)) {
+          employeesData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          employeesData = response.data;
+        }
+      }
 
-      const response =
-        view === "active"
-          ? await getEmployees(params)
-          : await getTrashedEmployees(params);
-
-      const employeesData = response.data?.data || [];
       setEmployees(employeesData);
-      setFilteredEmployees(employeesData);
+      applyFilters(employeesData, searchTerm, selectedStatus, selectedDepartment);
 
-      // Calculate statistics
       const activeCount = employeesData.filter(
         (emp) => emp.status === "Active"
       ).length;
@@ -400,7 +435,6 @@ export default function EmployeeList() {
         (emp) => emp.status === "On Leave"
       ).length;
 
-      // Calculate department distribution
       const departmentStats = {};
       employeesData.forEach((emp) => {
         const deptName = emp.department?.name || "No Department";
@@ -421,44 +455,17 @@ export default function EmployeeList() {
     } finally {
       setLoading(false);
     }
-  }, [
-    selectedOrganization,
-    view,
-    searchTerm,
-    selectedStatus,
-    selectedDepartment,
-  ]);
+  }, [selectedOrganization, view, searchTerm, selectedStatus, selectedDepartment, applyFilters]);
+
+  useEffect(() => {
+    applyFilters(employees, searchTerm, selectedStatus, selectedDepartment);
+  }, [searchTerm, selectedStatus, selectedDepartment, employees, applyFilters]);
 
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  // Filter employees based on search
-  useEffect(() => {
-    const filtered = employees.filter((employee) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        employee.first_name?.toLowerCase().includes(searchLower) ||
-        employee.last_name?.toLowerCase().includes(searchLower) ||
-        employee.personal_email?.toLowerCase().includes(searchLower) ||
-        employee.employee_code?.toLowerCase().includes(searchLower) ||
-        employee.phone_number?.includes(searchTerm) ||
-        employee.designation?.title?.toLowerCase().includes(searchLower) ||
-        employee.department?.name?.toLowerCase().includes(searchLower)
-      );
-    });
-    setFilteredEmployees(filtered);
-  }, [searchTerm, employees]);
-
-  // Open modal for confirmation
-  const openModal = (
-    action,
-    title,
-    message,
-    type = "delete",
-    employeeId = null,
-    employeeName = ""
-  ) => {
+  const openModal = (action, title, message, type = "delete", employeeId = null, employeeName = "") => {
     setModalState({
       isOpen: true,
       action,
@@ -470,7 +477,6 @@ export default function EmployeeList() {
     });
   };
 
-  // Close modal
   const closeModal = () => {
     setModalState({
       isOpen: false,
@@ -483,16 +489,15 @@ export default function EmployeeList() {
     });
   };
 
-  // Handle modal confirmation
   const handleConfirm = async () => {
     if (modalState.action) {
       try {
         await modalState.action();
-        fetchEmployees(); // Refresh list
+        fetchEmployees();
         alert(
           `${
             modalState.type === "delete"
-              ? "Employee deleted"
+              ? "Employee moved to trash"
               : "Employee restored"
           } successfully!`
         );
@@ -504,7 +509,6 @@ export default function EmployeeList() {
     closeModal();
   };
 
-  // Handle delete employee
   const handleDelete = (employee) => {
     openModal(
       () => deleteEmployee(employee.id),
@@ -516,7 +520,6 @@ export default function EmployeeList() {
     );
   };
 
-  // Handle restore employee
   const handleRestore = (employee) => {
     openModal(
       () => restoreEmployee(employee.id),
@@ -528,7 +531,6 @@ export default function EmployeeList() {
     );
   };
 
-  // Handle permanent delete
   const handleForceDelete = (employee) => {
     openModal(
       () => forceDeleteEmployee(employee.id),
@@ -540,7 +542,6 @@ export default function EmployeeList() {
     );
   };
 
-  // Handle status change
   const handleStatusChange = async (employeeId, newStatus) => {
     try {
       await updateEmployeeStatus(employeeId, newStatus);
@@ -552,10 +553,8 @@ export default function EmployeeList() {
     }
   };
 
-  // Handle sync to Xero
   const handleSyncToXero = async (employee) => {
-    // If already linked, show details
-    if (employee.xero_employee_id) {
+    if (employee.xero_employee_connection || employee.xero_employee_id) {
       setXeroDetailsModal({
         isOpen: true,
         employee: employee
@@ -563,43 +562,100 @@ export default function EmployeeList() {
       return;
     }
 
-    // Set syncing state for this employee
+    if (!selectedOrganization?.id) {
+      alert("Please select an organization first");
+      return;
+    }
+
     setSyncingEmployees((prev) => ({ ...prev, [employee.id]: true }));
     
     try {
-      // Call the Xero sync API
-      const response = await syncEmployeeToXero(employee.id);
+      console.log(`Syncing employee ${employee.id} to Xero...`);
       
-      if (response.status === true) {
-        // Update the employee in state with Xero ID
-        setEmployees(prev => prev.map(emp => 
-          emp.id === employee.id 
-            ? { ...emp, xero_employee_id: response.xero_employee_id }
-            : emp
-        ));
+      const response = await syncEmployeeToXero(
+        selectedOrganization.id,
+        employee.id
+      );
+      
+      console.log("Sync response:", response.data);
+      
+      if (response.data?.status === true) {
+        const xeroEmployeeId = response.data.xero_employee_id;
         
-        // Show success message
-        if (response.message === "Employee already linked with Xero.") {
-          alert(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${response.xero_employee_id})`);
+        if (response.data.message === "Employee already linked with Xero.") {
+          alert(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`);
         } else {
-          alert(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${response.xero_employee_id}`);
+          alert(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`);
         }
         
-        // Refresh the employee list
-        fetchEmployees();
+        await fetchEmployees();
       } else {
-        throw new Error(response.message || 'Failed to sync with Xero');
+        throw new Error(response.data?.message || 'Failed to sync with Xero');
       }
     } catch (error) {
       console.error("Failed to sync to Xero:", error);
-      alert(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.message}`);
+      
+      if (error.response?.data?.error?.includes("No query results for model")) {
+        alert(`Employee ${employee.first_name} ${employee.last_name} not found in the system.`);
+      } else {
+        alert(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
-      // Clear syncing state
       setSyncingEmployees((prev) => ({ ...prev, [employee.id]: false }));
     }
   };
 
-  // Close Xero details modal
+  // Sync all employees to Xero
+  const handleSyncAllToXero = async () => {
+    if (!selectedOrganization?.id) {
+      alert("Please select an organization first");
+      return;
+    }
+
+    const unsyncedEmployees = employees.filter(emp => 
+      !emp.xero_employee_id && !emp.xero_employee_connection
+    );
+
+    if (unsyncedEmployees.length === 0) {
+      alert("All employees are already synced with Xero!");
+      return;
+    }
+
+    if (!window.confirm(`Sync ${unsyncedEmployees.length} employees to Xero? This may take a few moments.`)) {
+      return;
+    }
+
+    setSyncingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+    const failedEmployees = [];
+
+    for (const employee of unsyncedEmployees) {
+      try {
+        setSyncingEmployees(prev => ({ ...prev, [employee.id]: true }));
+        
+        const response = await syncEmployeeToXero(selectedOrganization.id, employee.id);
+        
+        if (response.data?.status === true) {
+          successCount++;
+        } else {
+          failCount++;
+          failedEmployees.push(`${employee.first_name} ${employee.last_name}`);
+        }
+      } catch (error) {
+        failCount++;
+        failedEmployees.push(`${employee.first_name} ${employee.last_name}`);
+        console.error(`Failed to sync ${employee.first_name}:`, error);
+      } finally {
+        setSyncingEmployees(prev => ({ ...prev, [employee.id]: false }));
+      }
+    }
+
+    alert(`Sync complete: ${successCount} succeeded, ${failCount} failed${failedEmployees.length > 0 ? '\nFailed: ' + failedEmployees.join(', ') : ''}`);
+    fetchEmployees();
+    setSyncingAll(false);
+  };
+
   const closeXeroDetailsModal = () => {
     setXeroDetailsModal({
       isOpen: false,
@@ -607,7 +663,6 @@ export default function EmployeeList() {
     });
   };
 
-  // Export employee list
   const exportEmployeeList = () => {
     const csvContent = [
       [
@@ -619,6 +674,7 @@ export default function EmployeeList() {
         "Designation",
         "Status",
         "Joining Date",
+        "Xero Status",
         "Xero Employee ID",
       ],
       ...filteredEmployees.map((emp) => [
@@ -630,7 +686,8 @@ export default function EmployeeList() {
         emp.designation?.title || "N/A",
         emp.status || "N/A",
         emp.joining_date || "N/A",
-        emp.xero_employee_id || "Not linked",
+        emp.xero_synced_status || emp.xero_status || "Not synced",
+        emp.xero_employee_id || "N/A",
       ]),
     ]
       .map((row) => row.join(","))
@@ -648,7 +705,6 @@ export default function EmployeeList() {
     alert("Export started! Check your downloads folder.");
   };
 
-  // Get unique departments for filter
   const departments = [
     ...new Set(employees.map((emp) => emp.department?.name).filter(Boolean)),
   ];
@@ -659,6 +715,8 @@ export default function EmployeeList() {
     "Terminated",
     "On Probation",
   ];
+
+  const trashedCount = employees.filter(e => e.deleted_at).length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen font-sans">
@@ -694,7 +752,23 @@ export default function EmployeeList() {
               )}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 mr-8 mt-10">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleSyncAllToXero}
+              disabled={syncingAll}
+              className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {syncingAll ? (
+                <>
+                  <FaSpinner className="animate-spin h-4 w-4" /> 
+                  Syncing All...
+                </>
+              ) : (
+                <>
+                  <FaSync className="h-4 w-4" /> Sync All to Xero
+                </>
+              )}
+            </button>
             <button
               onClick={() => navigate("/dashboard/employees/new")}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -717,11 +791,6 @@ export default function EmployeeList() {
             value={stats.active}
             icon={<FaUserCheck className="h-6 w-6 text-green-600" />}
             color="bg-green-50"
-            trend={
-              stats.total > 0
-                ? Math.round((stats.active / stats.total) * 100)
-                : 0
-            }
           />
           <StatsCard
             title="On Leave"
@@ -777,7 +846,7 @@ export default function EmployeeList() {
                 }`}
               >
                 <FaTrash className="h-3 w-3" />
-                Trash ({employees.filter((e) => e.deleted_at).length})
+                Trash ({trashedCount})
               </button>
             </div>
 
@@ -858,7 +927,7 @@ export default function EmployeeList() {
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <FaSpinner className="animate-spin h-8 w-8 text-blue-600" />
                     </div>
                     <p className="mt-2 text-gray-500">Loading employees...</p>
                   </td>
