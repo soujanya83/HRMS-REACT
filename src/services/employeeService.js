@@ -1,5 +1,5 @@
 // services/employeeService.js
-import axiosClient from '../axiosClient';
+import axiosClient from '../axiosClient'; // This should be at the very top
 
 // ============================================
 // BASIC EMPLOYEE OPERATIONS
@@ -212,6 +212,11 @@ export const updateEmployeeDocument = (documentId, documentData) => {
   });
 };
 
+
+
+// Get designations by department ID
+// In employeeService.js - update this function (around line 237)
+// employeeService.js
 // ============================================
 // DEPARTMENTS & ORGANIZATIONS
 // ============================================
@@ -223,11 +228,23 @@ export const getDepartmentsByOrganization = (orgId) => {
 };
 
 // Get designations by department ID
-export const getDesignationsByDeptId = (deptId) => {
-  console.log(`Fetching designations for department ID: ${deptId}`);
-  return axiosClient.get(`/departments/${deptId}/designations`);
+// FIXED: Now accepts organizationId as a parameter
+export const getDesignationsByDeptId = async (organizationId) => {
+  if (!organizationId) {
+    console.error('Organization ID is required to fetch designations');
+    return { data: [] };
+  }
+  
+  console.log(`Fetching designations for organization: ${organizationId}`);
+  try {
+    // Use the organization-level endpoint to get all designations
+    const response = await axiosClient.get(`/organizations/${organizationId}/designations`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching designations:', error);
+    throw error;
+  }
 };
-
 // ============================================
 // SUPER FUND SEARCH - NEW API ENDPOINT
 // ============================================

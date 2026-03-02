@@ -108,6 +108,18 @@ const COLOR_OPTIONS = [
   { value: "#F43F5E", label: "Rose", class: "bg-rose-500", code: "rose" },
 ];
 
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Lavender', value: '#E6E6FA', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Lilac', value: '#C8A2C8', textColor: 'text-gray-800' },
+  { name: 'Mint Cream', value: '#F5FFFA', textColor: 'text-gray-800' },
+];
+
 // Age group options with icons
 const AGE_GROUPS = [
   { value: "Infants (0-12 months)", label: "Infants (0-12 months)", icon: "🍼" },
@@ -182,6 +194,64 @@ const getColorWithOpacity = (colorValue, opacity = 0.1) => {
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
   return colorValue;
+};
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
 };
 
 // Reusable Form Components
@@ -296,6 +366,8 @@ function OrganizationsPage() {
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'designations'
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb'); // Default bg-gray-50
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
@@ -580,7 +652,31 @@ function OrganizationsPage() {
   return (
     <RoomModalContext.Provider value={roomModalContextValue}>
       <DesignationModalContext.Provider value={designationModalContextValue}>
-        <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
+        {/* Color Palette Toggle Button */}
+        <button
+          onClick={() => setIsColorPaletteOpen(true)}
+          className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          <div className="flex items-center space-x-2">
+            <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            <span className="text-sm font-medium">Colors</span>
+          </div>
+        </button>
+
+        {/* Color Palette Component */}
+        <ColorPalette 
+          isOpen={isColorPaletteOpen}
+          onClose={() => setIsColorPaletteOpen(false)}
+          onColorSelect={setBackgroundColor}
+        />
+
+        <div 
+          className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+          style={{ backgroundColor }}
+        >
           <div className="max-w-7xl mx-auto">
             {!selectedOrg ? (
               <OrganizationListView
@@ -1224,8 +1320,7 @@ function RoomCard({ room, onEdit, onDelete }) {
     </div>
   );
 }
-
-// Designations List Component
+// Designations List Component (complete)
 function DesignationsList({ orgId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1292,51 +1387,49 @@ function DesignationsList({ orgId }) {
 
   return (
     <div className="space-y-2">
-      {designations.map((desig) => {
-        return (
-          <div
-            key={desig.id}
-            className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
-          >
-            <div className="flex items-center gap-4">
-              <div 
-                className="w-1 h-10 rounded-full bg-blue-500"
-              />
-              
-              <div>
-                <p className="font-semibold text-gray-800">{desig.title}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  {desig.level && (
-                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
-                      Level: {desig.level}
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    ID: {desig.id}
+      {designations.map((desig) => (
+        <div
+          key={desig.id}
+          className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
+        >
+          <div className="flex items-center gap-4">
+            <div 
+              className="w-1 h-10 rounded-full bg-blue-500"
+            />
+            
+            <div>
+              <p className="font-semibold text-gray-800">{desig.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                {desig.level && (
+                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                    Level: {desig.level}
                   </span>
-                </div>
+                )}
+                <span className="text-xs text-gray-500">
+                  ID: {desig.id}
+                </span>
               </div>
             </div>
-            
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => designationModalContext.openDesignationModal(desig)}
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                title="Edit Designation"
-              >
-                <HiPencil size={14} />
-              </button>
-              <button
-                onClick={() => designationModalContext.deleteDesignation(desig)}
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
-                title="Delete Designation"
-              >
-                <HiTrash size={14} />
-              </button>
-            </div>
           </div>
-        );
-      })}
+          
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => designationModalContext.openDesignationModal(desig)}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+              title="Edit Designation"
+            >
+              <HiPencil size={14} />
+            </button>
+            <button
+              onClick={() => designationModalContext.deleteDesignation(desig)}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+              title="Delete Designation"
+            >
+              <HiTrash size={14} />
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1636,7 +1729,6 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 name="color_code"
                 value={formData.color_code}
                 onChange={handleChange}
-                roomId={room?.id}
               />
               
               <FormTextarea

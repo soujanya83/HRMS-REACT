@@ -49,14 +49,16 @@ import {
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
-
-
 const MANDATORY_CERTIFICATES = {
-  // Mandatory Certificates & Checks
+  // Mandatory Certificates & Checks (Purple themed)
   mandatory_checks: {
     title: "🛡️ Mandatory Certificates & Checks",
     icon: <FaShieldAlt />,
     color: "purple",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+    textColor: "text-purple-800",
+    badgeColor: "bg-purple-100 text-purple-800",
     items: [
       {
         id: "wwcc",
@@ -67,7 +69,11 @@ const MANDATORY_CERTIFICATES = {
         expiryYears: 5,
         description: "Employee type, linked to service",
         regulatoryBody: "Department of Justice and Community Safety",
-        icon: "🆔"
+        icon: "🆔",
+        color: "purple",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-800",
+        borderColor: "border-purple-300"
       },
       {
         id: "first_aid",
@@ -78,7 +84,10 @@ const MANDATORY_CERTIFICATES = {
         expiryYears: 3,
         includes: ["CPR", "Asthma", "Anaphylaxis"],
         description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
-        icon: "🚑"
+        icon: "🚑",
+        color: "purple",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-800"
       },
       {
         id: "police_check",
@@ -88,7 +97,10 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: true,
         expiryYears: 3,
         description: "Current National Police Check",
-        icon: "👮"
+        icon: "👮",
+        color: "purple",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-800"
       },
       {
         id: "mandatory_reporting",
@@ -97,7 +109,10 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Protecting Children – Victoria",
-        icon: "📋"
+        icon: "📋",
+        color: "purple",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-800"
       },
       {
         id: "child_safe",
@@ -106,16 +121,23 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Child Safe Standards Awareness Training",
-        icon: "🛡️"
+        icon: "🛡️",
+        color: "purple",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-800"
       }
     ]
   },
 
-  // Qualifications
+  // Qualifications (Blue themed)
   qualifications: {
     title: "🎓 Qualifications",
     icon: <FaGraduationCap />,
     color: "blue",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+    textColor: "text-blue-800",
+    badgeColor: "bg-blue-100 text-blue-800",
     items: [
       {
         id: "cert_3",
@@ -125,7 +147,10 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: false,
         description: "Minimum qualification for educators",
         icon: "🎓",
-        qualificationCode: "CHC30121"
+        qualificationCode: "CHC30121",
+        color: "blue",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-800"
       },
       {
         id: "diploma",
@@ -135,7 +160,10 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: false,
         description: "Advanced qualification for room leaders",
         icon: "📜",
-        qualificationCode: "CHC50121"
+        qualificationCode: "CHC50121",
+        color: "blue",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-800"
       },
       {
         id: "enrollment_proof",
@@ -145,16 +173,23 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: true,
         expiryYears: 1,
         description: "Proof of current enrollment in qualification",
-        icon: "📝"
+        icon: "📝",
+        color: "blue",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-800"
       }
     ]
   },
 
-  // Health & Safety Compliance
+  // Health & Safety Compliance (Green themed)
   health_safety: {
     title: "🏥 Health & Safety Compliance",
     icon: <FaMedkit />,
     color: "green",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+    textColor: "text-green-800",
+    badgeColor: "bg-green-100 text-green-800",
     items: [
       {
         id: "immunisation",
@@ -164,7 +199,10 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: false,
         recommendations: ["Flu", "Pertussis", "MMR", "Hepatitis B"],
         description: "Flu and Pertussis recommended for childcare workers",
-        icon: "💉"
+        icon: "💉",
+        color: "green",
+        bgColor: "bg-green-100",
+        textColor: "text-green-800"
       },
       {
         id: "medical_fitness",
@@ -173,16 +211,23 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Medical fitness to work with children",
-        icon: "🩺"
+        icon: "🩺",
+        color: "green",
+        bgColor: "bg-green-100",
+        textColor: "text-green-800"
       }
     ]
   },
 
-  // Identity & Legal
+  // Identity & Legal (Orange themed)
   identity_legal: {
     title: "🪪 Identity & Legal",
     icon: <FaIdCard />,
     color: "orange",
+    bgColor: "bg-orange-50",
+    borderColor: "border-orange-200",
+    textColor: "text-orange-800",
+    badgeColor: "bg-orange-100 text-orange-800",
     items: [
       {
         id: "proof_of_identity",
@@ -192,7 +237,10 @@ const MANDATORY_CERTIFICATES = {
         hasExpiry: false,
         description: "Passport or Driver's Licence",
         icon: "🛂",
-        options: ["Passport", "Driver's Licence", "Birth Certificate"]
+        options: ["Passport", "Driver's Licence", "Birth Certificate"],
+        color: "orange",
+        bgColor: "bg-orange-100",
+        textColor: "text-orange-800"
       },
       {
         id: "right_to_work",
@@ -201,7 +249,10 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Proof of Australian citizenship or valid work visa",
-        icon: "🇦🇺"
+        icon: "🇦🇺",
+        color: "orange",
+        bgColor: "bg-orange-100",
+        textColor: "text-orange-800"
       },
       {
         id: "visa",
@@ -210,16 +261,23 @@ const MANDATORY_CERTIFICATES = {
         required: false,
         hasExpiry: true,
         description: "Current visa for non-citizens",
-        icon: "🛂"
+        icon: "🛂",
+        color: "orange",
+        bgColor: "bg-orange-100",
+        textColor: "text-orange-800"
       }
     ]
   },
 
-  // Professional Compliance
+  // Professional Compliance (Red themed)
   professional: {
     title: "📋 Professional Compliance",
     icon: <FaGavel />,
     color: "red",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    textColor: "text-red-800",
+    badgeColor: "bg-red-100 text-red-800",
     items: [
       {
         id: "code_of_conduct",
@@ -228,7 +286,10 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Signed Code of Conduct agreement",
-        icon: "📄"
+        icon: "📄",
+        color: "red",
+        bgColor: "bg-red-100",
+        textColor: "text-red-800"
       },
       {
         id: "confidentiality",
@@ -237,16 +298,23 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Signed Confidentiality Agreement",
-        icon: "🔒"
+        icon: "🔒",
+        color: "red",
+        bgColor: "bg-red-100",
+        textColor: "text-red-800"
       }
     ]
   },
 
-  // Operational Readiness
+  // Operational Readiness (Teal themed)
   operational: {
     title: "⚙️ Operational Readiness",
     icon: <FaClipboardList />,
     color: "teal",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-200",
+    textColor: "text-teal-800",
+    badgeColor: "bg-teal-100 text-teal-800",
     items: [
       {
         id: "induction",
@@ -255,7 +323,10 @@ const MANDATORY_CERTIFICATES = {
         required: true,
         hasExpiry: false,
         description: "Emergency procedures, supervision, child protection",
-        icon: "📋"
+        icon: "📋",
+        color: "teal",
+        bgColor: "bg-teal-100",
+        textColor: "text-teal-800"
       },
       {
         id: "food_safety",
@@ -264,7 +335,10 @@ const MANDATORY_CERTIFICATES = {
         required: false,
         hasExpiry: false,
         description: "If handling food",
-        icon: "🍽️"
+        icon: "🍽️",
+        color: "teal",
+        bgColor: "bg-teal-100",
+        textColor: "text-teal-800"
       },
       {
         id: "safe_sleep",
@@ -272,8 +346,63 @@ const MANDATORY_CERTIFICATES = {
         type: "Safe Sleep Training",
         required: true,
         hasExpiry: false,
-        description: "Safe Sleep & SIDS Training",
-        icon: "😴"
+        description: "For educators working with children under 2 years",
+        icon: "😴",
+        color: "teal",
+        bgColor: "bg-teal-100",
+        textColor: "text-teal-800"
+      }
+    ]
+  },
+
+  // Annual Training (Pink themed)
+  annual_training: {
+    title: "📅 Annual Training Requirements",
+    icon: <FaCalendarAlt />,
+    color: "pink",
+    bgColor: "bg-pink-50",
+    borderColor: "border-pink-200",
+    textColor: "text-pink-800",
+    badgeColor: "bg-pink-100 text-pink-800",
+    items: [
+      {
+        id: "sun_smart",
+        name: "Sun Smart Training",
+        type: "Sun Smart",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 1,
+        description: "Annual sun safety awareness training",
+        icon: "☀️",
+        color: "pink",
+        bgColor: "bg-pink-100",
+        textColor: "text-pink-800"
+      },
+      {
+        id: "allergies",
+        name: "All About Allergies",
+        type: "Allergies Training",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 1,
+        description: "Annual allergy awareness and management training",
+        icon: "⚠️",
+        color: "pink",
+        bgColor: "bg-pink-100",
+        textColor: "text-pink-800"
+      },
+      {
+        id: "food_safety_annual",
+        name: "Do Food Safety",
+        type: "Food Safety Annual",
+        required: true,
+        hasExpiry: true,
+        expiryYears: 1,
+        description: "Annual food safety certification",
+        icon: "🍲",
+        color: "pink",
+        bgColor: "bg-pink-100",
+        textColor: "text-pink-800"
       }
     ]
   }
@@ -293,7 +422,7 @@ const STAFF_FILE_REQUIREMENTS = [
 ];
 
 // ============================================
-// SUPER FUND SEARCH COMPONENT (Integrated)
+// SUPER FUND SEARCH COMPONENT
 // ============================================
 const SuperFundSearch = ({ 
   value = '', 
@@ -312,7 +441,6 @@ const SuperFundSearch = ({
   const inputRef = useRef(null);
   const debounceTimeout = useRef(null);
 
-  // Debounced search function
   const debouncedSearch = (searchQuery) => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
@@ -338,7 +466,6 @@ const SuperFundSearch = ({
     }, 300);
   };
 
-  // Handle input change
   const handleInputChange = (e) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
@@ -352,7 +479,6 @@ const SuperFundSearch = ({
     debouncedSearch(newQuery);
   };
 
-  // Handle suggestion selection
   const handleSelect = (fundName) => {
     setQuery(fundName);
     setSelected(fundName);
@@ -367,7 +493,6 @@ const SuperFundSearch = ({
     }
   };
 
-  // Handle clear selection
   const handleClear = () => {
     setQuery('');
     setSelected('');
@@ -384,7 +509,6 @@ const SuperFundSearch = ({
     inputRef.current?.focus();
   };
 
-  // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -398,7 +522,6 @@ const SuperFundSearch = ({
     };
   }, []);
 
-  // Update query when value prop changes
   useEffect(() => {
     if (value !== query) {
       setQuery(value || '');
@@ -406,7 +529,6 @@ const SuperFundSearch = ({
     }
   }, [value]);
 
-  // Highlight matching text
   const highlightMatch = (text, highlight) => {
     if (!highlight.trim()) {
       return text;
@@ -427,12 +549,10 @@ const SuperFundSearch = ({
   return (
     <div ref={wrapperRef} className="relative w-full">
       <div className="relative">
-        {/* Search Icon */}
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <FaSearch className="h-4 w-4 text-gray-400" />
         </div>
         
-        {/* Input Field */}
         <input
           ref={inputRef}
           type="text"
@@ -449,7 +569,6 @@ const SuperFundSearch = ({
           autoComplete="off"
         />
         
-        {/* Clear/Selected Indicator */}
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
           {isLoading ? (
             <FaSpinner className="h-4 w-4 text-gray-400 animate-spin" />
@@ -478,12 +597,10 @@ const SuperFundSearch = ({
         </div>
       </div>
       
-      {/* Error Message */}
       {error && (
         <p className="mt-1 text-sm text-red-600">{error}</p>
       )}
       
-      {/* Suggestions Dropdown */}
       {showSuggestions && (suggestions.length > 0 || isLoading) && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {isLoading ? (
@@ -508,7 +625,6 @@ const SuperFundSearch = ({
         </div>
       )}
       
-      {/* No Results Message */}
       {showSuggestions && !isLoading && query.length >= 1 && suggestions.length === 0 && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
           No super funds found matching "{query}"
@@ -544,7 +660,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  // Get all certificate types flattened for dropdown
   const allCertificateTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(category => 
     category.items.map(item => ({
       ...item,
@@ -655,7 +770,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
 
   if (!isOpen) return null;
 
-  // Group certificate types by category for the dropdown
   const groupedTypes = Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => ({
     ...category,
     key
@@ -676,7 +790,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
           )}
 
           <div className="space-y-6">
-            {/* Document Type with Categories */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Document Type <span className="text-red-500">*</span>
@@ -689,9 +802,9 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               >
                 <option value="">Select Document Type</option>
                 {groupedTypes.map((category) => (
-                  <optgroup key={category.key} label={category.title}>
+                  <optgroup key={category.key} label={category.title} className={category.textColor}>
                     {category.items.map((item) => (
-                      <option key={item.id} value={item.type}>
+                      <option key={item.id} value={item.type} className="py-1">
                         {item.icon} {item.name} {item.required ? '(Required)' : ''}
                       </option>
                     ))}
@@ -705,7 +818,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               )}
             </div>
 
-            {/* File Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 File Name <span className="text-red-500">*</span>
@@ -723,7 +835,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </p>
             </div>
 
-            {/* Dates Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -749,7 +860,6 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </div>
             </div>
 
-            {/* File Upload */}
             {!isEdit && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -889,7 +999,6 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
 
   const baseUrl = 'https://api.chrispp.com';
 
-  // Find matching certificate type for additional info
   const findCertType = () => {
     for (const category of Object.values(MANDATORY_CERTIFICATES)) {
       const found = category.items.find(item => 
@@ -951,7 +1060,6 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
         )}
       </div>
 
-      {/* Progress Bar for Expiring Documents */}
       {expiryDate && daysRemaining > 0 && daysRemaining <= 90 && (
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -1011,7 +1119,7 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
   );
 };
 
-// Compliance Checklist Component
+// Compliance Checklist Component with Colors
 const ComplianceChecklist = ({ certificates = [] }) => {
   const [expandedCategories, setExpandedCategories] = useState(
     Object.keys(MANDATORY_CERTIFICATES).reduce((acc, key) => ({ ...acc, [key]: true }), {})
@@ -1024,7 +1132,6 @@ const ComplianceChecklist = ({ certificates = [] }) => {
     }));
   };
 
-  // Check if a certificate is uploaded
   const isCertificateUploaded = (certType) => {
     return certificates.some(doc => 
       doc.document_type === certType || 
@@ -1034,7 +1141,6 @@ const ComplianceChecklist = ({ certificates = [] }) => {
     );
   };
 
-  // Get uploaded certificate details
   const getUploadedCertificate = (certType) => {
     return certificates.find(doc => 
       doc.document_type === certType || 
@@ -1044,7 +1150,6 @@ const ComplianceChecklist = ({ certificates = [] }) => {
     );
   };
 
-  // Calculate compliance percentage
   const totalRequired = Object.values(MANDATORY_CERTIFICATES)
     .flatMap(cat => cat.items.filter(item => item.required)).length;
   
@@ -1062,7 +1167,6 @@ const ComplianceChecklist = ({ certificates = [] }) => {
 
   return (
     <div className="space-y-6">
-      {/* Compliance Summary */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Compliance Summary</h3>
         <div className="flex items-center gap-4">
@@ -1090,7 +1194,6 @@ const ComplianceChecklist = ({ certificates = [] }) => {
         </div>
       </div>
 
-      {/* Staff File Requirements */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
           <h3 className="text-md font-semibold text-gray-800">Staff File Requirements</h3>
@@ -1121,39 +1224,48 @@ const ComplianceChecklist = ({ certificates = [] }) => {
         </div>
       </div>
 
-      {/* Category-wise Checklist */}
       {Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => {
         const uploadedInCategory = category.items.filter(item => 
           isCertificateUploaded(item.type)
         ).length;
 
         return (
-          <div key={key} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div 
+            key={key} 
+            className={`rounded-lg border overflow-hidden ${category.borderColor || 'border-gray-200'}`}
+          >
             <button
               onClick={() => toggleCategory(key)}
-              className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className={`w-full px-6 py-4 flex items-center justify-between hover:opacity-90 transition-colors ${category.bgColor || 'bg-gray-50'}`}
             >
               <div className="flex items-center gap-3">
-                <span className={`text-${category.color}-600 text-xl`}>{category.icon}</span>
+                <span className={`text-${category.color || 'gray'}-600 text-xl`}>{category.icon}</span>
                 <div>
-                  <h3 className="text-md font-semibold text-gray-800 text-left">{category.title}</h3>
+                  <h3 className={`text-md font-semibold ${category.textColor || 'text-gray-800'} text-left`}>
+                    {category.title}
+                  </h3>
                   <p className="text-xs text-gray-500 text-left">
                     {uploadedInCategory}/{category.items.length} documents
                   </p>
                 </div>
               </div>
-              {expandedCategories[key] ? <FaChevronUp /> : <FaChevronDown />}
+              {expandedCategories[key] ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
             </button>
             
             {expandedCategories[key] && (
-              <div className="px-6 pb-6 pt-2 border-t border-gray-200">
+              <div className="px-6 pb-6 pt-2 border-t border-gray-200 bg-white">
                 <div className="space-y-3">
                   {category.items.map((item) => {
                     const uploaded = isCertificateUploaded(item.type);
                     const uploadedDoc = getUploadedCertificate(item.type);
                     
                     return (
-                      <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div 
+                        key={item.id} 
+                        className={`flex items-start gap-3 p-3 rounded-lg ${
+                          item.bgColor || 'bg-gray-50'
+                        }`}
+                      >
                         <div className="mt-1">
                           {uploaded ? (
                             <FaCheck className="text-green-500" />
@@ -1167,7 +1279,7 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{item.icon}</span>
                             <div>
-                              <p className="font-medium text-gray-800">
+                              <p className={`font-medium ${item.textColor || 'text-gray-800'}`}>
                                 {item.name}
                                 {item.required && <span className="text-red-500 ml-1">*</span>}
                               </p>
@@ -1198,6 +1310,17 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                             <p className="text-xs text-gray-400 mt-1 pl-7">
                               Recommended: {item.recommendations.join(', ')}
                             </p>
+                          )}
+                          {item.includes && (
+                            <div className="flex flex-wrap gap-1 mt-1 pl-7">
+                              {item.includes.map((inc, idx) => (
+                                <span key={idx} className={`text-xs px-2 py-0.5 rounded-full ${
+                                  category.badgeColor || 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {inc}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1378,9 +1501,8 @@ export default function EmployeeForm() {
   const [formErrors, setFormErrors] = useState({});
   const [completedTabs, setCompletedTabs] = useState(new Set());
   const [employeeId, setEmployeeId] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'checklist'
+  const [viewMode, setViewMode] = useState('list');
 
-  // Document states
   const [certificates, setCertificates] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
   const [certificateError, setCertificateError] = useState('');
@@ -1393,7 +1515,6 @@ export default function EmployeeForm() {
   const organizationId = selectedOrganization?.id;
 
   const [formData, setFormData] = useState({
-    // Personal Info - Basic fields
     first_name: "",
     last_name: "",
     personal_email: "",
@@ -1405,7 +1526,6 @@ export default function EmployeeForm() {
     emergency_contact_phone: "",
     emergency_contact_relationship: "",
     
-    // Employment
     employee_code: "",
     joining_date: "",
     room_id: "",
@@ -1415,7 +1535,6 @@ export default function EmployeeForm() {
     status: "On Probation",
     hourly_wage: "",
     
-    // Payroll
     tax_file_number: "",
     superannuation_fund_name: "",
     superannuation_member_number: "",
@@ -1436,7 +1555,6 @@ export default function EmployeeForm() {
     { id: "payroll", label: "Payroll", icon: <FaDollarSign />, step: 4 },
   ];
 
-  // Tab descriptions
   const tabDescriptions = {
     personal: "Step 1: Enter basic personal details to create the employee",
     certificates: "Step 2: Upload certificates and documents - View by list or compliance checklist",
@@ -1444,7 +1562,6 @@ export default function EmployeeForm() {
     payroll: "Step 4: Add payroll information",
   };
 
-  // Check for employee ID in URL params and set state
   useEffect(() => {
     if (id) {
       console.log('URL has ID param:', id);
@@ -1452,7 +1569,6 @@ export default function EmployeeForm() {
     }
   }, [id]);
 
-  // Check for tab in URL query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -1462,7 +1578,6 @@ export default function EmployeeForm() {
     }
   }, [location.search]);
 
-  // Fetch employee data when employeeId changes
   useEffect(() => {
     if (employeeId) {
       console.log('Employee ID changed to:', employeeId, '- fetching data');
@@ -1472,7 +1587,6 @@ export default function EmployeeForm() {
     }
   }, [employeeId]);
 
-  // Update URL when tab changes
   useEffect(() => {
     if (employeeId) {
       const params = new URLSearchParams(location.search);
@@ -1529,10 +1643,8 @@ export default function EmployeeForm() {
     }
   };
 
-  // Fetch departments and managers when we have an ID and organizationId
   useEffect(() => {
     if (employeeId && organizationId) {
-      // Fetch departments (rooms)
       getDepartmentsByOrganization(organizationId)
         .then((res) => {
           if (res && res.data && res.data.success === true) {
@@ -1559,7 +1671,6 @@ export default function EmployeeForm() {
           setDepartments([]);
         });
 
-      // Fetch managers (existing employees)
       getEmployees({ organization_id: organizationId })
         .then((response) => {
           if (response.data && response.data.success === true) {
@@ -1585,44 +1696,71 @@ export default function EmployeeForm() {
     }
   }, [employeeId, organizationId]);
 
-  // Fetch designations when room changes
+  // FIXED: Designation fetch - using organization-level endpoint
   useEffect(() => {
-    if (employeeId && formData.room_id) {
-      setFormData((prev) => ({ ...prev, designation_id: "" }));
-      
-      getDesignationsByDeptId(formData.room_id)
-        .then((res) => {
-          if (res && res.data && res.data.success === true) {
-            const designationsData = res.data.data || [];
-            setDesignations(
-              designationsData.map((d) => ({ 
-                value: d.id, 
-                label: d.title 
-              }))
-            );
-          } else if (res && res.data && Array.isArray(res.data)) {
-            setDesignations(
-              res.data.map((d) => ({ 
-                value: d.id, 
-                label: d.title 
-              }))
-            );
-          } else {
-            setDesignations([]);
+    const fetchDesignations = async () => {
+      // Only fetch if we have an organization ID
+      if (!organizationId) {
+        console.log('No organization ID available');
+        setDesignations([]);
+        return;
+      }
+
+      try {
+        console.log('Fetching all designations for organization:', organizationId);
+        
+        // Use the organization-level endpoint to get all designations
+        const response = await getDesignationsByDeptId(organizationId);
+        
+        console.log('Designations API response:', response);
+        
+        let designationsData = [];
+        
+        if (response && response.data) {
+          if (response.data.success === true && response.data.data) {
+            designationsData = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            designationsData = response.data;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            designationsData = response.data.data;
           }
-        })
-        .catch((err) => {
-          console.error("Error fetching designations:", err);
-          setDesignations([]);
-        });
-    } else {
-      setDesignations([]);
-    }
-  }, [employeeId, formData.room_id]);
+        }
+        
+        console.log('Processed designations:', designationsData);
+        
+        // Map to the format expected by SelectField
+        setDesignations(
+          designationsData.map((d) => ({ 
+            value: d.id, 
+            label: d.title || d.name || 'Unknown'
+          }))
+        );
+        
+        // Clear any previous designation errors
+        setFormErrors(prev => ({ ...prev, designation_id: null }));
+        
+      } catch (err) {
+        console.error("Error fetching designations:", err);
+        setDesignations([]);
+        
+        // Show user-friendly error message
+        setFormErrors(prev => ({
+          ...prev,
+          designation_id: "Could not load designations. Please try again."
+        }));
+      }
+    };
+
+    fetchDesignations();
+  }, [organizationId]); // Only depend on organizationId
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Field changed: ${name} = ${value}`);
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: null }));
     }
@@ -1695,7 +1833,6 @@ export default function EmployeeForm() {
     }
   };
 
-  // Validate personal tab
   const validatePersonalTab = () => {
     const errors = {};
     
@@ -1720,7 +1857,6 @@ export default function EmployeeForm() {
   };
 
   const handleCreateEmployee = async () => {
-    // Validate personal tab
     const errors = validatePersonalTab();
     
     if (Object.keys(errors).length > 0) {
@@ -1759,25 +1895,15 @@ export default function EmployeeForm() {
       const response = await createEmployeeBasic(basicEmployeeData);
       console.log('Create employee response:', response);
       
-      // Get the new employee ID from the response
       const newEmployeeId = response.data?.data?.employee?.id || 
                             response.data?.data?.id || 
                             response.data?.id;
       
       if (newEmployeeId) {
-        // Set the employee ID in state
         setEmployeeId(newEmployeeId);
-        
-        // Mark personal tab as completed
         setCompletedTabs(prev => new Set([...prev, "personal"]));
-        
-        // Switch to certificates tab
         setActiveTab("certificates");
-        
-        // Update the URL to include the ID and certificates tab
         navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=certificates`, { replace: true });
-        
-        // Show success message
         alert('Employee created successfully! Now you can upload documents.');
       } else {
         console.error('No employee ID in response:', response);
@@ -1982,7 +2108,6 @@ export default function EmployeeForm() {
       />
 
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate("/dashboard/employees")}
@@ -2013,9 +2138,7 @@ export default function EmployeeForm() {
           )}
         </div>
 
-        {/* Main Container */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {/* Tab Navigation */}
           <div className="p-6 border-b border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {tabs.map((tab) => (
@@ -2043,9 +2166,7 @@ export default function EmployeeForm() {
             </div>
           </div>
 
-          {/* Form Content */}
           <div className="p-6 md:p-8">
-            {/* Tab Description */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
                 {tabs.find(t => t.id === activeTab)?.label}
@@ -2055,7 +2176,6 @@ export default function EmployeeForm() {
               </p>
             </div>
 
-            {/* Personal Information Tab */}
             {activeTab === "personal" && (
               <div className="space-y-8">
                 <SectionHeader 
@@ -2191,7 +2311,6 @@ export default function EmployeeForm() {
               </div>
             )}
 
-            {/* Certificates Tab */}
             {activeTab === "certificates" && (
               <div className="space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -2200,7 +2319,6 @@ export default function EmployeeForm() {
                     description="Upload and manage employee certificates - View by list or compliance checklist"
                   />
                   <div className="flex items-center gap-3">
-                    {/* View Toggle */}
                     <div className="flex items-center bg-gray-100 rounded-lg p-1">
                       <button
                         onClick={() => setViewMode('list')}
@@ -2277,7 +2395,6 @@ export default function EmployeeForm() {
                     <span className="ml-3 text-gray-600">Loading certificates...</span>
                   </div>
                 ) : viewMode === 'list' ? (
-                  // List View
                   certificates.length > 0 ? (
                     <>
                       <div className="flex items-center gap-3 mb-4">
@@ -2323,13 +2440,11 @@ export default function EmployeeForm() {
                     </div>
                   )
                 ) : (
-                  // Compliance Checklist View
                   <ComplianceChecklist certificates={certificates} />
                 )}
               </div>
             )}
 
-            {/* Employment Tab */}
             {activeTab === "employment" && employeeId && (
               <div className="space-y-8">
                 <SectionHeader 
@@ -2364,8 +2479,12 @@ export default function EmployeeForm() {
                     label="Room"
                     name="room_id"
                     id="room_id"
-                    value={formData.room_id}
-                    onChange={handleChange}
+                    value={formData.room_id || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      console.log('Room selected, value:', value);
+                      handleChange(e);
+                    }}
                     options={departments}
                     error={formErrors.room_id}
                     required
@@ -2376,13 +2495,13 @@ export default function EmployeeForm() {
                     label="Designation"
                     name="designation_id"
                     id="designation_id"
-                    value={formData.designation_id}
+                    value={formData.designation_id || ""}
                     onChange={handleChange}
                     options={designations}
                     error={formErrors.designation_id}
                     required
-                    placeholder={departments.length === 0 ? "-- Select Room First --" : "-- Select Designation --"}
-                    disabled={!formData.room_id || designations.length === 0}
+                    placeholder={designations.length === 0 ? "No designations available" : "-- Select Designation --"}
+                    disabled={designations.length === 0}
                   />
                   
                   <SelectField
@@ -2450,7 +2569,6 @@ export default function EmployeeForm() {
               </div>
             )}
 
-            {/* Payroll Tab */}
             {activeTab === "payroll" && employeeId && (
               <div className="space-y-8">
                 <SectionHeader 
@@ -2469,7 +2587,6 @@ export default function EmployeeForm() {
                     placeholder="Enter TFN"
                   />
                   
-                  {/* Superannuation Fund Name with Search */}
                   <div className="w-full">
                     <label htmlFor="superannuation_fund_name" className="block text-sm font-medium text-gray-700 mb-1">
                       Superannuation Fund Name
@@ -2541,7 +2658,6 @@ export default function EmployeeForm() {
               </div>
             )}
 
-            {/* Form Actions */}
             <div className="mt-12 pt-8 border-t border-gray-200 flex justify-between items-center">
               <div>
                 {activeTab !== "personal" && employeeId && (
@@ -2637,7 +2753,6 @@ export default function EmployeeForm() {
           </div>
         </div>
 
-        {/* Progress Note */}
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
           <FaInfoCircle className="text-blue-600 mt-0.5" />
           <div>

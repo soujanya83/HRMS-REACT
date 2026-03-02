@@ -29,6 +29,76 @@ import {
   getDesignationsByDeptId,
 } from "../../services/recruitmentService";
 
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Lavender', value: '#E6E6FA', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Lilac', value: '#C8A2C8', textColor: 'text-gray-800' },
+  { name: 'Mint Cream', value: '#F5FFFA', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 const FormInput = ({ label, name, error, ...props }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium text-gray-700">
@@ -45,6 +115,7 @@ const FormInput = ({ label, name, error, ...props }) => (
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
 );
+
 const FormSelect = ({ label, name, error, children, ...props }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium text-gray-700">
@@ -63,6 +134,7 @@ const FormSelect = ({ label, name, error, children, ...props }) => (
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
 );
+
 const FormTextarea = ({ label, name, error, ...props }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium text-gray-700">
@@ -99,6 +171,8 @@ function JobOpeningListPage() {
   const [jobToDelete, setJobToDelete] = useState(null);
   const { selectedOrganization } = useOrganizations();
   const [modalErrors, setModalErrors] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb'); // Default bg-gray-50
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     if (!selectedOrganization) {
@@ -163,71 +237,97 @@ function JobOpeningListPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Job Openings</h1>
-          <button
-            onClick={() => {
-              setEditingJob(null);
-              setModalErrors(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
-          >
-            <HiPlus /> Create Job Opening
-          </button>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-sm font-medium">Colors</span>
         </div>
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">Job Openings</h1>
+            <button
+              onClick={() => {
+                setEditingJob(null);
+                setModalErrors(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
+            >
+              <HiPlus /> Create Job Opening
+            </button>
           </div>
-        ) : jobs.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onEdit={() => {
-                  setEditingJob(job);
-                  setModalErrors(null);
-                  setIsModalOpen(true);
-                }}
-                onDelete={() => {
-                  setJobToDelete(job);
-                  setIsConfirmOpen(true);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 bg-white rounded-lg shadow-md">
-            <HiOutlineBriefcase className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No job openings found
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              There are no jobs for the selected organization:{" "}
-              <span className="font-bold">{selectedOrganization?.name}</span>.
-            </p>
-          </div>
-        )}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
+            </div>
+          ) : jobs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {jobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onEdit={() => {
+                    setEditingJob(job);
+                    setModalErrors(null);
+                    setIsModalOpen(true);
+                  }}
+                  onDelete={() => {
+                    setJobToDelete(job);
+                    setIsConfirmOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-lg shadow-md">
+              <HiOutlineBriefcase className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No job openings found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                There are no jobs for the selected organization:{" "}
+                <span className="font-bold">{selectedOrganization?.name}</span>.
+              </p>
+            </div>
+          )}
+        </div>
+        <JobOpeningModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+          job={editingJob}
+          errors={modalErrors}
+        />
+        <ConfirmationModal
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={handleDelete}
+          title="Delete Job Opening"
+          message={`Are you sure you want to delete "${jobToDelete?.title}"?`}
+        />
       </div>
-      <JobOpeningModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
-        job={editingJob}
-        errors={modalErrors}
-      />
-      <ConfirmationModal
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Job Opening"
-        message={`Are you sure you want to delete "${jobToDelete?.title}"?`}
-      />
-    </div>
+    </>
   );
 }
 
@@ -315,6 +415,8 @@ function JobOpeningDetailPage() {
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -361,7 +463,10 @@ function JobOpeningDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-gray-50 min-h-full flex items-center justify-center">
+      <div 
+        className="p-8 min-h-full flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading job details...</p>
@@ -372,7 +477,10 @@ function JobOpeningDetailPage() {
 
   if (error || !job) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
+      <div 
+        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate(-1)}
@@ -391,89 +499,115 @@ function JobOpeningDetailPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
-        >
-          <HiArrowLeft /> Back to Job Openings
-        </button>
-        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 relative">
-          {/* Status bar on the LEFT side */}
-          {statusConfig && (
-            <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
-          )}
-          
-          <div className="pl-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
-                <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
-                  <span className="flex items-center gap-1.5">
-                    <HiOutlineOfficeBuilding />
-                    {job.organization?.name || 'No organization'}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <HiOutlineLocationMarker />
-                    {job.location || 'Remote'}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <HiOutlineClock />
-                    {job.employment_type || 'Full-time'}
-                  </span>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-sm font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
+          >
+            <HiArrowLeft /> Back to Job Openings
+          </button>
+          <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 relative">
+            {/* Status bar on the LEFT side */}
+            {statusConfig && (
+              <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
+            )}
+            
+            <div className="pl-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
+                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
+                    <span className="flex items-center gap-1.5">
+                      <HiOutlineOfficeBuilding />
+                      {job.organization?.name || 'No organization'}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <HiOutlineLocationMarker />
+                      {job.location || 'Remote'}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <HiOutlineClock />
+                      {job.employment_type || 'Full-time'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {statusConfig && (
+                    <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusConfig.color}`}>
+                      {statusConfig.text}
+                    </span>
+                  )}
+                  <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                    <HiPencil /> Edit
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {statusConfig && (
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusConfig.color}`}>
-                    {statusConfig.text}
-                  </span>
-                )}
-                <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
-                  <HiPencil /> Edit
-                </button>
+              <hr className="my-6" />
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Description
+                </h3>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {job.description || 'No description provided.'}
+                </p>
               </div>
-            </div>
-            <hr className="my-6" />
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                Description
-              </h3>
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {job.description || 'No description provided.'}
-              </p>
-            </div>
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                Requirements
-              </h3>
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {job.requirements || 'No requirements provided.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
-              <div>
-                <span className="font-semibold">Posting Date:</span>{' '}
-                {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : 'Not specified'}
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Requirements
+                </h3>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {job.requirements || 'No requirements provided.'}
+                </p>
               </div>
-              <div>
-                <span className="font-semibold">Closing Date:</span>{' '}
-                {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
-              </div>
-              <div>
-                <span className="font-semibold">Room:</span>{' '}
-                {job.department?.name || 'Not specified'}
-              </div>
-              <div>
-                <span className="font-semibold">Designation:</span>{' '}
-                {job.designation?.title || 'Not specified'}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold">Posting Date:</span>{' '}
+                  {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-semibold">Closing Date:</span>{' '}
+                  {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-semibold">Room:</span>{' '}
+                  {job.department?.name || 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-semibold">Designation:</span>{' '}
+                  {job.designation?.title || 'Not specified'}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
