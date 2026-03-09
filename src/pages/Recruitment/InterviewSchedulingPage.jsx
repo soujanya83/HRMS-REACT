@@ -15,6 +15,76 @@ import {
   updateApplicantStatus
 } from '../../services/recruitmentService';
 
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Lavender', value: '#E6E6FA', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Lilac', value: '#C8A2C8', textColor: 'text-gray-800' },
+  { name: 'Mint Cream', value: '#F5FFFA', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // Interview type options
 const interviewTypeOptions = [
   'phone_screen',
@@ -26,8 +96,6 @@ const interviewTypeOptions = [
   'one_on_one',
 ];
 
-// Status options
-// Status options - UPDATED WITH ONLY TWO OPTIONS
 // Status options - UPDATED TO MATCH API VALID VALUES
 const statusOptions = [
   { 
@@ -196,7 +264,7 @@ const InterviewFormSlideOver = ({
     location: '',
     notes: '',
     feedback: '',
-    result: 'progress', // UPDATED: Default to 'progress' to match API
+    result: 'progress',
     interviewer_ids: []
   });
 
@@ -214,7 +282,7 @@ const InterviewFormSlideOver = ({
         location: interview.location || '',
         notes: interview.notes || '',
         feedback: interview.feedback || '',
-        result: interview.result || 'progress', // UPDATED: Default to 'progress'
+        result: interview.result || 'progress',
         interviewer_ids: interview.interviewer_ids || interview.interviewers?.map(i => i.id) || []
       });
     } else {
@@ -225,7 +293,7 @@ const InterviewFormSlideOver = ({
         location: '',
         notes: '',
         feedback: '',
-        result: 'progress', // UPDATED: Default to 'progress'
+        result: 'progress',
         interviewer_ids: []
       });
     }
@@ -309,7 +377,6 @@ const InterviewFormSlideOver = ({
                   ))}
                 </FormSelect>
                 
-                {/* UPDATED RESULT FIELD TO MATCH API */}
                 <FormSelect 
                   label="Initial Result *" 
                   name="result" 
@@ -423,6 +490,8 @@ const InterviewSchedulingPage = () => {
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [filterDate, setFilterDate] = useState('');
   const [filteredInterviews, setFilteredInterviews] = useState([]);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -446,11 +515,10 @@ const InterviewSchedulingPage = () => {
 
       const interviewsData = interviewsRes.data?.data || [];
       setInterviews(interviewsData);
-      setFilteredInterviews(interviewsData); // Initialize filtered interviews with all data
+      setFilteredInterviews(interviewsData);
       setUpcomingInterviews(upcomingRes.data?.data || []);
       setApplicants(applicantsRes.data?.data || []);
 
-      // Extract interviewers from existing interviews
       const interviewersRes = await getInterviewersFromInterviews(organizationId);
       setInterviewers(interviewersRes.data?.data || []);
 
@@ -477,10 +545,8 @@ const InterviewSchedulingPage = () => {
     setFilterDate(date);
     
     if (!date) {
-      // If no date selected, show all interviews
       setFilteredInterviews(interviews);
     } else {
-      // Filter interviews by selected date
       const filtered = interviews.filter(interview => {
         if (!interview.scheduled_at) return false;
         const interviewDate = new Date(interview.scheduled_at).toISOString().split('T')[0];
@@ -531,7 +597,6 @@ const InterviewSchedulingPage = () => {
       console.log('📝 Form data being submitted:', interviewData);
       setFormErrors({});
 
-      // Enhanced validation
       const validationErrors = {};
       
       if (!interviewData.applicant_id) {
@@ -546,12 +611,10 @@ const InterviewSchedulingPage = () => {
       if (!interviewData.interview_type) {
         validationErrors.interview_type = ['Please select interview type'];
       }
-      // UPDATED: Validate result field with correct values
       if (!interviewData.result || !resultOptions.find(opt => opt.value === interviewData.result)) {
         validationErrors.result = ['Please select a valid result'];
       }
 
-      // Validate date is in future
       if (interviewData.scheduled_at && new Date(interviewData.scheduled_at) <= new Date()) {
         validationErrors.scheduled_at = ['Interview date must be in the future'];
       }
@@ -561,7 +624,6 @@ const InterviewSchedulingPage = () => {
         return;
       }
 
-      // Check applicant status first
       const selectedApplicant = applicants.find(app => app.id === parseInt(interviewData.applicant_id));
       console.log('👤 Selected applicant:', selectedApplicant);
 
@@ -596,7 +658,6 @@ const InterviewSchedulingPage = () => {
         return;
       }
 
-      // UPDATED: Proper payload structure with correct result field values
       const payload = {
         applicant_id: parseInt(interviewData.applicant_id),
         interview_type: interviewData.interview_type,
@@ -606,22 +667,18 @@ const InterviewSchedulingPage = () => {
         organization_id: parseInt(organizationId),
         notes: interviewData.notes || '',
         feedback: interviewData.feedback || '',
-        // UPDATED: Ensure result uses correct API values
         result: interviewData.result && resultOptions.find(opt => opt.value === interviewData.result) 
           ? interviewData.result 
           : 'progress',
         
-        // Ensure interviewer_ids is properly formatted
         interviewer_ids: Array.isArray(interviewData.interviewer_ids) 
           ? interviewData.interviewer_ids.map(id => parseInt(id))
           : [parseInt(interviewData.interviewer_ids)],
         
-        // Add commonly required fields
         duration: 60,
         interview_round: 1,
       };
 
-      // Add job_opening_id if available from applicant
       if (selectedApplicant?.job_opening_id) {
         payload.job_opening_id = selectedApplicant.job_opening_id;
       }
@@ -639,7 +696,6 @@ const InterviewSchedulingPage = () => {
       
       console.log('✅ API Success Response:', response.data);
       
-      // Refresh data
       await fetchData();
       setSlideOverOpen(false);
       setEditingInterview(null);
@@ -650,7 +706,6 @@ const InterviewSchedulingPage = () => {
     } catch (err) {
       console.error('❌ Error saving interview:', err);
       
-      // Enhanced error logging
       console.error('🔴 Complete error object:', err);
       console.error('🔴 Error response data:', err.response?.data);
       console.error('🔴 Error response status:', err.response?.status);
@@ -681,7 +736,6 @@ const InterviewSchedulingPage = () => {
         
         setFormErrors(validationErrors);
         
-        // Create detailed error message
         let errorMessage = 'Please fix the following errors:\n\n';
         Object.entries(validationErrors).forEach(([field, messages]) => {
           const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -721,24 +775,22 @@ const InterviewSchedulingPage = () => {
     }
   };
 
-const handleStatusUpdate = async (interviewId, newStatus) => {
-  try {
-    // First get the interview to find the applicant ID
-    const interview = interviews.find(i => i.id === interviewId);
-    if (!interview || !interview.applicant_id) {
-      alert('Could not find applicant for this interview');
-      return;
+  const handleStatusUpdate = async (interviewId, newStatus) => {
+    try {
+      const interview = interviews.find(i => i.id === interviewId);
+      if (!interview || !interview.applicant_id) {
+        alert('Could not find applicant for this interview');
+        return;
+      }
+      
+      await updateApplicantStatus(interview.applicant_id, newStatus);
+      await fetchData();
+      alert(`Status updated to ${newStatus === 'applied_interview_schedule' ? 'Applied & interview-schedule' : 'Shortlisted'}`);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update status.');
     }
-    
-    // Update applicant status with the new status values
-    await updateApplicantStatus(interview.applicant_id, newStatus);
-    await fetchData();
-    alert(`Status updated to ${newStatus === 'applied_interview_schedule' ? 'Applied & interview-schedule' : 'Shortlisted'}`);
-  } catch (err) {
-    console.error('Error updating status:', err);
-    alert('Failed to update status.');
-  }
-};
+  };
 
   const getInterviewsForDate = (date) => {
     const interviewsToUse = filterDate ? filteredInterviews : interviews;
@@ -759,7 +811,10 @@ const handleStatusUpdate = async (interviewId, newStatus) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
       </div>
     );
@@ -767,7 +822,10 @@ const handleStatusUpdate = async (interviewId, newStatus) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
           <button 
@@ -782,299 +840,317 @@ const handleStatusUpdate = async (interviewId, newStatus) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Interview Scheduling</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage and schedule interviews for all job applicants.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 self-start sm:self-center">
-            {/* Filter Button */}
-            <button 
-              onClick={() => setFilterOpen(true)}
-              className={`inline-flex items-center gap-2 justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm ${
-                filterDate 
-                  ? 'border-brand-blue text-brand-blue bg-blue-50' 
-                  : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-              }`}
-            >
-              <HiFilter className="h-4 w-4" />
-              Filter by Date
-              {filterDate && (
-                <span className="ml-1 bg-brand-blue text-white text-xs px-2 py-1 rounded-full">
-                  {new Date(filterDate).toLocaleDateString()}
-                </span>
-              )}
-            </button>
-            
-            {/* Schedule Interview Button */}
-            <button 
-              onClick={() => {
-                setEditingInterview(null);
-                setFormErrors({});
-                setSlideOverOpen(true);
-              }}
-              className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90"
-            >
-              <HiPlus className="h-5 w-5" /> Schedule Interview
-            </button>
-          </div>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-sm font-medium">Colors</span>
         </div>
+      </button>
 
-        {/* Filter Status Display */}
-        {filterDate && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HiFilter className="h-4 w-4 text-blue-600" />
-                <span className="text-sm text-blue-800">
-                  Showing interviews for: <strong>{new Date(filterDate).toLocaleDateString()}</strong>
-                </span>
-                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                  {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} found
-                </span>
-              </div>
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">Interview Scheduling</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Manage and schedule interviews for all job applicants.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 self-start sm:self-center">
               <button 
-                onClick={() => applyDateFilter('')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                onClick={() => setFilterOpen(true)}
+                className={`inline-flex items-center gap-2 justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm ${
+                  filterDate 
+                    ? 'border-brand-blue text-brand-blue bg-blue-50' 
+                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                }`}
               >
-                Clear filter
+                <HiFilter className="h-4 w-4" />
+                Filter by Date
+                {filterDate && (
+                  <span className="ml-1 bg-brand-blue text-white text-xs px-2 py-1 rounded-full">
+                    {new Date(filterDate).toLocaleDateString()}
+                  </span>
+                )}
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setEditingInterview(null);
+                  setFormErrors({});
+                  setSlideOverOpen(true);
+                }}
+                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90"
+              >
+                <HiPlus className="h-5 w-5" /> Schedule Interview
               </button>
             </div>
           </div>
-        )}
 
-        <div className="bg-white rounded-xl shadow-md lg:flex">
-          {/* Calendar View */}
-          <div className="lg:flex-1">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                </h2>
+          {filterDate && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button onClick={goToPreviousMonth} className="p-2 rounded-full hover:bg-gray-100">
-                    <HiChevronLeft className="h-5 w-5 text-gray-600" />
-                  </button>
-                  <button onClick={goToNextMonth} className="p-2 rounded-full hover:bg-gray-100">
-                    <HiChevronRight className="h-5 w-5 text-gray-600" />
-                  </button>
+                  <HiFilter className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">
+                    Showing interviews for: <strong>{new Date(filterDate).toLocaleDateString()}</strong>
+                  </span>
+                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                    {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} found
+                  </span>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 font-semibold">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => 
-                  <div key={day} className="py-2">{day}</div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-1 mt-1">
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => 
-                  <div key={`empty-${i}`} className="border rounded-lg"></div>
-                )}
-                
-                {Array.from({ length: daysInMonth }).map((_, day) => {
-                  const date = day + 1;
-                  const fullDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), date);
-                  const interviewsForDay = getInterviewsForDate(fullDate);
-                  
-                  return (
-                    <div key={date} className="border rounded-lg p-2 h-24 flex flex-col hover:bg-gray-50">
-                      <span className={`font-semibold ${fullDate.toDateString() === new Date().toDateString() ? 'text-brand-blue' : ''}`}>
-                        {date}
-                      </span>
-                      <div className="mt-1 overflow-y-auto text-xs space-y-1 flex-1">
-                        {interviewsForDay.map(interview => (
-                          <div 
-                            key={interview.id} 
-                            className="bg-blue-100 text-blue-800 p-1 rounded text-xs truncate cursor-pointer hover:bg-blue-200"
-                            onClick={() => handleEditInterview(interview)}
-                            title={`${interview.applicant?.first_name} ${interview.applicant?.last_name} - ${formatInterviewTime(interview.scheduled_at)}`}
-                          >
-                            {interview.applicant?.first_name} {formatInterviewTime(interview.scheduled_at)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+                <button 
+                  onClick={() => applyDateFilter('')}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  Clear filter
+                </button>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Upcoming Interviews Sidebar */}
-          <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-gray-200">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Interviews</h3>
-              <div className="space-y-4">
-                {upcomingInterviews.length > 0 ? (
-                  upcomingInterviews.slice(0, 5).map(interview => (
-                    <div key={interview.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                      <div className="bg-white p-2 rounded-lg">
-                        <HiOutlineCalendar className="h-5 w-5 text-brand-blue" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900 text-sm">
-                          {interview.applicant?.first_name} {interview.applicant?.last_name}
-                        </p>
-                        <p className="text-xs text-gray-600">{interview.job_opening?.title}</p>
-                        <p className="text-xs text-gray-500">
-                          {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleString([], { 
-                            dateStyle: 'medium', 
-                            timeStyle: 'short' 
-                          }) : 'Date not set'}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            statusOptions.find(s => s.value === interview.status)?.color || 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {statusOptions.find(s => s.value === interview.status)?.label || interview.status}
-                          </span>
+          <div className="bg-white rounded-xl shadow-md lg:flex">
+            <div className="lg:flex-1">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={goToPreviousMonth} className="p-2 rounded-full hover:bg-gray-100">
+                      <HiChevronLeft className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button onClick={goToNextMonth} className="p-2 rounded-full hover:bg-gray-100">
+                      <HiChevronRight className="h-5 w-5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 font-semibold">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => 
+                    <div key={day} className="py-2">{day}</div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1 mt-1">
+                  {Array.from({ length: firstDayOfMonth }).map((_, i) => 
+                    <div key={`empty-${i}`} className="border rounded-lg"></div>
+                  )}
+                  
+                  {Array.from({ length: daysInMonth }).map((_, day) => {
+                    const date = day + 1;
+                    const fullDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), date);
+                    const interviewsForDay = getInterviewsForDate(fullDate);
+                    
+                    return (
+                      <div key={date} className="border rounded-lg p-2 h-24 flex flex-col hover:bg-gray-50">
+                        <span className={`font-semibold ${fullDate.toDateString() === new Date().toDateString() ? 'text-brand-blue' : ''}`}>
+                          {date}
+                        </span>
+                        <div className="mt-1 overflow-y-auto text-xs space-y-1 flex-1">
+                          {interviewsForDay.map(interview => (
+                            <div 
+                              key={interview.id} 
+                              className="bg-blue-100 text-blue-800 p-1 rounded text-xs truncate cursor-pointer hover:bg-blue-200"
+                              onClick={() => handleEditInterview(interview)}
+                              title={`${interview.applicant?.first_name} ${interview.applicant?.last_name} - ${formatInterviewTime(interview.scheduled_at)}`}
+                            >
+                              {interview.applicant?.first_name} {formatInterviewTime(interview.scheduled_at)}
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm">No upcoming interviews</p>
-                )}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Interviews List Table */}
-        <div className="bg-white rounded-xl shadow-md mt-6">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">All Interviews</h3>
-              <div className="text-sm text-gray-500">
-                {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} total
-                {filterDate && ` (filtered by date)`}
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Position</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredInterviews.length > 0 ? (
-                    filteredInterviews.map(interview => (
-                      <tr key={interview.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                              <span className="text-gray-700 font-medium text-sm">
-                                {interview.applicant?.first_name?.[0]}{interview.applicant?.last_name?.[0]}
-                              </span>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {interview.applicant?.first_name} {interview.applicant?.last_name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {interview.applicant?.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {interview.job_opening?.title || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleString([], { 
-                            dateStyle: 'medium', 
-                            timeStyle: 'short' 
-                          }) : 'Not scheduled'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {interview.interview_type || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={interview.status || 'scheduled'}
-                            onChange={(e) => handleStatusUpdate(interview.id, e.target.value)}
-                            className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
+            <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-gray-200">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Interviews</h3>
+                <div className="space-y-4">
+                  {upcomingInterviews.length > 0 ? (
+                    upcomingInterviews.slice(0, 5).map(interview => (
+                      <div key={interview.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                        <div className="bg-white p-2 rounded-lg">
+                          <HiOutlineCalendar className="h-5 w-5 text-brand-blue" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {interview.applicant?.first_name} {interview.applicant?.last_name}
+                          </p>
+                          <p className="text-xs text-gray-600">{interview.job_opening?.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleString([], { 
+                              dateStyle: 'medium', 
+                              timeStyle: 'short' 
+                            }) : 'Date not set'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
                               statusOptions.find(s => s.value === interview.status)?.color || 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {statusOptions.map(option => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleEditInterview(interview)}
-                              className="text-blue-600 hover:text-blue-900 p-1"
-                              title="Edit"
-                            >
-                              <HiPencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteInterview(interview.id)}
-                              className="text-red-600 hover:text-red-900 p-1"
-                              title="Delete"
-                            >
-                              <HiTrash className="h-4 w-4" />
-                            </button>
+                            }`}>
+                              {statusOptions.find(s => s.value === interview.status)?.label || interview.status}
+                            </span>
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                        {filterDate 
-                          ? `No interviews found for ${new Date(filterDate).toLocaleDateString()}. Try a different date or clear the filter.`
-                          : 'No interviews found. Schedule your first interview to get started.'
-                        }
-                      </td>
-                    </tr>
+                    <p className="text-gray-500 text-sm">No upcoming interviews</p>
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md mt-6">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">All Interviews</h3>
+                <div className="text-sm text-gray-500">
+                  {filteredInterviews.length} interview{filteredInterviews.length !== 1 ? 's' : ''} total
+                  {filterDate && ` (filtered by date)`}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Position</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredInterviews.length > 0 ? (
+                      filteredInterviews.map(interview => (
+                        <tr key={interview.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                <span className="text-gray-700 font-medium text-sm">
+                                  {interview.applicant?.first_name?.[0]}{interview.applicant?.last_name?.[0]}
+                                </span>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {interview.applicant?.first_name} {interview.applicant?.last_name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {interview.applicant?.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {interview.job_opening?.title || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleString([], { 
+                              dateStyle: 'medium', 
+                              timeStyle: 'short' 
+                            }) : 'Not scheduled'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {interview.interview_type || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <select
+                              value={interview.status || 'scheduled'}
+                              onChange={(e) => handleStatusUpdate(interview.id, e.target.value)}
+                              className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
+                                statusOptions.find(s => s.value === interview.status)?.color || 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {statusOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEditInterview(interview)}
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="Edit"
+                              >
+                                <HiPencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteInterview(interview.id)}
+                                className="text-red-600 hover:text-red-900 p-1"
+                                title="Delete"
+                              >
+                                <HiTrash className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                          {filterDate 
+                            ? `No interviews found for ${new Date(filterDate).toLocaleDateString()}. Try a different date or clear the filter.`
+                            : 'No interviews found. Schedule your first interview to get started.'
+                          }
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
+        
+        <InterviewFormSlideOver 
+          isOpen={isSlideOverOpen}
+          onClose={() => {
+            setSlideOverOpen(false);
+            setEditingInterview(null);
+            setFormErrors({});
+          }}
+          onSave={handleSaveInterview}
+          interview={editingInterview}
+          applicants={applicants}
+          formErrors={formErrors}
+          interviewers={interviewers}
+        />
+        
+        <DateFilter 
+          isOpen={isFilterOpen}
+          onClose={() => setFilterOpen(false)}
+          onApplyFilter={applyDateFilter}
+          filterDate={filterDate}
+        />
       </div>
-      
-      {/* Interview Form SlideOver */}
-      <InterviewFormSlideOver 
-        isOpen={isSlideOverOpen}
-        onClose={() => {
-          setSlideOverOpen(false);
-          setEditingInterview(null);
-          setFormErrors({});
-        }}
-        onSave={handleSaveInterview}
-        interview={editingInterview}
-        applicants={applicants}
-        formErrors={formErrors}
-        interviewers={interviewers}
-      />
-      
-      {/* Date Filter Modal */}
-      <DateFilter 
-        isOpen={isFilterOpen}
-        onClose={() => setFilterOpen(false)}
-        onApplyFilter={applyDateFilter}
-        filterDate={filterDate}
-      />
-    </div>
+    </>
   );
 };
 

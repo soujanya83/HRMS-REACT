@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   FaCalendarAlt,
   FaPlus,
@@ -23,33 +23,122 @@ import {
   FaUserClock,
   FaCalendarMinus
 } from "react-icons/fa";
+import { HiX } from "react-icons/hi";
 import { rosterPeriodService } from "../../services/rosterPeriodService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import axios from "axios";
 
+// Pastel color options for background - Memoized to prevent recreation
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component - Memoized
+const ColorPalette = React.memo(({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay with higher z-index */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+});
+
+ColorPalette.displayName = 'ColorPalette';
+
 const RosterPeriods = () => {
+  // State declarations
   const [rosterPeriods, setRosterPeriods] = useState([]);
   const [payPeriods, setPayPeriods] = useState([]);
   const [fortnightCalendars, setFortnightCalendars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payPeriodsLoading, setPayPeriodsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  
+  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const [showRostersModal, setShowRostersModal] = useState(false);
+  
+  // UI states
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [rosters, setRosters] = useState([]);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(null);
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [availableShifts, setAvailableShifts] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [shiftsLoading, setShiftsLoading] = useState(false);
+  
+  // Color palette state
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -68,31 +157,34 @@ const RosterPeriods = () => {
 
   const { selectedOrganization } = useOrganizations();
 
-  // Status colors
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-blue-100 text-blue-800 border border-blue-200';
-      case 'locked': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'published': return 'bg-green-100 text-green-800 border border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border border-gray-200';
-    }
-  };
+  // Memoized values
+  const statusColors = useMemo(() => ({
+    draft: 'bg-blue-100 text-blue-800 border border-blue-200',
+    locked: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+    published: 'bg-green-100 text-green-800 border border-green-200',
+  }), []);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'draft': return <FaEdit className="text-blue-500" />;
-      case 'locked': return <FaLock className="text-yellow-500" />;
-      case 'published': return <FaCheckCircle className="text-green-500" />;
-      default: return <FaInfoCircle className="text-gray-500" />;
-    }
-  };
+  const statusIcons = useMemo(() => ({
+    draft: <FaEdit className="text-blue-500" aria-hidden="true" />,
+    locked: <FaLock className="text-yellow-500" aria-hidden="true" />,
+    published: <FaCheckCircle className="text-green-500" aria-hidden="true" />,
+  }), []);
 
-  // Format date function
-  const formatDate = (dateString) => {
+  // Helper functions
+  const getStatusColor = useCallback((status) => {
+    return statusColors[status] || 'bg-gray-100 text-gray-800 border border-gray-200';
+  }, [statusColors]);
+
+  const getStatusIcon = useCallback((status) => {
+    return statusIcons[status] || <FaInfoCircle className="text-gray-500" aria-hidden="true" />;
+  }, [statusIcons]);
+
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return "-";
     try {
       const dateOnly = dateString.split('T')[0];
       const date = new Date(dateOnly);
+      if (isNaN(date.getTime())) return dateString;
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -101,32 +193,39 @@ const RosterPeriods = () => {
     } catch {
       return dateString;
     }
-  };
+  }, []);
 
-  // Reset form
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       type: "fortnightly",
       start_date: "",
       created_by: 4
     });
-  };
+  }, []);
 
-  // Fetch roster periods from /periods endpoint
-  const fetchRosterPeriods = async () => {
+  const resetBulkAssignForm = useCallback(() => {
+    setBulkAssignForm({
+      roster_period_id: "",
+      employee_ids: [],
+      shift_id: "",
+      created_by: 4
+    });
+  }, []);
+
+  // API calls with error handling
+  const fetchRosterPeriods = useCallback(async () => {
+    if (!selectedOrganization?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      if (!selectedOrganization?.id) {
-        throw new Error("No organization selected");
-      }
-
       const response = await rosterPeriodService.getRosterPeriods({
         organization_id: selectedOrganization.id
       });
-
-      console.log("Roster periods response:", response.data);
 
       if (response.data?.success === true) {
         const fortnightPeriods = response.data.data.filter(period => 
@@ -137,37 +236,35 @@ const RosterPeriods = () => {
         setRosterPeriods([]);
       }
     } catch (err) {
-      console.error("Error fetching roster periods:", err);
+      console.error("[RosterPeriods] Error fetching roster periods:", err);
       setError(err.response?.data?.message || "Failed to load roster periods");
       setRosterPeriods([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedOrganization]);
 
-  // Fetch pay periods (for calendar data)
-  const fetchPayPeriods = async () => {
+  const fetchPayPeriods = useCallback(async () => {
+    if (!selectedOrganization?.id) {
+      setPayPeriods([]);
+      setFortnightCalendars([]);
+      return;
+    }
+
     try {
       setPayPeriodsLoading(true);
       setError(null);
-
-      if (!selectedOrganization?.id) {
-        setPayPeriods([]);
-        setFortnightCalendars([]);
-        return;
-      }
 
       const response = await rosterPeriodService.getPayPeriods({
         organization_id: selectedOrganization.id
       });
 
-      console.log("Pay periods response:", response.data);
-
       if (response.data?.status === true) {
-        setPayPeriods(response.data.data || []);
+        const periods = response.data.data || [];
+        setPayPeriods(periods);
         
         // Extract unique fortnightly calendars
-        const fortnightCalendars = response.data.data.reduce((acc, period) => {
+        const fortnightCalendars = periods.reduce((acc, period) => {
           if (period.calendar_type === "FORTNIGHTLY" && 
               !acc.find(c => c.calendar_id === period.calendar_id)) {
             acc.push({
@@ -181,39 +278,39 @@ const RosterPeriods = () => {
         }, []);
         
         setFortnightCalendars(fortnightCalendars);
-        console.log("Fortnight calendars extracted:", fortnightCalendars);
       } else {
         setPayPeriods([]);
         setFortnightCalendars([]);
       }
     } catch (err) {
-      console.error("Error fetching pay periods:", err);
+      console.error("[RosterPeriods] Error fetching pay periods:", err);
       setPayPeriods([]);
       setFortnightCalendars([]);
     } finally {
       setPayPeriodsLoading(false);
     }
-  };
+  }, [selectedOrganization]);
 
-  // Fetch available employees
-  const fetchAvailableEmployees = async () => {
+  const fetchAvailableEmployees = useCallback(async () => {
+    if (!selectedOrganization?.id) {
+      setAvailableEmployees([]);
+      return;
+    }
+
     try {
       setEmployeesLoading(true);
-
-      if (!selectedOrganization?.id) {
-        setAvailableEmployees([]);
-        return;
-      }
 
       const token = localStorage.getItem('ACCESS_TOKEN');
       const response = await axios.get('https://api.chrispp.com/api/v1/employees', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
         params: {
           organization_id: selectedOrganization.id
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
 
       if (response.data?.success === true) {
@@ -225,32 +322,38 @@ const RosterPeriods = () => {
         setAvailableEmployees([]);
       }
     } catch (err) {
-      console.error("Error fetching employees:", err);
+      console.error("[RosterPeriods] Error fetching employees:", err);
+      if (err.code === 'ECONNABORTED') {
+        setError("Request timeout. Please check your connection.");
+      } else {
+        setError("Failed to load employees. Please try again.");
+      }
       setAvailableEmployees([]);
     } finally {
       setEmployeesLoading(false);
     }
-  };
+  }, [selectedOrganization]);
 
-  // Fetch available shifts
-  const fetchAvailableShifts = async () => {
+  const fetchAvailableShifts = useCallback(async () => {
+    if (!selectedOrganization?.id) {
+      setAvailableShifts([]);
+      return;
+    }
+
     try {
       setShiftsLoading(true);
-
-      if (!selectedOrganization?.id) {
-        setAvailableShifts([]);
-        return;
-      }
 
       const token = localStorage.getItem('ACCESS_TOKEN');
       const response = await axios.get('https://api.chrispp.com/api/v1/shifts', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
         params: {
           organization_id: selectedOrganization.id
-        }
+        },
+        timeout: 10000
       });
 
       if (response.data?.success === true) {
@@ -259,15 +362,21 @@ const RosterPeriods = () => {
         setAvailableShifts([]);
       }
     } catch (err) {
-      console.error("Error fetching shifts:", err);
+      console.error("[RosterPeriods] Error fetching shifts:", err);
+      if (err.code === 'ECONNABORTED') {
+        setError("Request timeout. Please check your connection.");
+      } else {
+        setError("Failed to load shifts. Please try again.");
+      }
       setAvailableShifts([]);
     } finally {
       setShiftsLoading(false);
     }
-  };
+  }, [selectedOrganization]);
 
-  // Fetch rosters for a period
-  const fetchRostersByPeriod = async (periodId) => {
+  const fetchRostersByPeriod = useCallback(async (periodId) => {
+    if (!periodId) return;
+
     try {
       const response = await rosterPeriodService.getRostersByPeriod(periodId);
       if (response.data?.success === true) {
@@ -276,41 +385,58 @@ const RosterPeriods = () => {
         setRosters([]);
       }
     } catch (err) {
-      console.error("Error fetching rosters:", err);
+      console.error("[RosterPeriods] Error fetching rosters:", err);
       setRosters([]);
+      setError("Failed to load rosters. Please try again.");
     }
-  };
+  }, []);
 
-  // Fetch initial data
+  // Initial data fetch
   useEffect(() => {
     if (selectedOrganization) {
-      fetchRosterPeriods();
-      fetchPayPeriods();
-      fetchAvailableEmployees();
-      fetchAvailableShifts();
+      Promise.all([
+        fetchRosterPeriods(),
+        fetchPayPeriods(),
+        fetchAvailableEmployees(),
+        fetchAvailableShifts()
+      ]).catch(err => {
+        console.error("[RosterPeriods] Error in initial data fetch:", err);
+      });
     }
-  }, [selectedOrganization]);
+  }, [selectedOrganization, fetchRosterPeriods, fetchPayPeriods, fetchAvailableEmployees, fetchAvailableShifts]);
 
-  // Open create modal with fortnightly periods like timesheet
-  const openCreateModal = async () => {
+  // Click outside handler for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPeriodDropdown && !event.target.closest('.period-dropdown')) {
+        setShowPeriodDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showPeriodDropdown]);
+
+  // Modal handlers
+  const openCreateModal = useCallback(async () => {
     if (!selectedOrganization) {
-      alert("Please select an organization first");
+      setError("Please select an organization first");
       return;
     }
     
     resetForm();
     
-    // Fetch pay periods if not already loaded
     if (payPeriods.length === 0) {
       await fetchPayPeriods();
     }
     
-    // Set default selection to current fortnightly period
     const currentFortnightly = payPeriods.find(p => 
       p.calendar_type === 'FORTNIGHTLY' && p.is_current === true
     );
     
-    if (currentFortnightly && currentFortnightly.start_date) {
+    if (currentFortnightly?.start_date) {
       setFormData(prev => ({
         ...prev,
         start_date: currentFortnightly.start_date.split('T')[0]
@@ -326,24 +452,21 @@ const RosterPeriods = () => {
     }
     
     setShowCreateModal(true);
-  };
+  }, [selectedOrganization, payPeriods, fetchPayPeriods, resetForm]);
 
-  // Handle create roster period
-  const handleCreatePeriod = async () => {
-    setIsSubmitting(true);
-    setError(null);
-
+  const handleCreatePeriod = useCallback(async () => {
     if (!selectedOrganization?.id) {
       setError("No organization selected");
-      setIsSubmitting(false);
       return;
     }
 
     if (!formData.start_date) {
       setError("Please select a fortnightly pay period");
-      setIsSubmitting(false);
       return;
     }
+
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const dataToSend = {
@@ -353,73 +476,59 @@ const RosterPeriods = () => {
         created_by: 4
       };
 
-      console.log("Creating fortnightly roster period with data:", dataToSend);
-
       const response = await rosterPeriodService.createRosterPeriod(dataToSend);
 
       if (response.data?.success === true) {
         setSuccessMessage("Fortnightly roster period created successfully!");
         setShowCreateModal(false);
         resetForm();
-        fetchRosterPeriods();
+        await fetchRosterPeriods();
         
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.data?.message || "Failed to create roster period");
       }
     } catch (err) {
-      console.error("Error creating roster period:", err);
+      console.error("[RosterPeriods] Error creating roster period:", err);
       setError(err.response?.data?.message || "Failed to create roster period");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [selectedOrganization, formData.start_date, resetForm, fetchRosterPeriods]);
 
-  // Handle bulk assign
-  const handleBulkAssign = async (e) => {
+  const handleBulkAssign = useCallback(async (e) => {
     e.preventDefault();
+    
+    if (!selectedPeriod) {
+      setError("No period selected");
+      return;
+    }
+
+    if (selectedPeriod.status !== 'draft') {
+      setError(`Cannot assign to a ${selectedPeriod.status} period. Only draft periods can be modified.`);
+      return;
+    }
+
+    const employeeIdsArray = bulkAssignForm.employee_ids
+      .map(id => parseInt(id, 10))
+      .filter(id => !isNaN(id));
+    
+    if (employeeIdsArray.length === 0) {
+      setError("Please select at least one employee");
+      return;
+    }
+
+    if (!bulkAssignForm.shift_id) {
+      setError("Please select a shift");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      let rosterPeriodId;
-      
-      if (selectedPeriod?.id) {
-        rosterPeriodId = selectedPeriod.id;
-      } else if (bulkAssignForm.roster_period_id) {
-        rosterPeriodId = bulkAssignForm.roster_period_id;
-      } else {
-        throw new Error("Please select a roster period first");
-      }
-
-      if (selectedPeriod && selectedPeriod.status !== 'draft') {
-        throw new Error(`Cannot assign to a ${selectedPeriod.status} period. Only draft periods can be modified.`);
-      }
-
-      let employeeIdsArray = [];
-      
-      if (Array.isArray(bulkAssignForm.employee_ids)) {
-        employeeIdsArray = bulkAssignForm.employee_ids.map(id => {
-          const numId = parseInt(id, 10);
-          if (isNaN(numId)) {
-            throw new Error(`Invalid employee ID: ${id}`);
-          }
-          return numId;
-        });
-      }
-      
-      if (employeeIdsArray.length === 0) {
-        throw new Error("Please select at least one employee");
-      }
-
-      if (!bulkAssignForm.shift_id) {
-        throw new Error("Please select a shift");
-      }
-
       const dataToSend = {
-        roster_period_id: parseInt(rosterPeriodId, 10),
+        roster_period_id: parseInt(selectedPeriod.id, 10),
         employee_ids: employeeIdsArray,
         shift_id: parseInt(bulkAssignForm.shift_id, 10),
         created_by: 4
@@ -430,23 +539,15 @@ const RosterPeriods = () => {
       if (response.data?.success === true) {
         setSuccessMessage(`✅ Successfully assigned ${response.data.count} rosters!`);
         setShowBulkAssignModal(false);
-        setBulkAssignForm({
-          roster_period_id: "",
-          employee_ids: [],
-          shift_id: "",
-          created_by: 4
-        });
+        resetBulkAssignForm();
+        await fetchRosterPeriods();
         
-        fetchRosterPeriods();
-        
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.data?.message || "Failed to bulk assign rosters");
       }
     } catch (err) {
-      console.error("❌ Error bulk assigning rosters:", err);
+      console.error("[RosterPeriods] Error bulk assigning rosters:", err);
       
       if (err.response?.data?.errors) {
         const errorMessages = Object.entries(err.response.data.errors)
@@ -455,18 +556,15 @@ const RosterPeriods = () => {
         setError(`Validation errors: ${errorMessages}`);
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
       } else {
-        setError("Failed to bulk assign rosters. Please check the data and try again.");
+        setError("Failed to bulk assign rosters. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [selectedPeriod, bulkAssignForm, resetBulkAssignForm, fetchRosterPeriods]);
 
-  // Handle publish period
-  const handlePublishPeriod = async () => {
+  const handlePublishPeriod = useCallback(async () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
@@ -485,37 +583,22 @@ const RosterPeriods = () => {
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period published successfully!");
-        fetchRosterPeriods();
+        await fetchRosterPeriods();
         setShowPublishModal(false);
         
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.data?.message || "Failed to publish roster period");
       }
     } catch (err) {
-      console.error("Error publishing roster period:", err);
-      
-      if (err.response?.data?.errors) {
-        const errorMessages = Object.entries(err.response.data.errors)
-          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-          .join(' | ');
-        setError(`Validation errors: ${errorMessages}`);
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
-      } else {
-        setError("Failed to publish roster period. Please try again.");
-      }
+      console.error("[RosterPeriods] Error publishing roster period:", err);
+      setError(err.response?.data?.message || err.message || "Failed to publish roster period");
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [selectedPeriod, fetchRosterPeriods]);
 
-  // Handle lock period
-  const handleLockPeriod = async () => {
+  const handleLockPeriod = useCallback(async () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
@@ -534,37 +617,22 @@ const RosterPeriods = () => {
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period locked successfully!");
-        fetchRosterPeriods();
+        await fetchRosterPeriods();
         setShowLockModal(false);
         
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.data?.message || "Failed to lock roster period");
       }
     } catch (err) {
-      console.error("Error locking roster period:", err);
-      
-      if (err.response?.data?.errors) {
-        const errorMessages = Object.entries(err.response.data.errors)
-          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-          .join(' | ');
-        setError(`Validation errors: ${errorMessages}`);
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
-      } else {
-        setError("Failed to lock roster period. Please try again.");
-      }
+      console.error("[RosterPeriods] Error locking roster period:", err);
+      setError(err.response?.data?.message || err.message || "Failed to lock roster period");
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [selectedPeriod, fetchRosterPeriods]);
 
-  // Handle delete period
-  const handleDeletePeriod = async () => {
+  const handleDeletePeriod = useCallback(async () => {
     if (!selectedPeriod) return;
 
     setActionLoading(true);
@@ -579,35 +647,27 @@ const RosterPeriods = () => {
 
       if (response.data?.success === true) {
         setSuccessMessage("Roster period deleted successfully!");
-        fetchRosterPeriods();
+        await fetchRosterPeriods();
         setShowDeleteModal(false);
         
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.data?.message || "Failed to delete roster period");
       }
     } catch (err) {
-      console.error("Error deleting roster period:", err);
+      console.error("[RosterPeriods] Error deleting roster period:", err);
       setError(err.response?.data?.message || err.message || "Failed to delete roster period");
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [selectedPeriod, fetchRosterPeriods]);
 
-  // Toggle period dropdown
-  const togglePeriodDropdown = (periodId, e) => {
+  const togglePeriodDropdown = useCallback((periodId, e) => {
     if (e) e.stopPropagation();
-    if (showPeriodDropdown === periodId) {
-      setShowPeriodDropdown(null);
-    } else {
-      setShowPeriodDropdown(periodId);
-    }
-  };
+    setShowPeriodDropdown(prev => prev === periodId ? null : periodId);
+  }, []);
 
-  // Handle employee selection with checkboxes
-  const handleEmployeeSelection = (employeeId, isChecked) => {
+  const handleEmployeeSelection = useCallback((employeeId, isChecked) => {
     const idInt = parseInt(employeeId, 10);
     
     setBulkAssignForm(prev => {
@@ -628,18 +688,16 @@ const RosterPeriods = () => {
       }
       return prev;
     });
-  };
+  }, []);
 
-  // Check if employee is selected
-  const isEmployeeSelected = (employeeId) => {
+  const isEmployeeSelected = useCallback((employeeId) => {
     const idInt = parseInt(employeeId, 10);
     return bulkAssignForm.employee_ids
       .map(id => parseInt(id, 10))
       .includes(idInt);
-  };
+  }, [bulkAssignForm.employee_ids]);
 
-  // Handle select all employees
-  const handleSelectAllEmployees = () => {
+  const handleSelectAllEmployees = useCallback(() => {
     if (bulkAssignForm.employee_ids.length === availableEmployees.length) {
       setBulkAssignForm(prev => ({
         ...prev,
@@ -652,24 +710,31 @@ const RosterPeriods = () => {
         employee_ids: allEmployeeIds
       }));
     }
-  };
+  }, [availableEmployees, bulkAssignForm.employee_ids.length]);
 
-  // Close all dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowPeriodDropdown(null);
-    };
+  const handleRefresh = useCallback(() => {
+    Promise.all([
+      fetchRosterPeriods(),
+      fetchPayPeriods(),
+      fetchAvailableEmployees(),
+      fetchAvailableShifts()
+    ]).catch(err => {
+      console.error("[RosterPeriods] Error refreshing data:", err);
+    });
+  }, [fetchRosterPeriods, fetchPayPeriods, fetchAvailableEmployees, fetchAvailableShifts]);
 
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
+  // Memoized stats
+  const stats = useMemo(() => ({
+    total: rosterPeriods.length,
+    draft: rosterPeriods.filter(p => p.status === 'draft').length,
+    locked: rosterPeriods.filter(p => p.status === 'locked').length,
+    published: rosterPeriods.filter(p => p.status === 'published').length
+  }), [rosterPeriods]);
 
   if (loading && rosterPeriods.length === 0) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center" role="status" aria-label="Loading">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading fortnightly roster periods...</p>
         </div>
@@ -678,228 +743,255 @@ const RosterPeriods = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Fortnightly Roster Periods
-            </h1>
-            <p className="text-gray-600">
-              Create and manage fortnightly roster periods for shift scheduling
-            </p>
-            <div className="mt-2 text-sm text-gray-500">
-              <span className="font-medium">Organization:</span> {selectedOrganization?.name || "Not selected"} | 
-              <span className="font-medium ml-2">Total Fortnightly Periods:</span> {rosterPeriods.length}
+    <>
+      {/* Color Palette Toggle Button - Fixed position */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                Fortnightly Roster Periods
+              </h1>
+              <p className="text-gray-600">
+                Create and manage fortnightly roster periods for shift scheduling
+              </p>
+              <div className="mt-2 text-sm text-gray-500">
+                <span className="font-medium">Organization:</span> {selectedOrganization?.name || "Not selected"} | 
+                <span className="font-medium ml-2">Total Fortnightly Periods:</span> {rosterPeriods.length}
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={openCreateModal}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!selectedOrganization}
+                aria-label="Create fortnightly period"
+              >
+                <FaPlus className="h-4 w-4" aria-hidden="true" />
+                Create Fortnightly Period
+              </button>
             </div>
           </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={openCreateModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <FaPlus className="h-4 w-4" />
-              Create Fortnightly Period
-            </button>
-          </div>
-        </div>
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <FaCheckCircle className="text-green-500 flex-shrink-0" />
-            <span className="text-green-700 flex-1">{successMessage}</span>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="text-green-700 hover:text-green-900"
-            >
-              <FaTimesCircle />
-            </button>
-          </div>
-        )}
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-fadeIn" role="alert">
+              <FaCheckCircle className="text-green-500 flex-shrink-0" aria-hidden="true" />
+              <span className="text-green-700 flex-1">{successMessage}</span>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="text-green-700 hover:text-green-900 transition-colors p-1 rounded-full hover:bg-green-100"
+                aria-label="Dismiss success message"
+              >
+                <FaTimesCircle aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
-            <span className="text-red-700 flex-1">{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-700 hover:text-red-900"
-            >
-              <FaTimesCircle />
-            </button>
-          </div>
-        )}
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 animate-fadeIn" role="alert">
+              <FaExclamationTriangle className="text-red-500 flex-shrink-0" aria-hidden="true" />
+              <span className="text-red-700 flex-1">{error}</span>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-700 hover:text-red-900 transition-colors p-1 rounded-full hover:bg-red-100"
+                aria-label="Dismiss error message"
+              >
+                <FaTimesCircle aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
-        {/* Calendar Info */}
-        {fortnightCalendars.length > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <FaCalendarWeek className="text-blue-500 mr-3" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900">
-                    Available Fortnightly Calendars
-                  </p>
+          {/* Calendar Info */}
+          {fortnightCalendars.length > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FaCalendarWeek className="text-blue-500 mr-3" aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Available Fortnightly Calendars
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      {fortnightCalendars.length} calendar(s) found
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
                   <p className="text-sm text-blue-700">
-                    {fortnightCalendars.length} calendar(s) found
+                    Calendar ID: {fortnightCalendars[0]?.calendar_id}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    {fortnightCalendars[0]?.calendar_name}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-blue-700">
-                  Calendar ID: {fortnightCalendars[0]?.calendar_id}
-                </p>
-                <p className="text-xs text-blue-600">
-                  {fortnightCalendars[0]?.calendar_name}
-                </p>
-              </div>
             </div>
+          )}
+
+          {/* Refresh Button */}
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleRefresh}
+              disabled={loading || payPeriodsLoading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              aria-label="Refresh data"
+            >
+              <FaSync className={loading || payPeriodsLoading ? "animate-spin" : ""} aria-hidden="true" />
+              {loading || payPeriodsLoading ? "Refreshing..." : "Refresh"}
+            </button>
           </div>
-        )}
 
-        {/* Refresh Button */}
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={() => {
-              fetchRosterPeriods();
-              fetchPayPeriods();
-              fetchAvailableEmployees();
-              fetchAvailableShifts();
-            }}
-            disabled={loading || payPeriodsLoading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FaSync className={loading || payPeriodsLoading ? "animate-spin" : ""} />
-            {loading || payPeriodsLoading ? "Refreshing..." : "Refresh"}
-          </button>
-        </div>
-
-        {/* Roster Periods Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Period Details
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Dates (14 Days)
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Rosters
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {rosterPeriods.length === 0 ? (
+          {/* Roster Periods Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                      <div className="flex flex-col items-center">
-                        <FaCalendarWeek className="text-4xl text-gray-300 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 mb-1">
-                          No fortnightly roster periods found
-                        </p>
-                        <p className="text-gray-500">
-                          Create your first fortnightly roster period to get started
-                        </p>
-                      </div>
-                    </td>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Period Details
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Dates (14 Days)
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Rosters
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  rosterPeriods.map((period) => {
-                    const StatusIcon = getStatusIcon(period.status);
-                    
-                    return (
-                      <tr key={period.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FaCalendarWeek className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                Fortnightly Period #{period.id}
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {rosterPeriods.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center">
+                          <FaCalendarWeek className="text-4xl text-gray-300 mb-3" aria-hidden="true" />
+                          <p className="text-lg font-medium text-gray-900 mb-1">
+                            No fortnightly roster periods found
+                          </p>
+                          <p className="text-gray-500">
+                            Create your first fortnightly roster period to get started
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    rosterPeriods.map((period) => {
+                      const StatusIcon = getStatusIcon(period.status);
+                      
+                      return (
+                        <tr key={period.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <FaCalendarWeek className="h-5 w-5 text-blue-600" aria-hidden="true" />
                               </div>
-                              <div className="text-sm text-gray-500">
-                                Created: {formatDate(period.created_at)}
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  Fortnightly Period #{period.id}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  Created: {formatDate(period.created_at)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center text-sm">
-                              <FaCalendarDay className="h-4 w-4 text-green-500 mr-2" />
-                              <span className="font-medium">Start: </span>
-                              <span className="ml-1 text-gray-700">
-                                {formatDate(period.start_date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="space-y-1">
+                              <div className="flex items-center text-sm">
+                                <FaCalendarDay className="h-4 w-4 text-green-500 mr-2" aria-hidden="true" />
+                                <span className="font-medium">Start: </span>
+                                <span className="ml-1 text-gray-700">
+                                  {formatDate(period.start_date)}
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                <FaCalendarCheck className="h-4 w-4 text-red-500 mr-2" aria-hidden="true" />
+                                <span className="font-medium">End: </span>
+                                <span className="ml-1 text-gray-700">
+                                  {formatDate(period.end_date)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Duration: 14 days (Fortnightly)
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="mr-2">
+                                {StatusIcon}
+                              </div>
+                              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(period.status)}`}>
+                                {period.status?.charAt(0).toUpperCase() + period.status?.slice(1)}
                               </span>
                             </div>
-                            <div className="flex items-center text-sm">
-                              <FaCalendarCheck className="h-4 w-4 text-red-500 mr-2" />
-                              <span className="font-medium">End: </span>
-                              <span className="ml-1 text-gray-700">
-                                {formatDate(period.end_date)}
-                              </span>
+                            <div className="mt-2 text-xs text-gray-500">
+                              {period.status === 'draft' && 'Can be edited and scheduled'}
+                              {period.status === 'locked' && 'Read-only, cannot be modified'}
+                              {period.status === 'published' && 'Visible to employees'}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Duration: 14 days (Fortnightly)
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {period.rosters_count || 0} rosters
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="mr-2">
-                              {StatusIcon}
+                            <div className="text-sm text-gray-500">
+                              {period.rosters_count === 0 ? 'No schedules yet' : 'Scheduled'}
                             </div>
-                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(period.status)}`}>
-                              {period.status?.charAt(0).toUpperCase() + period.status?.slice(1)}
-                            </span>
-                          </div>
-                          <div className="mt-2 text-xs text-gray-500">
-                            {period.status === 'draft' && 'Can be edited and scheduled'}
-                            {period.status === 'locked' && 'Read-only, cannot be modified'}
-                            {period.status === 'published' && 'Visible to employees'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {period.rosters_count || 0} rosters
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {period.rosters_count === 0 ? 'No schedules yet' : 'Scheduled'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePeriodDropdown(period.id, e);
-                              }}
-                              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-                            >
-                              <span>Actions</span>
-                              <FaChevronDown className={`h-3 w-3 transition-transform ${showPeriodDropdown === period.id ? 'rotate-180' : ''}`} />
-                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="relative period-dropdown">
+                              <button
+                                onClick={(e) => togglePeriodDropdown(period.id, e)}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                aria-label="Period actions"
+                                aria-expanded={showPeriodDropdown === period.id}
+                              >
+                                <span>Actions</span>
+                                <FaChevronDown 
+                                  className={`h-3 w-3 transition-transform ${showPeriodDropdown === period.id ? 'rotate-180' : ''}`} 
+                                  aria-hidden="true" 
+                                />
+                              </button>
 
-                            {showPeriodDropdown === period.id && (
-                              <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10" onClick={(e) => e.stopPropagation()}>
-                                <div className="py-1">
+                              {showPeriodDropdown === period.id && (
+                                <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1">
                                   <button
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors focus:outline-none focus:bg-gray-100"
                                     onClick={() => {
                                       fetchRostersByPeriod(period.id);
                                       setSelectedPeriod(period);
@@ -907,13 +999,13 @@ const RosterPeriods = () => {
                                       setShowPeriodDropdown(null);
                                     }}
                                   >
-                                    <FaList className="text-blue-500" />
+                                    <FaList className="text-blue-500" aria-hidden="true" />
                                     View Rosters
                                   </button>
 
                                   {period.status === 'draft' && (
                                     <button
-                                      className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-green-50"
                                       onClick={() => {
                                         setBulkAssignForm(prev => ({ 
                                           ...prev, 
@@ -925,7 +1017,7 @@ const RosterPeriods = () => {
                                         setShowPeriodDropdown(null);
                                       }}
                                     >
-                                      <FaUsers className="text-green-500" />
+                                      <FaUsers className="text-green-500" aria-hidden="true" />
                                       Bulk Assign
                                     </button>
                                   )}
@@ -934,15 +1026,29 @@ const RosterPeriods = () => {
 
                                   {period.status === 'draft' && (
                                     <button
-                                      className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-green-50"
                                       onClick={() => {
                                         setSelectedPeriod(period);
                                         setShowPublishModal(true);
                                         setShowPeriodDropdown(null);
                                       }}
                                     >
-                                      <FaCheckCircle className="text-green-500" />
+                                      <FaCheckCircle className="text-green-500" aria-hidden="true" />
                                       Publish Period
+                                    </button>
+                                  )}
+
+                                  {period.status === 'published' && (
+                                    <button
+                                      className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-yellow-50"
+                                      onClick={() => {
+                                        setSelectedPeriod(period);
+                                        setShowLockModal(true);
+                                        setShowPeriodDropdown(null);
+                                      }}
+                                    >
+                                      <FaLock className="text-yellow-500" aria-hidden="true" />
+                                      Lock Period
                                     </button>
                                   )}
 
@@ -952,57 +1058,57 @@ const RosterPeriods = () => {
 
                                   {period.status === 'draft' && (
                                     <button
-                                      className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-red-50"
                                       onClick={() => {
                                         setSelectedPeriod(period);
                                         setShowDeleteModal(true);
                                         setShowPeriodDropdown(null);
                                       }}
                                     >
-                                      <FaTrash className="text-red-500" />
+                                      <FaTrash className="text-red-500" aria-hidden="true" />
                                       Delete Period
                                     </button>
                                   )}
 
                                   <div className="border-t border-gray-100 my-1"></div>
                                   <button
-                                    className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2"
+                                    className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-purple-50"
                                     onClick={() => {
                                       console.log("Export period:", period.id);
                                       setShowPeriodDropdown(null);
                                     }}
                                   >
-                                    <FaDownload className="text-purple-500" />
+                                    <FaDownload className="text-purple-500" aria-hidden="true" />
                                     Export Data
                                   </button>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        {/* Info Footer */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start">
-            <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-blue-900 mb-1">About Fortnightly Roster Periods</h4>
-              <p className="text-sm text-blue-700">
-                • <strong>Draft</strong> periods can be edited and scheduled<br />
-                • <strong>Published</strong> periods are visible to employees<br />
-                • <strong>Locked</strong> periods are read-only and cannot be modified<br />
-                • Workflow: Draft → Publish → Lock<br />
-                • All periods are <strong>14 days (fortnightly)</strong><br />
-                • Based on system calendar: {fortnightCalendars[0]?.calendar_name || 'Fortnightly Calendar'}
-              </p>
+          {/* Info Footer */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start">
+              <FaInfoCircle className="text-blue-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">About Fortnightly Roster Periods</h4>
+                <p className="text-sm text-blue-700">
+                  • <strong>Draft</strong> periods can be edited and scheduled<br />
+                  • <strong>Published</strong> periods are visible to employees<br />
+                  • <strong>Locked</strong> periods are read-only and cannot be modified<br />
+                  • Workflow: Draft → Publish → Lock<br />
+                  • All periods are <strong>14 days (fortnightly)</strong><br />
+                  • Based on system calendar: {fortnightCalendars[0]?.calendar_name || 'Fortnightly Calendar'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1010,7 +1116,7 @@ const RosterPeriods = () => {
 
       {/* Create Roster Period Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1024,7 +1130,7 @@ const RosterPeriods = () => {
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <h3 className="text-2xl font-bold text-gray-900" id="modal-title">
                       Create Fortnightly Roster Period
                     </h3>
                     <p className="text-gray-600 mt-1">
@@ -1033,8 +1139,9 @@ const RosterPeriods = () => {
                   </div>
                   <button
                     onClick={() => setShowCreateModal(false)}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                    className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500"
                     disabled={isSubmitting}
+                    aria-label="Close modal"
                   >
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
@@ -1063,7 +1170,7 @@ const RosterPeriods = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Select Fortnightly Pay Period
                       </label>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                         {payPeriods
                           .filter(p => p.calendar_type === 'FORTNIGHTLY')
                           .map((period) => (
@@ -1071,11 +1178,21 @@ const RosterPeriods = () => {
                             key={period.id}
                             className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
                               formData.start_date === period.start_date?.split('T')[0]
-                                ? 'border-blue-300 bg-blue-50'
+                                ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                             }`}
                             onClick={() => {
                               if (period.start_date) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  start_date: period.start_date.split('T')[0]
+                                }));
+                              }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && period.start_date) {
                                 setFormData(prev => ({
                                   ...prev,
                                   start_date: period.start_date.split('T')[0]
@@ -1100,7 +1217,7 @@ const RosterPeriods = () => {
                               <div className="text-right">
                                 <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
                                 {formData.start_date === period.start_date?.split('T')[0] && (
-                                  <div className="text-xs text-blue-600 font-medium mt-1">• Selected</div>
+                                  <div className="text-xs text-blue-600 font-medium mt-1">✓ Selected</div>
                                 )}
                               </div>
                             </div>
@@ -1192,7 +1309,7 @@ const RosterPeriods = () => {
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     disabled={isSubmitting}
                   >
                     Cancel
@@ -1200,9 +1317,9 @@ const RosterPeriods = () => {
                   <button
                     onClick={handleCreatePeriod}
                     disabled={isSubmitting || !selectedOrganization || !formData.start_date}
-                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${
+                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       selectedOrganization && formData.start_date && !isSubmitting
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }`}
                   >
@@ -1227,7 +1344,7 @@ const RosterPeriods = () => {
 
       {/* Bulk Assign Modal */}
       {showBulkAssignModal && selectedPeriod && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="bulk-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1241,7 +1358,7 @@ const RosterPeriods = () => {
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <h3 className="text-2xl font-bold text-gray-900" id="bulk-modal-title">
                       Bulk Assign Rosters
                     </h3>
                     <p className="text-gray-600 mt-1">
@@ -1251,15 +1368,11 @@ const RosterPeriods = () => {
                   <button
                     onClick={() => {
                       setShowBulkAssignModal(false);
-                      setBulkAssignForm({
-                        roster_period_id: "",
-                        employee_ids: [],
-                        shift_id: "",
-                        created_by: 4
-                      });
+                      resetBulkAssignForm();
                     }}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                    className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500"
                     disabled={isSubmitting}
+                    aria-label="Close modal"
                   >
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
@@ -1342,7 +1455,8 @@ const RosterPeriods = () => {
                                 id="select-all-employees"
                                 checked={bulkAssignForm.employee_ids.length === availableEmployees.length && availableEmployees.length > 0}
                                 onChange={handleSelectAllEmployees}
-                                className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                                className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                aria-label="Select all employees"
                               />
                               <label htmlFor="select-all-employees" className="ml-3 text-sm font-medium text-gray-700">
                                 Select All Employees ({availableEmployees.length})
@@ -1350,7 +1464,7 @@ const RosterPeriods = () => {
                             </div>
                           </div>
 
-                          <div className="max-h-60 overflow-y-auto p-2">
+                          <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
                             <div className="space-y-1">
                               {availableEmployees.map((employee) => (
                                 <div key={employee.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
@@ -1359,7 +1473,8 @@ const RosterPeriods = () => {
                                     id={`employee-${employee.id}`}
                                     checked={isEmployeeSelected(employee.id.toString())}
                                     onChange={(e) => handleEmployeeSelection(employee.id.toString(), e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                    aria-label={`Select ${employee.first_name} ${employee.last_name}`}
                                   />
                                   <label htmlFor={`employee-${employee.id}`} className="ml-3 flex-1 cursor-pointer">
                                     <div className="flex items-center">
@@ -1426,7 +1541,7 @@ const RosterPeriods = () => {
                           <p className="text-gray-600">Loading shifts...</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
                           {availableShifts.map((shift) => (
                             <div key={shift.id} className="relative">
                               <input
@@ -1437,6 +1552,7 @@ const RosterPeriods = () => {
                                 checked={bulkAssignForm.shift_id === shift.id.toString()}
                                 onChange={(e) => setBulkAssignForm(prev => ({ ...prev, shift_id: e.target.value }))}
                                 className="sr-only"
+                                aria-label={`Select shift ${shift.name || shift.id}`}
                               />
                               <label
                                 htmlFor={`shift-${shift.id}`}
@@ -1532,14 +1648,9 @@ const RosterPeriods = () => {
                       type="button"
                       onClick={() => {
                         setShowBulkAssignModal(false);
-                        setBulkAssignForm({
-                          roster_period_id: "",
-                          employee_ids: [],
-                          shift_id: "",
-                          created_by: 4
-                        });
+                        resetBulkAssignForm();
                       }}
-                      className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                      className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                       disabled={isSubmitting}
                     >
                       Cancel
@@ -1547,7 +1658,7 @@ const RosterPeriods = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting || bulkAssignForm.employee_ids.length === 0 || !bulkAssignForm.shift_id || selectedPeriod.status !== 'draft'}
-                      className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
                       {isSubmitting ? (
                         <>
@@ -1571,7 +1682,7 @@ const RosterPeriods = () => {
 
       {/* View Rosters Modal */}
       {showRostersModal && selectedPeriod && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="rosters-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1585,7 +1696,7 @@ const RosterPeriods = () => {
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <h3 className="text-2xl font-bold text-gray-900" id="rosters-modal-title">
                       Rosters for Fortnightly Period #{selectedPeriod.id}
                     </h3>
                     <p className="text-gray-600 mt-1">
@@ -1594,7 +1705,8 @@ const RosterPeriods = () => {
                   </div>
                   <button
                     onClick={() => setShowRostersModal(false)}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                    className="text-gray-400 hover:text-gray-500 transition-colors p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    aria-label="Close modal"
                   >
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
@@ -1604,16 +1716,16 @@ const RosterPeriods = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Employee
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Roster Date
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Shift
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Status
                         </th>
                       </tr>
@@ -1700,7 +1812,7 @@ const RosterPeriods = () => {
                 <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end">
                   <button
                     onClick={() => setShowRostersModal(false)}
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                   >
                     Close
                   </button>
@@ -1713,7 +1825,7 @@ const RosterPeriods = () => {
 
       {/* Publish Confirmation Modal */}
       {showPublishModal && selectedPeriod && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="publish-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1731,7 +1843,7 @@ const RosterPeriods = () => {
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                <h3 className="text-xl font-bold text-gray-900 text-center mb-2" id="publish-modal-title">
                   Publish Fortnightly Roster Period
                 </h3>
                 
@@ -1755,7 +1867,7 @@ const RosterPeriods = () => {
                   <button
                     type="button"
                     onClick={() => setShowPublishModal(false)}
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     disabled={actionLoading}
                   >
                     Cancel
@@ -1764,7 +1876,7 @@ const RosterPeriods = () => {
                     type="button"
                     onClick={handlePublishPeriod}
                     disabled={actionLoading}
-                    className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
                     {actionLoading ? (
                       <>
@@ -1787,7 +1899,7 @@ const RosterPeriods = () => {
 
       {/* Lock Confirmation Modal */}
       {showLockModal && selectedPeriod && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="lock-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1805,7 +1917,7 @@ const RosterPeriods = () => {
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                <h3 className="text-xl font-bold text-gray-900 text-center mb-2" id="lock-modal-title">
                   Lock Fortnightly Roster Period
                 </h3>
                 
@@ -1829,7 +1941,7 @@ const RosterPeriods = () => {
                   <button
                     type="button"
                     onClick={() => setShowLockModal(false)}
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     disabled={actionLoading}
                   >
                     Cancel
@@ -1838,7 +1950,7 @@ const RosterPeriods = () => {
                     type="button"
                     onClick={handleLockPeriod}
                     disabled={actionLoading}
-                    className="px-5 py-2.5 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                   >
                     {actionLoading ? (
                       <>
@@ -1861,7 +1973,7 @@ const RosterPeriods = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedPeriod && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="delete-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -1879,7 +1991,7 @@ const RosterPeriods = () => {
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                <h3 className="text-xl font-bold text-gray-900 text-center mb-2" id="delete-modal-title">
                   Delete Fortnightly Roster Period
                 </h3>
                 
@@ -1903,7 +2015,7 @@ const RosterPeriods = () => {
                   <button
                     type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     disabled={actionLoading}
                   >
                     Cancel
@@ -1912,7 +2024,7 @@ const RosterPeriods = () => {
                     type="button"
                     onClick={handleDeletePeriod}
                     disabled={actionLoading}
-                    className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     {actionLoading ? (
                       <>
@@ -1939,7 +2051,7 @@ const RosterPeriods = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Fortnightly Periods</p>
-              <p className="text-2xl font-bold text-gray-800">{rosterPeriods.length}</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
             </div>
             <FaCalendarWeek className="text-blue-500 text-2xl" />
           </div>
@@ -1950,7 +2062,7 @@ const RosterPeriods = () => {
             <div>
               <p className="text-sm text-gray-600">Draft</p>
               <p className="text-2xl font-bold text-blue-600">
-                {rosterPeriods.filter(p => p.status === 'draft').length}
+                {stats.draft}
               </p>
             </div>
             <FaEdit className="text-blue-500 text-2xl" />
@@ -1962,7 +2074,7 @@ const RosterPeriods = () => {
             <div>
               <p className="text-sm text-gray-600">Locked</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {rosterPeriods.filter(p => p.status === 'locked').length}
+                {stats.locked}
               </p>
             </div>
             <FaLock className="text-yellow-500 text-2xl" />
@@ -1974,7 +2086,7 @@ const RosterPeriods = () => {
             <div>
               <p className="text-sm text-gray-600">Published</p>
               <p className="text-2xl font-bold text-green-600">
-                {rosterPeriods.filter(p => p.status === 'published').length}
+                {stats.published}
               </p>
             </div>
             <FaCheckCircle className="text-green-500 text-2xl" />
@@ -2043,7 +2155,7 @@ const RosterPeriods = () => {
           Current Organization: <span className="font-medium">{selectedOrganization?.name || "None selected"}</span>
         </p>
       </div>
-    </div>
+    </>
   );
 };
 

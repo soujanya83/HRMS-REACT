@@ -24,6 +24,78 @@ import {
   FaFileExport,
   FaTimesCircle,
 } from "react-icons/fa";
+import {
+  HiX,
+} from "react-icons/hi";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default function ProbationConfirmation() {
   const [employees, setEmployees] = useState([]);
@@ -36,6 +108,8 @@ export default function ProbationConfirmation() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [error, setError] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const { selectedOrganization } = useOrganizations();
 
@@ -668,436 +742,462 @@ export default function ProbationConfirmation() {
   ]);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen font-sans">
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
       {ProbationFormModal}
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Probation & Confirmation
-        </h1>
-        <p className="text-gray-600">
-          Manage employee probation periods and confirmations
-        </p>
-      </div>
+      <div 
+        className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Probation & Confirmation
+          </h1>
+          <p className="text-gray-600">
+            Manage employee probation periods and confirmations
+          </p>
+        </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Employees</p>
+                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+              </div>
+              <FaUserCheck className="text-blue-500 text-2xl" />
             </div>
-            <FaUserCheck className="text-blue-500 text-2xl" />
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">On Probation</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.onProbation}
-              </p>
+          <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">On Probation</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.onProbation}
+                </p>
+              </div>
+              <FaUserClock className="text-yellow-500 text-2xl" />
             </div>
-            <FaUserClock className="text-yellow-500 text-2xl" />
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Confirmed</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.confirmed}
-              </p>
+          <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Confirmed</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.confirmed}
+                </p>
+              </div>
+              <FaCheckCircle className="text-green-500 text-2xl" />
             </div>
-            <FaCheckCircle className="text-green-500 text-2xl" />
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Ending Soon</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.endingSoon}
-              </p>
+          <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Ending Soon</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.endingSoon}
+                </p>
+              </div>
+              <FaClock className="text-orange-500 text-2xl" />
             </div>
-            <FaClock className="text-orange-500 text-2xl" />
           </div>
         </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="mb-8 p-6 bg-white shadow-lg rounded-xl">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="md:col-span-4 relative">
-            <FaSearch className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search employees by name or code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-gray-300 pl-12 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        {/* Filters and Search */}
+        <div className="mb-8 p-6 bg-white shadow-lg rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div className="md:col-span-4 relative">
+              <FaSearch className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search employees by name or code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 pl-12 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-          <div className="md:col-span-3">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Employees</option>
-              <option value="probation">On Probation</option>
-              <option value="confirmed">Confirmed</option>
-            </select>
-          </div>
+            <div className="md:col-span-3">
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Employees</option>
+                <option value="probation">On Probation</option>
+                <option value="confirmed">Confirmed</option>
+              </select>
+            </div>
 
-          <div className="md:col-span-5 flex justify-end items-center space-x-4">
-            <button
-              onClick={() => setShowProbationForm(true)}
-              className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium"
-            >
-              <FaPlus className="mr-2" /> Add Probation
-            </button>
-            <button
-              onClick={handleGenerateReports}
-              disabled={generatingReport || employees.length === 0}
-              className={`px-5 py-3 rounded-lg transition-colors flex items-center font-medium ${
-                generatingReport || employees.length === 0
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 text-white"
-              }`}
-            >
-              <FaFileExport className="mr-2" />
-              {generatingReport ? "Generating..." : "Generate Reports"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && !showProbationForm && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center">
-            <FaExclamationTriangle className="text-red-500 mr-2" />
-            <p className="text-red-600">{error}</p>
+            <div className="md:col-span-5 flex justify-end items-center space-x-4">
+              <button
+                onClick={() => setShowProbationForm(true)}
+                className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium"
+              >
+                <FaPlus className="mr-2" /> Add Probation
+              </button>
+              <button
+                onClick={handleGenerateReports}
+                disabled={generatingReport || employees.length === 0}
+                className={`px-5 py-3 rounded-lg transition-colors flex items-center font-medium ${
+                  generatingReport || employees.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}
+              >
+                <FaFileExport className="mr-2" />
+                {generatingReport ? "Generating..." : "Generate Reports"}
+              </button>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Employees Table */}
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-8">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Department
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Joining Date
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Probation Progress
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+        {/* Error Display */}
+        {error && !showProbationForm && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <FaExclamationTriangle className="text-red-500 mr-2" />
+              <p className="text-red-600">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Employees Table */}
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-8">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    </div>
-                    <p className="mt-2 text-gray-500">Loading employees...</p>
-                  </td>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Employee
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Department
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Joining Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Probation Progress
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : employees.length > 0 ? (
-                employees.map((emp) => {
-                  const probation = getEmployeeProbation(emp.id);
-                  const progress = probation
-                    ? calculateProbationProgress(
-                        probation.start_date,
-                        probation.end_date
-                      )
-                    : 0;
-                  const remainingDays = probation
-                    ? getProbationRemainingDays(probation.end_date)
-                    : 0;
-                  const isOnProbation = emp.status === "On Probation";
-                  const hasProbation = !!probation;
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                      <p className="mt-2 text-gray-500">Loading employees...</p>
+                    </td>
+                  </tr>
+                ) : employees.length > 0 ? (
+                  employees.map((emp) => {
+                    const probation = getEmployeeProbation(emp.id);
+                    const progress = probation
+                      ? calculateProbationProgress(
+                          probation.start_date,
+                          probation.end_date
+                        )
+                      : 0;
+                    const remainingDays = probation
+                      ? getProbationRemainingDays(probation.end_date)
+                      : 0;
+                    const isOnProbation = emp.status === "On Probation";
+                    const hasProbation = !!probation;
 
-                  return (
-                    <tr
-                      key={emp.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold">
-                              {emp.first_name?.[0]}
-                              {emp.last_name?.[0]}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {emp.first_name} {emp.last_name}
+                    return (
+                      <tr
+                        key={emp.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 font-semibold">
+                                {emp.first_name?.[0]}
+                                {emp.last_name?.[0]}
+                              </span>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {emp.employee_code}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {emp.department?.name || "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {emp.joining_date
-                            ? new Date(emp.joining_date).toLocaleDateString()
-                            : "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="w-32 mr-3">
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  progress >= 100
-                                    ? "bg-green-500"
-                                    : progress >= 70
-                                    ? "bg-yellow-500"
-                                    : "bg-blue-500"
-                                }`}
-                                style={{ width: `${Math.min(progress, 100)}%` }}
-                              ></div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {emp.first_name} {emp.last_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {emp.employee_code}
+                              </div>
                             </div>
                           </div>
-                          <div className="text-sm text-gray-600 min-w-[80px]">
-                            {hasProbation ? (
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {emp.department?.name || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {emp.joining_date
+                              ? new Date(emp.joining_date).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="w-32 mr-3">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${
+                                    progress >= 100
+                                      ? "bg-green-500"
+                                      : progress >= 70
+                                      ? "bg-yellow-500"
+                                      : "bg-blue-500"
+                                  }`}
+                                  style={{ width: `${Math.min(progress, 100)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-600 min-w-[80px]">
+                              {hasProbation ? (
+                                <>
+                                  {remainingDays > 0 ? (
+                                    <span className="font-medium">
+                                      {remainingDays}d left
+                                    </span>
+                                  ) : (
+                                    <span className="text-green-600 font-medium">
+                                      Completed
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-gray-400">No Probation</span>
+                              )}
+                            </div>
+                          </div>
+                          {probation && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {new Date(probation.start_date).toLocaleDateString()} -{" "}
+                              {new Date(probation.end_date).toLocaleDateString()}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              emp.status === "Active"
+                                ? "bg-green-100 text-green-800"
+                                : emp.status === "On Probation"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {emp.status}
+                          </span>
+                          {probation && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              Probation: {probation.status}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-wrap gap-2">
+                            {isOnProbation && (
                               <>
-                                {remainingDays > 0 ? (
-                                  <span className="font-medium">
-                                    {remainingDays}d left
-                                  </span>
-                                ) : (
-                                  <span className="text-green-600 font-medium">
-                                    Completed
-                                  </span>
+                                <button
+                                  onClick={() => handleConfirmEmployee(emp.id)}
+                                  className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                                >
+                                  <FaCheckCircle className="mr-1.5" /> Confirm
+                                </button>
+                                {hasProbation && (
+                                  <button
+                                    onClick={() => handleExtendProbation(emp.id)}
+                                    className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                                  >
+                                    <FaCalendarAlt className="mr-1.5" /> Extend
+                                  </button>
                                 )}
                               </>
-                            ) : (
-                              <span className="text-gray-400">No Probation</span>
+                            )}
+                            {hasProbation && (
+                              <>
+                                <button
+                                  onClick={() => handleEditProbation(probation)}
+                                  className="px-3 py-1.5 bg-yellow-600 text-white text-xs rounded-lg hover:bg-yellow-700 transition-colors"
+                                  title="Edit Probation"
+                                >
+                                  <FaEdit />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProbation(probation.id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                                  title="Delete Probation"
+                                >
+                                  <FaTrash />
+                                </button>
+                              </>
+                            )}
+                            {isOnProbation && !hasProbation && (
+                              <button
+                                onClick={() => handleAddProbation(emp)}
+                                className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                              >
+                                <FaPlus className="mr-1.5" /> Add Probation
+                              </button>
                             )}
                           </div>
-                        </div>
-                        {probation && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {new Date(probation.start_date).toLocaleDateString()} -{" "}
-                            {new Date(probation.end_date).toLocaleDateString()}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            emp.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : emp.status === "On Probation"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {emp.status}
-                        </span>
-                        {probation && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            Probation: {probation.status}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-2">
-                          {isOnProbation && (
-                            <>
-                              <button
-                                onClick={() => handleConfirmEmployee(emp.id)}
-                                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors flex items-center"
-                              >
-                                <FaCheckCircle className="mr-1.5" /> Confirm
-                              </button>
-                              {hasProbation && (
-                                <button
-                                  onClick={() => handleExtendProbation(emp.id)}
-                                  className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                                >
-                                  <FaCalendarAlt className="mr-1.5" /> Extend
-                                </button>
-                              )}
-                            </>
-                          )}
-                          {hasProbation && (
-                            <>
-                              <button
-                                onClick={() => handleEditProbation(probation)}
-                                className="px-3 py-1.5 bg-yellow-600 text-white text-xs rounded-lg hover:bg-yellow-700 transition-colors"
-                                title="Edit Probation"
-                              >
-                                <FaEdit />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProbation(probation.id)}
-                                className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
-                                title="Delete Probation"
-                              >
-                                <FaTrash />
-                              </button>
-                            </>
-                          )}
-                          {isOnProbation && !hasProbation && (
-                            <button
-                              onClick={() => handleAddProbation(emp)}
-                              className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                            >
-                              <FaPlus className="mr-1.5" /> Add Probation
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
-                    <div className="text-gray-500">
-                      <FaUserClock className="text-4xl text-gray-300 mx-auto mb-3" />
-                      <p className="text-lg">No employees found</p>
-                      <p className="text-sm mt-1">
-                        {searchTerm
-                          ? "Try a different search term"
-                          : "Add employees or check organization selection"}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="text-gray-500">
+                        <FaUserClock className="text-4xl text-gray-300 mx-auto mb-3" />
+                        <p className="text-lg">No employees found</p>
+                        <p className="text-sm mt-1">
+                          {searchTerm
+                            ? "Try a different search term"
+                            : "Add employees or check organization selection"}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {/* Upcoming Confirmations */}
-      <div className="bg-white shadow-lg rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-          <FaClock className="mr-3 text-orange-500" />
-          Upcoming Confirmations (Next 30 Days)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {employees
-            .filter((emp) => {
-              if (emp.status !== "On Probation") return false;
+        {/* Upcoming Confirmations */}
+        <div className="bg-white shadow-lg rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+            <FaClock className="mr-3 text-orange-500" />
+            Upcoming Confirmations (Next 30 Days)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {employees
+              .filter((emp) => {
+                if (emp.status !== "On Probation") return false;
+                const probation = getEmployeeProbation(emp.id);
+                if (!probation) return false;
+                const remainingDays = getProbationRemainingDays(probation.end_date);
+                return remainingDays <= 30 && remainingDays > 0;
+              })
+              .slice(0, 6)
+              .map((emp) => {
+                const probation = getEmployeeProbation(emp.id);
+                const remainingDays = getProbationRemainingDays(probation?.end_date);
+
+                return (
+                  <div
+                    key={emp.id}
+                    className="border border-orange-200 rounded-xl p-4 bg-orange-50 hover:bg-orange-100 transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-800">
+                          {emp.first_name} {emp.last_name}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          {emp.department?.name || "No Department"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {emp.employee_code}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 text-xs rounded-full font-semibold ${
+                          remainingDays <= 7
+                            ? "bg-red-100 text-red-800"
+                            : "bg-orange-100 text-orange-800"
+                        }`}
+                      >
+                        {remainingDays} {remainingDays === 1 ? "day" : "days"}
+                      </span>
+                    </div>
+                    {probation && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 mb-1">
+                          Ends: {new Date(probation.end_date).toLocaleDateString()}
+                        </p>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className="bg-orange-500 h-1.5 rounded-full"
+                            style={{
+                              width: `${Math.min(
+                                calculateProbationProgress(
+                                  probation.start_date,
+                                  probation.end_date
+                                ),
+                                100
+                              )}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleConfirmEmployee(emp.id)}
+                      className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
+                    >
+                      Confirm Now
+                    </button>
+                  </div>
+                );
+              })}
+            {employees.filter((emp) => {
               const probation = getEmployeeProbation(emp.id);
               if (!probation) return false;
               const remainingDays = getProbationRemainingDays(probation.end_date);
               return remainingDays <= 30 && remainingDays > 0;
-            })
-            .slice(0, 6)
-            .map((emp) => {
-              const probation = getEmployeeProbation(emp.id);
-              const remainingDays = getProbationRemainingDays(probation?.end_date);
-
-              return (
-                <div
-                  key={emp.id}
-                  className="border border-orange-200 rounded-xl p-4 bg-orange-50 hover:bg-orange-100 transition-colors"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">
-                        {emp.first_name} {emp.last_name}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        {emp.department?.name || "No Department"}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {emp.employee_code}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 text-xs rounded-full font-semibold ${
-                        remainingDays <= 7
-                          ? "bg-red-100 text-red-800"
-                          : "bg-orange-100 text-orange-800"
-                      }`}
-                    >
-                      {remainingDays} {remainingDays === 1 ? "day" : "days"}
-                    </span>
-                  </div>
-                  {probation && (
-                    <div className="mb-3">
-                      <p className="text-xs text-gray-600 mb-1">
-                        Ends: {new Date(probation.end_date).toLocaleDateString()}
-                      </p>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                        <div
-                          className="bg-orange-500 h-1.5 rounded-full"
-                          style={{
-                            width: `${Math.min(
-                              calculateProbationProgress(
-                                probation.start_date,
-                                probation.end_date
-                              ),
-                              100
-                            )}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleConfirmEmployee(emp.id)}
-                    className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
-                  >
-                    Confirm Now
-                  </button>
-                </div>
-              );
-            })}
-          {employees.filter((emp) => {
-            const probation = getEmployeeProbation(emp.id);
-            if (!probation) return false;
-            const remainingDays = getProbationRemainingDays(probation.end_date);
-            return remainingDays <= 30 && remainingDays > 0;
-          }).length === 0 && (
-            <div className="col-span-3 text-center py-8">
-              <FaClock className="text-3xl text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No upcoming confirmations</p>
-              <p className="text-sm text-gray-400 mt-1">
-                No employees have probation ending in the next 30 days
-              </p>
-            </div>
-          )}
+            }).length === 0 && (
+              <div className="col-span-3 text-center py-8">
+                <FaClock className="text-3xl text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No upcoming confirmations</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  No employees have probation ending in the next 30 days
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

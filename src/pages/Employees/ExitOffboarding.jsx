@@ -35,6 +35,75 @@ import {
   deleteOffboardingTemplateTask,
 } from "../../services/exitOffboardingService";
 
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // Helper function to calculate days left
 const calculateDaysLeft = (dueDate) => {
   if (!dueDate) return null;
@@ -54,63 +123,91 @@ const calculateDaysLeft = (dueDate) => {
 // Main Page Component
 const OffboardingPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 font-sans bg-gray-50 min-h-full">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              Employee Offboarding
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage employee exit processes and track offboarding progress.
-            </p>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">
+                Employee Offboarding
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Manage employee exit processes and track offboarding progress.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "dashboard"
+                    ? "border-red-600 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Offboarding Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab("templates")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "templates"
+                    ? "border-red-600 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Offboarding Templates
+              </button>
+              <button
+                onClick={() => setActiveTab("reports")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "reports"
+                    ? "border-red-600 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Exit Reports
+              </button>
+            </nav>
+          </div>
+
+          <div className="mt-8">
+            {activeTab === "dashboard" && <OffboardingDashboard />}
+            {activeTab === "templates" && <OffboardingTemplateManager />}
+            {activeTab === "reports" && <ExitReports />}
           </div>
         </div>
-
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "dashboard"
-                  ? "border-red-600 text-red-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Offboarding Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab("templates")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "templates"
-                  ? "border-red-600 text-red-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Offboarding Templates
-            </button>
-            <button
-              onClick={() => setActiveTab("reports")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "reports"
-                  ? "border-red-600 text-red-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Exit Reports
-            </button>
-          </nav>
-        </div>
-
-        <div className="mt-8">
-          {activeTab === "dashboard" && <OffboardingDashboard />}
-          {activeTab === "templates" && <OffboardingTemplateManager />}
-          {activeTab === "reports" && <ExitReports />}
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 

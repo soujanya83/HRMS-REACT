@@ -19,6 +19,9 @@ import {
   FaRedoAlt,
   FaDownload,
 } from "react-icons/fa";
+import {
+  HiX,
+} from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
   getEmploymentHistory,
@@ -27,6 +30,75 @@ import {
   deleteEmploymentHistory,
   getEmployeesList,
 } from "../../services/employmentHistoryService";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
+        onClick={onClose}
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                style={{ backgroundColor: color.value }}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // History Event Component
 const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
@@ -609,6 +681,8 @@ const EmploymentHistory = () => {
   const [employees, setEmployees] = useState([]);
   const [apiError, setApiError] = useState("");
   const [organizationInfo, setOrganizationInfo] = useState("");
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const { selectedOrganization, organizations, isLoading: orgLoading } = useOrganizations();
 
@@ -889,7 +963,28 @@ const EmploymentHistory = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
       <EventFormModal
         isOpen={showForm}
         onClose={() => {
@@ -901,344 +996,349 @@ const EmploymentHistory = () => {
         employees={employees}
       />
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              Employment History
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Track all employee employment history and organizational changes
-              {organizationInfo && ` • ${organizationInfo}`}
-            </p>
-            {organizations.length > 0 && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                <FaBuilding className="h-4 w-4" />
-                <select
-                  value={selectedOrganization?.id || ""}
-                  onChange={(e) => {
-                    const newOrgId = parseInt(e.target.value);
-                    if (newOrgId) {
-                      localStorage.setItem('selectedOrgId', newOrgId);
-                      window.location.reload();
-                    }
-                  }}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
-                >
-                  {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <FaPlus className="h-4 w-4" /> Add New Record
-            </button>
-            <button
-              onClick={fetchData}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-            >
-              <FaRedoAlt className="h-4 w-4" /> Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {apiError && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <FaTimes className="h-5 w-5 text-red-500 mr-2" />
-              <p className="text-red-600">{apiError}</p>
-            </div>
-            <button
-              onClick={fetchData}
-              className="mt-2 text-sm text-red-700 underline hover:text-red-800"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            icon={<FaHistory className="h-6 w-6" />}
-            label="Total Records"
-            value={stats.total}
-            color="blue"
-            description="All recorded history"
-          />
-          <StatCard
-            icon={<FaCalendar className="h-6 w-6" />}
-            label="Recent Records"
-            value={stats.recent}
-            color="green"
-            description="Last 30 days"
-          />
-          <StatCard
-            icon={<FaArrowUp className="h-6 w-6" />}
-            label="Promotions"
-            value={stats.promotions}
-            color="purple"
-            description="Career advancements"
-          />
-          <StatCard
-            icon={<FaUserTimes className="h-6 w-6" />}
-            label="Terminations"
-            value={stats.terminations}
-            color="red"
-            description="Employment endings"
-          />
-        </div>
-      </div>
-
-      {/* Main Content Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-        {/* Filters Section */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+      <div 
+        className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Employment Records
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {filteredEvents.length} of {events.length} records shown
+              <h1 className="text-3xl font-bold text-gray-800">
+                Employment History
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Track all employee employment history and organizational changes
+                {organizationInfo && ` • ${organizationInfo}`}
               </p>
+              {organizations.length > 0 && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                  <FaBuilding className="h-4 w-4" />
+                  <select
+                    value={selectedOrganization?.id || ""}
+                    onChange={(e) => {
+                      const newOrgId = parseInt(e.target.value);
+                      if (newOrgId) {
+                        localStorage.setItem('selectedOrgId', newOrgId);
+                        window.location.reload();
+                      }
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  >
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                <FaTimes className="h-4 w-4" />
-                Clear Filters
+                <FaPlus className="h-4 w-4" /> Add New Record
+              </button>
+              <button
+                onClick={fetchData}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                <FaRedoAlt className="h-4 w-4" /> Refresh
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by employee, reason, or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          {/* Error Display */}
+          {apiError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <FaTimes className="h-5 w-5 text-red-500 mr-2" />
+                <p className="text-red-600">{apiError}</p>
+              </div>
+              <button
+                onClick={fetchData}
+                className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+              >
+                Try Again
+              </button>
             </div>
+          )}
 
-            <select
-              value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Types</option>
-              {eventTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) =>
-                setDateRange((prev) => ({ ...prev, start: e.target.value }))
-              }
-              placeholder="Start Date"
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              icon={<FaHistory className="h-6 w-6" />}
+              label="Total Records"
+              value={stats.total}
+              color="blue"
+              description="All recorded history"
             />
-
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) =>
-                setDateRange((prev) => ({ ...prev, end: e.target.value }))
-              }
-              placeholder="End Date"
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <StatCard
+              icon={<FaCalendar className="h-6 w-6" />}
+              label="Recent Records"
+              value={stats.recent}
+              color="green"
+              description="Last 30 days"
+            />
+            <StatCard
+              icon={<FaArrowUp className="h-6 w-6" />}
+              label="Promotions"
+              value={stats.promotions}
+              color="purple"
+              description="Career advancements"
+            />
+            <StatCard
+              icon={<FaUserTimes className="h-6 w-6" />}
+              label="Terminations"
+              value={stats.terminations}
+              color="red"
+              description="Employment endings"
             />
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="p-6">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-500">
-                Loading employment history...
-              </p>
+        {/* Main Content Card */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+          {/* Filters Section */}
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Employment Records
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {filteredEvents.length} of {events.length} records shown
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FaTimes className="h-4 w-4" />
+                  Clear Filters
+                </button>
+              </div>
             </div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto mb-6">
-                <div className="relative">
-                  <FaHistory className="h-20 w-20 text-gray-200 mx-auto" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <FaSearch className="h-8 w-8 text-gray-400" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by employee, reason, or location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <select
+                value={eventTypeFilter}
+                onChange={(e) => setEventTypeFilter(e.target.value)}
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Types</option>
+                {eventTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, start: e.target.value }))
+                }
+                placeholder="Start Date"
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                }
+                placeholder="End Date"
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="p-6">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-500">
+                  Loading employment history...
+                </p>
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="mx-auto mb-6">
+                  <div className="relative">
+                    <FaHistory className="h-20 w-20 text-gray-200 mx-auto" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <FaSearch className="h-8 w-8 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+                <h3 className="text-lg font-medium text-gray-700 mb-2">
+                  {searchTerm ||
+                  eventTypeFilter !== "all" ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? "No matching records found"
+                    : "No employment history recorded yet"}
+                </h3>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                  {searchTerm ||
+                  eventTypeFilter !== "all" ||
+                  dateRange.start ||
+                  dateRange.end
+                    ? "Try adjusting your search or filters to find what you're looking for."
+                    : "Start tracking employee employment history by adding your first record."}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  >
+                    <FaPlus className="inline mr-2" />
+                    Add First Record
+                  </button>
+                  {(searchTerm ||
+                    eventTypeFilter !== "all" ||
+                    dateRange.start ||
+                    dateRange.end) && (
+                    <button
+                      onClick={clearFilters}
+                      className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredEvents.map((event, index) => (
+                  <HistoryEvent
+                    key={event.id || index}
+                    event={event}
+                    onEdit={() => handleEdit(event)}
+                    onDelete={() => handleDelete(event)}
+                    onView={() => handleView(event)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          {filteredEvents.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-sm text-gray-600">
+                  Showing{" "}
+                  <span className="font-semibold">{filteredEvents.length}</span>{" "}
+                  of <span className="font-semibold">{events.length}</span>{" "}
+                  records
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      // Export functionality
+                      const exportData = filteredEvents.map((event) => ({
+                        Employee: `${event.employee?.first_name || ""} ${
+                          event.employee?.last_name || ""
+                        }`,
+                        "Employee ID": event.employee_id,
+                        "Start Date": event.start_date,
+                        "End Date": event.end_date || "Ongoing",
+                        Reason: event.reason_for_change,
+                        "Department ID": event.department_id || "",
+                        "Designation ID": event.designation_id || "",
+                        "Job Title": event.job_title || "",
+                        "Employment Type": event.employment_type || "",
+                        Location: event.location || "",
+                        Salary: event.salary || "",
+                        Notes: event.notes || "",
+                      }));
+
+                      const csvContent = [
+                        Object.keys(exportData[0]).join(","),
+                        ...exportData.map((row) =>
+                          Object.values(row)
+                            .map(
+                              (value) => `"${String(value).replace(/"/g, '""')}"`
+                            )
+                            .join(",")
+                        ),
+                      ].join("\n");
+
+                      const blob = new Blob([csvContent], {
+                        type: "text/csv;charset=utf-8;",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `employment-history-${
+                        new Date().toISOString().split("T")[0]
+                      }.csv`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+
+                      alert("✅ Data exported to CSV successfully!");
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <FaDownload className="h-4 w-4" />
+                    Export CSV
+                  </button>
+                  <div className="text-sm text-gray-500">
+                    Updated:{" "}
+                    {new Date().toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                 </div>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                {searchTerm ||
-                eventTypeFilter !== "all" ||
-                dateRange.start ||
-                dateRange.end
-                  ? "No matching records found"
-                  : "No employment history recorded yet"}
-              </h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                {searchTerm ||
-                eventTypeFilter !== "all" ||
-                dateRange.start ||
-                dateRange.end
-                  ? "Try adjusting your search or filters to find what you're looking for."
-                  : "Start tracking employee employment history by adding your first record."}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                >
-                  <FaPlus className="inline mr-2" />
-                  Add First Record
-                </button>
-                {(searchTerm ||
-                  eventTypeFilter !== "all" ||
-                  dateRange.start ||
-                  dateRange.end) && (
-                  <button
-                    onClick={clearFilters}
-                    className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-                  >
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredEvents.map((event, index) => (
-                <HistoryEvent
-                  key={event.id || index}
-                  event={event}
-                  onEdit={() => handleEdit(event)}
-                  onDelete={() => handleDelete(event)}
-                  onView={() => handleView(event)}
-                />
-              ))}
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Quick Actions Bar */}
         {filteredEvents.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-sm text-gray-600">
-                Showing{" "}
-                <span className="font-semibold">{filteredEvents.length}</span>{" "}
-                of <span className="font-semibold">{events.length}</span>{" "}
-                records
-              </div>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => {
-                    // Export functionality
-                    const exportData = filteredEvents.map((event) => ({
-                      Employee: `${event.employee?.first_name || ""} ${
-                        event.employee?.last_name || ""
-                      }`,
-                      "Employee ID": event.employee_id,
-                      "Start Date": event.start_date,
-                      "End Date": event.end_date || "Ongoing",
-                      Reason: event.reason_for_change,
-                      "Department ID": event.department_id || "",
-                      "Designation ID": event.designation_id || "",
-                      "Job Title": event.job_title || "",
-                      "Employment Type": event.employment_type || "",
-                      Location: event.location || "",
-                      Salary: event.salary || "",
-                      Notes: event.notes || "",
-                    }));
-
-                    const csvContent = [
-                      Object.keys(exportData[0]).join(","),
-                      ...exportData.map((row) =>
-                        Object.values(row)
-                          .map(
-                            (value) => `"${String(value).replace(/"/g, '""')}"`
-                          )
-                          .join(",")
-                      ),
-                    ].join("\n");
-
-                    const blob = new Blob([csvContent], {
-                      type: "text/csv;charset=utf-8;",
-                    });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `employment-history-${
-                      new Date().toISOString().split("T")[0]
-                    }.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-
-                    alert("✅ Data exported to CSV successfully!");
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaDownload className="h-4 w-4" />
-                  Export CSV
-                </button>
-                <div className="text-sm text-gray-500">
-                  Updated:{" "}
-                  {new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </div>
-            </div>
+          <div className="mt-6 flex flex-wrap gap-3 justify-center">
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+            >
+              <FaPlus className="inline mr-2" />
+              Add Another Record
+            </button>
+            <button
+              onClick={fetchData}
+              className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+            >
+              <FaRedoAlt className="inline mr-2" />
+              Refresh Data
+            </button>
           </div>
         )}
       </div>
-
-      {/* Quick Actions Bar */}
-      {filteredEvents.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-3 justify-center">
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-          >
-            <FaPlus className="inline mr-2" />
-            Add Another Record
-          </button>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-          >
-            <FaRedoAlt className="inline mr-2" />
-            Refresh Data
-          </button>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 
