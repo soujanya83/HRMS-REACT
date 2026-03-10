@@ -27,9 +27,87 @@ import {
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
+import { HiX } from "react-icons/hi";
 import goalService from "../../services/goalService";
 import employeeService from "../../services/employeeService";
 import performanceService from "../../services/performanceService";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // Utility functions
 const formatDate = (dateString) => {
@@ -125,7 +203,7 @@ const getStatusConfig = (status) => {
 
 const getPriorityConfig = (priority) => {
   const priorityLower = priority?.toLowerCase() || "medium";
-console.log()
+  
   const configs = {
     low: { color: "bg-green-100 text-green-800", label: "Low" },
     medium: { color: "bg-yellow-100 text-yellow-800", label: "Medium" },
@@ -292,7 +370,7 @@ const GoalFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -628,7 +706,7 @@ const KeyResultFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -855,7 +933,7 @@ const GoalDetailModal = ({
   loading,
 }) => {
   const [expandedKeyResults, setExpandedKeyResults] = useState([]);
-console.log(loading)
+
   if (!isOpen || !goal) return null;
 
   const employee = goal.employee || {};
@@ -887,7 +965,7 @@ console.log(loading)
   const statusConfig = getStatusConfig(goal.status);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -1209,6 +1287,8 @@ const GoalSetting = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     status: "all",
@@ -1550,522 +1630,549 @@ const GoalSetting = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      {/* Success Message */}
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="min-h-screen bg-gray-50 p-4 md:p-6 transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        {/* Success Message */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <FaCheckCircle className="h-5 w-5 text-green-600" />
+                <p className="text-green-800 font-medium">{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center gap-3">
-              <FaCheckCircle className="h-5 w-5 text-green-600" />
-              <p className="text-green-800 font-medium">{successMessage}</p>
+              <FaExclamationTriangle className="h-5 w-5 text-red-600" />
+              <p className="text-red-800">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
+                <FaBullseye className="text-blue-600" />
+                Performance Goals & Key Results
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Set, track, and measure performance goals with key results
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchData}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                <FaSync className={loading ? "animate-spin" : ""} />
+                Refresh
+              </button>
+              <button
+                onClick={() =>
+                  setModalState((prev) => ({ ...prev, showGoalForm: true }))
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <FaPlus /> New Goal
+              </button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-3">
-            <FaExclamationTriangle className="h-5 w-5 text-red-600" />
-            <p className="text-red-800">{error}</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Goals</p>
+                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+              </div>
+              <FaBullseye className="text-blue-500 text-xl" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Draft</p>
+                <p className="text-2xl font-bold text-gray-800">{stats.Draft}</p>
+              </div>
+              <FaClock className="text-gray-500 text-xl" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">In Progress</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.in_progress}
+                </p>
+              </div>
+              <FaChartLine className="text-yellow-500 text-xl" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">On Track</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.on_track}
+                </p>
+              </div>
+              <FaCheckCircle className="text-green-500 text-xl" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.completed}
+                </p>
+              </div>
+              <FaCheckCircle className="text-green-600 text-xl" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Overdue</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {stats.overdue}
+                </p>
+              </div>
+              <FaExclamationTriangle className="text-red-500 text-xl" />
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <FaBullseye className="text-blue-600" />
-              Performance Goals & Key Results
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Set, track, and measure performance goals with key results
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchData}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+        {/* Filters and Search */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search goals..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <FaSync className={loading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-            <button
-              onClick={() =>
-                setModalState((prev) => ({ ...prev, showGoalForm: true }))
-              }
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              <option value="all">All Status</option>
+              <option value="Draft">Draft</option>
+              <option value="planned">Planned</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_track">On Track</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+
+            <select
+              value={filters.cycle}
+              onChange={(e) => handleFilterChange("cycle", e.target.value)}
+              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <FaPlus /> New Goal
-            </button>
-          </div>
-        </div>
-      </div>
+              <option value="all">All Review Cycles</option>
+              {reviewCycles.map((cycle) => (
+                <option key={cycle.id} value={cycle.id}>
+                  {cycle.name}
+                </option>
+              ))}
+            </select>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Goals</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+            <select
+              value={filters.employee}
+              onChange={(e) => handleFilterChange("employee", e.target.value)}
+              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Employees</option>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {getEmployeeName(emp)}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex gap-2">
+              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <FaDownload /> Export
+              </button>
             </div>
-            <FaBullseye className="text-blue-500 text-xl" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Draft</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.Draft}</p>
-            </div>
-            <FaClock className="text-gray-500 text-xl" />
-          </div>
-        </div>
+        {/* Goals Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Goal Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee & Cycle
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Timeline
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Key Results & Progress
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredGoals.map((goal) => {
+                  const employee = goal.employee || {};
+                  const cycle = goal.review_cycle || {};
+                  const goalKeyResults = keyResults.filter(
+                    (kr) => kr.performance_goal_id === goal.id,
+                  );
+                  const daysLeft = getDaysLeft(goal.due_date);
+                  const statusConfig = getStatusConfig(goal.status);
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">In Progress</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.in_progress}
-              </p>
-            </div>
-            <FaChartLine className="text-yellow-500 text-xl" />
-          </div>
-        </div>
+                  // Calculate average progress from key results
+                  const avgProgress =
+                    goalKeyResults.length > 0
+                      ? Math.round(
+                          goalKeyResults.reduce((sum, kr) => {
+                            const progress = goalService.calculateProgress(
+                              parseFloat(kr.start_value),
+                              parseFloat(kr.target_value),
+                              parseFloat(kr.current_value),
+                            );
+                            return sum + progress;
+                          }, 0) / goalKeyResults.length,
+                        )
+                      : 0;
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">On Track</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.on_track}
-              </p>
-            </div>
-            <FaCheckCircle className="text-green-500 text-xl" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.completed}
-              </p>
-            </div>
-            <FaCheckCircle className="text-green-600 text-xl" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Overdue</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.overdue}
-              </p>
-            </div>
-            <FaExclamationTriangle className="text-red-500 text-xl" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search goals..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <select
-            value={filters.status}
-            onChange={(e) => handleFilterChange("status", e.target.value)}
-            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="Draft">Draft</option>
-            <option value="planned">Planned</option>
-            <option value="in_progress">In Progress</option>
-            <option value="on_track">On Track</option>
-            <option value="completed">Completed</option>
-            <option value="overdue">Overdue</option>
-          </select>
-
-          <select
-            value={filters.cycle}
-            onChange={(e) => handleFilterChange("cycle", e.target.value)}
-            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Review Cycles</option>
-            {reviewCycles.map((cycle) => (
-              <option key={cycle.id} value={cycle.id}>
-                {cycle.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filters.employee}
-            onChange={(e) => handleFilterChange("employee", e.target.value)}
-            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Employees</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {getEmployeeName(emp)}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-              <FaDownload /> Export
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Goals Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Goal Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee & Cycle
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Timeline
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Key Results & Progress
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredGoals.map((goal) => {
-                const employee = goal.employee || {};
-                const cycle = goal.review_cycle || {};
-                const goalKeyResults = keyResults.filter(
-                  (kr) => kr.performance_goal_id === goal.id,
-                );
-                const daysLeft = getDaysLeft(goal.due_date);
-                const statusConfig = getStatusConfig(goal.status);
-
-                // Calculate average progress from key results
-                const avgProgress =
-                  goalKeyResults.length > 0
-                    ? Math.round(
-                        goalKeyResults.reduce((sum, kr) => {
-                          const progress = goalService.calculateProgress(
-                            parseFloat(kr.start_value),
-                            parseFloat(kr.target_value),
-                            parseFloat(kr.current_value),
-                          );
-                          return sum + progress;
-                        }, 0) / goalKeyResults.length,
-                      )
-                    : 0;
-
-                return (
-                  <tr key={goal.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          <FaBullseye className="text-blue-500" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {goal.title}
+                  return (
+                    <tr key={goal.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            <FaBullseye className="text-blue-500" />
                           </div>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {goal.description
-                              ? goal.description.length > 80
-                                ? `${goal.description.substring(0, 80)}...`
-                                : goal.description
-                              : "No description"}
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {goal.title}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {goal.description
+                                ? goal.description.length > 80
+                                  ? `${goal.description.substring(0, 80)}...`
+                                  : goal.description
+                                : "No description"}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <FaUser className="text-gray-400" size={14} />
-                          <span className="text-sm font-medium">
-                            {getEmployeeName(employee)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-gray-400" size={14} />
-                          <span className="text-sm text-gray-600">
-                            {cycle.name || "No Cycle"}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <div className="text-gray-600">
-                            Start: {formatDate(goal.start_date)}
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <FaUser className="text-gray-400" size={14} />
+                            <span className="text-sm font-medium">
+                              {getEmployeeName(employee)}
+                            </span>
                           </div>
-                          <div
-                            className={`font-medium ${daysLeft !== null && daysLeft < 0 ? "text-red-600" : ""}`}
-                          >
-                            Due: {formatDate(goal.due_date)}
-                            {daysLeft !== null && daysLeft < 0 && " (Overdue)"}
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {daysLeft !== null && daysLeft > 0
-                            ? `${daysLeft} days left`
-                            : ""}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-2">
+                            <FaCalendarAlt className="text-gray-400" size={14} />
                             <span className="text-sm text-gray-600">
-                              {goalKeyResults.length} Key Results
+                              {cycle.name || "No Cycle"}
                             </span>
-                            <span className="text-sm font-semibold">
-                              {avgProgress}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${statusConfig.progressColor}`}
-                              style={{ width: `${avgProgress}%` }}
-                            ></div>
                           </div>
                         </div>
+                      </td>
 
-                        {goalKeyResults.slice(0, 2).map((kr) => (
-                          <div
-                            key={kr.id}
-                            className="flex items-center justify-between text-xs"
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <div className="text-gray-600">
+                              Start: {formatDate(goal.start_date)}
+                            </div>
+                            <div
+                              className={`font-medium ${daysLeft !== null && daysLeft < 0 ? "text-red-600" : ""}`}
+                            >
+                              Due: {formatDate(goal.due_date)}
+                              {daysLeft !== null && daysLeft < 0 && " (Overdue)"}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {daysLeft !== null && daysLeft > 0
+                              ? `${daysLeft} days left`
+                              : ""}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">
+                                {goalKeyResults.length} Key Results
+                              </span>
+                              <span className="text-sm font-semibold">
+                                {avgProgress}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${statusConfig.progressColor}`}
+                                style={{ width: `${avgProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {goalKeyResults.slice(0, 2).map((kr) => (
+                            <div
+                              key={kr.id}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-gray-600 truncate max-w-[120px]">
+                                {kr.description.length > 20
+                                  ? `${kr.description.substring(0, 20)}...`
+                                  : kr.description}
+                              </span>
+                              <span className="font-medium">
+                                {formatValue(kr.current_value, kr.type)}/
+                                {formatValue(kr.target_value, kr.type)}
+                              </span>
+                            </div>
+                          ))}
+
+                          {goalKeyResults.length > 2 && (
+                            <div className="text-xs text-blue-600 font-medium">
+                              +{goalKeyResults.length - 2} more key results
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleViewGoalDetails(goal)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="View Details"
                           >
-                            <span className="text-gray-600 truncate max-w-[120px]">
-                              {kr.description.length > 20
-                                ? `${kr.description.substring(0, 20)}...`
-                                : kr.description}
-                            </span>
-                            <span className="font-medium">
-                              {formatValue(kr.current_value, kr.type)}/
-                              {formatValue(kr.target_value, kr.type)}
-                            </span>
-                          </div>
-                        ))}
-
-                        {goalKeyResults.length > 2 && (
-                          <div className="text-xs text-blue-600 font-medium">
-                            +{goalKeyResults.length - 2} more key results
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleViewGoalDetails(goal)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                          title="View Details"
-                        >
-                          <FaSearch />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setModalState((prev) => ({
-                              ...prev,
-                              showGoalForm: true,
-                              selectedGoal: goal,
-                            }))
-                          }
-                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                          title="Edit Goal"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Delete this goal and all its key results?",
-                              )
-                            ) {
-                              handleDeleteGoal(goal.id);
+                            <FaSearch />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setModalState((prev) => ({
+                                ...prev,
+                                showGoalForm: true,
+                                selectedGoal: goal,
+                              }))
                             }
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                          title="Delete Goal"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                            title="Edit Goal"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Delete this goal and all its key results?",
+                                )
+                              ) {
+                                handleDeleteGoal(goal.id);
+                              }
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Delete Goal"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {filteredGoals.length === 0 && (
-            <div className="text-center py-12">
-              <FaBullseye className="mx-auto text-4xl text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                {filters.search ||
-                filters.status !== "all" ||
-                filters.cycle !== "all" ||
-                filters.employee !== "all"
-                  ? "No matching performance goals found"
-                  : "No performance goals yet"}
-              </h3>
-              <p className="text-gray-500">
-                {filters.search ||
-                filters.status !== "all" ||
-                filters.cycle !== "all" ||
-                filters.employee !== "all"
-                  ? "Try adjusting your filters or search terms"
-                  : "Create your first performance goal to get started"}
-              </p>
-              {!(
-                filters.search ||
-                filters.status !== "all" ||
-                filters.cycle !== "all" ||
-                filters.employee !== "all"
-              ) && (
-                <button
-                  onClick={() =>
-                    setModalState((prev) => ({ ...prev, showGoalForm: true }))
-                  }
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Create First Goal
-                </button>
-              )}
+            {filteredGoals.length === 0 && (
+              <div className="text-center py-12">
+                <FaBullseye className="mx-auto text-4xl text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  {filters.search ||
+                  filters.status !== "all" ||
+                  filters.cycle !== "all" ||
+                  filters.employee !== "all"
+                    ? "No matching performance goals found"
+                    : "No performance goals yet"}
+                </h3>
+                <p className="text-gray-500">
+                  {filters.search ||
+                  filters.status !== "all" ||
+                  filters.cycle !== "all" ||
+                  filters.employee !== "all"
+                    ? "Try adjusting your filters or search terms"
+                    : "Create your first performance goal to get started"}
+                </p>
+                {!(
+                  filters.search ||
+                  filters.status !== "all" ||
+                  filters.cycle !== "all" ||
+                  filters.employee !== "all"
+                ) && (
+                  <button
+                    onClick={() =>
+                      setModalState((prev) => ({ ...prev, showGoalForm: true }))
+                    }
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Create First Goal
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Summary Footer */}
+          {filteredGoals.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <div className="text-sm text-gray-600 mb-2 md:mb-0">
+                  Showing {filteredGoals.length} of {goals.length} goals
+                </div>
+                <div className="text-sm text-gray-700 font-medium">
+                  {keyResults.length} total key results • {stats.Draft} Draft •{" "}
+                  {stats.in_progress} in progress • {stats.completed} completed
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Summary Footer */}
-        {filteredGoals.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-sm text-gray-600 mb-2 md:mb-0">
-                Showing {filteredGoals.length} of {goals.length} goals
-              </div>
-              <div className="text-sm text-gray-700 font-medium">
-                {keyResults.length} total key results • {stats.Draft} Draft •{" "}
-                {stats.in_progress} in progress • {stats.completed} completed
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Modals */}
+        <GoalFormModal
+          isOpen={modalState.showGoalForm}
+          onClose={() =>
+            setModalState((prev) => ({
+              ...prev,
+              showGoalForm: false,
+              selectedGoal: null,
+            }))
+          }
+          goal={modalState.selectedGoal}
+          reviewCycles={reviewCycles}
+          employees={employees}
+          onSubmit={(formData) => {
+            if (modalState.selectedGoal) {
+              return handleUpdateGoal(modalState.selectedGoal.id, formData);
+            } else {
+              return handleCreateGoal(formData);
+            }
+          }}
+          loading={saving}
+        />
+
+        <KeyResultFormModal
+          isOpen={modalState.showKeyResultForm}
+          onClose={() =>
+            setModalState((prev) => ({
+              ...prev,
+              showKeyResultForm: false,
+              selectedKeyResult: null,
+              selectedGoalForKeyResult: null,
+            }))
+          }
+          keyResult={modalState.selectedKeyResult}
+          goal={modalState.selectedGoalForKeyResult}
+          onSubmit={(formData) => {
+            if (modalState.selectedKeyResult) {
+              return goalService
+                .updateKeyResult(modalState.selectedKeyResult.id, formData)
+                .then((response) => {
+                  // Update key result in state
+                  setKeyResults((prev) =>
+                    prev.map((kr) =>
+                      kr.id === modalState.selectedKeyResult.id
+                        ? response.data
+                        : kr,
+                    ),
+                  );
+                  setSuccessMessage("Key result updated successfully!");
+                });
+            } else {
+              return handleCreateKeyResult(formData);
+            }
+          }}
+          loading={saving}
+        />
+
+        <GoalDetailModal
+          isOpen={modalState.showGoalDetail}
+          onClose={() =>
+            setModalState((prev) => ({
+              ...prev,
+              showGoalDetail: false,
+              selectedGoal: null,
+            }))
+          }
+          goal={modalState.selectedGoal}
+          keyResults={keyResults.filter(
+            (kr) => kr.performance_goal_id === modalState.selectedGoal?.id,
+          )}
+          onAddKeyResult={handleAddKeyResult}
+          onEditKeyResult={handleEditKeyResult}
+          onDeleteKeyResult={handleDeleteKeyResult}
+          onUpdateKeyResult={handleUpdateKeyResult}
+          loading={saving}
+        />
       </div>
-
-      {/* Modals */}
-      <GoalFormModal
-        isOpen={modalState.showGoalForm}
-        onClose={() =>
-          setModalState((prev) => ({
-            ...prev,
-            showGoalForm: false,
-            selectedGoal: null,
-          }))
-        }
-        goal={modalState.selectedGoal}
-        reviewCycles={reviewCycles}
-        employees={employees}
-        onSubmit={(formData) => {
-          if (modalState.selectedGoal) {
-            return handleUpdateGoal(modalState.selectedGoal.id, formData);
-          } else {
-            return handleCreateGoal(formData);
-          }
-        }}
-        loading={saving}
-      />
-
-      <KeyResultFormModal
-        isOpen={modalState.showKeyResultForm}
-        onClose={() =>
-          setModalState((prev) => ({
-            ...prev,
-            showKeyResultForm: false,
-            selectedKeyResult: null,
-            selectedGoalForKeyResult: null,
-          }))
-        }
-        keyResult={modalState.selectedKeyResult}
-        goal={modalState.selectedGoalForKeyResult}
-        onSubmit={(formData) => {
-          if (modalState.selectedKeyResult) {
-            return goalService
-              .updateKeyResult(modalState.selectedKeyResult.id, formData)
-              .then((response) => {
-                // Update key result in state
-                setKeyResults((prev) =>
-                  prev.map((kr) =>
-                    kr.id === modalState.selectedKeyResult.id
-                      ? response.data
-                      : kr,
-                  ),
-                );
-                setSuccessMessage("Key result updated successfully!");
-              });
-          } else {
-            return handleCreateKeyResult(formData);
-          }
-        }}
-        loading={saving}
-      />
-
-      <GoalDetailModal
-        isOpen={modalState.showGoalDetail}
-        onClose={() =>
-          setModalState((prev) => ({
-            ...prev,
-            showGoalDetail: false,
-            selectedGoal: null,
-          }))
-        }
-        goal={modalState.selectedGoal}
-        keyResults={keyResults.filter(
-          (kr) => kr.performance_goal_id === modalState.selectedGoal?.id,
-        )}
-        onAddKeyResult={handleAddKeyResult}
-        onEditKeyResult={handleEditKeyResult}
-        onDeleteKeyResult={handleDeleteKeyResult}
-        onUpdateKeyResult={handleUpdateKeyResult}
-        loading={saving}
-      />
-    </div>
+    </>
   );
 };
 

@@ -31,9 +31,87 @@ import {
   FaUser,
   FaCalculator
 } from "react-icons/fa";
+import { HiX } from "react-icons/hi";
 import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const AttendanceTracking = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -41,6 +119,8 @@ const AttendanceTracking = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   // States for attendance rules
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -775,799 +855,825 @@ const AttendanceTracking = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Attendance Tracking
-            </h1>
-            <p className="text-gray-600">
-              Monitor and manage employee attendance in real-time
-            </p>
-            <div className="mt-2 text-sm text-gray-500">
-              <span className="font-medium">Date Range:</span> {formatDate(filters.start_date)} to {formatDate(filters.end_date)} | 
-              <span className="font-medium ml-2">Records:</span> {attendanceData.length} | 
-              <span className="font-medium ml-2">Unique Employees:</span> {stats.totalEmployees}
-            </div>
-          </div>
-          
-          {/* Attendance Rules Button */}
-          <button
-            onClick={handleOpenRulesModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-          >
-            <FaClock className="h-4 w-4" />
-            Attendance Rules
-          </button>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
         </div>
+      </button>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          {statusCards.map((stat, index) => (
-            <div
-              key={index}
-              className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    {stat.label}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-800 mt-1">
-                    {stat.value}
-                  </p>
-                </div>
-                <div className={`text-${stat.color}-500 text-xl`}>
-                  <stat.icon />
-                </div>
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                Attendance Tracking
+              </h1>
+              <p className="text-gray-600">
+                Monitor and manage employee attendance in real-time
+              </p>
+              <div className="mt-2 text-sm text-gray-500">
+                <span className="font-medium">Date Range:</span> {formatDate(filters.start_date)} to {formatDate(filters.end_date)} | 
+                <span className="font-medium ml-2">Records:</span> {attendanceData.length} | 
+                <span className="font-medium ml-2">Unique Employees:</span> {stats.totalEmployees}
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
-            <span className="text-red-700 flex-1">{error}</span>
+            
+            {/* Attendance Rules Button */}
             <button
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+              onClick={handleOpenRulesModal}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
             >
-              Retry
+              <FaClock className="h-4 w-4" />
+              Attendance Rules
             </button>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="mb-6 flex justify-end">
-          <div className="flex gap-2">
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaSync className={loading ? "animate-spin" : ""} />
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-            >
-              <FaDownload /> Export
-            </button>
-          </div>
-        </div>
-
-        {/* Filters Section */}
-        <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
-          <div className="space-y-4">
-            {/* Search bar */}
-            <div className="relative max-w-md">
-              <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search employees by name or ID..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              />
-            </div>
-
-            {/* Filter controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Start Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 ">
-                  Start Date
-                </label>
-                <div className="relative">
-                  <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="date"
-                    value={filters.start_date}
-                    onChange={(e) =>
-                      handleFilterChange("start_date", e.target.value)
-                    }
-                    className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* End Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 ">
-                  End Date 
-                </label>
-                <div className="relative">
-                  <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="date"
-                    value={filters.end_date}
-                    onChange={(e) =>
-                      handleFilterChange("end_date", e.target.value)
-                    }
-                    className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Employee Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employee
-                </label>
-                <select
-                  value={filters.employee_id}
-                  onChange={(e) =>
-                    handleFilterChange("employee_id", e.target.value)
-                  }
-                  className="block w-full border border-gray-300 rounded-lg shadow-smfocus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2  focus:border-transparent transition-colors"
-                >
-                  <option value="all">All Employees</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.first_name} {emp.last_name} ({emp.employee_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Department Filter - Commented out */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <select
-                  value={filters.department}
-                  onChange={(e) => handleFilterChange("department", e.target.value)}
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
-                >
-                  <option value="all">All Departments</option>
-                  {departments.map((dept) => (
-                    <option key={`dept-${dept.id}`} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange("status", e.target.value)}
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm  focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                >
-                  <option value="all">All Status</option>
-                  <option value="present">Present</option>
-                  <option value="absent">Absent</option>
-                  <option value="late">Late</option>
-                  <option value="on_leave">On Leave</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Check In/Out
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Hours
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="px-6 py-12 text-center text-gray-500"
-                    >
-                      <div className="flex flex-col items-center">
-                        <FaClock className="text-4xl text-gray-300 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 mb-1">
-                          No attendance records found
-                        </p>
-                        <p className="text-gray-500">
-                          Try adjusting your filters or refresh the data
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((record) => {
-                    // Calculate hours for this record
-                    const hours = calculateHours(
-                      record.check_in, 
-                      record.check_out, 
-                      record.break_duration
-                    );
-                    
-                    return (
-                      <tr
-                        key={`${record.id}-${record.date}`} // Use combination of id and date for unique key
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                              <span className="text-gray-700 font-medium">
-                                {record.employee?.first_name?.[0] || "E"}
-                              </span>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {record.employee?.first_name || "Unknown"} {record.employee?.last_name || ""}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {record.employee?.employee_code || "No ID"}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 font-medium">
-                            {formatDate(record.date)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {record.employee?.designation || ""}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center text-sm">
-                              <FaClock className="h-4 w-4 text-green-500 mr-2" />
-                              <span className="font-medium">In: </span>
-                              <span className="ml-1 text-gray-700">
-                                {formatTime(record.check_in) || "-"}
-                              </span>
-                            </div>
-                            <div className="flex items-center text-sm">
-                              <FaClock className="h-4 w-4 text-red-500 mr-2" />
-                              <span className="font-medium">Out: </span>
-                              <span className="ml-1 text-gray-700">
-                                {formatTime(record.check_out) || "-"}
-                              </span>
-                            </div>
-                            <div className="flex items-center text-sm">
-                              <FaCoffee className="h-4 w-4 text-yellow-500 mr-2" />
-                              <span className="font-medium">Break: </span>
-                              <span className="ml-1 text-gray-700">
-                                {record.break_duration ? `${record.break_duration} mins` : "-"}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {hours.net} hrs
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {parseFloat(hours.overtime) > 0 ? (
-                              <span className="flex items-center">
-                                <FaMoneyBill className="h-3 w-3 text-yellow-600 mr-1" />
-                                OT: {hours.overtime} hrs
-                              </span>
-                            ) : (
-                              "No overtime"
-                            )}
-                          </div>
-                          {record.is_late && parseFloat(record.is_late) > 0 && (
-                            <div className="text-sm text-red-600 font-medium mt-1">
-                              Late by {record.is_late} mins
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={getStatusBadge(record.status)}>
-                            {record.status?.replace("_", " ") || "Unknown"}
-                          </span>
-                          <div className="mt-2 space-y-1">
-                            <div className="flex items-center text-xs text-gray-500">
-                              {record.check_in_device === "mobile" ? (
-                                <>
-                                  <FaMobileAlt className="h-3 w-3 mr-1" />
-                                  Mobile check-in
-                                </>
-                              ) : record.check_in_device === "web" ? (
-                                <>
-                                  <FaDesktop className="h-3 w-3 mr-1" />
-                                  Web check-in
-                                </>
-                              ) : (
-                                ""
-                              )}
-                            </div>
-                            {record.location && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <FaMapMarkerAlt className="h-3 w-3 mr-1" />
-                                {record.location}
-                              </div>
-                            )}
-                            {record.attendance_type === "biometric" && (
-                              <div className="flex items-center text-xs text-blue-500">
-                                <FaFingerprint className="h-3 w-3 mr-1" />
-                                Biometric
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-                            <button
-                              className="text-blue-600 hover:text-blue-900 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                              onClick={() => handleViewDetails(record)}
-                            >
-                              View
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination/Info Footer */}
-        <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
-          <div>
-            Showing <span className="font-medium">{filteredData.length}</span> of{" "}
-            <span className="font-medium">{attendanceData.length}</span> records
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              onClick={handleRefresh}
-            >
-              Refresh Data
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* View Details Modal */}
-      {showDetailsModal && selectedRecord && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-              &#8203;
-            </span>
-
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-              <div className="bg-white px-6 pt-6 pb-4">
-                <div className="flex justify-between items-center mb-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {statusCards.map((stat, index) => (
+              <div
+                key={index}
+                className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      Attendance Details
-                    </h3>
-                    <p className="text-gray-600 mt-1">
-                      {selectedRecord.employee?.first_name} {selectedRecord.employee?.last_name} - {formatDate(selectedRecord.date)}
+                    <p className="text-sm font-medium text-gray-600">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800 mt-1">
+                      {stat.value}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setShowDetailsModal(false)}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
-                  >
-                    <FaTimes className="h-6 w-6" />
-                  </button>
+                  <div className={`text-${stat.color}-500 text-xl`}>
+                    <stat.icon />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+              <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
+              <span className="text-red-700 flex-1">{error}</span>
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="mb-6 flex justify-end">
+            <div className="flex gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaSync className={loading ? "animate-spin" : ""} />
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <FaDownload /> Export
+              </button>
+            </div>
+          </div>
+
+          {/* Filters Section */}
+          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
+            <div className="space-y-4">
+              {/* Search bar */}
+              <div className="relative max-w-md">
+                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search employees by name or ID..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
+                  className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                />
+              </div>
+
+              {/* Filter controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 ">
+                    Start Date
+                  </label>
+                  <div className="relative">
+                    <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="date"
+                      value={filters.start_date}
+                      onChange={(e) =>
+                        handleFilterChange("start_date", e.target.value)
+                      }
+                      className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-6">
-                  {/* Employee Information */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <FaUser className="mr-2" />
-                      Employee Information
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Full Name</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {selectedRecord.employee?.first_name || "Unknown"} {selectedRecord.employee?.last_name || ""}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Employee Code</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {selectedRecord.employee?.employee_code || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Department</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {selectedRecord.employee?.department_name || "No Department"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Designation</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {selectedRecord.employee?.designation || "N/A"}
-                        </p>
-                      </div>
-                    </div>
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 ">
+                    End Date 
+                  </label>
+                  <div className="relative">
+                    <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="date"
+                      value={filters.end_date}
+                      onChange={(e) =>
+                        handleFilterChange("end_date", e.target.value)
+                      }
+                      className="block w-full border border-gray-300 pl-10 pr-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    />
                   </div>
+                </div>
 
-                  {/* Attendance Details */}
-                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <FaClock className="mr-2" />
-                      Attendance Details
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Date</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {formatDate(selectedRecord.date)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Status</p>
-                        <span className={getStatusBadge(selectedRecord.status)}>
-                          {selectedRecord.status?.replace("_", " ") || "Unknown"}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Check In Time</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {formatTime(selectedRecord.check_in) || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Check Out Time</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {formatTime(selectedRecord.check_out) || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Break Duration</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {selectedRecord.break_duration ? `${selectedRecord.break_duration} minutes` : "No break"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                {/* Employee Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Employee
+                  </label>
+                  <select
+                    value={filters.employee_id}
+                    onChange={(e) =>
+                      handleFilterChange("employee_id", e.target.value)
+                    }
+                    className="block w-full border border-gray-300 rounded-lg shadow-smfocus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2  focus:border-transparent transition-colors"
+                  >
+                    <option value="all">All Employees</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name} ({emp.employee_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* Hours Calculation */}
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <FaCalculator className="mr-2" />
-                      Hours Calculation
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {calculatedHours.totalHours.toFixed(2)} hrs
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-600">Break Time</p>
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {calculatedHours.breakHours.toFixed(2)} hrs
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-600">Net Hours</p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {calculatedHours.netHours.toFixed(2)} hrs
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-600">Overtime</p>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {calculatedHours.overtimeHours.toFixed(2)} hrs
-                        </p>
-                      </div>
-                    </div>
-                    {selectedRecord.is_late && parseFloat(selectedRecord.is_late) > 0 && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center">
-                          <FaExclamationTriangle className="text-red-500 mr-2" />
-                          <p className="text-red-700 font-medium">
-                            Late by {selectedRecord.is_late} minutes
+                {/* Department Filter - Commented out */}
+                {/* <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department
+                  </label>
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange("department", e.target.value)}
+                    className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map((dept) => (
+                      <option key={`dept-${dept.id}`} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div> */}
+
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange("status", e.target.value)}
+                    className="block w-full border border-gray-300 rounded-lg shadow-sm  focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                    <option value="late">Late</option>
+                    <option value="on_leave">On Leave</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Attendance Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Check In/Out
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Hours
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredData.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="px-6 py-12 text-center text-gray-500"
+                      >
+                        <div className="flex flex-col items-center">
+                          <FaClock className="text-4xl text-gray-300 mb-3" />
+                          <p className="text-lg font-medium text-gray-900 mb-1">
+                            No attendance records found
+                          </p>
+                          <p className="text-gray-500">
+                            Try adjusting your filters or refresh the data
                           </p>
                         </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredData.map((record) => {
+                      // Calculate hours for this record
+                      const hours = calculateHours(
+                        record.check_in, 
+                        record.check_out, 
+                        record.break_duration
+                      );
+                      
+                      return (
+                        <tr
+                          key={`${record.id}-${record.date}`} // Use combination of id and date for unique key
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                <span className="text-gray-700 font-medium">
+                                  {record.employee?.first_name?.[0] || "E"}
+                                </span>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {record.employee?.first_name || "Unknown"} {record.employee?.last_name || ""}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {record.employee?.employee_code || "No ID"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 font-medium">
+                              {formatDate(record.date)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {record.employee?.designation || ""}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="space-y-1">
+                              <div className="flex items-center text-sm">
+                                <FaClock className="h-4 w-4 text-green-500 mr-2" />
+                                <span className="font-medium">In: </span>
+                                <span className="ml-1 text-gray-700">
+                                  {formatTime(record.check_in) || "-"}
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                <FaClock className="h-4 w-4 text-red-500 mr-2" />
+                                <span className="font-medium">Out: </span>
+                                <span className="ml-1 text-gray-700">
+                                  {formatTime(record.check_out) || "-"}
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                <FaCoffee className="h-4 w-4 text-yellow-500 mr-2" />
+                                <span className="font-medium">Break: </span>
+                                <span className="ml-1 text-gray-700">
+                                  {record.break_duration ? `${record.break_duration} mins` : "-"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {hours.net} hrs
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {parseFloat(hours.overtime) > 0 ? (
+                                <span className="flex items-center">
+                                  <FaMoneyBill className="h-3 w-3 text-yellow-600 mr-1" />
+                                  OT: {hours.overtime} hrs
+                                </span>
+                              ) : (
+                                "No overtime"
+                              )}
+                            </div>
+                            {record.is_late && parseFloat(record.is_late) > 0 && (
+                              <div className="text-sm text-red-600 font-medium mt-1">
+                                Late by {record.is_late} mins
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={getStatusBadge(record.status)}>
+                              {record.status?.replace("_", " ") || "Unknown"}
+                            </span>
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center text-xs text-gray-500">
+                                {record.check_in_device === "mobile" ? (
+                                  <>
+                                    <FaMobileAlt className="h-3 w-3 mr-1" />
+                                    Mobile check-in
+                                  </>
+                                ) : record.check_in_device === "web" ? (
+                                  <>
+                                    <FaDesktop className="h-3 w-3 mr-1" />
+                                    Web check-in
+                                  </>
+                                ) : (
+                                  ""
+                                )}
+                              </div>
+                              {record.location && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <FaMapMarkerAlt className="h-3 w-3 mr-1" />
+                                  {record.location}
+                                </div>
+                              )}
+                              {record.attendance_type === "biometric" && (
+                                <div className="flex items-center text-xs text-blue-500">
+                                  <FaFingerprint className="h-3 w-3 mr-1" />
+                                  Biometric
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex gap-2">
+                              <button
+                                className="text-blue-600 hover:text-blue-900 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                                onClick={() => handleViewDetails(record)}
+                              >
+                                View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination/Info Footer */}
+          <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Showing <span className="font-medium">{filteredData.length}</span> of{" "}
+              <span className="font-medium">{attendanceData.length}</span> records
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={handleRefresh}
+              >
+                Refresh Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* View Details Modal */}
+        {showDetailsModal && selectedRecord && (
+          <div className="fixed inset-0 z-[80] overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              </div>
+
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+                &#8203;
+              </span>
+
+              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div className="bg-white px-6 pt-6 pb-4">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        Attendance Details
+                      </h3>
+                      <p className="text-gray-600 mt-1">
+                        {selectedRecord.employee?.first_name} {selectedRecord.employee?.last_name} - {formatDate(selectedRecord.date)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDetailsModal(false)}
+                      className="text-gray-400 hover:text-gray-500 transition-colors"
+                    >
+                      <FaTimes className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Employee Information */}
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FaUser className="mr-2" />
+                        Employee Information
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Full Name</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.employee?.first_name || "Unknown"} {selectedRecord.employee?.last_name || ""}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Employee Code</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.employee?.employee_code || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Department</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.employee?.department_name || "No Department"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Designation</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.employee?.designation || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Attendance Details */}
+                    <div className="bg-white border border-gray-200 p-4 rounded-lg">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FaClock className="mr-2" />
+                        Attendance Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Date</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {formatDate(selectedRecord.date)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Status</p>
+                          <span className={getStatusBadge(selectedRecord.status)}>
+                            {selectedRecord.status?.replace("_", " ") || "Unknown"}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Check In Time</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {formatTime(selectedRecord.check_in) || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Check Out Time</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {formatTime(selectedRecord.check_out) || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Break Duration</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.break_duration ? `${selectedRecord.break_duration} minutes` : "No break"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hours Calculation */}
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FaCalculator className="mr-2" />
+                        Hours Calculation
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-600">Total Hours</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {calculatedHours.totalHours.toFixed(2)} hrs
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-600">Break Time</p>
+                          <p className="text-2xl font-bold text-yellow-600">
+                            {calculatedHours.breakHours.toFixed(2)} hrs
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-600">Net Hours</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {calculatedHours.netHours.toFixed(2)} hrs
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-600">Overtime</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {calculatedHours.overtimeHours.toFixed(2)} hrs
+                          </p>
+                        </div>
+                      </div>
+                      {selectedRecord.is_late && parseFloat(selectedRecord.is_late) > 0 && (
+                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <div className="flex items-center">
+                            <FaExclamationTriangle className="text-red-500 mr-2" />
+                            <p className="text-red-700 font-medium">
+                              Late by {selectedRecord.is_late} minutes
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Additional Information */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                        Additional Information
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Device Type</p>
+                          <p className="text-gray-900">
+                            {selectedRecord.check_in_device === "mobile" ? (
+                              <span className="flex items-center">
+                                <FaMobileAlt className="mr-2" /> Mobile Device
+                              </span>
+                            ) : selectedRecord.check_in_device === "web" ? (
+                              <span className="flex items-center">
+                                <FaDesktop className="mr-2" /> Web Browser
+                              </span>
+                            ) : (
+                              "Not specified"
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Attendance Type</p>
+                          <p className="text-gray-900">
+                            {selectedRecord.attendance_type === "biometric" ? (
+                              <span className="flex items-center">
+                                <FaFingerprint className="mr-2" /> Biometric
+                              </span>
+                            ) : (
+                              selectedRecord.attendance_type || "Manual"
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Location</p>
+                          <p className="text-gray-900">
+                            {selectedRecord.location || "Location not recorded"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes Section - Only shown if there are notes */}
+                    {selectedRecord.notes && (
+                      <div className="bg-yellow-50 p-4 rounded-lg">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                          <FaStickyNote className="mr-2" />
+                          Notes
+                        </h4>
+                        <p className="text-gray-700 whitespace-pre-wrap">
+                          {selectedRecord.notes}
+                        </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Additional Information */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                      Additional Information
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Device Type</p>
-                        <p className="text-gray-900">
-                          {selectedRecord.check_in_device === "mobile" ? (
-                            <span className="flex items-center">
-                              <FaMobileAlt className="mr-2" /> Mobile Device
-                            </span>
-                          ) : selectedRecord.check_in_device === "web" ? (
-                            <span className="flex items-center">
-                              <FaDesktop className="mr-2" /> Web Browser
-                            </span>
-                          ) : (
-                            "Not specified"
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Attendance Type</p>
-                        <p className="text-gray-900">
-                          {selectedRecord.attendance_type === "biometric" ? (
-                            <span className="flex items-center">
-                              <FaFingerprint className="mr-2" /> Biometric
-                            </span>
-                          ) : (
-                            selectedRecord.attendance_type || "Manual"
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Location</p>
-                        <p className="text-gray-900">
-                          {selectedRecord.location || "Location not recorded"}
-                        </p>
-                      </div>
-                    </div>
+                  {/* Modal Actions */}
+                  <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailsModal(false)}
+                      className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      Close
+                    </button>
                   </div>
-
-                  {/* Notes Section - Only shown if there are notes */}
-                  {selectedRecord.notes && (
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                        <FaStickyNote className="mr-2" />
-                        Notes
-                      </h4>
-                      <p className="text-gray-700 whitespace-pre-wrap">
-                        {selectedRecord.notes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Modal Actions */}
-                <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setShowDetailsModal(false)}
-                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                  >
-                    Close
-                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Attendance Rules Modal */}
-      {showRulesModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
+        {/* Attendance Rules Modal */}
+        {showRulesModal && (
+          <div className="fixed inset-0 z-[80] overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              </div>
 
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-              &#8203;
-            </span>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+                &#8203;
+              </span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-              <div className="bg-white px-6 pt-6 pb-4">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      {existingRule ? "Edit Attendance Rules" : "Create Attendance Rules"}
-                    </h3>
-                    <p className="text-gray-600 mt-1">
-                      Configure attendance policies for {selectedOrganization?.name}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowRulesModal(false)}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
-                  >
-                    <FaTimes className="h-6 w-6" />
-                  </button>
-                </div>
-
-                {/* Status Messages */}
-                {rulesError && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                    <FaExclamationTriangle className="text-red-500 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-red-700 font-medium">Error</p>
-                      <p className="text-red-600 text-sm mt-1">{rulesError}</p>
+              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div className="bg-white px-6 pt-6 pb-4">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        {existingRule ? "Edit Attendance Rules" : "Create Attendance Rules"}
+                      </h3>
+                      <p className="text-gray-600 mt-1">
+                        Configure attendance policies for {selectedOrganization?.name}
+                      </p>
                     </div>
+                    <button
+                      onClick={() => setShowRulesModal(false)}
+                      className="text-gray-400 hover:text-gray-500 transition-colors"
+                    >
+                      <FaTimes className="h-6 w-6" />
+                    </button>
                   </div>
-                )}
 
-                {rulesSuccess && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-                    <FaCheck className="text-green-500 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-green-700 font-medium">Success</p>
-                      <p className="text-green-600 text-sm mt-1">{rulesSuccess}</p>
+                  {/* Status Messages */}
+                  {rulesError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                      <FaExclamationTriangle className="text-red-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-red-700 font-medium">Error</p>
+                        <p className="text-red-600 text-sm mt-1">{rulesError}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {rulesLoading ? (
-                  <div className="text-center py-12">
-                    <FaSpinner className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-3" />
-                    <p className="text-gray-600">Loading attendance rules...</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleRulesSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Basic Information */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaBuilding className="inline mr-2" />
-                          Basic Settings
-                        </h4>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Shift Name *
-                          </label>
-                          <input
-                            type="text"
-                            name="shift_name"
-                            value={ruleForm.shift_name}
-                            onChange={handleRuleFormChange}
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            placeholder="e.g., Regular Shift, Night Shift"
-                            required
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Check In Time
-                            </label>
-                            <input
-                              type="time"
-                              name="check_in"
-                              value={ruleForm.check_in}
-                              onChange={handleRuleFormChange}
-                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Check Out Time
-                            </label>
-                            <input
-                              type="time"
-                              name="check_out"
-                              value={ruleForm.check_out}
-                              onChange={handleRuleFormChange}
-                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <div className="flex items-center text-sm text-blue-700">
-                            <FaRegClock className="mr-2" />
-                            <span className="font-medium">Work Hours: </span>
-                            <span className="ml-1">{calculateWorkHours()} hours</span>
-                          </div>
-                        </div>
+                  {rulesSuccess && (
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                      <FaCheck className="text-green-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-green-700 font-medium">Success</p>
+                        <p className="text-green-600 text-sm mt-1">{rulesSuccess}</p>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Break Settings */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaCoffee className="inline mr-2" />
-                          Break Settings
-                        </h4>
-                        
-                        <div className="grid grid-cols-2 gap-4">
+                  {rulesLoading ? (
+                    <div className="text-center py-12">
+                      <FaSpinner className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-3" />
+                      <p className="text-gray-600">Loading attendance rules...</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleRulesSubmit}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Basic Information */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaBuilding className="inline mr-2" />
+                            Basic Settings
+                          </h4>
+                          
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Break Start
+                              Shift Name *
                             </label>
                             <input
-                              type="time"
-                              name="break_start"
-                              value={ruleForm.break_start}
+                              type="text"
+                              name="shift_name"
+                              value={ruleForm.shift_name}
                               onChange={handleRuleFormChange}
                               className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              placeholder="e.g., Regular Shift, Night Shift"
+                              required
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Break End
-                            </label>
-                            <input
-                              type="time"
-                              name="break_end"
-                              value={ruleForm.break_end}
-                              onChange={handleRuleFormChange}
-                              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                            />
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Check In Time
+                              </label>
+                              <input
+                                type="time"
+                                name="check_in"
+                                value={ruleForm.check_in}
+                                onChange={handleRuleFormChange}
+                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Check Out Time
+                              </label>
+                              <input
+                                type="time"
+                                name="check_out"
+                                value={ruleForm.check_out}
+                                onChange={handleRuleFormChange}
+                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            <div className="flex items-center text-sm text-blue-700">
+                              <FaRegClock className="mr-2" />
+                              <span className="font-medium">Work Hours: </span>
+                              <span className="ml-1">{calculateWorkHours()} hours</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="bg-yellow-50 p-3 rounded-lg">
-                          <div className="flex items-center text-sm text-yellow-700">
-                            <FaCoffee className="mr-2" />
-                            <span className="font-medium">Break Duration: </span>
-                            <span className="ml-1">1 hour</span>
+                        {/* Break Settings */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaCoffee className="inline mr-2" />
+                            Break Settings
+                          </h4>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Break Start
+                              </label>
+                              <input
+                                type="time"
+                                name="break_start"
+                                value={ruleForm.break_start}
+                                onChange={handleRuleFormChange}
+                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Break End
+                              </label>
+                              <input
+                                type="time"
+                                name="break_end"
+                                value={ruleForm.break_end}
+                                onChange={handleRuleFormChange}
+                                className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-yellow-50 p-3 rounded-lg">
+                            <div className="flex items-center text-sm text-yellow-700">
+                              <FaCoffee className="mr-2" />
+                              <span className="font-medium">Break Duration: </span>
+                              <span className="ml-1">1 hour</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Grace Period & Thresholds */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                          <FaExclamationTriangle className="inline mr-2" />
-                          Grace Period & Thresholds
-                        </h4>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Late Grace Period (minutes)
-                          </label>
+                        {/* Grace Period & Thresholds */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                            <FaExclamationTriangle className="inline mr-2" />
+                            Grace Period & Thresholds
+                          </h4>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Late Grace Period (minutes)
+                            </label>
                             <input
                               type="number"
                               name="late_grace_minutes"
@@ -1918,19 +2024,20 @@ const AttendanceTracking = () => {
               </div>
             </div>
           </div>
-      )}
+        )}
 
-      {/* Styles */}
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        .animate-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-      `}</style>
-    </div>
+        {/* Styles */}
+        <style jsx>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+          .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+        `}</style>
+      </div>
+    </>
   );
 };
 

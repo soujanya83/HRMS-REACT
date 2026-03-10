@@ -14,8 +14,86 @@ import {
   FaUsers,
   FaSync
 } from 'react-icons/fa';
+import { HiX } from "react-icons/hi";
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import { timesheetService } from '../../services/timesheetService';
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const TimesheetEntry = () => {
   const { selectedOrganization } = useOrganizations();
@@ -29,6 +107,8 @@ const TimesheetEntry = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedTimesheetIds, setSelectedTimesheetIds] = useState([]);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   
   // New state for generate timesheet modal
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -255,38 +335,40 @@ const TimesheetEntry = () => {
   };
 
   // Generate timesheets for selected fortnightly period
-  const handleGenerateTimesheets = async () => {
-    if (!selectedFortnightlyPeriod) {
-      alert('Please select a fortnightly period');
-      return;
-    }
+  // Generate timesheets for selected fortnightly period
+const handleGenerateTimesheets = async () => {
+  if (!selectedFortnightlyPeriod) {
+    alert('Please select a fortnightly period');
+    return;
+  }
 
-    if (!window.confirm(`Generate timesheets for period: ${formatDate(selectedFortnightlyPeriod.start_date)} to ${formatDate(selectedFortnightlyPeriod.end_date)}?`)) {
-      return;
-    }
+  if (!window.confirm(`Generate timesheets for period: ${formatDate(selectedFortnightlyPeriod.start_date)} to ${formatDate(selectedFortnightlyPeriod.end_date)}?`)) {
+    return;
+  }
 
-    setGeneratingTimesheet(true);
-    try {
-      const response = await timesheetService.generateTimesheets(
-        selectedFortnightlyPeriod.start_date.split('T')[0],
-        selectedFortnightlyPeriod.end_date.split('T')[0]
-      );
-      
-      if (response.status) {
-        alert(`Successfully generated ${response.created} timesheets for the selected period!`);
-        // Refresh data
-        fetchAllOrganizationTimesheets();
-        setShowGenerateModal(false);
-      } else {
-        alert(response.message || 'Failed to generate timesheets');
-      }
-    } catch (error) {
-      console.error('Error generating timesheets:', error);
-      alert('Failed to generate timesheets. Please try again.');
-    } finally {
-      setGeneratingTimesheet(false);
+  setGeneratingTimesheet(true);
+  try {
+    const response = await timesheetService.generateTimesheets(
+      selectedFortnightlyPeriod.start_date.split('T')[0],
+      selectedFortnightlyPeriod.end_date.split('T')[0],
+      selectedOrganization.id  // ← ADD THIS: Pass organization_id as third parameter
+    );
+    
+    if (response.status) {
+      alert(`Successfully generated ${response.created} timesheets for the selected period!`);
+      // Refresh data
+      fetchAllOrganizationTimesheets();
+      setShowGenerateModal(false);
+    } else {
+      alert(response.message || 'Failed to generate timesheets');
     }
-  };
+  } catch (error) {
+    console.error('Error generating timesheets:', error);
+    alert('Failed to generate timesheets. Please try again.');
+  } finally {
+    setGeneratingTimesheet(false);
+  }
+};
 
   // Filter timesheets - Only show pending/draft timesheets (not submitted/approved/pushed)
   const getPendingTimesheets = () => {
@@ -364,558 +446,585 @@ const TimesheetEntry = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Timesheet Management</h1>
-            <p className="text-gray-600 text-sm md:text-base">Manage and submit employee timesheets</p>
-            {selectedOrganization && (
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-                <FaUsers className="mr-2 text-xs" />
-                {selectedOrganization.name}
-              </div>
-            )}
-          </div>
-          
-          {/* Organization Stats */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="text-sm text-gray-600 mb-2 font-medium">Organization Stats</div>
-            <div className="flex gap-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">{orgStats.pendingTimesheets}</div>
-                <div className="text-xs text-gray-500">Pending Timesheets</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-green-600">
-                  {orgStats.submittedTimesheets}
-                </div>
-                <div className="text-xs text-gray-500">Submitted</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-purple-600">
-                  {orgStats.pushedToXero}
-                </div>
-                <div className="text-xs text-gray-500">Pushed to Xero</div>
-              </div>
-            </div>
-          </div>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
         </div>
+      </button>
 
-        {/* Stats Cards Grid - Only for pending/draft timesheets */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Hours</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalHours.toFixed(2)}</p>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <FaClock className="text-blue-500 text-lg" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500">{stats.entriesCount} pending entries</div>
-          </div>
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto space-y-6">
           
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Billable Hours</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.billableHours.toFixed(2)}</p>
-              </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <FaCalculator className="text-green-500 text-lg" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500">Revenue generating hours</div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Approval</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {orgStats.pendingTimesheets}
-                </p>
-              </div>
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <FaFileAlt className="text-orange-500 text-lg" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500">Timesheets awaiting submission</div>
-          </div>
-        </div>
-
-        {/* Fortnightly Pay Periods Section */}
-        {payPeriods.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Fortnightly Pay Periods</h3>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-600">Current:</span>
-                {selectedPayPeriod && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                    {selectedPayPeriod.calendar_name}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FaCalendarAlt className="text-gray-400" />
-                Select Fortnightly Period
-              </h4>
-              <div className="space-y-2">
-                {payPeriods.slice(0, 5).map((period, index) => (
-                  <div 
-                    key={`fortnightly-${period.id}-${index}`}
-                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
-                      period.is_current 
-                        ? 'border-blue-300 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                    onClick={() => {
-                      if (period.start_date) {
-                        setSelectedDate(period.start_date.split('T')[0]);
-                      }
-                      setSelectedPayPeriod(period);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-8 rounded-full ${
-                        period.is_current ? 'bg-blue-500' : 'bg-gray-300'
-                      }`}></div>
-                      <div>
-                        <div className="font-medium text-gray-900">{period.calendar_name}</div>
-                        <div className="text-xs text-gray-500">
-                          {formatDate(period.start_date)} - {formatDate(period.end_date)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
-                      {period.is_current && (
-                        <div className="text-xs text-green-600 font-medium mt-1">• Current</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
+          {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Timesheet Actions</h3>
-              <p className="text-sm text-gray-600">Generate and submit timesheets</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Timesheet Management</h1>
+              <p className="text-gray-600 text-sm md:text-base">Manage and submit employee timesheets</p>
+              {selectedOrganization && (
+                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+                  <FaUsers className="mr-2 text-xs" />
+                  {selectedOrganization.name}
+                </div>
+              )}
             </div>
             
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleOpenGenerateModal}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
-                disabled={apiLoading}
-              >
-                <FaSync className={apiLoading ? 'animate-spin' : ''} />
-                Generate Timesheets
-              </button>
-              
-              <button
-                onClick={handleSubmitTimesheet}
-                disabled={selectedTimesheetIds.length === 0 || apiLoading}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                  selectedTimesheetIds.length > 0
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <FaPaperPlane />
-                Submit Selected ({selectedTimesheetIds.length})
-              </button>
+            {/* Organization Stats */}
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="text-sm text-gray-600 mb-2 font-medium">Organization Stats</div>
+              <div className="flex gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-600">{orgStats.pendingTimesheets}</div>
+                  <div className="text-xs text-gray-500">Pending Timesheets</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-600">
+                    {orgStats.submittedTimesheets}
+                  </div>
+                  <div className="text-xs text-gray-500">Submitted</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-600">
+                    {orgStats.pushedToXero}
+                  </div>
+                  <div className="text-xs text-gray-500">Pushed to Xero</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Main Timesheets Table - Only shows pending/draft timesheets */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Pending Timesheets</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Showing {getPendingTimesheets().length} pending/draft timesheets
-                </p>
-              </div>
-              
-              <div className="flex flex-wrap gap-3">
-                {/* Search */}
-                <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
-                  <input
-                    type="text"
-                    placeholder="Search employees..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full md:w-48"
-                  />
+          {/* Stats Cards Grid - Only for pending/draft timesheets */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Hours</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalHours.toFixed(2)}</p>
                 </div>
-
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <FaFilter className="text-gray-400 text-sm" />
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="border border-gray-300 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="draft">Draft</option>
-                  </select>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <FaClock className="text-blue-500 text-lg" />
                 </div>
               </div>
+              <div className="mt-2 text-xs text-gray-500">{stats.entriesCount} pending entries</div>
             </div>
+            
+            <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Billable Hours</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.billableHours.toFixed(2)}</p>
+                </div>
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <FaCalculator className="text-green-500 text-lg" />
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">Revenue generating hours</div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Approval</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {orgStats.pendingTimesheets}
+                  </p>
+                </div>
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <FaFileAlt className="text-orange-500 text-lg" />
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">Timesheets awaiting submission</div>
+            </div>
+          </div>
 
-            {/* Selection Summary */}
-            {selectedTimesheetIds.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FaCheckCircle className="text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">
-                      {selectedTimesheetIds.length} timesheet(s) selected
+          {/* Fortnightly Pay Periods Section */}
+          {payPeriods.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Fortnightly Pay Periods</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600">Current:</span>
+                  {selectedPayPeriod && (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                      {selectedPayPeriod.calendar_name}
                     </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={selectAllTimesheets}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {selectedTimesheetIds.length === getPendingTimesheets().length ? 'Deselect All' : 'Select All'}
-                    </button>
-                    <button
-                      onClick={() => setSelectedTimesheetIds([])}
-                      className="text-sm text-red-600 hover:text-red-800"
-                    >
-                      Clear Selection
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Timesheets Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
-                    {getPendingTimesheets().length > 0 && (
-                      <input
-                        type="checkbox"
-                        checked={selectedTimesheetIds.length === getPendingTimesheets().length}
-                        onChange={selectAllTimesheets}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    )}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hours
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {getPendingTimesheets().length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <FaFileAlt className="mx-auto text-4xl text-gray-300 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">No Pending Timesheets</h3>
-                      <p className="text-gray-600 mb-4">
-                        Generate timesheets to get started
-                      </p>
-                      <button
-                        onClick={handleOpenGenerateModal}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                      >
-                        Generate Timesheets
-                      </button>
-                    </td>
-                  </tr>
-                ) : filteredTimesheets.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <FaSearch className="mx-auto text-4xl text-gray-300 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">No matching timesheets</h3>
-                      <p className="text-gray-600">
-                        Try adjusting your search or filter
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTimesheets.map((timesheet) => (
-                    <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedTimesheetIds.includes(timesheet.id)}
-                          onChange={() => toggleTimesheetSelection(timesheet.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                            <FaUser className="text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {timesheet.employee?.first_name} {timesheet.employee?.last_name}
-                            </div>
-                            <div className="text-sm text-gray-500">{timesheet.employee?.employee_code}</div>
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <FaCalendarAlt className="text-gray-400" />
+                  Select Fortnightly Period
+                </h4>
+                <div className="space-y-2">
+                  {payPeriods.slice(0, 5).map((period, index) => (
+                    <div 
+                      key={`fortnightly-${period.id}-${index}`}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
+                        period.is_current 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        if (period.start_date) {
+                          setSelectedDate(period.start_date.split('T')[0]);
+                        }
+                        setSelectedPayPeriod(period);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-8 rounded-full ${
+                          period.is_current ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}></div>
+                        <div>
+                          <div className="font-medium text-gray-900">{period.calendar_name}</div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(period.start_date)} - {formatDate(period.end_date)}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="bg-gray-100 p-2 rounded-lg mr-3">
-                            <FaCalendar className="text-gray-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {timesheet.from_date && timesheet.to_date 
-                                ? Math.round((new Date(timesheet.to_date) - new Date(timesheet.from_date)) / (1000 * 60 * 60 * 24)) + 1 + ' days'
-                                : 'N/A'
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-lg font-bold text-gray-900">
-                          {parseFloat(timesheet.regular_hours || 0).toFixed(2)}
-                        </div>
-                        <div className="text-sm text-gray-500">Regular hours</div>
-                        {parseFloat(timesheet.overtime_hours || 0) > 0 && (
-                          <div className="text-xs text-orange-600 mt-1">
-                            +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
-                          </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
+                        {period.is_current && (
+                          <div className="text-xs text-green-600 font-medium mt-1">• Current</div>
                         )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          timesheet.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                            : timesheet.status === 'draft'
-                            ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                            : 'bg-blue-100 text-blue-800 border border-blue-200'
-                        }`}>
-                          {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              // View timesheet details
-                              alert(`Timesheet Details:\nEmployee: ${timesheet.employee?.first_name} ${timesheet.employee?.last_name}\nPeriod: ${timesheet.from_date} to ${timesheet.to_date}\nHours: ${timesheet.regular_hours}\nStatus: ${timesheet.status}`);
-                            }}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <FaSearch size={14} />
-                          </button>
-                          <button
-                            onClick={() => toggleTimesheetSelection(timesheet.id)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              selectedTimesheetIds.includes(timesheet.id)
-                                ? 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                            }`}
-                            title="Select for Submission"
-                          >
-                            <FaCheckCircle size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Generate Timesheet Modal */}
-        {showGenerateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Generate Timesheets
-                </h2>
+          {/* Action Buttons */}
+          <div className="bg-white rounded-xl shadow-sm p-5">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Timesheet Actions</h3>
+                <p className="text-sm text-gray-600">Generate and submit timesheets</p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => {
-                    setShowGenerateModal(false);
-                    setSelectedFortnightlyPeriod(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 text-xl"
-                  disabled={generatingTimesheet}
+                  onClick={handleOpenGenerateModal}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                  disabled={apiLoading}
                 >
-                  ✕
+                  <FaSync className={apiLoading ? 'animate-spin' : ''} />
+                  Generate Timesheets
+                </button>
+                
+                <button
+                  onClick={handleSubmitTimesheet}
+                  disabled={selectedTimesheetIds.length === 0 || apiLoading}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                    selectedTimesheetIds.length > 0
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <FaPaperPlane />
+                  Submit Selected ({selectedTimesheetIds.length})
                 </button>
               </div>
-              
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Select a fortnightly pay period to generate timesheets for all employees.
-                </p>
+            </div>
+          </div>
+
+          {/* Main Timesheets Table - Only shows pending/draft timesheets */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Pending Timesheets</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Showing {getPendingTimesheets().length} pending/draft timesheets
+                  </p>
+                </div>
                 
-                {fortnightlyPeriods.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">No Fortnightly Periods Found</h3>
-                    <p className="text-gray-600">
-                      No fortnightly pay periods available for this organization.
-                    </p>
+                <div className="flex flex-wrap gap-3">
+                  {/* Search */}
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
+                    <input
+                      type="text"
+                      placeholder="Search employees..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full md:w-48"
+                    />
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Fortnightly Period
-                    </label>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {fortnightlyPeriods.map((period) => (
-                        <div
-                          key={period.id}
-                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
-                            selectedFortnightlyPeriod?.id === period.id
-                              ? 'border-blue-300 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                          onClick={() => setSelectedFortnightlyPeriod(period)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium text-gray-900">{period.calendar_name}</div>
-                              <div className="text-sm text-gray-500">
-                                {formatDate(period.start_date)} - {formatDate(period.end_date)}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
-                              {period.is_current && (
-                                <div className="text-xs text-green-600 font-medium mt-1">• Current</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+
+                  {/* Status Filter */}
+                  <div className="flex items-center gap-2">
+                    <FaFilter className="text-gray-400 text-sm" />
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="border border-gray-300 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="draft">Draft</option>
+                    </select>
                   </div>
-                )}
+                </div>
               </div>
 
-              {selectedFortnightlyPeriod && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">Selected Period Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-gray-500">Start Date</div>
-                      <div className="text-sm font-medium">{formatDate(selectedFortnightlyPeriod.start_date)}</div>
+              {/* Selection Summary */}
+              {selectedTimesheetIds.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FaCheckCircle className="text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">
+                        {selectedTimesheetIds.length} timesheet(s) selected
+                      </span>
                     </div>
-                    <div>
-                      <div className="text-xs text-gray-500">End Date</div>
-                      <div className="text-sm font-medium">{formatDate(selectedFortnightlyPeriod.end_date)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Period Name</div>
-                      <div className="text-sm font-medium">{selectedFortnightlyPeriod.calendar_name}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Duration</div>
-                      <div className="text-sm font-medium">{selectedFortnightlyPeriod.number_of_days} days</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={selectAllTimesheets}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {selectedTimesheetIds.length === getPendingTimesheets().length ? 'Deselect All' : 'Select All'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedTimesheetIds([])}
+                        className="text-sm text-red-600 hover:text-red-800"
+                      >
+                        Clear Selection
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
+            </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowGenerateModal(false);
-                    setSelectedFortnightlyPeriod(null);
-                  }}
-                  className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                  disabled={generatingTimesheet}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleGenerateTimesheets}
-                  disabled={!selectedFortnightlyPeriod || generatingTimesheet}
-                  className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${
-                    selectedFortnightlyPeriod && !generatingTimesheet
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {generatingTimesheet ? (
-                    <>
-                      <FaSync className="animate-spin" />
-                      Generating...
-                    </>
+            {/* Timesheets Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                      {getPendingTimesheets().length > 0 && (
+                        <input
+                          type="checkbox"
+                          checked={selectedTimesheetIds.length === getPendingTimesheets().length}
+                          onChange={selectAllTimesheets}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      )}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Period
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Hours
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {getPendingTimesheets().length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center">
+                        <FaFileAlt className="mx-auto text-4xl text-gray-300 mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">No Pending Timesheets</h3>
+                        <p className="text-gray-600 mb-4">
+                          Generate timesheets to get started
+                        </p>
+                        <button
+                          onClick={handleOpenGenerateModal}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          Generate Timesheets
+                        </button>
+                      </td>
+                    </tr>
+                  ) : filteredTimesheets.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center">
+                        <FaSearch className="mx-auto text-4xl text-gray-300 mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">No matching timesheets</h3>
+                        <p className="text-gray-600">
+                          Try adjusting your search or filter
+                        </p>
+                      </td>
+                    </tr>
                   ) : (
-                    <>
-                      <FaSync />
-                      Generate Timesheets
-                    </>
+                    filteredTimesheets.map((timesheet) => (
+                      <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedTimesheetIds.includes(timesheet.id)}
+                            onChange={() => toggleTimesheetSelection(timesheet.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                              <FaUser className="text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {timesheet.employee?.first_name} {timesheet.employee?.last_name}
+                              </div>
+                              <div className="text-sm text-gray-500">{timesheet.employee?.employee_code}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="bg-gray-100 p-2 rounded-lg mr-3">
+                              <FaCalendar className="text-gray-600" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {timesheet.from_date && timesheet.to_date 
+                                  ? Math.round((new Date(timesheet.to_date) - new Date(timesheet.from_date)) / (1000 * 60 * 60 * 24)) + 1 + ' days'
+                                  : 'N/A'
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-lg font-bold text-gray-900">
+                            {parseFloat(timesheet.regular_hours || 0).toFixed(2)}
+                          </div>
+                          <div className="text-sm text-gray-500">Regular hours</div>
+                          {parseFloat(timesheet.overtime_hours || 0) > 0 && (
+                            <div className="text-xs text-orange-600 mt-1">
+                              +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            timesheet.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
+                              : timesheet.status === 'draft'
+                              ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                              : 'bg-blue-100 text-blue-800 border border-blue-200'
+                          }`}>
+                            {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                // View timesheet details
+                                alert(`Timesheet Details:\nEmployee: ${timesheet.employee?.first_name} ${timesheet.employee?.last_name}\nPeriod: ${timesheet.from_date} to ${timesheet.to_date}\nHours: ${timesheet.regular_hours}\nStatus: ${timesheet.status}`);
+                              }}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <FaSearch size={14} />
+                            </button>
+                            <button
+                              onClick={() => toggleTimesheetSelection(timesheet.id)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                selectedTimesheetIds.includes(timesheet.id)
+                                  ? 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                              }`}
+                              title="Select for Submission"
+                            >
+                              <FaCheckCircle size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
-                </button>
-              </div>
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
 
-        {/* Loading Overlay */}
-        {(apiLoading || generatingTimesheet) && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                <div>
-                  <div className="text-lg font-medium text-gray-900">
-                    {generatingTimesheet ? 'Generating Timesheets...' : 'Processing...'}
+          {/* Generate Timesheet Modal */}
+          {showGenerateModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Generate Timesheets
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowGenerateModal(false);
+                      setSelectedFortnightlyPeriod(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 text-xl"
+                    disabled={generatingTimesheet}
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Select a fortnightly pay period to generate timesheets for all employees.
+                  </p>
+                  
+                  {fortnightlyPeriods.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">No Fortnightly Periods Found</h3>
+                      <p className="text-gray-600">
+                        No fortnightly pay periods available for this organization.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Fortnightly Period
+                      </label>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {fortnightlyPeriods.map((period) => (
+                          <div
+                            key={period.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
+                              selectedFortnightlyPeriod?.id === period.id
+                                ? 'border-blue-300 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                            onClick={() => setSelectedFortnightlyPeriod(period)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-gray-900">{period.calendar_name}</div>
+                                <div className="text-sm text-gray-500">
+                                  {formatDate(period.start_date)} - {formatDate(period.end_date)}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs font-medium text-gray-700">{period.number_of_days} days</div>
+                                {period.is_current && (
+                                  <div className="text-xs text-green-600 font-medium mt-1">• Current</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {selectedFortnightlyPeriod && (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Selected Period Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">Start Date</div>
+                        <div className="text-sm font-medium">{formatDate(selectedFortnightlyPeriod.start_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">End Date</div>
+                        <div className="text-sm font-medium">{formatDate(selectedFortnightlyPeriod.end_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Period Name</div>
+                        <div className="text-sm font-medium">{selectedFortnightlyPeriod.calendar_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Duration</div>
+                        <div className="text-sm font-medium">{selectedFortnightlyPeriod.number_of_days} days</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">Please wait while we complete your request</div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowGenerateModal(false);
+                      setSelectedFortnightlyPeriod(null);
+                    }}
+                    className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    disabled={generatingTimesheet}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleGenerateTimesheets}
+                    disabled={!selectedFortnightlyPeriod || generatingTimesheet}
+                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${
+                      selectedFortnightlyPeriod && !generatingTimesheet
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {generatingTimesheet ? (
+                      <>
+                        <FaSync className="animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <FaSync />
+                        Generate Timesheets
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Loading Overlay */}
+          {(apiLoading || generatingTimesheet) && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80]">
+              <div className="bg-white p-8 rounded-xl shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                  <div>
+                    <div className="text-lg font-medium text-gray-900">
+                      {generatingTimesheet ? 'Generating Timesheets...' : 'Processing...'}
+                    </div>
+                    <div className="text-sm text-gray-600">Please wait while we complete your request</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

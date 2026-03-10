@@ -33,12 +33,11 @@ import {
 const PASTEL_COLORS = [
   { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
   { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Lavender', value: '#E6E6FA', textColor: 'text-gray-800' },
   { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
   { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
   { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Lilac', value: '#C8A2C8', textColor: 'text-gray-800' },
-  { name: 'Mint Cream', value: '#F5FFFA', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
 ];
 
 // Color Palette Component

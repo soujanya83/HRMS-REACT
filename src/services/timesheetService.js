@@ -16,12 +16,13 @@ export const timesheetService = {
     }
   },
 
-  // ✅ Available: Generate timesheets for date range
-  generateTimesheets: async (fromDate, toDate) => {
+  // ✅ FIXED: Generate timesheets for date range with organization ID
+  generateTimesheets: async (fromDate, toDate, organizationId) => {
     try {
       const response = await axiosClient.post('/timesheets/generate', {
         from: fromDate,
-        to: toDate
+        to: toDate,
+        organization_id: organizationId  // ← ADD THIS
       });
       console.log('🔄 Generate timesheets response:', response.data);
       return response.data;

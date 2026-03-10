@@ -22,11 +22,89 @@ import {
   FaUserTimes,
   FaInfoCircle
 } from 'react-icons/fa';
+import { HiX } from "react-icons/hi";
 import manualAdjustmentService from "../../services/manualAdjustmentService";
 import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const ManualAdjustments = () => {
   const { selectedOrganization } = useOrganizations();
@@ -40,6 +118,8 @@ const ManualAdjustments = () => {
   const [departments, setDepartments] = useState([]);
   const [selectedAdjustment, setSelectedAdjustment] = useState(null);
   const [editingAdjustment, setEditingAdjustment] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   
   // Filters state
   const [filters, setFilters] = useState({
@@ -797,783 +877,810 @@ const ManualAdjustments = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusDraggable pauseOnHover />
-      
-      {/* View Adjustment Modal */}
-      {showViewModal && selectedAdjustment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Adjustment Details</h2>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Employee Information */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <FaUsers className="text-blue-500" /> Employee Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Employee Name</p>
-                    <p className="font-medium">
-                      {selectedAdjustment.employee?.first_name} {selectedAdjustment.employee?.last_name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Employee Code</p>
-                    <p className="font-medium">{selectedAdjustment.employee?.employee_code}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Department</p>
-                    <p className="font-medium">
-                      {departments.find(d => d.id === selectedAdjustment.employee?.department_id)?.name || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedAdjustment.employee?.personal_email}</p>
-                  </div>
-                </div>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusDraggable pauseOnHover />
+        
+        {/* View Adjustment Modal */}
+        {showViewModal && selectedAdjustment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Adjustment Details</h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full text-2xl"
+                >
+                  ×
+                </button>
               </div>
               
-              {/* Adjustment Details */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <FaInfoCircle className="text-blue-500" /> Adjustment Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Adjustment Date</p>
-                    <p className="font-medium">
-                      {new Date(selectedAdjustment.date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <span className={getStatusBadge(selectedAdjustment.status)}>
-                      {selectedAdjustment.status?.charAt(0).toUpperCase() + selectedAdjustment.status?.slice(1)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Created By</p>
-                    <p className="font-medium">User ID: {selectedAdjustment.created_by}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Created At</p>
-                    <p className="font-medium">{formatDateTime(selectedAdjustment.created_at)}</p>
+              <div className="space-y-6">
+                {/* Employee Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <FaUsers className="text-blue-500" /> Employee Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Employee Name</p>
+                      <p className="font-medium">
+                        {selectedAdjustment.employee?.first_name} {selectedAdjustment.employee?.last_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Employee Code</p>
+                      <p className="font-medium">{selectedAdjustment.employee?.employee_code}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Department</p>
+                      <p className="font-medium">
+                        {departments.find(d => d.id === selectedAdjustment.employee?.department_id)?.name || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{selectedAdjustment.employee?.personal_email}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Time Comparison */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Time Comparison</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium text-gray-700 mb-3 text-center">Original Times</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Check-in:</span>
-                        <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_in)}</span>
+                
+                {/* Adjustment Details */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <FaInfoCircle className="text-blue-500" /> Adjustment Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Adjustment Date</p>
+                      <p className="font-medium">
+                        {new Date(selectedAdjustment.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <span className={getStatusBadge(selectedAdjustment.status)}>
+                        {selectedAdjustment.status?.charAt(0).toUpperCase() + selectedAdjustment.status?.slice(1)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Created By</p>
+                      <p className="font-medium">User ID: {selectedAdjustment.created_by}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Created At</p>
+                      <p className="font-medium">{formatDateTime(selectedAdjustment.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Time Comparison */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Time Comparison</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium text-gray-700 mb-3 text-center">Original Times</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Check-in:</span>
+                          <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_in)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Check-out:</span>
+                          <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_out)}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Check-out:</span>
-                        <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_out)}</span>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4 bg-blue-50">
+                      <h4 className="font-medium text-blue-700 mb-3 text-center">Adjusted Times</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-blue-600">Check-in:</span>
+                          <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_in)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-blue-600">Check-out:</span>
+                          <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_out)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="border rounded-lg p-4 bg-blue-50">
-                    <h4 className="font-medium text-blue-700 mb-3 text-center">Adjusted Times</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-blue-600">Check-in:</span>
-                        <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_in)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-blue-600">Check-out:</span>
-                        <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_out)}</span>
-                      </div>
+                  {/* Time Difference */}
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Total Time Change:</span>
+                      <span className={`text-lg font-bold ${
+                        calculateTimeDifference(
+                          selectedAdjustment.original_check_in,
+                          selectedAdjustment.original_check_out,
+                          selectedAdjustment.adjusted_check_in,
+                          selectedAdjustment.adjusted_check_out
+                        ).includes('+') 
+                          ? 'text-green-600' 
+                          : calculateTimeDifference(
+                              selectedAdjustment.original_check_in,
+                              selectedAdjustment.original_check_out,
+                              selectedAdjustment.adjusted_check_in,
+                              selectedAdjustment.adjusted_check_out
+                            ).includes('-')
+                          ? 'text-red-600'
+                          : 'text-gray-600'
+                      }`}>
+                        {calculateTimeDifference(
+                          selectedAdjustment.original_check_in,
+                          selectedAdjustment.original_check_out,
+                          selectedAdjustment.adjusted_check_in,
+                          selectedAdjustment.adjusted_check_out
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Time Difference */}
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Total Time Change:</span>
-                    <span className={`text-lg font-bold ${
-                      calculateTimeDifference(
-                        selectedAdjustment.original_check_in,
-                        selectedAdjustment.original_check_out,
-                        selectedAdjustment.adjusted_check_in,
-                        selectedAdjustment.adjusted_check_out
-                      ).includes('+') 
-                        ? 'text-green-600' 
-                        : calculateTimeDifference(
-                            selectedAdjustment.original_check_in,
-                            selectedAdjustment.original_check_out,
-                            selectedAdjustment.adjusted_check_in,
-                            selectedAdjustment.adjusted_check_out
-                          ).includes('-')
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                    }`}>
-                      {calculateTimeDifference(
-                        selectedAdjustment.original_check_in,
-                        selectedAdjustment.original_check_out,
-                        selectedAdjustment.adjusted_check_in,
-                        selectedAdjustment.adjusted_check_out
-                      )}
-                    </span>
+                {/* Reason */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Reason for Adjustment</h3>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="whitespace-pre-wrap">{selectedAdjustment.reason}</p>
                   </div>
                 </div>
-              </div>
-              
-              {/* Reason */}
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Reason for Adjustment</h3>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="whitespace-pre-wrap">{selectedAdjustment.reason}</p>
-                </div>
-              </div>
-              
-              {/* Approval Information */}
-              {selectedAdjustment.approved_by && (
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">Approval Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Approved By</p>
-                      <p className="font-medium">User ID: {selectedAdjustment.approved_by}</p>
-                    </div>
-                    {selectedAdjustment.approved_at && (
+                
+                {/* Approval Information */}
+                {selectedAdjustment.approved_by && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2">Approval Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Approved At</p>
-                        <p className="font-medium">{formatDateTime(selectedAdjustment.approved_at)}</p>
+                        <p className="text-sm text-gray-600">Approved By</p>
+                        <p className="font-medium">User ID: {selectedAdjustment.approved_by}</p>
                       </div>
-                    )}
+                      {selectedAdjustment.approved_at && (
+                        <div>
+                          <p className="text-sm text-gray-600">Approved At</p>
+                          <p className="font-medium">{formatDateTime(selectedAdjustment.approved_at)}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Edit Adjustment Modal */}
-      {showEditModal && editingAdjustment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Edit Adjustment</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                ×
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmitEdit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adjusted Check-in *
-                  </label>
-                  <input
-                    type="time"
-                    name="adjusted_check_in"
-                    value={editForm.adjusted_check_in}
-                    onChange={handleEditInputChange}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adjusted Check-out *
-                  </label>
-                  <input
-                    type="time"
-                    name="adjusted_check_out"
-                    value={editForm.adjusted_check_out}
-                    onChange={handleEditInputChange}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg"
-                    required
-                  />
-                </div>
+                )}
               </div>
               
               <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
                 <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Update Adjustment
+                  Close
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {/* New Adjustment Modal */}
-      {showAdjustmentForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Request Manual Adjustment</h2>
-              <button
-                onClick={() => {
-                  setShowAdjustmentForm(false);
-                  resetNewAdjustmentForm();
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full text-2xl"
-              >
-                ×
-              </button>
             </div>
-            
-            <form onSubmit={handleSubmitAdjustment}>
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          </div>
+        )}
+        
+        {/* Edit Adjustment Modal */}
+        {showEditModal && editingAdjustment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Edit Adjustment</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <form onSubmit={handleSubmitEdit}>
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Employee *
+                      Adjusted Check-in *
                     </label>
-                    <select
-                      name="employee_id"
-                      value={newAdjustment.employee_id}
-                      onChange={(e) => {
-                        handleInputChange(e);
-                        setTimeout(() => loadExistingAttendance(), 100);
-                      }}
+                    <input
+                      type="time"
+                      name="adjusted_check_in"
+                      value={editForm.adjusted_check_in}
+                      onChange={handleEditInputChange}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg"
                       required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select Employee</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.first_name} {emp.last_name} ({emp.employee_code})
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Adjustment Date *
+                      Adjusted Check-out *
                     </label>
                     <input
-                      type="date"
-                      name="date"
-                      value={newAdjustment.date}
-                      onChange={(e) => {
-                        handleInputChange(e);
-                        setTimeout(() => loadExistingAttendance(), 100);
-                      }}
+                      type="time"
+                      name="adjusted_check_out"
+                      value={editForm.adjusted_check_out}
+                      onChange={handleEditInputChange}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg"
                       required
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      max={new Date().toISOString().split('T')[0]}
                     />
                   </div>
                 </div>
-
-                {/* Time Adjustments */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Original Check-in
-                      </label>
-                      <input
-                        type="time"
-                        name="original_check_in"
-                        value={newAdjustment.original_check_in.replace(/ [AP]M$/, '')}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
-                        disabled
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Enter original time</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Original Check-out
-                      </label>
-                      <input
-                        type="time"
-                        name="original_check_out"
-                        value={newAdjustment.original_check_out.replace(/ [AP]M$/, '')}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
-                        disabled
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Enter original time</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adjusted Check-in *
-                      </label>
-                      <input
-                        type="time"
-                        name="adjusted_check_in"
-                        value={newAdjustment.adjusted_check_in.replace(/ [AP]M$/, '')}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adjusted Check-out *
-                      </label>
-                      <input
-                        type="time"
-                        name="adjusted_check_out"
-                        value={newAdjustment.adjusted_check_out.replace(/ [AP]M$/, '')}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    * Note: Adjust at least one time (check-in or check-out). Original times will be auto-loaded if attendance exists for this date, otherwise enter them manually.
-                  </p>
+                
+                <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Update Adjustment
+                  </button>
                 </div>
-
-                {/* Reason */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reason for Adjustment *
-                  </label>
-                  <textarea
-                    name="reason"
-                    value={newAdjustment.reason}
-                    onChange={handleInputChange}
-                    required
-                    rows="3"
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Please provide a detailed reason for this adjustment..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {/* New Adjustment Modal */}
+        {showAdjustmentForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Request Manual Adjustment</h2>
                 <button
-                  type="button"
                   onClick={() => {
                     setShowAdjustmentForm(false);
                     resetNewAdjustmentForm();
                   }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full text-2xl"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {submitting ? (
-                    <>
-                      <FaSpinner className="animate-spin" /> Submitting...
-                    </>
-                  ) : (
-                    'Submit Request'
-                  )}
+                  ×
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Manual Adjustments</h1>
-            <p className="text-gray-600">Manage and approve attendance adjustment requests</p>
-            <div className="flex items-center gap-2 mt-1">
-              <FaBuilding className="text-gray-400" />
-              <span className="text-sm text-gray-500">
-                Organization: <span className="font-semibold">{selectedOrganization.name}</span>
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={fetchInitialData}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
-            >
-              <FaRedoAlt className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.totalRequests}</p>
-              </div>
-              <FaHistory className="text-blue-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.approved}</p>
-              </div>
-              <FaCheckCircle className="text-green-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.pending}</p>
-              </div>
-              <FaClock className="text-yellow-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.rejected}</p>
-              </div>
-              <FaTimesCircle className="text-red-500 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Filters Section */}
-        <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <FaFilter /> Filters
-            </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={applyFilters}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <FaSearch /> Apply Filters
-              </button>
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Search by name, ID, or reason..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <select 
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
-            </select>
-
-            <select 
-              value={filters.employee_id}
-              onChange={(e) => handleFilterChange('employee_id', e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Employees</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.first_name} {emp.last_name} ({emp.employee_code})
-                </option>
-              ))}
-            </select>
-
-            <div className="relative">
-              <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Start Date"
-              />
-            </div>
-
-            <div className="relative">
-              <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="End Date"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="text-sm text-gray-600 flex items-center gap-2">
-            <span>Showing {filteredAdjustments.length} of {adjustments.length} adjustments</span>
-            {filteredAdjustments.length !== adjustments.length && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                Filtered
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={exportAdjustments}
-              disabled={filteredAdjustments.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaDownload /> Export ({filteredAdjustments.length})
-            </button>
-            <button
-              onClick={() => setShowAdjustmentForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FaPlus /> New Adjustment
-            </button>
-          </div>
-        </div>
-
-        {/* Adjustments Table */}
-        <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Time Changes</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reason</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredAdjustments.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                    <FaExclamationTriangle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                    <p className="text-lg font-medium">No adjustments found</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      {adjustments.length === 0 
-                        ? 'No adjustment requests in the system. Click "New Adjustment" to create one.' 
-                        : 'No adjustments match your current filters. Try adjusting your filter criteria.'
-                      }
-                    </p>
-                    {adjustments.length === 0 && (
-                      <button
-                        onClick={() => setShowAdjustmentForm(true)}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
+              
+              <form onSubmit={handleSubmitAdjustment}>
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Employee *
+                      </label>
+                      <select
+                        name="employee_id"
+                        value={newAdjustment.employee_id}
+                        onChange={(e) => {
+                          handleInputChange(e);
+                          setTimeout(() => loadExistingAttendance(), 100);
+                        }}
+                        required
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <FaPlus /> Create First Adjustment
-                      </button>
+                        <option value="">Select Employee</option>
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.first_name} {emp.last_name} ({emp.employee_code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Adjustment Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={newAdjustment.date}
+                        onChange={(e) => {
+                          handleInputChange(e);
+                          setTimeout(() => loadExistingAttendance(), 100);
+                        }}
+                        required
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Time Adjustments */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Original Check-in
+                        </label>
+                        <input
+                          type="time"
+                          name="original_check_in"
+                          value={newAdjustment.original_check_in.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Enter original time</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Original Check-out
+                        </label>
+                        <input
+                          type="time"
+                          name="original_check_out"
+                          value={newAdjustment.original_check_out.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Enter original time</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Adjusted Check-in *
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_check_in"
+                          value={newAdjustment.adjusted_check_in.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Adjusted Check-out *
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_check_out"
+                          value={newAdjustment.adjusted_check_out.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      * Note: Adjust at least one time (check-in or check-out). Original times will be auto-loaded if attendance exists for this date, otherwise enter them manually.
+                    </p>
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Reason for Adjustment *
+                    </label>
+                    <textarea
+                      name="reason"
+                      value={newAdjustment.reason}
+                      onChange={handleInputChange}
+                      required
+                      rows="3"
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Please provide a detailed reason for this adjustment..."
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAdjustmentForm(false);
+                      resetNewAdjustmentForm();
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {submitting ? (
+                      <>
+                        <FaSpinner className="animate-spin" /> Submitting...
+                      </>
+                    ) : (
+                      'Submit Request'
                     )}
-                  </td>
-                </tr>
-              ) : (
-                filteredAdjustments.map((adjustment) => (
-                  <tr key={adjustment.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <FaUsers className="text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {adjustment.employee_name}
-                          </div>
-                          <div className="text-sm text-gray-500">{adjustment.employee_id}</div>
-                          <div className="text-xs text-gray-400 flex items-center gap-1">
-                            <FaBuilding /> {adjustment.department}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {new Date(adjustment.adjustment_date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {formatDateTime(adjustment.requested_date)}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <div className="mb-1">
-                          <span className="text-gray-500 text-xs">Original: </span>
-                          <span className="font-medium">{adjustment.original_check_in} - {adjustment.original_check_out}</span>
-                        </div>
-                        <div className="mb-1">
-                          <span className="text-gray-500 text-xs">Adjusted: </span>
-                          <span className="font-medium text-blue-600">{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
-                        </div>
-                        <div className={`text-xs font-medium ${
-                          adjustment.total_hours_change.includes('+') 
-                            ? 'text-green-600' 
-                            : adjustment.total_hours_change.includes('-')
-                            ? 'text-red-600'
-                            : 'text-gray-600'
-                        }`}>
-                          {adjustment.total_hours_change}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700 max-w-xs">
-                        {adjustment.reason.length > 100 ? 
-                          `${adjustment.reason.substring(0, 100)}...` : 
-                          adjustment.reason
-                        }
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(adjustment.status)}
-                        <span className={getStatusBadge(adjustment.status)}>
-                          {adjustment.status.charAt(0).toUpperCase() + adjustment.status.slice(1)}
-                        </span>
-                      </div>
-                      {adjustment.approved_by_name !== '-' && adjustment.approved_by_name && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          By: {adjustment.approved_by_name}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleViewAdjustment(adjustment.id)}
-                          className="p-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-                          title="View Details"
-                        >
-                          <FaEye />
-                        </button>
-                        
-                        {adjustment.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(adjustment.id)}
-                              className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                              title="Approve"
-                            >
-                              <FaUserCheck />
-                            </button>
-                            <button
-                              onClick={() => handleReject(adjustment.id)}
-                              className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                              title="Reject"
-                            >
-                              <FaUserTimes />
-                            </button>
-                          </>
-                        )}
-                        
-                        <button
-                          onClick={() => handleEditAdjustment(adjustment)}
-                          className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </button>
-                        
-                        {/* Show delete button only for rejected adjustments */}
-                        {adjustment.status === 'rejected' && (
-                          <button
-                            onClick={() => handleDelete(adjustment.id)}
-                            className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                            title="Delete"
-                          >
-                            <FaTrash />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        {filteredAdjustments.length > 0 && (
-          <div className="mt-6 flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              Showing {filteredAdjustments.length} adjustments
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
+
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Manual Adjustments</h1>
+              <p className="text-gray-600">Manage and approve attendance adjustment requests</p>
+              <div className="flex items-center gap-2 mt-1">
+                <FaBuilding className="text-gray-400" />
+                <span className="text-sm text-gray-500">
+                  Organization: <span className="font-semibold">{selectedOrganization.name}</span>
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={fetchInitialData}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                <FaRedoAlt className={loading ? 'animate-spin' : ''} />
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Requests</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.totalRequests}</p>
+                </div>
+                <FaHistory className="text-blue-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Approved</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.approved}</p>
+                </div>
+                <FaCheckCircle className="text-green-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.pending}</p>
+                </div>
+                <FaClock className="text-yellow-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Rejected</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.rejected}</p>
+                </div>
+                <FaTimesCircle className="text-red-500 text-xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Filters Section */}
+          <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <FaFilter /> Filters
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={applyFilters}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <FaSearch /> Apply Filters
+                </button>
+                <button
+                  onClick={resetFilters}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="relative">
+                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text"
+                  placeholder="Search by name, ID, or reason..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
+                  className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <select 
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+
+              <select 
+                value={filters.employee_id}
+                onChange={(e) => handleFilterChange('employee_id', e.target.value)}
+                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Employees</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.first_name} {emp.last_name} ({emp.employee_code})
+                  </option>
+                ))}
+              </select>
+
+              <div className="relative">
+                <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Start Date"
+                />
+              </div>
+
+              <div className="relative">
+                <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="End Date"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <span>Showing {filteredAdjustments.length} of {adjustments.length} adjustments</span>
+              {filteredAdjustments.length !== adjustments.length && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  Filtered
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={exportAdjustments}
+                disabled={filteredAdjustments.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaDownload /> Export ({filteredAdjustments.length})
+              </button>
+              <button
+                onClick={() => setShowAdjustmentForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FaPlus /> New Adjustment
+              </button>
+            </div>
+          </div>
+
+          {/* Adjustments Table */}
+          <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Time Changes</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reason</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredAdjustments.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      <FaExclamationTriangle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                      <p className="text-lg font-medium">No adjustments found</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {adjustments.length === 0 
+                          ? 'No adjustment requests in the system. Click "New Adjustment" to create one.' 
+                          : 'No adjustments match your current filters. Try adjusting your filter criteria.'
+                        }
+                      </p>
+                      {adjustments.length === 0 && (
+                        <button
+                          onClick={() => setShowAdjustmentForm(true)}
+                          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
+                        >
+                          <FaPlus /> Create First Adjustment
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAdjustments.map((adjustment) => (
+                    <tr key={adjustment.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <FaUsers className="text-blue-600" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {adjustment.employee_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{adjustment.employee_id}</div>
+                            <div className="text-xs text-gray-400 flex items-center gap-1">
+                              <FaBuilding /> {adjustment.department}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {new Date(adjustment.adjustment_date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {formatDateTime(adjustment.requested_date)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <div className="mb-1">
+                            <span className="text-gray-500 text-xs">Original: </span>
+                            <span className="font-medium">{adjustment.original_check_in} - {adjustment.original_check_out}</span>
+                          </div>
+                          <div className="mb-1">
+                            <span className="text-gray-500 text-xs">Adjusted: </span>
+                            <span className="font-medium text-blue-600">{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
+                          </div>
+                          <div className={`text-xs font-medium ${
+                            adjustment.total_hours_change.includes('+') 
+                              ? 'text-green-600' 
+                              : adjustment.total_hours_change.includes('-')
+                              ? 'text-red-600'
+                              : 'text-gray-600'
+                          }`}>
+                            {adjustment.total_hours_change}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-700 max-w-xs">
+                          {adjustment.reason.length > 100 ? 
+                            `${adjustment.reason.substring(0, 100)}...` : 
+                            adjustment.reason
+                          }
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(adjustment.status)}
+                          <span className={getStatusBadge(adjustment.status)}>
+                            {adjustment.status.charAt(0).toUpperCase() + adjustment.status.slice(1)}
+                          </span>
+                        </div>
+                        {adjustment.approved_by_name !== '-' && adjustment.approved_by_name && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            By: {adjustment.approved_by_name}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleViewAdjustment(adjustment.id)}
+                            className="p-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            title="View Details"
+                          >
+                            <FaEye />
+                          </button>
+                          
+                          {adjustment.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(adjustment.id)}
+                                className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                                title="Approve"
+                              >
+                                <FaUserCheck />
+                              </button>
+                              <button
+                                onClick={() => handleReject(adjustment.id)}
+                                className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                                title="Reject"
+                              >
+                                <FaUserTimes />
+                              </button>
+                            </>
+                          )}
+                          
+                          <button
+                            onClick={() => handleEditAdjustment(adjustment)}
+                            className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                            title="Edit"
+                          >
+                            <FaEdit />
+                          </button>
+                          
+                          {/* Show delete button only for rejected adjustments */}
+                          {adjustment.status === 'rejected' && (
+                            <button
+                              onClick={() => handleDelete(adjustment.id)}
+                              className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                              title="Delete"
+                            >
+                              <FaTrash />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {filteredAdjustments.length > 0 && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                Showing {filteredAdjustments.length} adjustments
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

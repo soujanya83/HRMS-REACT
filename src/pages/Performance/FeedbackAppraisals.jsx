@@ -23,8 +23,86 @@ import {
     FaFilter,
     FaCalendarAlt
 } from 'react-icons/fa';
+import { HiX } from "react-icons/hi";
 import { feedbackService } from '../../services/feedbackService';
 import { employeeService } from '../../services/employeeService';
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // Utility functions
 const formatDate = (dateString) => {
@@ -227,7 +305,7 @@ const FeedbackFormModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -494,7 +572,7 @@ const FeedbackDetailModal = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -678,6 +756,8 @@ const FeedbackAppraisals = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+    const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
     
     const [filters, setFilters] = useState({
         type: 'all',
@@ -981,403 +1061,430 @@ const FeedbackAppraisals = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-            {/* Success Message */}
-            {successMessage && (
-                <div className="fixed top-4 right-4 z-50 animate-slide-in">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <FaCheckCircle className="h-5 w-5 text-green-600" />
-                            <p className="text-green-800 font-medium">{successMessage}</p>
-                        </div>
-                    </div>
+        <>
+            {/* Color Palette Toggle Button */}
+            <button
+                onClick={() => setIsColorPaletteOpen(true)}
+                className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+                style={{ writingMode: 'vertical-rl' }}
+                aria-label="Open color palette"
+            >
+                <div className="flex items-center space-x-1">
+                    <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    <span className="text-xs font-medium">Colors</span>
                 </div>
-            )}
+            </button>
 
-            {/* Error Display */}
-            {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                        <FaExclamationTriangle className="h-5 w-5 text-red-600" />
-                        <p className="text-red-800">{error}</p>
-                        <button
-                            onClick={() => setError(null)}
-                            className="ml-auto text-red-500 hover:text-red-700"
-                        >
-                            <FaTimes />
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Color Palette Component */}
+            <ColorPalette 
+                isOpen={isColorPaletteOpen}
+                onClose={() => setIsColorPaletteOpen(false)}
+                onColorSelect={setBackgroundColor}
+            />
 
-            {/* Header */}
-            <div className="mb-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
-                            <FaComments className="text-green-600" />
-                            Feedback & Appraisals
-                        </h1>
-                        <p className="text-gray-600 mt-1">
-                            Manage employee feedback, 360-degree reviews, and performance appraisals
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={fetchData}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                        >
-                            <FaSync className={loading ? 'animate-spin' : ''} />
-                            Refresh
-                        </button>
-                        <button
-                            onClick={() => setModalState(prev => ({ ...prev, showForm: true }))}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                            disabled={employees.length === 0}
-                        >
-                            <FaPlus /> New Feedback
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Total Feedback</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
-                        </div>
-                        <FaComments className="text-green-500 text-xl" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Unread</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.unread}</p>
-                        </div>
-                        <FaEnvelope className="text-blue-500 text-xl" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Read</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.read}</p>
-                        </div>
-                        <FaCheckCircle className="text-yellow-500 text-xl" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Public</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.public}</p>
-                        </div>
-                        <FaUser className="text-purple-500 text-xl" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Positive</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.positive}</p>
-                        </div>
-                        <FaThumbsUp className="text-green-600 text-xl" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Constructive</p>
-                            <p className="text-2xl font-bold text-gray-800">{stats.constructive}</p>
-                        </div>
-                        <FaExclamationTriangle className="text-yellow-600 text-xl" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Filters and Search */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                    <div className="relative">
-                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search feedback..."
-                            value={filters.search}
-                            onChange={(e) => handleFilterChange('search', e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                    </div>
-
-                    <select
-                        value={filters.type}
-                        onChange={(e) => handleFilterChange('type', e.target.value)}
-                        className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="all">All Types</option>
-                        <option value="general">General</option>
-                        <option value="positive">Positive</option>
-                        <option value="constructive">Constructive</option>
-                        <option value="improvement">Improvement</option>
-                        <option value="recognition">Recognition</option>
-                        <option value="peer_feedback">Peer Feedback</option>
-                    </select>
-
-                    <select
-                        value={filters.visibility}
-                        onChange={(e) => handleFilterChange('visibility', e.target.value)}
-                        className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="all">All Visibility</option>
-                        <option value="public">Public</option>
-                        <option value="private">Private</option>
-                        <option value="manager_only">Manager Only</option>
-                        <option value="team_only">Team Only</option>
-                    </select>
-
-                    <select
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="read">Read</option>
-                        <option value="unread">Unread</option>
-                    </select>
-
-                    <div className="flex gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                            <FaDownload /> Export
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Feedback Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Feedback Details
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    People Involved
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type & Visibility
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status & Date
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {filteredFeedbacks.map((feedback) => {
-                                const giver = feedback.giver || {};
-                                const receiver = feedback.receiver || {};
-                                const isRead = feedback.read_at;
-
-                                return (
-                                    <tr key={feedback.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex-shrink-0">
-                                                    <FaComments className={`${isRead ? 'text-gray-400' : 'text-green-500'}`} />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="font-medium text-gray-900">
-                                                        {feedback.feedback_content?.length > 100
-                                                            ? `${feedback.feedback_content.substring(0, 100)}...`
-                                                            : feedback.feedback_content || 'No content'}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        ID: {feedback.id}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                                                        <FaUser className="text-blue-600 text-xs" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            To: {getEmployeeName(receiver)}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500">
-                                                            {getEmployeeDepartment(receiver)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
-                                                        <FaUser className="text-green-600 text-xs" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm text-gray-700">
-                                                            From: {getEmployeeName(giver)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="space-y-2">
-                                                <div>{getTypeBadge(feedback.type)}</div>
-                                                <div>{getVisibilityBadge(feedback.visibility)}</div>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="space-y-2">
-                                                <div>{getStatusBadge(feedback.read_at)}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    {formatDate(feedback.created_at)}
-                                                </div>
-                                                {feedback.read_at && (
-                                                    <div className="text-xs text-gray-400">
-                                                        Read: {formatDate(feedback.read_at)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleViewDetails(feedback)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                                                    title="View Details"
-                                                >
-                                                    <FaEye />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleEditFeedback(feedback)}
-                                                    className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                                                    title="Edit Feedback"
-                                                >
-                                                    <FaEdit />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleMarkAsRead(feedback.id)}
-                                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
-                                                    title={isRead ? 'Mark as Unread' : 'Mark as Read'}
-                                                    disabled={saving}
-                                                >
-                                                    {isRead ? <FaCheckCircle /> : <FaEnvelope />}
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm('Delete this feedback?')) {
-                                                            handleDeleteFeedback(feedback.id);
-                                                        }
-                                                    }}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                                                    title="Delete Feedback"
-                                                    disabled={saving}
-                                                >
-                                                    <FaTrash />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-
-                    {filteredFeedbacks.length === 0 && (
-                        <div className="text-center py-12">
-                            <FaComments className="mx-auto text-4xl text-gray-300 mb-4" />
-                            <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                                {filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all'
-                                    ? 'No matching feedback found'
-                                    : 'No feedback entries yet'}
-                            </h3>
-                            <p className="text-gray-500">
-                                {filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all'
-                                    ? 'Try adjusting your filters or search terms'
-                                    : 'Create your first feedback entry to get started'}
-                            </p>
-                            {!(filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all') && (
-                                <button
-                                    onClick={() => setModalState(prev => ({ ...prev, showForm: true }))}
-                                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                >
-                                    Create First Feedback
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Summary Footer */}
-                {filteredFeedbacks.length > 0 && (
-                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        <div className="flex flex-col md:flex-row justify-between items-center">
-                            <div className="text-sm text-gray-600 mb-2 md:mb-0">
-                                Showing {filteredFeedbacks.length} of {feedbacks.length} feedback entries
-                            </div>
-                            <div className="text-sm text-gray-700 font-medium">
-                                {stats.unread} unread • {stats.read} read • {stats.public} public • {stats.positive} positive
+            <div 
+                className="min-h-screen bg-gray-50 p-4 md:p-6 transition-colors duration-300"
+                style={{ backgroundColor }}
+            >
+                {/* Success Message */}
+                {successMessage && (
+                    <div className="fixed top-4 right-4 z-50 animate-slide-in">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
+                            <div className="flex items-center gap-3">
+                                <FaCheckCircle className="h-5 w-5 text-green-600" />
+                                <p className="text-green-800 font-medium">{successMessage}</p>
                             </div>
                         </div>
                     </div>
                 )}
+
+                {/* Error Display */}
+                {error && (
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                            <FaExclamationTriangle className="h-5 w-5 text-red-600" />
+                            <p className="text-red-800">{error}</p>
+                            <button
+                                onClick={() => setError(null)}
+                                className="ml-auto text-red-500 hover:text-red-700"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Header */}
+                <div className="mb-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
+                                <FaComments className="text-green-600" />
+                                Feedback & Appraisals
+                            </h1>
+                            <p className="text-gray-600 mt-1">
+                                Manage employee feedback, 360-degree reviews, and performance appraisals
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={fetchData}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            >
+                                <FaSync className={loading ? 'animate-spin' : ''} />
+                                Refresh
+                            </button>
+                            <button
+                                onClick={() => setModalState(prev => ({ ...prev, showForm: true }))}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                disabled={employees.length === 0}
+                            >
+                                <FaPlus /> New Feedback
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Total Feedback</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                            </div>
+                            <FaComments className="text-green-500 text-xl" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Unread</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.unread}</p>
+                            </div>
+                            <FaEnvelope className="text-blue-500 text-xl" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Read</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.read}</p>
+                            </div>
+                            <FaCheckCircle className="text-yellow-500 text-xl" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Public</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.public}</p>
+                            </div>
+                            <FaUser className="text-purple-500 text-xl" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Positive</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.positive}</p>
+                            </div>
+                            <FaThumbsUp className="text-green-600 text-xl" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Constructive</p>
+                                <p className="text-2xl font-bold text-gray-800">{stats.constructive}</p>
+                            </div>
+                            <FaExclamationTriangle className="text-yellow-600 text-xl" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters and Search */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                        <div className="relative">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search feedback..."
+                                value={filters.search}
+                                onChange={(e) => handleFilterChange('search', e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                        </div>
+
+                        <select
+                            value={filters.type}
+                            onChange={(e) => handleFilterChange('type', e.target.value)}
+                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="all">All Types</option>
+                            <option value="general">General</option>
+                            <option value="positive">Positive</option>
+                            <option value="constructive">Constructive</option>
+                            <option value="improvement">Improvement</option>
+                            <option value="recognition">Recognition</option>
+                            <option value="peer_feedback">Peer Feedback</option>
+                        </select>
+
+                        <select
+                            value={filters.visibility}
+                            onChange={(e) => handleFilterChange('visibility', e.target.value)}
+                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="all">All Visibility</option>
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                            <option value="manager_only">Manager Only</option>
+                            <option value="team_only">Team Only</option>
+                        </select>
+
+                        <select
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="read">Read</option>
+                            <option value="unread">Unread</option>
+                        </select>
+
+                        <div className="flex gap-2">
+                            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                <FaDownload /> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Feedback Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Feedback Details
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        People Involved
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type & Visibility
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status & Date
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {filteredFeedbacks.map((feedback) => {
+                                    const giver = feedback.giver || {};
+                                    const receiver = feedback.receiver || {};
+                                    const isRead = feedback.read_at;
+
+                                    return (
+                                        <tr key={feedback.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-shrink-0">
+                                                        <FaComments className={`${isRead ? 'text-gray-400' : 'text-green-500'}`} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-gray-900">
+                                                            {feedback.feedback_content?.length > 100
+                                                                ? `${feedback.feedback_content.substring(0, 100)}...`
+                                                                : feedback.feedback_content || 'No content'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                            ID: {feedback.id}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                                                            <FaUser className="text-blue-600 text-xs" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                To: {getEmployeeName(receiver)}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                {getEmployeeDepartment(receiver)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                                            <FaUser className="text-green-600 text-xs" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm text-gray-700">
+                                                                From: {getEmployeeName(giver)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <div className="space-y-2">
+                                                    <div>{getTypeBadge(feedback.type)}</div>
+                                                    <div>{getVisibilityBadge(feedback.visibility)}</div>
+                                                </div>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <div className="space-y-2">
+                                                    <div>{getStatusBadge(feedback.read_at)}</div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {formatDate(feedback.created_at)}
+                                                    </div>
+                                                    {feedback.read_at && (
+                                                        <div className="text-xs text-gray-400">
+                                                            Read: {formatDate(feedback.read_at)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleViewDetails(feedback)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                        title="View Details"
+                                                    >
+                                                        <FaEye />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleEditFeedback(feedback)}
+                                                        className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                                                        title="Edit Feedback"
+                                                    >
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMarkAsRead(feedback.id)}
+                                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                                        title={isRead ? 'Mark as Unread' : 'Mark as Read'}
+                                                        disabled={saving}
+                                                    >
+                                                        {isRead ? <FaCheckCircle /> : <FaEnvelope />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (window.confirm('Delete this feedback?')) {
+                                                                handleDeleteFeedback(feedback.id);
+                                                            }
+                                                        }}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                        title="Delete Feedback"
+                                                        disabled={saving}
+                                                    >
+                                                        <FaTrash />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        {filteredFeedbacks.length === 0 && (
+                            <div className="text-center py-12">
+                                <FaComments className="mx-auto text-4xl text-gray-300 mb-4" />
+                                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                                    {filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all'
+                                        ? 'No matching feedback found'
+                                        : 'No feedback entries yet'}
+                                </h3>
+                                <p className="text-gray-500">
+                                    {filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all'
+                                        ? 'Try adjusting your filters or search terms'
+                                        : 'Create your first feedback entry to get started'}
+                                </p>
+                                {!(filters.search || filters.type !== 'all' || filters.visibility !== 'all' || filters.status !== 'all') && (
+                                    <button
+                                        onClick={() => setModalState(prev => ({ ...prev, showForm: true }))}
+                                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                    >
+                                        Create First Feedback
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Summary Footer */}
+                    {filteredFeedbacks.length > 0 && (
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <div className="flex flex-col md:flex-row justify-between items-center">
+                                <div className="text-sm text-gray-600 mb-2 md:mb-0">
+                                    Showing {filteredFeedbacks.length} of {feedbacks.length} feedback entries
+                                </div>
+                                <div className="text-sm text-gray-700 font-medium">
+                                    {stats.unread} unread • {stats.read} read • {stats.public} public • {stats.positive} positive
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Modals */}
+                <FeedbackFormModal
+                    isOpen={modalState.showForm}
+                    onClose={() => setModalState(prev => ({
+                        ...prev,
+                        showForm: false,
+                        selectedFeedback: null
+                    }))}
+                    feedback={modalState.selectedFeedback}
+                    employees={employees}
+                    onSubmit={(formData) => {
+                        if (modalState.selectedFeedback) {
+                            return handleUpdateFeedback(modalState.selectedFeedback.id, formData);
+                        } else {
+                            return handleCreateFeedback(formData);
+                        }
+                    }}
+                    loading={saving}
+                />
+
+                <FeedbackDetailModal
+                    isOpen={modalState.showDetail}
+                    onClose={() => setModalState(prev => ({
+                        ...prev,
+                        showDetail: false,
+                        selectedFeedback: null
+                    }))}
+                    feedback={modalState.selectedFeedback}
+                    onEdit={handleEditFeedback}
+                    onDelete={handleDeleteFeedback}
+                    onMarkAsRead={handleMarkAsRead}
+                    loading={saving}
+                />
             </div>
-
-            {/* Modals */}
-            <FeedbackFormModal
-                isOpen={modalState.showForm}
-                onClose={() => setModalState(prev => ({
-                    ...prev,
-                    showForm: false,
-                    selectedFeedback: null
-                }))}
-                feedback={modalState.selectedFeedback}
-                employees={employees}
-                onSubmit={(formData) => {
-                    if (modalState.selectedFeedback) {
-                        return handleUpdateFeedback(modalState.selectedFeedback.id, formData);
-                    } else {
-                        return handleCreateFeedback(formData);
-                    }
-                }}
-                loading={saving}
-            />
-
-            <FeedbackDetailModal
-                isOpen={modalState.showDetail}
-                onClose={() => setModalState(prev => ({
-                    ...prev,
-                    showDetail: false,
-                    selectedFeedback: null
-                }))}
-                feedback={modalState.selectedFeedback}
-                onEdit={handleEditFeedback}
-                onDelete={handleDeleteFeedback}
-                onMarkAsRead={handleMarkAsRead}
-                loading={saving}
-            />
-        </div>
+        </>
     );
 };
 

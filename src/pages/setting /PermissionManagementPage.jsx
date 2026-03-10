@@ -42,7 +42,85 @@ import {
   FaCheckCircle,
   FaListUl,
 } from "react-icons/fa";
+import { HiX } from "react-icons/hi";
 import permissionService from "../../services/permissionService";
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -845,7 +923,7 @@ const PermissionFormModal = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="p-5 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -1013,6 +1091,8 @@ export default function PermissionManagementPage() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showPermissionForm, setShowPermissionForm] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   // Fetch modules on mount
   useEffect(() => {
@@ -1169,206 +1249,233 @@ export default function PermissionManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Success Message */}
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4 shadow-lg">
-            <div className="flex items-center gap-3">
-              <FaCheckCircle className="h-5 w-5 text-green-600" />
-              <p className="text-green-800 font-medium truncate">
-                {successMessage}
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="min-h-screen bg-gradient-to-br from-gray-50 to-white transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        {/* Success Message */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <FaCheckCircle className="h-5 w-5 text-green-600" />
+                <p className="text-green-800 font-medium truncate">
+                  {successMessage}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-800 truncate">
+                {getPageTitle()}
+              </h1>
+              <p className="text-gray-600 text-sm mt-1 truncate">
+                {getPageDescription()}
               </p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-800 truncate">
-              {getPageTitle()}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1 truncate">
-              {getPageDescription()}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {currentPage === "pages" && (
-              <button
-                onClick={() => handleBack("modules")}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
-              >
-                <FaArrowLeft className="h-4 w-4" /> Back to Modules
-              </button>
-            )}
-            {currentPage === "permissions" && (
-              <button
-                onClick={() => handleBack("pages")}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
-              >
-                <FaArrowLeft className="h-4 w-4" /> Back to Pages
-              </button>
-            )}
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap"
-            >
-              <FaSync className="h-4 w-4" /> Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <FaExclamationTriangle className="h-5 w-5 text-red-600" />
-              <p className="text-red-800 text-sm truncate">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <div className="text-sm text-gray-600">Total Modules</div>
-                <div className="text-2xl font-bold text-gray-800 truncate">
-                  {modules.length}
-                </div>
-              </div>
-              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 flex-shrink-0">
-                <FaBox className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <div className="text-sm text-gray-600">
-                  Current {currentPage === "permissions" ? "Page" : "Module"}
-                </div>
-                <div className="text-2xl font-bold text-gray-800 truncate">
-                  {currentPage === "modules"
-                    ? modules.length
-                    : currentPage === "pages"
-                      ? selectedModule?.name?.substring(0, 10) || "..."
-                      : currentPage === "permissions"
-                        ? selectedPage?.name?.substring(0, 10) || "..."
-                        : "-"}
-                </div>
-              </div>
-              <div className="p-2 bg-green-100 text-green-600 rounded-lg border border-green-200 flex-shrink-0">
-                {currentPage === "modules" ? (
-                  <FaBox className="h-5 w-5" />
-                ) : currentPage === "pages" ? (
-                  <FaBook className="h-5 w-5" />
-                ) : (
-                  <FaKey className="h-5 w-5" />
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <div className="text-sm text-gray-600">Total Permissions</div>
-                <div className="text-2xl font-bold text-gray-800 truncate">
-                  {permissions.length}
-                </div>
-              </div>
-              <div className="p-2 bg-purple-100 text-purple-600 rounded-lg border border-purple-200 flex-shrink-0">
-                <FaKey className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Breadcrumb */}
-        {(currentPage === "pages" || currentPage === "permissions") && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 flex-wrap">
-            <button
-              onClick={() => handleBack("modules")}
-              className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
-            >
-              <FaBox className="h-3 w-3 flex-shrink-0" />
-              <span className="group-hover:underline truncate">Modules</span>
-            </button>
-            {currentPage === "permissions" && (
-              <>
-                <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            <div className="flex flex-wrap gap-3">
+              {currentPage === "pages" && (
+                <button
+                  onClick={() => handleBack("modules")}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
+                >
+                  <FaArrowLeft className="h-4 w-4" /> Back to Modules
+                </button>
+              )}
+              {currentPage === "permissions" && (
                 <button
                   onClick={() => handleBack("pages")}
-                  className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm border border-gray-300 whitespace-nowrap"
                 >
-                  <FaBook className="h-3 w-3 flex-shrink-0" />
-                  <span className="group-hover:underline truncate max-w-[100px]">
-                    {selectedModule?.name || "Module"}
-                  </span>
+                  <FaArrowLeft className="h-4 w-4" /> Back to Pages
                 </button>
-              </>
-            )}
-            <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-            <span className="font-medium text-gray-800 flex items-center gap-1 whitespace-nowrap">
-              {currentPage === "pages" ? (
-                <FaBook className="h-3 w-3 flex-shrink-0" />
-              ) : (
-                <FaKey className="h-3 w-3 flex-shrink-0" />
               )}
-              <span className="truncate max-w-[150px]">
-                {currentPage === "pages"
-                  ? (selectedModule?.name || "Module") + " Pages"
-                  : (selectedPage?.name || "Page") + " Permissions"}
-              </span>
-            </span>
+              <button
+                onClick={handleRefresh}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap"
+              >
+                <FaSync className="h-4 w-4" /> Refresh
+              </button>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Main Content */}
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-          {currentPage === "modules" ? (
-            <ModulesPage
-              modules={modules}
-              onViewPages={fetchModulePages}
-              loading={loading}
-            />
-          ) : currentPage === "pages" ? (
-            <ModulePagesPage
-              module={selectedModule}
-              pages={pages}
-              onOpenForm={handleOpenPermissionForm}
-              onViewPermissions={fetchPagePermissions}
-              onBack={() => handleBack("modules")}
-              loading={pagesLoading}
-            />
-          ) : (
-            <PagePermissionsPage
-              module={selectedModule}
-              page={selectedPage}
-              permissions={permissions}
-              onBack={handleBack}
-              onOpenForm={handleOpenPermissionForm}
-              loading={permissionsLoading}
-            />
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <FaExclamationTriangle className="h-5 w-5 text-red-600" />
+                <p className="text-red-800 text-sm truncate">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm text-gray-600">Total Modules</div>
+                  <div className="text-2xl font-bold text-gray-800 truncate">
+                    {modules.length}
+                  </div>
+                </div>
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 flex-shrink-0">
+                  <FaBox className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm text-gray-600">
+                    Current {currentPage === "permissions" ? "Page" : "Module"}
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800 truncate">
+                    {currentPage === "modules"
+                      ? modules.length
+                      : currentPage === "pages"
+                        ? selectedModule?.name?.substring(0, 10) || "..."
+                        : currentPage === "permissions"
+                          ? selectedPage?.name?.substring(0, 10) || "..."
+                          : "-"}
+                  </div>
+                </div>
+                <div className="p-2 bg-green-100 text-green-600 rounded-lg border border-green-200 flex-shrink-0">
+                  {currentPage === "modules" ? (
+                    <FaBox className="h-5 w-5" />
+                  ) : currentPage === "pages" ? (
+                    <FaBook className="h-5 w-5" />
+                  ) : (
+                    <FaKey className="h-5 w-5" />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm text-gray-600">Total Permissions</div>
+                  <div className="text-2xl font-bold text-gray-800 truncate">
+                    {permissions.length}
+                  </div>
+                </div>
+                <div className="p-2 bg-purple-100 text-purple-600 rounded-lg border border-purple-200 flex-shrink-0">
+                  <FaKey className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Breadcrumb */}
+          {(currentPage === "pages" || currentPage === "permissions") && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+              <button
+                onClick={() => handleBack("modules")}
+                className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
+              >
+                <FaBox className="h-3 w-3 flex-shrink-0" />
+                <span className="group-hover:underline truncate">Modules</span>
+              </button>
+              {currentPage === "permissions" && (
+                <>
+                  <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  <button
+                    onClick={() => handleBack("pages")}
+                    className="hover:text-gray-800 flex items-center gap-1 group whitespace-nowrap"
+                  >
+                    <FaBook className="h-3 w-3 flex-shrink-0" />
+                    <span className="group-hover:underline truncate max-w-[100px]">
+                      {selectedModule?.name || "Module"}
+                    </span>
+                  </button>
+                </>
+              )}
+              <FaChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              <span className="font-medium text-gray-800 flex items-center gap-1 whitespace-nowrap">
+                {currentPage === "pages" ? (
+                  <FaBook className="h-3 w-3 flex-shrink-0" />
+                ) : (
+                  <FaKey className="h-3 w-3 flex-shrink-0" />
+                )}
+                <span className="truncate max-w-[150px]">
+                  {currentPage === "pages"
+                    ? (selectedModule?.name || "Module") + " Pages"
+                    : (selectedPage?.name || "Page") + " Permissions"}
+                </span>
+              </span>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Permission Form Modal */}
-      <PermissionFormModal
-        isOpen={showPermissionForm}
-        onClose={handleClosePermissionForm}
-        contextModule={selectedModule}
-        contextPage={selectedPage}
-        onSave={handleSavePermission}
-        loading={saving}
-      />
-    </div>
+        {/* Main Content */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+            {currentPage === "modules" ? (
+              <ModulesPage
+                modules={modules}
+                onViewPages={fetchModulePages}
+                loading={loading}
+              />
+            ) : currentPage === "pages" ? (
+              <ModulePagesPage
+                module={selectedModule}
+                pages={pages}
+                onOpenForm={handleOpenPermissionForm}
+                onViewPermissions={fetchPagePermissions}
+                onBack={() => handleBack("modules")}
+                loading={pagesLoading}
+              />
+            ) : (
+              <PagePermissionsPage
+                module={selectedModule}
+                page={selectedPage}
+                permissions={permissions}
+                onBack={handleBack}
+                onOpenForm={handleOpenPermissionForm}
+                loading={permissionsLoading}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Permission Form Modal */}
+        <PermissionFormModal
+          isOpen={showPermissionForm}
+          onClose={handleClosePermissionForm}
+          contextModule={selectedModule}
+          contextPage={selectedPage}
+          onSave={handleSavePermission}
+          loading={saving}
+        />
+      </div>
+    </>
   );
 }

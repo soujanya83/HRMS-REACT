@@ -23,8 +23,86 @@ import {
   FaExclamationTriangle,
   FaInfoCircle
 } from 'react-icons/fa';
+import { HiX } from "react-icons/hi";
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import { timesheetService } from '../../services/timesheetService';
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const TimesheetApprovals = () => {
   const { selectedOrganization } = useOrganizations();
@@ -32,6 +110,8 @@ const TimesheetApprovals = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     employee: 'all',
@@ -457,7 +537,7 @@ const TimesheetApprovals = () => {
         year: 'numeric'
       });
     } catch (error) {
-      return 'Invalid Date' (error);
+      return 'Invalid Date';
     }
   };
 
@@ -469,7 +549,7 @@ const TimesheetApprovals = () => {
     const failureCount = pushResults.filter(r => !r.success).length;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
         <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-800">Xero Push Results</h2>
@@ -561,558 +641,585 @@ const TimesheetApprovals = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        {/* Push Results Modal */}
-        <PushResultsModal />
-        
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Timesheet Approvals</h1>
-          <p className="text-gray-600">Review, approve, and push timesheets to Xero</p>
-          {selectedOrganization && (
-            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-              <FaUserTie className="mr-2 text-xs" />
-              {selectedOrganization.name}
-            </div>
-          )}
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
         </div>
+      </button>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
-              </div>
-              <FaCalendarAlt className="text-blue-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.submitted}</p>
-              </div>
-              <FaPaperPlane className="text-yellow-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.approved}</p>
-              </div>
-              <FaCheckCircle className="text-green-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.rejected}</p>
-              </div>
-              <FaTimesCircle className="text-red-500 text-xl" />
-            </div>
-          </div>
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ready for Xero</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.readyForXero}</p>
+      <div 
+        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Push Results Modal */}
+          <PushResultsModal />
+          
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Timesheet Approvals</h1>
+            <p className="text-gray-600">Review, approve, and push timesheets to Xero</p>
+            {selectedOrganization && (
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+                <FaUserTie className="mr-2 text-xs" />
+                {selectedOrganization.name}
               </div>
-              <FaSyncAlt className="text-purple-500 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-wrap gap-2">
-            {/* Push ALL button */}
-            <button
-              onClick={handlePushAllToXero}
-              disabled={stats.readyForXero === 0 || pushToXeroLoading}
-              className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                stats.readyForXero > 0 && !pushToXeroLoading
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
-              {pushToXeroLoading ? 'Pushing All...' : `Push All (${stats.readyForXero})`}
-            </button>
-            
-            {/* Push SELECTED button */}
-            <button
-              onClick={handlePushToXero}
-              disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
-              className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                selectedTimesheetIds.length > 0 && !pushToXeroLoading
-                  ? 'bg-purple-600 text-white hover:bg-purple-700'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
-              {pushToXeroLoading ? 'Pushing...' : `Push Selected (${selectedTimesheetIds.length})`}
-            </button>
-            
-            {/* View Results button */}
-            {pushResults && (
-              <button
-                onClick={() => setShowPushResults(true)}
-                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <FaInfoCircle /> View Results
-              </button>
             )}
-            
-            {/* Refresh button */}
-            <button 
-              onClick={() => setRefreshTrigger(prev => prev + 1)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <FaSyncAlt /> Refresh
-            </button>
           </div>
 
-          {selectedTimesheetIds.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm text-blue-600 font-medium">
-                {selectedTimesheetIds.length} timesheet(s) selected
-              </span>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Submissions</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
+                </div>
+                <FaCalendarAlt className="text-blue-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.submitted}</p>
+                </div>
+                <FaPaperPlane className="text-yellow-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Approved</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.approved}</p>
+                </div>
+                <FaCheckCircle className="text-green-500 text-xl" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Rejected</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.rejected}</p>
+                </div>
+                <FaTimesCircle className="text-red-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Ready for Xero</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.readyForXero}</p>
+                </div>
+                <FaSyncAlt className="text-purple-500 text-xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-wrap gap-2">
+              {/* Push ALL button */}
               <button
-                onClick={selectAllTimesheets}
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={handlePushAllToXero}
+                disabled={stats.readyForXero === 0 || pushToXeroLoading}
+                className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                  stats.readyForXero > 0 && !pushToXeroLoading
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                {selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0 ? 'Deselect All' : 'Select All'}
+                <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+                {pushToXeroLoading ? 'Pushing All...' : `Push All (${stats.readyForXero})`}
               </button>
+              
+              {/* Push SELECTED button */}
               <button
-                onClick={() => setSelectedTimesheetIds([])}
-                className="text-sm text-red-600 hover:text-red-800 hover:underline"
+                onClick={handlePushToXero}
+                disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
+                className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                  selectedTimesheetIds.length > 0 && !pushToXeroLoading
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                Clear Selection
+                <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+                {pushToXeroLoading ? 'Pushing...' : `Push Selected (${selectedTimesheetIds.length})`}
+              </button>
+              
+              {/* View Results button */}
+              {pushResults && (
+                <button
+                  onClick={() => setShowPushResults(true)}
+                  className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <FaInfoCircle /> View Results
+                </button>
+              )}
+              
+              {/* Refresh button */}
+              <button 
+                onClick={() => setRefreshTrigger(prev => prev + 1)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <FaSyncAlt /> Refresh
               </button>
             </div>
-          )}
-        </div>
 
-        {/* Filters Section */}
-        <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search bar */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Search
-              </label>
-              <div className="relative">
-                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+            {selectedTimesheetIds.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm text-blue-600 font-medium">
+                  {selectedTimesheetIds.length} timesheet(s) selected
+                </span>
+                <button
+                  onClick={selectAllTimesheets}
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0 ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={() => setSelectedTimesheetIds([])}
+                  className="text-sm text-red-600 hover:text-red-800 hover:underline"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Filters Section */}
+          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search bar */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search
+                </label>
+                <div className="relative">
+                  <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                  <input 
+                    type="text"
+                    placeholder="Search employees..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+                  />
+                </div>
+              </div>
+              
+              {/* Status filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select 
+                  value={filters.status}
+                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              {/* Date filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Submission Date
+                </label>
                 <input 
-                  type="text"
-                  placeholder="Search employees..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+                  type="date"
+                  value={filters.date}
+                  onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
                 />
               </div>
             </div>
-            
-            {/* Status filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select 
-                value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="submitted">Submitted</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-
-            {/* Date filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Submission Date
-              </label>
-              <input 
-                type="date"
-                value={filters.date}
-                onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-              />
-            </div>
           </div>
-        </div>
 
-        {/* Timesheets Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">
-                    {stats.readyForXero > 0 && (
-                      <input
-                        type="checkbox"
-                        checked={selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0}
-                        onChange={selectAllTimesheets}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    )}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Period
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Hours
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Xero Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredTimesheets.length === 0 ? (
+          {/* Timesheets Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      <div className="flex flex-col items-center">
-                        <FaClock className="text-4xl text-gray-300 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 mb-1">No timesheets found</p>
-                        <p className="text-gray-500">No timesheets match the current filters</p>
-                      </div>
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">
+                      {stats.readyForXero > 0 && (
+                        <input
+                          type="checkbox"
+                          checked={selectedTimesheetIds.length === stats.readyForXero && stats.readyForXero > 0}
+                          onChange={selectAllTimesheets}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      )}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Period
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Hours
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Xero Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  filteredTimesheets.map((timesheet) => (
-                    <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
-                      {/* Checkbox for Xero Push */}
-                      <td className="px-4 py-3">
-                        {timesheet.status === 'submitted' && 
-                         (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
-                          <input
-                            type="checkbox"
-                            checked={selectedTimesheetIds.includes(timesheet.id)}
-                            onChange={() => toggleTimesheetSelection(timesheet.id)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        )}
-                      </td>
-
-                      {/* Employee */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {`${timesheet.employee?.first_name?.[0] || ''}${timesheet.employee?.last_name?.[0] || ''}`}
-                          </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-semibold text-gray-900">
-                              {timesheet.employee?.first_name || 'N/A'} {timesheet.employee?.last_name || ''}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {timesheet.employee?.employee_code || 'N/A'}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              ID: {timesheet.employee_id || timesheet.employee?.id || 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Period */}
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
-                        </div>
-                      </td>
-
-                      {/* Hours */}
-                      <td className="px-4 py-3">
-                        <div className="text-sm">
-                          <div className="font-semibold text-gray-900 mb-1">
-                            {parseFloat(timesheet.regular_hours || 0).toFixed(2)}h
-                          </div>
-                          {parseFloat(timesheet.overtime_hours || 0) > 0 && (
-                            <div className="text-xs text-orange-600">
-                              +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col space-y-1">
-                          <span className={getStatusBadge(timesheet.status)}>
-                            {getStatusIcon(timesheet.status)}
-                            {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
-                          </span>
-                          {timesheet.approved_by && (
-                            <div className="text-xs text-gray-500">
-                              Approved by: {timesheet.approved_by}
-                            </div>
-                          )}
-                          {timesheet.approved_at && (
-                            <div className="text-xs text-gray-500">
-                              On: {formatDate(timesheet.approved_at)}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Xero Status */}
-                      <td className="px-4 py-3">
-                        {timesheet.xero_status ? (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            timesheet.xero_status === 'pushed' 
-                              ? 'bg-green-100 text-green-800 border border-green-200' 
-                              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                          }`}>
-                            <FaCheckCircle className="mr-1" />
-                            {timesheet.xero_status.charAt(0).toUpperCase() + timesheet.xero_status.slice(1)}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                            Not Pushed
-                          </span>
-                        )}
-                        {timesheet.xero_synced_at && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {formatDate(timesheet.xero_synced_at)}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-3 text-sm font-medium">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleViewDetails(timesheet)}
-                            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
-                            title="View Details"
-                          >
-                            <FaEye /> Details
-                          </button>
-                          
-                          {/* Single Push to Xero Button */}
-                          {timesheet.status === 'submitted' && 
-                           (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
-                            <button
-                              onClick={() => handlePushSingleToXero(timesheet.id)}
-                              className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1"
-                              title="Push to Xero"
-                            >
-                              <FaSyncAlt /> Push
-                            </button>
-                          )}
-                          
-                          {timesheet.status === 'submitted' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(timesheet.id)}
-                                className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
-                                title="Approve"
-                              >
-                                <FaThumbsUp />
-                              </button>
-                              <button
-                                onClick={() => handleReject(timesheet.id)}
-                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                                title="Reject"
-                              >
-                                <FaThumbsDown />
-                              </button>
-                            </>
-                          )}
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredTimesheets.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center">
+                          <FaClock className="text-4xl text-gray-300 mb-3" />
+                          <p className="text-lg font-medium text-gray-900 mb-1">No timesheets found</p>
+                          <p className="text-gray-500">No timesheets match the current filters</p>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  ) : (
+                    filteredTimesheets.map((timesheet) => (
+                      <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
+                        {/* Checkbox for Xero Push */}
+                        <td className="px-4 py-3">
+                          {timesheet.status === 'submitted' && 
+                           (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
+                            <input
+                              type="checkbox"
+                              checked={selectedTimesheetIds.includes(timesheet.id)}
+                              onChange={() => toggleTimesheetSelection(timesheet.id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          )}
+                        </td>
 
-        {/* Summary Footer */}
-        {filteredTimesheets.length > 0 && (
-          <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center">
-              <div className="text-sm text-gray-600">
-                Showing {filteredTimesheets.length} of {timesheets.length} timesheets
-              </div>
-              <div className="text-sm font-semibold text-gray-800">
-                Ready for Xero push:{" "}
-                <span className="text-purple-600">{stats.readyForXero}</span>
-              </div>
+                        {/* Employee */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                              {`${timesheet.employee?.first_name?.[0] || ''}${timesheet.employee?.last_name?.[0] || ''}`}
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-semibold text-gray-900">
+                                {timesheet.employee?.first_name || 'N/A'} {timesheet.employee?.last_name || ''}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {timesheet.employee?.employee_code || 'N/A'}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                ID: {timesheet.employee_id || timesheet.employee?.id || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Period */}
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-gray-900">
+                            {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
+                          </div>
+                        </td>
+
+                        {/* Hours */}
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div className="font-semibold text-gray-900 mb-1">
+                              {parseFloat(timesheet.regular_hours || 0).toFixed(2)}h
+                            </div>
+                            {parseFloat(timesheet.overtime_hours || 0) > 0 && (
+                              <div className="text-xs text-orange-600">
+                                +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col space-y-1">
+                            <span className={getStatusBadge(timesheet.status)}>
+                              {getStatusIcon(timesheet.status)}
+                              {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
+                            </span>
+                            {timesheet.approved_by && (
+                              <div className="text-xs text-gray-500">
+                                Approved by: {timesheet.approved_by}
+                              </div>
+                            )}
+                            {timesheet.approved_at && (
+                              <div className="text-xs text-gray-500">
+                                On: {formatDate(timesheet.approved_at)}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Xero Status */}
+                        <td className="px-4 py-3">
+                          {timesheet.xero_status ? (
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              timesheet.xero_status === 'pushed' 
+                                ? 'bg-green-100 text-green-800 border border-green-200' 
+                                : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                            }`}>
+                              <FaCheckCircle className="mr-1" />
+                              {timesheet.xero_status.charAt(0).toUpperCase() + timesheet.xero_status.slice(1)}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                              Not Pushed
+                            </span>
+                          )}
+                          {timesheet.xero_synced_at && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatDate(timesheet.xero_synced_at)}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-3 text-sm font-medium">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleViewDetails(timesheet)}
+                              className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
+                              title="View Details"
+                            >
+                              <FaEye /> Details
+                            </button>
+                            
+                            {/* Single Push to Xero Button */}
+                            {timesheet.status === 'submitted' && 
+                             (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
+                              <button
+                                onClick={() => handlePushSingleToXero(timesheet.id)}
+                                className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1"
+                                title="Push to Xero"
+                              >
+                                <FaSyncAlt /> Push
+                              </button>
+                            )}
+                            
+                            {timesheet.status === 'submitted' && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(timesheet.id)}
+                                  className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
+                                  title="Approve"
+                                >
+                                  <FaThumbsUp />
+                                </button>
+                                <button
+                                  onClick={() => handleReject(timesheet.id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                                  title="Reject"
+                                >
+                                  <FaThumbsDown />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
 
-        {/* Timesheet Detail Modal */}
-        {showDetailModal && selectedTimesheet && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Timesheet Details</h2>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaTimes className="text-gray-500" />
-                </button>
+          {/* Summary Footer */}
+          {filteredTimesheets.length > 0 && (
+            <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Showing {filteredTimesheets.length} of {timesheets.length} timesheets
+                </div>
+                <div className="text-sm font-semibold text-gray-800">
+                  Ready for Xero push:{" "}
+                  <span className="text-purple-600">{stats.readyForXero}</span>
+                </div>
               </div>
+            </div>
+          )}
 
-              <div className="p-6">
-                {/* Employee Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Employee Information</h3>
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="flex-shrink-0 h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-base">
-                        {`${selectedTimesheet.employee?.first_name?.[0] || ''}${selectedTimesheet.employee?.last_name?.[0] || ''}`}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          {selectedTimesheet.employee?.first_name || 'N/A'} {selectedTimesheet.employee?.last_name || ''}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {selectedTimesheet.employee?.employee_code || 'N/A'}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Employee ID: {selectedTimesheet.employee_id || selectedTimesheet.employee?.id}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Submitted:</span> {formatDate(selectedTimesheet.created_at)}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Hours Summary</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-gray-800">
-                          {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
-                        </div>
-                        <div className="text-xs text-gray-600">Total Hours</div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-green-600">
-                          {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
-                        </div>
-                        <div className="text-xs text-gray-600">Regular Hours</div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-orange-600">
-                          {parseFloat(selectedTimesheet.overtime_hours || 0).toFixed(2)}h
-                        </div>
-                        <div className="text-xs text-gray-600">Overtime Hours</div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded">
-                        <div className="text-lg font-bold text-blue-600">
-                          {selectedTimesheet.xero_status === 'pushed' ? 'Pushed' : 'Not Pushed'}
-                        </div>
-                        <div className="text-xs text-gray-600">Xero Status</div>
-                      </div>
-                    </div>
-                  </div>
+          {/* Timesheet Detail Modal */}
+          {showDetailModal && selectedTimesheet && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+              <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">Timesheet Details</h2>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <FaTimes className="text-gray-500" />
+                  </button>
                 </div>
 
-                {/* Period */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Period</h3>
-                  <div className="text-sm text-gray-900 bg-gray-50 p-4 rounded-lg">
-                    {formatDate(selectedTimesheet.from_date)} - {formatDate(selectedTimesheet.to_date)}
-                  </div>
-                </div>
-
-                {/* Daily Breakdown */}
-                {selectedTimesheet.daily_breakdown && typeof selectedTimesheet.daily_breakdown === 'object' && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Daily Breakdown</h3>
-                    <div className="space-y-2">
-                      {Object.entries(selectedTimesheet.daily_breakdown).map(([date, hours]) => (
-                        <div key={date} className="flex justify-between items-center text-sm border-b pb-2">
-                          <div className="text-gray-700">{formatDate(date)}</div>
-                          <div className="font-medium text-gray-900">
-                            {parseFloat(hours).toFixed(2)} hours
+                <div className="p-6">
+                  {/* Employee Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-2">Employee Information</h3>
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="flex-shrink-0 h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-base">
+                          {`${selectedTimesheet.employee?.first_name?.[0] || ''}${selectedTimesheet.employee?.last_name?.[0] || ''}`}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {selectedTimesheet.employee?.first_name || 'N/A'} {selectedTimesheet.employee?.last_name || ''}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {selectedTimesheet.employee?.employee_code || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Employee ID: {selectedTimesheet.employee_id || selectedTimesheet.employee?.id}
                           </div>
                         </div>
-                      ))}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Submitted:</span> {formatDate(selectedTimesheet.created_at)}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-2">Hours Summary</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="text-center p-3 bg-white rounded">
+                          <div className="text-lg font-bold text-gray-800">
+                            {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
+                          </div>
+                          <div className="text-xs text-gray-600">Total Hours</div>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <div className="text-lg font-bold text-green-600">
+                            {parseFloat(selectedTimesheet.regular_hours || 0).toFixed(2)}h
+                          </div>
+                          <div className="text-xs text-gray-600">Regular Hours</div>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <div className="text-lg font-bold text-orange-600">
+                            {parseFloat(selectedTimesheet.overtime_hours || 0).toFixed(2)}h
+                          </div>
+                          <div className="text-xs text-gray-600">Overtime Hours</div>
+                        </div>
+                        <div className="text-center p-3 bg-white rounded">
+                          <div className="text-lg font-bold text-blue-600">
+                            {selectedTimesheet.xero_status === 'pushed' ? 'Pushed' : 'Not Pushed'}
+                          </div>
+                          <div className="text-xs text-gray-600">Xero Status</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                {/* Action Buttons */}
-                {selectedTimesheet.status === 'submitted' && (
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
-                    <button
-                      onClick={() => handlePushSingleToXero(selectedTimesheet.id)}
-                      className="px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <FaSyncAlt /> Push to Xero
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleReject(selectedTimesheet.id);
-                        setShowDetailModal(false);
-                      }}
-                      className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
-                    >
-                      Reject
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleApprove(selectedTimesheet.id);
-                        setShowDetailModal(false);
-                      }}
-                      className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <FaSave /> Approve Timesheet
-                    </button>
+                  {/* Period */}
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Period</h3>
+                    <div className="text-sm text-gray-900 bg-gray-50 p-4 rounded-lg">
+                      {formatDate(selectedTimesheet.from_date)} - {formatDate(selectedTimesheet.to_date)}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Loading Overlay */}
-        {pushToXeroLoading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
-                <div>
-                  <div className="text-lg font-medium text-gray-900">Pushing to Xero...</div>
-                  <div className="text-sm text-gray-600">Please wait while we sync with Xero</div>
+                  {/* Daily Breakdown */}
+                  {selectedTimesheet.daily_breakdown && typeof selectedTimesheet.daily_breakdown === 'object' && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">Daily Breakdown</h3>
+                      <div className="space-y-2">
+                        {Object.entries(selectedTimesheet.daily_breakdown).map(([date, hours]) => (
+                          <div key={date} className="flex justify-between items-center text-sm border-b pb-2">
+                            <div className="text-gray-700">{formatDate(date)}</div>
+                            <div className="font-medium text-gray-900">
+                              {parseFloat(hours).toFixed(2)} hours
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  {selectedTimesheet.status === 'submitted' && (
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+                      <button
+                        onClick={() => handlePushSingleToXero(selectedTimesheet.id)}
+                        className="px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <FaSyncAlt /> Push to Xero
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleReject(selectedTimesheet.id);
+                          setShowDetailModal(false);
+                        }}
+                        className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleApprove(selectedTimesheet.id);
+                          setShowDetailModal(false);
+                        }}
+                        className="px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <FaSave /> Approve Timesheet
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Loading Overlay */}
+          {pushToXeroLoading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80]">
+              <div className="bg-white p-8 rounded-xl shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                  <div>
+                    <div className="text-lg font-medium text-gray-900">Pushing to Xero...</div>
+                    <div className="text-sm text-gray-600">Please wait while we sync with Xero</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

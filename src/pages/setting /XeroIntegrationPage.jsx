@@ -27,7 +27,85 @@ import {
   FaFileInvoiceDollar,
   FaUser
 } from 'react-icons/fa';
+import { HiX } from 'react-icons/hi';
 import axios from 'axios';
+
+// Pastel color options for background
+const PASTEL_COLORS = [
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+];
+
+// Color Palette Component
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <HiX size={24} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // Create axios client instance
 const axiosClient = axios.create({
@@ -211,6 +289,8 @@ const XeroIntegrationPage = () => {
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [error, setError] = useState(null);
   const [fetchingXeroData, setFetchingXeroData] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   
   const [stats, setStats] = useState({
     total: 0,
@@ -600,604 +680,631 @@ const XeroIntegrationPage = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header - BOTH BUTTONS SIDE BY SIDE */}
-        <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <HiOutlineSwitchHorizontal className="h-8 w-8 text-indigo-600" />
-                <h1 className="text-3xl font-bold text-gray-800">Xero Employee Connections</h1>
+    <>
+      {/* Color Palette Toggle Button */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
+      <div 
+        className="p-6 bg-gray-50 min-h-screen transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Header - BOTH BUTTONS SIDE BY SIDE */}
+          <div className="mb-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <HiOutlineSwitchHorizontal className="h-8 w-8 text-indigo-600" />
+                  <h1 className="text-3xl font-bold text-gray-800">Xero Employee Connections</h1>
+                </div>
+                <p className="text-gray-600">
+                  Manage employee data synchronization between HRMS and Xero
+                </p>
               </div>
-              <p className="text-gray-600">
-                Manage employee data synchronization between HRMS and Xero
-              </p>
+              
+              <div className="flex gap-2">
+                {/* Connect to Xero Button - Shows when NOT connected */}
+                {!xeroConnectionStatus.connected && (
+                  <button
+                    onClick={() => setShowConnectionModal(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
+                    disabled={connectingToXero}
+                  >
+                    {connectingToXero ? (
+                      <FaSpinner className="animate-spin" />
+                    ) : (
+                      <FaPlug />
+                    )}
+                    {connectingToXero ? 'Connecting...' : 'Connect to Xero'}
+                  </button>
+                )}
+                
+                {/* Bulk Sync Button - Shows when connected */}
+                {xeroConnectionStatus.connected && (
+                  <button
+                    onClick={handleBulkSync}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+                    disabled={loading || fetchingXeroData}
+                  >
+                    <FaSync /> Bulk Sync
+                  </button>
+                )}
+              </div>
             </div>
             
-            <div className="flex gap-2">
-              {/* Connect to Xero Button - Shows when NOT connected */}
-              {!xeroConnectionStatus.connected && (
-                <button
-                  onClick={() => setShowConnectionModal(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
-                  disabled={connectingToXero}
-                >
-                  {connectingToXero ? (
-                    <FaSpinner className="animate-spin" />
-                  ) : (
-                    <FaPlug />
+            {/* Connection Status Badge - Below the header */}
+            {xeroConnectionStatus.connected && (
+              <div className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200 inline-block">
+                <FaPlug className="text-green-600" />
+                <div className="text-sm">
+                  <span className="font-semibold">Connected to Xero</span>
+                  {xeroConnectionStatus.tenant && (
+                    <span className="ml-2">• Tenant: {xeroConnectionStatus.tenant}</span>
                   )}
-                  {connectingToXero ? 'Connecting...' : 'Connect to Xero'}
-                </button>
-              )}
-              
-              {/* Bulk Sync Button - Shows when connected */}
-              {xeroConnectionStatus.connected && (
+                  {xeroConnectionStatus.expires_at && (
+                    <span className="ml-2">• Expires: {formatExpiryDate(xeroConnectionStatus.expires_at)}</span>
+                  )}
+                </div>
                 <button
-                  onClick={handleBulkSync}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-                  disabled={loading || fetchingXeroData}
+                  onClick={() => fetchData()}
+                  className="ml-2 p-1 hover:bg-green-100 rounded transition-colors"
+                  title="Refresh Connection"
                 >
-                  <FaSync /> Bulk Sync
+                  <HiOutlineRefresh className="h-4 w-4" />
                 </button>
-              )}
-            </div>
-          </div>
-          
-          {/* Connection Status Badge - Below the header */}
-          {xeroConnectionStatus.connected && (
-            <div className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200 inline-block">
-              <FaPlug className="text-green-600" />
-              <div className="text-sm">
-                <span className="font-semibold">Connected to Xero</span>
-                {xeroConnectionStatus.tenant && (
-                  <span className="ml-2">• Tenant: {xeroConnectionStatus.tenant}</span>
-                )}
-                {xeroConnectionStatus.expires_at && (
-                  <span className="ml-2">• Expires: {formatExpiryDate(xeroConnectionStatus.expires_at)}</span>
-                )}
               </div>
-              <button
-                onClick={() => fetchData()}
-                className="ml-2 p-1 hover:bg-green-100 rounded"
-                title="Refresh Connection"
-              >
-                <HiOutlineRefresh className="h-4 w-4" />
-              </button>
+            )}
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <HiOutlineExclamationCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <p className="text-red-700">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <FaTimes />
+                </button>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center justify-between">
+          {/* Loading Xero Data Message */}
+          {fetchingXeroData && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center">
-                <HiOutlineExclamationCircle className="h-5 w-5 text-red-500 mr-2" />
-                <p className="text-red-700">{error}</p>
+                <FaSpinner className="h-5 w-5 text-blue-500 mr-2 animate-spin" />
+                <p className="text-blue-700">Fetching Xero connection data for employees...</p>
               </div>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-500 hover:text-red-700"
-              >
-                <FaTimes />
-              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Loading Xero Data Message */}
-        {fetchingXeroData && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center">
-              <FaSpinner className="h-5 w-5 text-blue-500 mr-2 animate-spin" />
-              <p className="text-blue-700">Fetching Xero connection data for employees...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Cards - ALWAYS SHOW (but with conditional data) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
-              </div>
-              <FaUser className="text-blue-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Synced to Xero</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.synced}</p>
-              </div>
-              <HiOutlineCheckCircle className="text-green-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active in Xero</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.active}</p>
-              </div>
-              <FaUserCheck className="text-blue-500 text-xl" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Not Synced</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total - stats.synced}</p>
-              </div>
-              <HiOutlineExclamationCircle className="text-yellow-500 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        {/* Connection Status Message */}
-        {!xeroConnectionStatus.connected && employees.length > 0 && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center">
-              <HiOutlineExclamationCircle className="h-5 w-5 text-yellow-500 mr-2" />
-              <p className="text-yellow-700">
-                <span className="font-semibold">Xero is not connected.</span> 
-                Connect to Xero to enable employee synchronization and view detailed Xero status.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Filters - ALWAYS SHOW */}
-        <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-              <div className="relative">
-                <HiOutlineSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search employees..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({...filters, search: e.target.value})}
-                  className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm"
-                />
+          {/* Stats Cards - ALWAYS SHOW (but with conditional data) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
+                </div>
+                <FaUser className="text-blue-500 text-xl" />
               </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sync Status</label>
-              <select
-                value={filters.syncStatus}
-                onChange={(e) => setFilters({...filters, syncStatus: e.target.value})}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
-              >
-                <option value="all">All Sync Status</option>
-                <option value="synced">Synced</option>
-                <option value="not_synced">Not Synced</option>
-                <option value="needs_update">Needs Update</option>
-              </select>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Synced to Xero</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.synced}</p>
+                </div>
+                <HiOutlineCheckCircle className="text-green-500 text-xl" />
+              </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Xero Status</label>
-              <select
-                value={filters.xeroStatus}
-                onChange={(e) => setFilters({...filters, xeroStatus: e.target.value})}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
-              >
-                <option value="all">All Xero Status</option>
-                <option value="ACTIVE">Active</option>
-                <option value="TERMINATED">Terminated</option>
-                <option value="null">Not in Xero</option>
-              </select>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active in Xero</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.active}</p>
+                </div>
+                <FaUserCheck className="text-blue-500 text-xl" />
+              </div>
             </div>
             
-            <div className="flex items-end gap-2">
-              <button
-                onClick={() => setFilters({search: '', syncStatus: 'all', xeroStatus: 'all'})}
-                className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
-              >
-                Clear Filters
-              </button>
-              <button 
-                onClick={() => fetchData()} 
-                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <HiOutlineRefresh /> Refresh
-              </button>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Not Synced</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total - stats.synced}</p>
+                </div>
+                <HiOutlineExclamationCircle className="text-yellow-500 text-xl" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Employees Table - ALWAYS SHOW */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[22%] min-w-[180px]">Employee</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Sync Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Xero Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">
-                    {xeroConnectionStatus.connected ? 'Xero ID' : 'Sync Status'}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Last Synced</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[14%] min-w-[140px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 w-[22%] min-w-[180px]">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
-                            {employee.employee_name?.split(' ').map(n => n[0]).join('')}
+          {/* Connection Status Message */}
+          {!xeroConnectionStatus.connected && employees.length > 0 && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center">
+                <HiOutlineExclamationCircle className="h-5 w-5 text-yellow-500 mr-2" />
+                <p className="text-yellow-700">
+                  <span className="font-semibold">Xero is not connected.</span> 
+                  Connect to Xero to enable employee synchronization and view detailed Xero status.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Filters - ALWAYS SHOW */}
+          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <div className="relative">
+                  <HiOutlineSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search employees..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({...filters, search: e.target.value})}
+                    className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sync Status</label>
+                <select
+                  value={filters.syncStatus}
+                  onChange={(e) => setFilters({...filters, syncStatus: e.target.value})}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
+                >
+                  <option value="all">All Sync Status</option>
+                  <option value="synced">Synced</option>
+                  <option value="not_synced">Not Synced</option>
+                  <option value="needs_update">Needs Update</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Xero Status</label>
+                <select
+                  value={filters.xeroStatus}
+                  onChange={(e) => setFilters({...filters, xeroStatus: e.target.value})}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
+                >
+                  <option value="all">All Xero Status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="TERMINATED">Terminated</option>
+                  <option value="null">Not in Xero</option>
+                </select>
+              </div>
+              
+              <div className="flex items-end gap-2">
+                <button
+                  onClick={() => setFilters({search: '', syncStatus: 'all', xeroStatus: 'all'})}
+                  className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+                >
+                  Clear Filters
+                </button>
+                <button 
+                  onClick={() => fetchData()} 
+                  className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <HiOutlineRefresh /> Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Employees Table - ALWAYS SHOW */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[22%] min-w-[180px]">Employee</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Sync Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Xero Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">
+                      {xeroConnectionStatus.connected ? 'Xero ID' : 'Sync Status'}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[140px]">Last Synced</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[14%] min-w-[140px]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredEmployees.length > 0 ? (
+                    filteredEmployees.map((employee) => (
+                      <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 w-[22%] min-w-[180px]">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
+                              {employee.employee_name?.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-semibold text-gray-900">{employee.employee_name}</div>
+                              <div className="text-sm text-gray-500">{employee.employee_code}</div>
+                              <div className="text-xs text-gray-400">{employee.department_name}</div>
+                            </div>
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-semibold text-gray-900">{employee.employee_name}</div>
-                            <div className="text-sm text-gray-500">{employee.employee_code}</div>
-                            <div className="text-xs text-gray-400">{employee.department_name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 w-[16%] min-w-[140px]">
-                        {getSyncStatusBadge(employee)}
-                        {employee.sync_error && (
-                          <div className="text-xs text-red-600 mt-1" title={employee.sync_error}>
-                            <HiOutlineExclamationCircle className="inline mr-1" /> Error
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 w-[16%] min-w-[140px]">
-                        {getXeroStatusBadge(employee.xero_status)}
-                      </td>
-                      <td className="px-4 py-3 w-[16%] min-w-[140px]">
-                        {xeroConnectionStatus.connected ? (
+                        </td>
+                        <td className="px-4 py-3 w-[16%] min-w-[140px]">
+                          {getSyncStatusBadge(employee)}
+                          {employee.sync_error && (
+                            <div className="text-xs text-red-600 mt-1" title={employee.sync_error}>
+                              <HiOutlineExclamationCircle className="inline mr-1" /> Error
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 w-[16%] min-w-[140px]">
+                          {getXeroStatusBadge(employee.xero_status)}
+                        </td>
+                        <td className="px-4 py-3 w-[16%] min-w-[140px]">
+                          {xeroConnectionStatus.connected ? (
+                            <div className="text-sm text-gray-900">
+                              {employee.xero_employee_id || 'Not assigned'}
+                              {employee.xero_employee_number && (
+                                <div className="text-xs text-gray-500">#{employee.xero_employee_number}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500 italic">Connect Xero to view</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 w-[16%] min-w-[140px]">
                           <div className="text-sm text-gray-900">
-                            {employee.xero_employee_id || 'Not assigned'}
-                            {employee.xero_employee_number && (
-                              <div className="text-xs text-gray-500">#{employee.xero_employee_number}</div>
+                            {formatDate(employee.last_synced_at)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 w-[14%] min-w-[140px] text-sm font-medium">
+                          <div className="flex gap-2">
+                            {!employee.is_synced && xeroConnectionStatus.connected ? (
+                              <button
+                                onClick={() => handleSyncEmployee(employee.id, employee.employee_name)}
+                                disabled={syncingEmployee === employee.id}
+                                className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Sync to Xero"
+                              >
+                                {syncingEmployee === employee.id ? (
+                                  <FaSpinner className="animate-spin" />
+                                ) : (
+                                  <FaSync />
+                                )}
+                              </button>
+                            ) : !xeroConnectionStatus.connected && (
+                              <button
+                                onClick={() => setShowConnectionModal(true)}
+                                className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1"
+                                title="Connect Xero to sync"
+                              >
+                                <FaPlug /> Connect
+                              </button>
+                            )}
+                            
+                            <button
+                              onClick={() => handleViewDetails(employee)}
+                              className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
+                              title="View Details"
+                            >
+                              <HiOutlineEye /> View
+                            </button>
+                            
+                            {employee.xero_contact_id && xeroConnectionStatus.connected && (
+                              <a
+                                href={`https://go.xero.com/Contacts/View/${employee.xero_contact_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
+                                title="View in Xero"
+                              >
+                                <HiOutlineExternalLink />
+                              </a>
                             )}
                           </div>
-                        ) : (
-                          <div className="text-sm text-gray-500 italic">Connect Xero to view</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 w-[16%] min-w-[140px]">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(employee.last_synced_at)}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 w-[14%] min-w-[140px] text-sm font-medium">
-                        <div className="flex gap-2">
-                          {!employee.is_synced && xeroConnectionStatus.connected ? (
-                            <button
-                              onClick={() => handleSyncEmployee(employee.id, employee.employee_name)}
-                              disabled={syncingEmployee === employee.id}
-                              className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Sync to Xero"
-                            >
-                              {syncingEmployee === employee.id ? (
-                                <FaSpinner className="animate-spin" />
-                              ) : (
-                                <FaSync />
-                              )}
-                            </button>
-                          ) : !xeroConnectionStatus.connected && (
-                            <button
-                              onClick={() => setShowConnectionModal(true)}
-                              className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1"
-                              title="Connect Xero to sync"
-                            >
-                              <FaPlug /> Connect
-                            </button>
-                          )}
-                          
-                          <button
-                            onClick={() => handleViewDetails(employee)}
-                            className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
-                            title="View Details"
-                          >
-                            <HiOutlineEye /> View
-                          </button>
-                          
-                          {employee.xero_contact_id && xeroConnectionStatus.connected && (
-                            <a
-                              href={`https://go.xero.com/Contacts/View/${employee.xero_contact_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
-                              title="View in Xero"
-                            >
-                              <HiOutlineExternalLink />
-                            </a>
-                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center">
+                          <HiOutlineUsers className="text-4xl text-gray-300 mb-3" />
+                          <p className="text-lg font-medium text-gray-900 mb-1">
+                            {employees.length === 0 ? 'No employees found' : 'No employees match your filters'}
+                          </p>
+                          <p className="text-gray-500">
+                            {employees.length === 0 ? 'No employees in the system yet.' : 'Try changing your filters.'}
+                          </p>
                         </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                      <div className="flex flex-col items-center">
-                        <HiOutlineUsers className="text-4xl text-gray-300 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 mb-1">
-                          {employees.length === 0 ? 'No employees found' : 'No employees match your filters'}
-                        </p>
-                        <p className="text-gray-500">
-                          {employees.length === 0 ? 'No employees in the system yet.' : 'Try changing your filters.'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Summary Footer - ALWAYS SHOW */}
-        {filteredEmployees.length > 0 && (
-          <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center">
-              <div className="text-sm text-gray-600">
-                Showing {filteredEmployees.length} of {employees.length} employees
-                {fetchingXeroData && ' • Fetching Xero data...'}
-              </div>
-              <div className="text-sm font-semibold text-gray-800">
-                {xeroConnectionStatus.connected ? (
-                  <>
-                    {stats.synced} of {stats.total} employees synced to Xero
-                    {stats.lastSync && ` • Last sync: ${formatDate(stats.lastSync)}`}
-                  </>
-                ) : (
-                  <>
-                    {stats.total} employees • Connect Xero to enable synchronization
-                  </>
-                )}
-              </div>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
 
-        {/* Connection Modal */}
-        {showConnectionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Connect to Xero</h2>
-                <button
-                  onClick={() => setShowConnectionModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaTimes className="text-gray-500" />
-                </button>
+          {/* Summary Footer - ALWAYS SHOW */}
+          {filteredEmployees.length > 0 && (
+            <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Showing {filteredEmployees.length} of {employees.length} employees
+                  {fetchingXeroData && ' • Fetching Xero data...'}
+                </div>
+                <div className="text-sm font-semibold text-gray-800">
+                  {xeroConnectionStatus.connected ? (
+                    <>
+                      {stats.synced} of {stats.total} employees synced to Xero
+                      {stats.lastSync && ` • Last sync: ${formatDate(stats.lastSync)}`}
+                    </>
+                  ) : (
+                    <>
+                      {stats.total} employees • Connect Xero to enable synchronization
+                    </>
+                  )}
+                </div>
               </div>
+            </div>
+          )}
 
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <FaPlug className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Connect Your Xero Account</h3>
-                  <p className="text-gray-600">
-                    You'll be redirected to Xero to authorize access to your account.
-                    This allows secure employee data synchronization.
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
-                    <HiOutlineExclamationCircle className="mr-2" />
-                    Permissions Required
-                  </h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Read and write employee information</li>
-                    <li>• Access payroll data</li>
-                    <li>• Manage employee leave and timesheets</li>
-                  </ul>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          {/* Connection Modal */}
+          {showConnectionModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+              <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">Connect to Xero</h2>
                   <button
                     onClick={() => setShowConnectionModal(false)}
-                    className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    Cancel
+                    <FaTimes className="text-gray-500" />
                   </button>
-                  <button
-                    onClick={handleConnectXero}
-                    disabled={connectingToXero}
-                    className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                  >
-                    {connectingToXero ? (
-                      <>
-                        <FaSpinner className="animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      <>
-                        <FaPlug />
-                        Connect to Xero
-                      </>
-                    )}
-                  </button>
+                </div>
+
+                <div className="p-6">
+                  <div className="text-center mb-6">
+                    <FaPlug className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Connect Your Xero Account</h3>
+                    <p className="text-gray-600">
+                      You'll be redirected to Xero to authorize access to your account.
+                      This allows secure employee data synchronization.
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
+                      <HiOutlineExclamationCircle className="mr-2" />
+                      Permissions Required
+                    </h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Read and write employee information</li>
+                      <li>• Access payroll data</li>
+                      <li>• Manage employee leave and timesheets</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => setShowConnectionModal(false)}
+                      className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConnectXero}
+                      disabled={connectingToXero}
+                      className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                    >
+                      {connectingToXero ? (
+                        <>
+                          <FaSpinner className="animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <FaPlug />
+                          Connect to Xero
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Employee Details Modal */}
-        {showDetailsModal && selectedEmployee && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Employee Xero Connection Details</h2>
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaTimes className="text-gray-500" />
-                </button>
-              </div>
-              
-              <div className="p-6">
-                {/* Basic Info */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-xl">
-                    {selectedEmployee.employee_name?.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">{selectedEmployee.employee_name}</h3>
-                    <p className="text-gray-600">{selectedEmployee.employee_code} • {selectedEmployee.department_name}</p>
-                    <div className="flex gap-2 mt-1">
-                      {getSyncStatusBadge(selectedEmployee)}
-                      {getXeroStatusBadge(selectedEmployee.xero_status)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Employee Info */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <HiOutlineUsers /> Employee Information
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Employee Code:</span>
-                        <span className="font-medium">{selectedEmployee.employee_code}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Department:</span>
-                        <span className="font-medium">{selectedEmployee.department_name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Designation:</span>
-                        <span className="font-medium">{selectedEmployee.designation || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Email:</span>
-                        <span className="font-medium">{selectedEmployee.personal_email || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Phone:</span>
-                        <span className="font-medium">{selectedEmployee.phone_number || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Xero Info */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <HiOutlineSwitchHorizontal /> Xero Information
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Xero Employee ID:</span>
-                        <span className="font-medium">{selectedEmployee.xero_employee_id || 'Not assigned'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Xero Contact ID:</span>
-                        <span className="font-medium">{selectedEmployee.xero_contact_id || 'Not assigned'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Employee Number:</span>
-                        <span className="font-medium">{selectedEmployee.xero_employee_number || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Sync Status:</span>
-                        <span className="font-medium">{selectedEmployee.is_synced ? 'Synced' : 'Not Synced'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaCalendarCheck /> Xero Start Date
-                    </h4>
-                    <p className="text-lg font-medium">
-                      {selectedEmployee.xero_start_date ? formatDate(selectedEmployee.xero_start_date) : 'N/A'}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaCalendarTimes /> Termination Date
-                    </h4>
-                    <p className="text-lg font-medium">
-                      {selectedEmployee.xero_termination_date ? formatDate(selectedEmployee.xero_termination_date) : 'N/A'}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <HiOutlineClock /> Last Synced
-                    </h4>
-                    <p className="text-lg font-medium">
-                      {formatDate(selectedEmployee.last_synced_at)}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Error Message */}
-                {selectedEmployee.sync_error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <h4 className="font-semibold text-red-800 mb-2 flex items-center">
-                      <HiOutlineExclamationCircle className="mr-2" />
-                      Sync Error
-                    </h4>
-                    <p className="text-red-700 text-sm">{selectedEmployee.sync_error}</p>
-                  </div>
-                )}
-                
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+          {/* Employee Details Modal */}
+          {showDetailsModal && selectedEmployee && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
+              <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">Employee Xero Connection Details</h2>
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    Close
+                    <FaTimes className="text-gray-500" />
                   </button>
-                  {!selectedEmployee.is_synced && xeroConnectionStatus.connected && (
-                    <button
-                      onClick={() => {
-                        handleSyncEmployee(selectedEmployee.id, selectedEmployee.employee_name);
-                        setShowDetailsModal(false);
-                      }}
-                      className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                      <FaSync /> Sync Now
-                    </button>
+                </div>
+                
+                <div className="p-6">
+                  {/* Basic Info */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-xl">
+                      {selectedEmployee.employee_name?.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800">{selectedEmployee.employee_name}</h3>
+                      <p className="text-gray-600">{selectedEmployee.employee_code} • {selectedEmployee.department_name}</p>
+                      <div className="flex gap-2 mt-1">
+                        {getSyncStatusBadge(selectedEmployee)}
+                        {getXeroStatusBadge(selectedEmployee.xero_status)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    {/* Employee Info */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <HiOutlineUsers /> Employee Information
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Employee Code:</span>
+                          <span className="font-medium">{selectedEmployee.employee_code}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Department:</span>
+                          <span className="font-medium">{selectedEmployee.department_name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Designation:</span>
+                          <span className="font-medium">{selectedEmployee.designation || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{selectedEmployee.personal_email || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Phone:</span>
+                          <span className="font-medium">{selectedEmployee.phone_number || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Xero Info */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <HiOutlineSwitchHorizontal /> Xero Information
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Xero Employee ID:</span>
+                          <span className="font-medium">{selectedEmployee.xero_employee_id || 'Not assigned'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Xero Contact ID:</span>
+                          <span className="font-medium">{selectedEmployee.xero_contact_id || 'Not assigned'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Employee Number:</span>
+                          <span className="font-medium">{selectedEmployee.xero_employee_number || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Sync Status:</span>
+                          <span className="font-medium">{selectedEmployee.is_synced ? 'Synced' : 'Not Synced'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FaCalendarCheck /> Xero Start Date
+                      </h4>
+                      <p className="text-lg font-medium">
+                        {selectedEmployee.xero_start_date ? formatDate(selectedEmployee.xero_start_date) : 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FaCalendarTimes /> Termination Date
+                      </h4>
+                      <p className="text-lg font-medium">
+                        {selectedEmployee.xero_termination_date ? formatDate(selectedEmployee.xero_termination_date) : 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <HiOutlineClock /> Last Synced
+                      </h4>
+                      <p className="text-lg font-medium">
+                        {formatDate(selectedEmployee.last_synced_at)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Error Message */}
+                  {selectedEmployee.sync_error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h4 className="font-semibold text-red-800 mb-2 flex items-center">
+                        <HiOutlineExclamationCircle className="mr-2" />
+                        Sync Error
+                      </h4>
+                      <p className="text-red-700 text-sm">{selectedEmployee.sync_error}</p>
+                    </div>
                   )}
-                  {!xeroConnectionStatus.connected && (
+                  
+                  {/* Actions */}
+                  <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                     <button
-                      onClick={() => {
-                        setShowDetailsModal(false);
-                        setShowConnectionModal(true);
-                      }}
-                      className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                      onClick={() => setShowDetailsModal(false)}
+                      className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
                     >
-                      <FaPlug /> Connect Xero
+                      Close
                     </button>
-                  )}
+                    {!selectedEmployee.is_synced && xeroConnectionStatus.connected && (
+                      <button
+                        onClick={() => {
+                          handleSyncEmployee(selectedEmployee.id, selectedEmployee.employee_name);
+                          setShowDetailsModal(false);
+                        }}
+                        className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                      >
+                        <FaSync /> Sync Now
+                      </button>
+                    )}
+                    {!xeroConnectionStatus.connected && (
+                      <button
+                        onClick={() => {
+                          setShowDetailsModal(false);
+                          setShowConnectionModal(true);
+                        }}
+                        className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                      >
+                        <FaPlug /> Connect Xero
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
