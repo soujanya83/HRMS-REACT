@@ -20,7 +20,9 @@ import {
   FaCalendarAlt,
   FaUserCheck,
   FaUserTimes,
-  FaInfoCircle
+  FaInfoCircle,
+  FaCoffee,
+  FaHourglassHalf
 } from 'react-icons/fa';
 import { HiX } from "react-icons/hi";
 import manualAdjustmentService from "../../services/manualAdjustmentService";
@@ -131,7 +133,7 @@ const ManualAdjustments = () => {
     employee_id: 'all'
   });
 
-  // New adjustment form state
+  // New adjustment form state - UPDATED with break times
   const [newAdjustment, setNewAdjustment] = useState({
     employee_id: '',
     organization_id: '',
@@ -139,16 +141,22 @@ const ManualAdjustments = () => {
     date: '',
     original_check_in: '09:00',
     original_check_out: '18:00',
+    original_break_start: '13:00',
+    original_break_end: '14:00',
     adjusted_check_in: '09:00',
     adjusted_check_out: '18:00',
+    adjusted_break_start: '13:00',
+    adjusted_break_end: '14:00',
     reason: '',
     created_by: 4
   });
 
-  // Edit form state
+  // Edit form state - UPDATED with break times
   const [editForm, setEditForm] = useState({
     adjusted_check_in: '',
-    adjusted_check_out: ''
+    adjusted_check_out: '',
+    adjusted_break_start: '',
+    adjusted_break_end: ''
   });
 
   // Stats state
@@ -224,7 +232,7 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Transform API data to component format
+  // Transform API data to component format - UPDATED with break times
   const transformAdjustmentsData = (apiData) => {
     if (!Array.isArray(apiData)) return [];
     
@@ -247,8 +255,12 @@ const ManualAdjustments = () => {
         adjustment_date: item.date,
         original_check_in: formatTimeForDisplay(item.original_check_in),
         original_check_out: formatTimeForDisplay(item.original_check_out),
+        original_break_start: formatTimeForDisplay(item.original_break_start),
+        original_break_end: formatTimeForDisplay(item.original_break_end),
         adjusted_check_in: formatTimeForDisplay(item.adjusted_check_in),
         adjusted_check_out: formatTimeForDisplay(item.adjusted_check_out),
+        adjusted_break_start: formatTimeForDisplay(item.adjusted_break_start),
+        adjusted_break_end: formatTimeForDisplay(item.adjusted_break_end),
         reason: item.reason || '',
         status: item.status?.toLowerCase() || 'pending',
         approved_by: item.approved_by || null,
@@ -258,7 +270,11 @@ const ManualAdjustments = () => {
           item.original_check_in,
           item.original_check_out,
           item.adjusted_check_in,
-          item.adjusted_check_out
+          item.adjusted_check_out,
+          item.original_break_start,
+          item.original_break_end,
+          item.adjusted_break_start,
+          item.adjusted_break_end
         ),
         raw_data: item,
         employee_raw: item.employee,
@@ -316,7 +332,7 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Load existing attendance when employee and date are selected
+  // Load existing attendance when employee and date are selected - UPDATED with break times
   const loadExistingAttendance = useCallback(async () => {
     if (!newAdjustment.employee_id || !newAdjustment.date) return;
     
@@ -331,11 +347,15 @@ const ManualAdjustments = () => {
         setNewAdjustment(prev => ({
           ...prev,
           attendance_id: attendance.id,
-          // Use the actual check_in/check_out from attendance
+          // Use the actual check_in/check_out/break times from attendance
           original_check_in: attendance.check_in || '09:00',
           original_check_out: attendance.check_out || '18:00',
+          original_break_start: attendance.break_start || '13:00',
+          original_break_end: attendance.break_end || '14:00',
           adjusted_check_in: attendance.check_in || '09:00',
           adjusted_check_out: attendance.check_out || '18:00',
+          adjusted_break_start: attendance.break_start || '13:00',
+          adjusted_break_end: attendance.break_end || '14:00',
           organization_id: attendance.organization_id || selectedOrganization.id
         }));
       } else {
@@ -345,8 +365,12 @@ const ManualAdjustments = () => {
           attendance_id: '',
           original_check_in: '09:00',
           original_check_out: '18:00',
+          original_break_start: '13:00',
+          original_break_end: '14:00',
           adjusted_check_in: '09:00',
-          adjusted_check_out: '18:00'
+          adjusted_check_out: '18:00',
+          adjusted_break_start: '13:00',
+          adjusted_break_end: '14:00'
         }));
       }
     } catch (error) {
@@ -357,8 +381,12 @@ const ManualAdjustments = () => {
         attendance_id: '',
         original_check_in: '09:00',
         original_check_out: '18:00',
+        original_break_start: '13:00',
+        original_break_end: '14:00',
         adjusted_check_in: '09:00',
-        adjusted_check_out: '18:00'
+        adjusted_check_out: '18:00',
+        adjusted_break_start: '13:00',
+        adjusted_break_end: '14:00'
       }));
     }
   }, [newAdjustment.employee_id, newAdjustment.date, selectedOrganization]);
@@ -369,7 +397,7 @@ const ManualAdjustments = () => {
     setNewAdjustment(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle edit form input changes
+  // Handle edit form input changes - UPDATED with break times
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
@@ -397,7 +425,7 @@ const ManualAdjustments = () => {
     });
   };
 
-  // Submit new adjustment request
+  // Submit new adjustment request - UPDATED with break times validation
   const handleSubmitAdjustment = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -410,8 +438,9 @@ const ManualAdjustments = () => {
         return;
       }
 
-      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out) {
-        toast.error('Please adjust at least one time (check-in or check-out)');
+      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out && 
+          !newAdjustment.adjusted_break_start && !newAdjustment.adjusted_break_end) {
+        toast.error('Please adjust at least one time (check-in, check-out, or break time)');
         setSubmitting(false);
         return;
       }
@@ -424,8 +453,12 @@ const ManualAdjustments = () => {
         date: newAdjustment.date,
         original_check_in: formatTimeForAPI(newAdjustment.original_check_in),
         original_check_out: formatTimeForAPI(newAdjustment.original_check_out),
+        original_break_start: formatTimeForAPI(newAdjustment.original_break_start),
+        original_break_end: formatTimeForAPI(newAdjustment.original_break_end),
         adjusted_check_in: formatTimeForAPI(newAdjustment.adjusted_check_in) || null,
         adjusted_check_out: formatTimeForAPI(newAdjustment.adjusted_check_out) || null,
+        adjusted_break_start: formatTimeForAPI(newAdjustment.adjusted_break_start) || null,
+        adjusted_break_end: formatTimeForAPI(newAdjustment.adjusted_break_end) || null,
         reason: newAdjustment.reason,
         created_by: userId
       };
@@ -471,7 +504,7 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Reset new adjustment form
+  // Reset new adjustment form - UPDATED with break times
   const resetNewAdjustmentForm = () => {
     setNewAdjustment({
       employee_id: '',
@@ -480,8 +513,12 @@ const ManualAdjustments = () => {
       date: '',
       original_check_in: '09:00',
       original_check_out: '18:00',
+      original_break_start: '13:00',
+      original_break_end: '14:00',
       adjusted_check_in: '09:00',
       adjusted_check_out: '18:00',
+      adjusted_break_start: '13:00',
+      adjusted_break_end: '14:00',
       reason: '',
       created_by: userId
     });
@@ -502,24 +539,28 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Open edit modal for adjustment
+  // Open edit modal for adjustment - UPDATED with break times
   const handleEditAdjustment = (adjustment) => {
     setEditingAdjustment(adjustment);
     setEditForm({
       adjusted_check_in: adjustment.adjusted_check_in.replace(/ [AP]M$/, ''),
-      adjusted_check_out: adjustment.adjusted_check_out.replace(/ [AP]M$/, '')
+      adjusted_check_out: adjustment.adjusted_check_out.replace(/ [AP]M$/, ''),
+      adjusted_break_start: adjustment.adjusted_break_start ? adjustment.adjusted_break_start.replace(/ [AP]M$/, '') : '13:00',
+      adjusted_break_end: adjustment.adjusted_break_end ? adjustment.adjusted_break_end.replace(/ [AP]M$/, '') : '14:00'
     });
     setShowEditModal(true);
   };
 
-  // Submit edit form
+  // Submit edit form - UPDATED with break times
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     
     try {
       const editData = {
         adjusted_check_in: formatTimeForAPI(editForm.adjusted_check_in),
-        adjusted_check_out: formatTimeForAPI(editForm.adjusted_check_out)
+        adjusted_check_out: formatTimeForAPI(editForm.adjusted_check_out),
+        adjusted_break_start: formatTimeForAPI(editForm.adjusted_break_start),
+        adjusted_break_end: formatTimeForAPI(editForm.adjusted_break_end)
       };
 
       const response = await manualAdjustmentService.updateAdjustment(editingAdjustment.id, editData);
@@ -597,7 +638,7 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Export adjustments to CSV
+  // Export adjustments to CSV - UPDATED with break times
   const exportAdjustments = () => {
     if (filteredAdjustments.length === 0) {
       toast.warning('No data to export');
@@ -611,8 +652,12 @@ const ManualAdjustments = () => {
       'Date': adj.adjustment_date,
       'Original Check-in': adj.original_check_in,
       'Original Check-out': adj.original_check_out,
+      'Original Break Start': adj.original_break_start || '--:--',
+      'Original Break End': adj.original_break_end || '--:--',
       'Adjusted Check-in': adj.adjusted_check_in,
       'Adjusted Check-out': adj.adjusted_check_out,
+      'Adjusted Break Start': adj.adjusted_break_start || '--:--',
+      'Adjusted Break End': adj.adjusted_break_end || '--:--',
       'Reason': adj.reason,
       'Status': adj.status.charAt(0).toUpperCase() + adj.status.slice(1),
       'Hours Change': adj.total_hours_change,
@@ -732,8 +777,8 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Calculate time difference between original and adjusted times
-  const calculateTimeDifference = (origIn, origOut, adjIn, adjOut) => {
+  // Calculate time difference between original and adjusted times - UPDATED with break times
+  const calculateTimeDifference = (origIn, origOut, adjIn, adjOut, origBreakStart, origBreakEnd, adjBreakStart, adjBreakEnd) => {
     const toMinutes = (timeStr) => {
       if (!timeStr || timeStr === '--:--' || timeStr === '00:00:00' || timeStr === null) return 0;
       
@@ -751,11 +796,19 @@ const ManualAdjustments = () => {
     const origOutMin = toMinutes(origOut);
     const adjInMin = toMinutes(adjIn);
     const adjOutMin = toMinutes(adjOut);
-
-    const origDuration = Math.max(0, origOutMin - origInMin);
-    const adjDuration = Math.max(0, adjOutMin - adjInMin);
     
-    const diff = adjDuration - origDuration;
+    const origBreakStartMin = toMinutes(origBreakStart);
+    const origBreakEndMin = toMinutes(origBreakEnd);
+    const adjBreakStartMin = toMinutes(adjBreakStart);
+    const adjBreakEndMin = toMinutes(adjBreakEnd);
+
+    const origBreakDuration = Math.max(0, origBreakEndMin - origBreakStartMin);
+    const adjBreakDuration = Math.max(0, adjBreakEndMin - adjBreakStartMin);
+
+    const origNetDuration = Math.max(0, origOutMin - origInMin) - origBreakDuration;
+    const adjNetDuration = Math.max(0, adjOutMin - adjInMin) - adjBreakDuration;
+    
+    const diff = adjNetDuration - origNetDuration;
     
     if (Math.abs(diff) < 1) return '±0h 00m';
     
@@ -906,10 +959,10 @@ const ManualAdjustments = () => {
       >
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusDraggable pauseOnHover />
         
-        {/* View Adjustment Modal */}
+        {/* View Adjustment Modal - UPDATED with break times display */}
         {showViewModal && selectedAdjustment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Adjustment Details</h2>
                 <button
@@ -984,7 +1037,7 @@ const ManualAdjustments = () => {
                   </div>
                 </div>
                 
-                {/* Time Comparison */}
+                {/* Time Comparison - UPDATED with break times */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Time Comparison</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -998,6 +1051,14 @@ const ManualAdjustments = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">Check-out:</span>
                           <span className="font-semibold">{formatTimeForDisplay(selectedAdjustment.original_check_out)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                          <span className="text-gray-600 flex items-center gap-1">
+                            <FaCoffee className="text-yellow-500" /> Break:
+                          </span>
+                          <span className="font-semibold">
+                            {formatTimeForDisplay(selectedAdjustment.original_break_start)} - {formatTimeForDisplay(selectedAdjustment.original_break_end)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1013,6 +1074,14 @@ const ManualAdjustments = () => {
                           <span className="text-blue-600">Check-out:</span>
                           <span className="font-semibold text-blue-700">{formatTimeForDisplay(selectedAdjustment.adjusted_check_out)}</span>
                         </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-blue-200">
+                          <span className="text-blue-600 flex items-center gap-1">
+                            <FaCoffee className="text-blue-500" /> Break:
+                          </span>
+                          <span className="font-semibold text-blue-700">
+                            {formatTimeForDisplay(selectedAdjustment.adjusted_break_start)} - {formatTimeForDisplay(selectedAdjustment.adjusted_break_end)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1026,14 +1095,22 @@ const ManualAdjustments = () => {
                           selectedAdjustment.original_check_in,
                           selectedAdjustment.original_check_out,
                           selectedAdjustment.adjusted_check_in,
-                          selectedAdjustment.adjusted_check_out
+                          selectedAdjustment.adjusted_check_out,
+                          selectedAdjustment.original_break_start,
+                          selectedAdjustment.original_break_end,
+                          selectedAdjustment.adjusted_break_start,
+                          selectedAdjustment.adjusted_break_end
                         ).includes('+') 
                           ? 'text-green-600' 
                           : calculateTimeDifference(
                               selectedAdjustment.original_check_in,
                               selectedAdjustment.original_check_out,
                               selectedAdjustment.adjusted_check_in,
-                              selectedAdjustment.adjusted_check_out
+                              selectedAdjustment.adjusted_check_out,
+                              selectedAdjustment.original_break_start,
+                              selectedAdjustment.original_break_end,
+                              selectedAdjustment.adjusted_break_start,
+                              selectedAdjustment.adjusted_break_end
                             ).includes('-')
                           ? 'text-red-600'
                           : 'text-gray-600'
@@ -1042,7 +1119,11 @@ const ManualAdjustments = () => {
                           selectedAdjustment.original_check_in,
                           selectedAdjustment.original_check_out,
                           selectedAdjustment.adjusted_check_in,
-                          selectedAdjustment.adjusted_check_out
+                          selectedAdjustment.adjusted_check_out,
+                          selectedAdjustment.original_break_start,
+                          selectedAdjustment.original_break_end,
+                          selectedAdjustment.adjusted_break_start,
+                          selectedAdjustment.adjusted_break_end
                         )}
                       </span>
                     </div>
@@ -1089,7 +1170,7 @@ const ManualAdjustments = () => {
           </div>
         )}
         
-        {/* Edit Adjustment Modal */}
+        {/* Edit Adjustment Modal - UPDATED with break times */}
         {showEditModal && editingAdjustment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
@@ -1132,6 +1213,38 @@ const ManualAdjustments = () => {
                       required
                     />
                   </div>
+                  
+                  <div className="border-t pt-4 mt-2">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <FaCoffee className="text-purple-500" /> Break Time Adjustments
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Break Start
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_break_start"
+                          value={editForm.adjusted_break_start}
+                          onChange={handleEditInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Break End
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_break_end"
+                          value={editForm.adjusted_break_end}
+                          onChange={handleEditInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
@@ -1154,10 +1267,10 @@ const ManualAdjustments = () => {
           </div>
         )}
         
-        {/* New Adjustment Modal */}
+        {/* New Adjustment Modal - UPDATED with break times */}
         {showAdjustmentForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Request Manual Adjustment</h2>
                 <button
@@ -1217,10 +1330,12 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
 
-                  {/* Time Adjustments */}
+                  {/* Time Adjustments - UPDATED with break times */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                    
+                    {/* Check In/Out Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Original Check-in
@@ -1233,7 +1348,6 @@ const ManualAdjustments = () => {
                           className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
                           disabled
                         />
-                        <p className="text-xs text-gray-500 mt-1">Enter original time</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1247,7 +1361,6 @@ const ManualAdjustments = () => {
                           className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
                           disabled
                         />
-                        <p className="text-xs text-gray-500 mt-1">Enter original time</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1274,8 +1387,67 @@ const ManualAdjustments = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Break Time Section - NEW */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center gap-2 col-span-4 mb-2">
+                        <FaCoffee className="text-yellow-600" />
+                        <h4 className="text-sm font-semibold text-yellow-800">Break Time Adjustments</h4>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Original Break Start
+                        </label>
+                        <input
+                          type="time"
+                          name="original_break_start"
+                          value={newAdjustment.original_break_start.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Original Break End
+                        </label>
+                        <input
+                          type="time"
+                          name="original_break_end"
+                          value={newAdjustment.original_break_end.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 bg-gray-100 px-3 py-2 rounded-lg cursor-not-allowed"
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Adjusted Break Start
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_break_start"
+                          value={newAdjustment.adjusted_break_start.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Adjusted Break End
+                        </label>
+                        <input
+                          type="time"
+                          name="adjusted_break_end"
+                          value={newAdjustment.adjusted_break_end.replace(/ [AP]M$/, '')}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    
                     <p className="text-sm text-gray-500 mt-2">
-                      * Note: Adjust at least one time (check-in or check-out). Original times will be auto-loaded if attendance exists for this date, otherwise enter them manually.
+                      * Note: Adjust at least one time (check-in, check-out, or break time). Original times will be auto-loaded if attendance exists for this date.
                     </p>
                   </div>
 
@@ -1504,7 +1676,7 @@ const ManualAdjustments = () => {
             </div>
           </div>
 
-          {/* Adjustments Table */}
+          {/* Adjustments Table - UPDATED to show break times in Time Changes column */}
           <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -1582,14 +1754,30 @@ const ManualAdjustments = () => {
                             <span className="text-gray-500 text-xs">Adjusted: </span>
                             <span className="font-medium text-blue-600">{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
                           </div>
-                          <div className={`text-xs font-medium ${
+                          
+                          {/* Break Time Display - NEW */}
+                          {(adjustment.original_break_start !== '--:--' || adjustment.adjusted_break_start !== '--:--') && (
+                            <div className="mt-2 pt-1 border-t border-gray-200">
+                              <div className="text-xs text-gray-500 mb-1">Break Times:</div>
+                              <div className="flex items-center text-xs mb-1">
+                                <span className="text-gray-500 w-12">Orig:</span>
+                                <span className="font-mono text-gray-600">{adjustment.original_break_start || '--:--'} - {adjustment.original_break_end || '--:--'}</span>
+                              </div>
+                              <div className="flex items-center text-xs">
+                                <span className="text-gray-500 w-12">Adj:</span>
+                                <span className="font-mono text-blue-600">{adjustment.adjusted_break_start || '--:--'} - {adjustment.adjusted_break_end || '--:--'}</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className={`text-xs font-medium mt-2 ${
                             adjustment.total_hours_change.includes('+') 
                               ? 'text-green-600' 
                               : adjustment.total_hours_change.includes('-')
                               ? 'text-red-600'
                               : 'text-gray-600'
                           }`}>
-                            {adjustment.total_hours_change}
+                            Net Change: {adjustment.total_hours_change}
                           </div>
                         </div>
                       </td>

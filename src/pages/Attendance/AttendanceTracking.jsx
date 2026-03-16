@@ -29,7 +29,9 @@ import {
   FaDollarSign,
   FaStickyNote,
   FaUser,
-  FaCalculator
+  FaCalculator,
+  FaHourglassHalf,
+  FaExclamationCircle
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
@@ -167,10 +169,15 @@ const AttendanceTracking = () => {
     is_active: true
   });
 
-  // Update initial filters to get more data
+  // FIXED: Default to current month (today's date)
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  // Update initial filters to show current month by default
   const [filters, setFilters] = useState({
-    start_date: "2026-01-01", // Start from Jan 2026 to see all data
-    end_date: "2026-02-28",   // End in Feb 2026
+    start_date: firstDayOfMonth.toISOString().split('T')[0],
+    end_date: lastDayOfMonth.toISOString().split('T')[0],
     employee_id: "all",
     department: "all",
     status: "all",
@@ -190,13 +197,14 @@ const AttendanceTracking = () => {
   const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   // Function to calculate hours from check-in and check-out times
-  const calculateHours = (checkIn, checkOut, breakDuration = 0) => {
+  const calculateHours = (checkIn, checkOut, breakDuration = 0, isLate = 0) => {
     if (!checkIn || !checkOut) {
       return {
         total: "0.00",
         break: "0.00",
         net: "0.00",
-        overtime: "0.00"
+        overtime: "0.00",
+        isLate: parseFloat(isLate) || 0
       };
     }
 
@@ -225,7 +233,8 @@ const AttendanceTracking = () => {
         total: totalHours.toFixed(2),
         break: breakHours.toFixed(2),
         net: netHours.toFixed(2),
-        overtime: overtimeHours.toFixed(2)
+        overtime: overtimeHours.toFixed(2),
+        isLate: parseFloat(isLate) || 0
       };
     } catch (error) {
       console.error("Error calculating hours:", error);
@@ -233,7 +242,8 @@ const AttendanceTracking = () => {
         total: "0.00",
         break: "0.00",
         net: "0.00",
-        overtime: "0.00"
+        overtime: "0.00",
+        isLate: 0
       };
     }
   };
@@ -335,7 +345,8 @@ const AttendanceTracking = () => {
     const hours = calculateHours(
       record.check_in, 
       record.check_out, 
-      record.break_duration
+      record.break_duration,
+      record.is_late
     );
     
     setCalculatedHours({
@@ -719,7 +730,12 @@ const AttendanceTracking = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, isLate) => {
+    // FIXED: Better font formatting and handling for late status
+    if (isLate && parseFloat(isLate) > 0) {
+      return "px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-200";
+    }
+    
     const statusConfig = {
       present: "bg-green-100 text-green-800 border border-green-200",
       Present: "bg-green-100 text-green-800 border border-green-200",
@@ -827,7 +843,7 @@ const AttendanceTracking = () => {
       label: "Late Arrivals",
       value: stats.late,
       icon: FaClock,
-      color: "yellow",
+      color: "orange",
     },
     {
       label: "On Time",
@@ -986,7 +1002,7 @@ const AttendanceTracking = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 ">
+                  <label className="block text-sm font-medium text-gray-700">
                     Start Date
                   </label>
                   <div className="relative">
@@ -1004,7 +1020,7 @@ const AttendanceTracking = () => {
 
                 {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 ">
+                  <label className="block text-sm font-medium text-gray-700">
                     End Date 
                   </label>
                   <div className="relative">
@@ -1030,7 +1046,7 @@ const AttendanceTracking = () => {
                     onChange={(e) =>
                       handleFilterChange("employee_id", e.target.value)
                     }
-                    className="block w-full border border-gray-300 rounded-lg shadow-smfocus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2  focus:border-transparent transition-colors"
+                    className="block w-full border border-gray-300 rounded-lg py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   >
                     <option value="all">All Employees</option>
                     {employees.map((emp) => (
@@ -1041,25 +1057,6 @@ const AttendanceTracking = () => {
                   </select>
                 </div>
 
-                {/* Department Filter - Commented out */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department
-                  </label>
-                  <select
-                    value={filters.department}
-                    onChange={(e) => handleFilterChange("department", e.target.value)}
-                    className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
-                  >
-                    <option value="all">All Departments</option>
-                    {departments.map((dept) => (
-                      <option key={`dept-${dept.id}`} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
-
                 {/* Status Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1068,7 +1065,7 @@ const AttendanceTracking = () => {
                   <select
                     value={filters.status}
                     onChange={(e) => handleFilterChange("status", e.target.value)}
-                    className="block w-full border border-gray-300 rounded-lg shadow-sm  focus:border-blue-500 py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="block w-full border border-gray-300 rounded-lg py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   >
                     <option value="all">All Status</option>
                     <option value="present">Present</option>
@@ -1077,11 +1074,28 @@ const AttendanceTracking = () => {
                     <option value="on_leave">On Leave</option>
                   </select>
                 </div>
+
+                {/* Clear Filters Button */}
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        ...filters,
+                        search: "",
+                        employee_id: "all",
+                        status: "all"
+                      });
+                    }}
+                    className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Attendance Table */}
+          {/* Attendance Table - FIXED: Added Employee ID column and Break times */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -1091,10 +1105,22 @@ const AttendanceTracking = () => {
                       Employee
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Employee ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Date
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Check In/Out
+                      Check In
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Check Out
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Break Start
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Break End
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Hours
@@ -1111,7 +1137,7 @@ const AttendanceTracking = () => {
                   {filteredData.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="6"
+                        colSpan="10"
                         className="px-6 py-12 text-center text-gray-500"
                       >
                         <div className="flex flex-col items-center">
@@ -1131,12 +1157,21 @@ const AttendanceTracking = () => {
                       const hours = calculateHours(
                         record.check_in, 
                         record.check_out, 
-                        record.break_duration
+                        record.break_duration,
+                        record.is_late
                       );
+                      
+                      // FIXED: Overtime calculation display
+                      const overtimeValue = parseFloat(hours.overtime);
+                      const isOvertime = overtimeValue > 0;
+                      
+                      // FIXED: Late time calculation
+                      const lateMinutes = parseFloat(record.is_late) || 0;
+                      const isLate = lateMinutes > 0;
                       
                       return (
                         <tr
-                          key={`${record.id}-${record.date}`} // Use combination of id and date for unique key
+                          key={`${record.id}-${record.date}`}
                           className="hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1150,99 +1185,92 @@ const AttendanceTracking = () => {
                                 <div className="text-sm font-medium text-gray-900">
                                   {record.employee?.first_name || "Unknown"} {record.employee?.last_name || ""}
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {record.employee?.employee_code || "No ID"}
-                                </div>
                               </div>
                             </div>
                           </td>
+                          
+                          {/* Employee ID Column - FIXED: Added this column */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-mono text-gray-700">
+                              {record.employee?.employee_code || "N/A"}
+                            </div>
+                          </td>
+                          
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900 font-medium">
                               {formatDate(record.date)}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {record.employee?.designation || ""}
-                            </div>
                           </td>
+                          
+                          {/* Check In */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="space-y-1">
-                              <div className="flex items-center text-sm">
-                                <FaClock className="h-4 w-4 text-green-500 mr-2" />
-                                <span className="font-medium">In: </span>
-                                <span className="ml-1 text-gray-700">
-                                  {formatTime(record.check_in) || "-"}
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm">
-                                <FaClock className="h-4 w-4 text-red-500 mr-2" />
-                                <span className="font-medium">Out: </span>
-                                <span className="ml-1 text-gray-700">
-                                  {formatTime(record.check_out) || "-"}
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm">
-                                <FaCoffee className="h-4 w-4 text-yellow-500 mr-2" />
-                                <span className="font-medium">Break: </span>
-                                <span className="ml-1 text-gray-700">
-                                  {record.break_duration ? `${record.break_duration} mins` : "-"}
-                                </span>
-                              </div>
+                            <div className="text-sm text-gray-900">
+                              {formatTime(record.check_in) || "-"}
                             </div>
                           </td>
+                          
+                          {/* Check Out */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {formatTime(record.check_out) || "-"}
+                            </div>
+                          </td>
+                          
+                          {/* Break Start - FIXED: Added break times */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {record.break_start ? formatTime(record.break_start) : "-"}
+                            </div>
+                          </td>
+                          
+                          {/* Break End - FIXED: Added break times */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {record.break_end ? formatTime(record.break_end) : "-"}
+                            </div>
+                          </td>
+                          
+                          {/* Hours Column - FIXED: Better overtime display */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
                               {hours.net} hrs
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {parseFloat(hours.overtime) > 0 ? (
-                                <span className="flex items-center">
-                                  <FaMoneyBill className="h-3 w-3 text-yellow-600 mr-1" />
-                                  OT: {hours.overtime} hrs
-                                </span>
-                              ) : (
-                                "No overtime"
-                              )}
-                            </div>
-                            {record.is_late && parseFloat(record.is_late) > 0 && (
-                              <div className="text-sm text-red-600 font-medium mt-1">
-                                Late by {record.is_late} mins
+                            {isOvertime && (
+                              <div className="text-xs flex items-center text-purple-600 font-medium mt-1">
+                                <FaHourglassHalf className="mr-1" size={10} />
+                                OT: {hours.overtime} hrs
+                              </div>
+                            )}
+                            {isLate && (
+                              <div className="text-xs flex items-center text-red-600 font-medium mt-1">
+                                <FaExclamationCircle className="mr-1" size={10} />
+                                Late: {lateMinutes} mins
                               </div>
                             )}
                           </td>
+                          
+                          {/* Status Column - FIXED: Better font formatting */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={getStatusBadge(record.status)}>
+                            <span className={getStatusBadge(record.status, record.is_late)}>
                               {record.status?.replace("_", " ") || "Unknown"}
                             </span>
-                            <div className="mt-2 space-y-1">
-                              <div className="flex items-center text-xs text-gray-500">
+                            {record.check_in_device && (
+                              <div className="mt-2 flex items-center text-xs text-gray-500">
                                 {record.check_in_device === "mobile" ? (
                                   <>
                                     <FaMobileAlt className="h-3 w-3 mr-1" />
-                                    Mobile check-in
+                                    Mobile
                                   </>
                                 ) : record.check_in_device === "web" ? (
                                   <>
                                     <FaDesktop className="h-3 w-3 mr-1" />
-                                    Web check-in
+                                    Web
                                   </>
-                                ) : (
-                                  ""
-                                )}
+                                ) : null}
                               </div>
-                              {record.location && (
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <FaMapMarkerAlt className="h-3 w-3 mr-1" />
-                                  {record.location}
-                                </div>
-                              )}
-                              {record.attendance_type === "biometric" && (
-                                <div className="flex items-center text-xs text-blue-500">
-                                  <FaFingerprint className="h-3 w-3 mr-1" />
-                                  Biometric
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </td>
+                          
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
                               <button
@@ -1279,7 +1307,7 @@ const AttendanceTracking = () => {
           </div>
         </div>
 
-        {/* View Details Modal */}
+        {/* View Details Modal - Updated to show break times */}
         {showDetailsModal && selectedRecord && (
           <div className="fixed inset-0 z-[80] overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1345,13 +1373,13 @@ const AttendanceTracking = () => {
                       </div>
                     </div>
 
-                    {/* Attendance Details */}
+                    {/* Attendance Details - FIXED: Added break start/end times */}
                     <div className="bg-white border border-gray-200 p-4 rounded-lg">
                       <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                         <FaClock className="mr-2" />
                         Attendance Details
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm font-medium text-gray-600">Date</p>
                           <p className="text-lg font-semibold text-gray-900">
@@ -1360,7 +1388,7 @@ const AttendanceTracking = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600">Status</p>
-                          <span className={getStatusBadge(selectedRecord.status)}>
+                          <span className={getStatusBadge(selectedRecord.status, selectedRecord.is_late)}>
                             {selectedRecord.status?.replace("_", " ") || "Unknown"}
                           </span>
                         </div>
@@ -1377,9 +1405,15 @@ const AttendanceTracking = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Break Duration</p>
+                          <p className="text-sm font-medium text-gray-600">Break Start</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {selectedRecord.break_duration ? `${selectedRecord.break_duration} minutes` : "No break"}
+                            {selectedRecord.break_start ? formatTime(selectedRecord.break_start) : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Break End</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.break_end ? formatTime(selectedRecord.break_end) : "-"}
                           </p>
                         </div>
                       </div>
@@ -2025,17 +2059,6 @@ const AttendanceTracking = () => {
             </div>
           </div>
         )}
-
-        {/* Styles */}
-        <style jsx>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-          .animate-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-          }
-        `}</style>
       </div>
     </>
   );
