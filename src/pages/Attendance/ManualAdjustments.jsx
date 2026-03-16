@@ -710,6 +710,7 @@ const ManualAdjustments = () => {
       
       return `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
+      error
       return timeString;
     }
   };
@@ -773,6 +774,7 @@ const ManualAdjustments = () => {
         minute: '2-digit'
       });
     } catch (error) {
+      error
       return dateTimeString;
     }
   };
@@ -785,7 +787,7 @@ const ManualAdjustments = () => {
       try {
         const parts = timeStr.split(':');
         const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;
+        const minutes = parseInt(parts[1]) || 0;5
         return (hours || 0) * 60 + (minutes || 0);
       } catch {
         return 0;

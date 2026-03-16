@@ -19,7 +19,7 @@ import {
   FaSpinner
 } from 'react-icons/fa';
 import { HiX } from "react-icons/hi";
-import axiosClient from '../../axiosClient.js'; // Import your axiosClient
+
 
 // Or better, use the holidayService from attendanceService
 import { holidayService } from "../../services/holidayService";
