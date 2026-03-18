@@ -24,6 +24,7 @@ import {
   FaCalculator,
   FaUserTie,
   FaMoneyBillWave,
+  FaDollarSign,
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import shiftSwapService from "../../services/shiftSwapService";
@@ -127,6 +128,11 @@ const ShiftSwapping = () => {
     employee: "all",
   });
 
+  // NEW: State for rate calculations
+  const [employeeRates, setEmployeeRates] = useState({});
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [swapAmountDifference, setSwapAmountDifference] = useState(0);
+
   const { selectedOrganization } = useOrganizations();
   const [currentUserId, setCurrentUserId] = useState(3); // This should come from your auth context
 
@@ -145,111 +151,181 @@ const ShiftSwapping = () => {
     }
   }, [selectedOrganization]);
 
+  // NEW: Calculate net working hours from shift
+  const calculateNetWorkingHours = (shift) => {
+    if (!shift || !shift.start_time || !shift.end_time) return 8; // Default 8 hours
+    
+    const start = new Date(`2000-01-01T${shift.start_time}`);
+    const end = new Date(`2000-01-01T${shift.end_time}`);
+    
+    let totalDuration = (end - start) / (1000 * 60 * 60);
+    if (totalDuration < 0) totalDuration += 24;
+    
+    // Subtract break duration if available
+    if (shift.total_break_minutes) {
+      totalDuration -= (parseInt(shift.total_break_minutes) / 60);
+    } else if (shift.break_duration) {
+      totalDuration -= (shift.break_duration / 60);
+    }
+    
+    return parseFloat(totalDuration.toFixed(2));
+  };
+
+  // NEW: Get employee hourly rate
+  const getEmployeeRate = (employeeId) => {
+    return employeeRates[employeeId] || 25; // Default fallback rate
+  };
+
+  // NEW: Calculate shift amount
+  const calculateShiftAmount = (rosterId) => {
+    const roster = rosters.find(r => r.id == rosterId);
+    if (!roster) return 0;
+    
+    const shift = shifts.find(s => s.id === roster.shift_id);
+    if (!shift) return 0;
+    
+    const hours = calculateNetWorkingHours(shift);
+    const rate = getEmployeeRate(roster.employee_id);
+    
+    return hours * rate;
+  };
+
+  // NEW: Calculate difference between two shifts being swapped
+  const calculateSwapDifference = (requesterRosterId, requestedRosterId) => {
+    const requesterAmount = calculateShiftAmount(requesterRosterId);
+    const requestedAmount = calculateShiftAmount(requestedRosterId);
+    
+    return requestedAmount - requesterAmount;
+  };
+
+  // NEW: Update swap difference when selected rosters change
+  useEffect(() => {
+    if (newRequest.requester_roster_id && newRequest.requested_roster_id) {
+      const difference = calculateSwapDifference(
+        newRequest.requester_roster_id,
+        newRequest.requested_roster_id
+      );
+      setSwapAmountDifference(difference);
+    } else {
+      setSwapAmountDifference(0);
+    }
+  }, [newRequest.requester_roster_id, newRequest.requested_roster_id, rosters, shifts, employeeRates]);
+
   const fetchAllData = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
+      setRatesLoading(true);
 
-    // Fetch all data - handle departments with the correct endpoint
-    const [
-      swapRequestsResponse,
-      employeesResponse,
-      rostersResponse,
-      shiftsResponse,
-      departmentsResponse,
-    ] = await Promise.allSettled([
-      shiftSwapService.getSwapRequests({
-        organization_id: selectedOrganization.id,
-      }),
-      shiftSwapService.getEmployees({
-        organization_id: selectedOrganization.id,
-      }),
-      shiftSwapService.getRosters({
-        organization_id: selectedOrganization.id,
-      }),
-      shiftSwapService.getShifts({
-        organization_id: selectedOrganization.id,
-      }),
-      shiftSwapService.getDepartments(selectedOrganization.id)  // Updated this line
-        .catch(() => ({ success: false, data: [] })), // Handle departments error
-    ]);
+      // Fetch all data
+      const [
+        swapRequestsResponse,
+        employeesResponse,
+        rostersResponse,
+        shiftsResponse,
+        departmentsResponse,
+      ] = await Promise.allSettled([
+        shiftSwapService.getSwapRequests({
+          organization_id: selectedOrganization.id,
+        }),
+        shiftSwapService.getEmployees({
+          organization_id: selectedOrganization.id,
+        }),
+        shiftSwapService.getRosters({
+          organization_id: selectedOrganization.id,
+        }),
+        shiftSwapService.getShifts({
+          organization_id: selectedOrganization.id,
+        }),
+        shiftSwapService.getDepartments(selectedOrganization.id)
+          .catch(() => ({ success: false, data: [] })),
+      ]);
 
-    // Process swap requests
-    if (
-      swapRequestsResponse.status === "fulfilled" &&
-      swapRequestsResponse.value?.success
-    ) {
-      setSwapRequests(swapRequestsResponse.value.data || []);
-    } else {
+      // Process swap requests
+      if (
+        swapRequestsResponse.status === "fulfilled" &&
+        swapRequestsResponse.value?.success
+      ) {
+        setSwapRequests(swapRequestsResponse.value.data || []);
+      } else {
+        setSwapRequests([]);
+      }
+
+      // Process employees and their rates
+      if (
+        employeesResponse.status === "fulfilled" &&
+        employeesResponse.value?.success
+      ) {
+        const employeesData = employeesResponse.value.data || [];
+        const formattedEmployees = employeesData.map((emp) => ({
+          id: emp.id,
+          name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
+          department_id: emp.department_id,
+          employee_code: emp.employee_code,
+          department_name:
+            emp.department?.name || `Department ${emp.department_id}`,
+          department: emp.department?.name || "General",
+          hourly_rate: emp.hourly_wage || emp.pay_rate || emp.rate || 25,
+        }));
+        setEmployees(formattedEmployees);
+        
+        // NEW: Extract and store employee rates
+        const rates = {};
+        employeesData.forEach(emp => {
+          rates[emp.id] = emp.hourly_wage || emp.pay_rate || emp.rate || 25;
+        });
+        setEmployeeRates(rates);
+      } else {
+        setEmployees([]);
+        setEmployeeRates({});
+      }
+
+      // Process rosters
+      if (
+        rostersResponse.status === "fulfilled" &&
+        rostersResponse.value?.success
+      ) {
+        setRosters(rostersResponse.value.data || []);
+      } else {
+        setRosters([]);
+      }
+
+      // Process shifts
+      if (
+        shiftsResponse.status === "fulfilled" &&
+        shiftsResponse.value?.success
+      ) {
+        setShifts(shiftsResponse.value.data || []);
+      } else {
+        setShifts([]);
+      }
+
+      // Process departments
+      if (
+        departmentsResponse.status === "fulfilled" &&
+        departmentsResponse.value?.success
+      ) {
+        const departmentsData = departmentsResponse.value.data || [];
+        const departmentNames = departmentsData.map((dept) => dept.name);
+        setDepartments(departmentNames);
+      } else {
+        const uniqueDepartments = [
+          ...new Set(employees.map((emp) => emp.department_name || "General")),
+        ];
+        setDepartments(uniqueDepartments.length > 0 ? uniqueDepartments : ["General"]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
       setSwapRequests([]);
-    }
-
-    // Process employees
-    if (
-      employeesResponse.status === "fulfilled" &&
-      employeesResponse.value?.success
-    ) {
-      const employeesData = employeesResponse.value.data || [];
-      const formattedEmployees = employeesData.map((emp) => ({
-        id: emp.id,
-        name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
-        department_id: emp.department_id,
-        employee_code: emp.employee_code,
-        department_name:
-          emp.department?.name || `Department ${emp.department_id}`,
-        department: emp.department?.name || "General",
-      }));
-      setEmployees(formattedEmployees);
-    } else {
       setEmployees([]);
-    }
-
-    // Process rosters
-    if (
-      rostersResponse.status === "fulfilled" &&
-      rostersResponse.value?.success
-    ) {
-      setRosters(rostersResponse.value.data || []);
-    } else {
       setRosters([]);
-    }
-
-    // Process shifts
-    if (
-      shiftsResponse.status === "fulfilled" &&
-      shiftsResponse.value?.success
-    ) {
-      setShifts(shiftsResponse.value.data || []);
-    } else {
       setShifts([]);
+      setDepartments(["General"]);
+      setEmployeeRates({});
+    } finally {
+      setLoading(false);
+      setRatesLoading(false);
     }
-
-    // Process departments
-    if (
-      departmentsResponse.status === "fulfilled" &&
-      departmentsResponse.value?.success
-    ) {
-      const departmentsData = departmentsResponse.value.data || [];
-      // Extract just the department names
-      const departmentNames = departmentsData.map((dept) => dept.name);
-      setDepartments(departmentNames);
-    } else {
-      // Fallback: extract departments from employees or use defaults
-      const uniqueDepartments = [
-        ...new Set(employees.map((emp) => emp.department_name || "General")),
-      ];
-      setDepartments(uniqueDepartments.length > 0 ? uniqueDepartments : ["General"]);
-    }
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    setSwapRequests([]);
-    setEmployees([]);
-    setRosters([]);
-    setShifts([]);
-    setDepartments(["General"]); // Default fallback
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -286,7 +362,19 @@ const ShiftSwapping = () => {
         return;
       }
 
-      const response = await shiftSwapService.createSwapRequest(newRequest);
+      // Calculate amounts for both shifts
+      const requesterAmount = calculateShiftAmount(newRequest.requester_roster_id);
+      const requestedAmount = calculateShiftAmount(newRequest.requested_roster_id);
+
+      // Add rate information to the request
+      const requestWithRates = {
+        ...newRequest,
+        requester_amount: requesterAmount,
+        requested_amount: requestedAmount,
+        amount_difference: swapAmountDifference,
+      };
+
+      const response = await shiftSwapService.createSwapRequest(requestWithRates);
 
       if (response.success) {
         alert("Swap request created successfully!");
@@ -438,28 +526,40 @@ const ShiftSwapping = () => {
       "Requested Employee",
       "Requester Roster Date",
       "Requested Roster Date",
+      "Requester Amount",
+      "Requested Amount",
+      "Amount Difference",
       "Status",
       "Reason",
       "Created At",
     ];
-    const rows = data.map((request) => [
-      request.id || "",
-      request.requester
-        ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
-        : "",
-      request.requested_employee
-        ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
-        : "",
-      request.requester_roster?.roster_date
-        ? new Date(request.requester_roster.roster_date).toLocaleDateString()
-        : "",
-      request.requested_roster?.roster_date
-        ? new Date(request.requested_roster.roster_date).toLocaleDateString()
-        : "",
-      request.status || "",
-      request.requester_reason || "",
-      request.created_at ? new Date(request.created_at).toLocaleString() : "",
-    ]);
+    const rows = data.map((request) => {
+      const requesterAmount = calculateShiftAmount(request.requester_roster_id);
+      const requestedAmount = calculateShiftAmount(request.requested_roster_id);
+      const difference = requestedAmount - requesterAmount;
+      
+      return [
+        request.id || "",
+        request.requester
+          ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
+          : "",
+        request.requested_employee
+          ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
+          : "",
+        request.requester_roster?.roster_date
+          ? new Date(request.requester_roster.roster_date).toLocaleDateString()
+          : "",
+        request.requested_roster?.roster_date
+          ? new Date(request.requested_roster.roster_date).toLocaleDateString()
+          : "",
+        formatCurrency(requesterAmount),
+        formatCurrency(requestedAmount),
+        formatCurrency(difference),
+        request.status || "",
+        request.requester_reason || "",
+        request.created_at ? new Date(request.created_at).toLocaleString() : "",
+      ];
+    });
 
     return [headers, ...rows]
       .map((row) =>
@@ -486,6 +586,7 @@ const ShiftSwapping = () => {
       requested_roster_id: "",
       requester_reason: "",
     });
+    setSwapAmountDifference(0);
   };
 
   const getStatusColor = (status) => {
@@ -517,6 +618,15 @@ const ShiftSwapping = () => {
         {config.label}
       </span>
     );
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
   };
 
   // Get rosters for current user
@@ -660,8 +770,8 @@ const ShiftSwapping = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {/* Stats Cards - Updated with Rate Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -711,6 +821,24 @@ const ShiftSwapping = () => {
                   </p>
                 </div>
                 <FaTimes className="text-red-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Avg Rate
+                  </p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">
+                    {employees.length > 0
+                      ? formatCurrency(
+                          employees.reduce((sum, emp) => sum + (emp.hourly_rate || 25), 0) / employees.length
+                        )
+                      : formatCurrency(25)}
+                  </p>
+                </div>
+                <FaDollarSign className="text-purple-500 text-xl" />
               </div>
             </div>
           </div>
@@ -811,7 +939,7 @@ const ShiftSwapping = () => {
                   <option value="all">All Employees</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.employee_code})
+                      {emp.name} ({emp.employee_code}) - {formatCurrency(emp.hourly_rate || 25)}/hr
                     </option>
                   ))}
                 </select>
@@ -825,19 +953,22 @@ const ShiftSwapping = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[22%] min-w-[180px]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
                       Swap Details
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
                       Shift Dates & Times
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[22%] min-w-[180px]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
+                      Rate & Amount
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
                       Reason
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[14%] min-w-[120px]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[12%] min-w-[100px]">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[24%] min-w-[200px]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[16%] min-w-[150px]">
                       Actions
                     </th>
                   </tr>
@@ -846,7 +977,7 @@ const ShiftSwapping = () => {
                   {filteredRequests.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="5"
+                        colSpan="6"
                         className="px-6 py-12 text-center text-gray-500"
                       >
                         <div className="flex flex-col items-center">
@@ -861,124 +992,150 @@ const ShiftSwapping = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredRequests.map((request) => (
-                      <tr
-                        key={request.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        {/* Swap Details */}
-                        <td className="px-4 py-3 w-[22%] min-w-[180px]">
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mt-1">
-                              <FaExchangeAlt className="text-blue-600 text-lg" />
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-semibold text-gray-900">
-                                {request.requester
-                                  ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
-                                  : "Unknown"}{" "}
-                                ↔{" "}
-                                {request.requested_employee
-                                  ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
-                                  : "Unknown"}
+                    filteredRequests.map((request) => {
+                      const requesterAmount = calculateShiftAmount(request.requester_roster_id);
+                      const requestedAmount = calculateShiftAmount(request.requested_roster_id);
+                      const difference = requestedAmount - requesterAmount;
+                      const differenceColor = difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-gray-600';
+                      
+                      return (
+                        <tr
+                          key={request.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          {/* Swap Details */}
+                          <td className="px-4 py-3 w-[18%] min-w-[150px]">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mt-1">
+                                <FaExchangeAlt className="text-blue-600 text-lg" />
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {request.requester_roster?.roster_date
-                                  ? formatDate(
-                                      request.requester_roster.roster_date,
-                                    )
-                                  : ""}{" "}
-                                ↔{" "}
-                                {request.requested_roster?.roster_date
-                                  ? formatDate(
-                                      request.requested_roster.roster_date,
-                                    )
-                                  : ""}
+                              <div className="ml-3">
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {request.requester
+                                    ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
+                                    : "Unknown"}
+                                </div>
+                                <div className="text-xs text-gray-500 mb-1">
+                                  Rate: {formatCurrency(getEmployeeRate(request.requester_employee_id))}/hr
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {request.requested_employee
+                                    ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
+                                    : "Unknown"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  Rate: {formatCurrency(getEmployeeRate(request.requested_employee_id))}/hr
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Shift Dates & Times */}
-                        <td className="px-4 py-3 w-[18%] min-w-[150px] text-sm text-gray-900">
-                          <div>
-                            <div className="font-medium mb-1">
-                              {request.requester_roster?.roster_date
-                                ? formatDate(request.requester_roster.roster_date)
-                                : "N/A"}
+                          {/* Shift Dates & Times */}
+                          <td className="px-4 py-3 w-[18%] min-w-[150px]">
+                            <div className="space-y-2">
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {request.requester_roster?.roster_date
+                                    ? formatDate(request.requester_roster.roster_date)
+                                    : "N/A"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {request.requester_roster?.start_time} -{" "}
+                                  {request.requester_roster?.end_time}
+                                </div>
+                              </div>
+                              <div className="border-t border-gray-200 pt-1">
+                                <div className="text-sm font-medium">
+                                  {request.requested_roster?.roster_date
+                                    ? formatDate(request.requested_roster.roster_date)
+                                    : "N/A"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {request.requested_roster?.start_time} -{" "}
+                                  {request.requested_roster?.end_time}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {request.requester_roster?.start_time} -{" "}
-                              {request.requester_roster?.end_time}
+                          </td>
+
+                          {/* Rate & Amount */}
+                          <td className="px-4 py-3 w-[18%] min-w-[150px]">
+                            <div className="space-y-2">
+                              <div>
+                                <div className="text-xs text-gray-500">Amount:</div>
+                                <div className="text-sm font-medium">
+                                  {formatCurrency(requesterAmount)}
+                                </div>
+                              </div>
+                              <div className="border-t border-gray-200 pt-1">
+                                <div className="text-xs text-gray-500">Amount:</div>
+                                <div className="text-sm font-medium">
+                                  {formatCurrency(requestedAmount)}
+                                </div>
+                              </div>
+                              <div className={`text-xs font-bold ${differenceColor}`}>
+                                Diff: {formatCurrency(difference)}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-400 mt-1">
-                              Shift:{" "}
-                              {request.requester_roster?.shift_id
-                                ? shifts.find(
-                                    (s) =>
-                                      s.id === request.requester_roster.shift_id,
-                                  )?.name || "N/A"
-                                : "N/A"}
+                          </td>
+
+                          {/* Reason */}
+                          <td className="px-4 py-3 w-[18%] min-w-[150px]">
+                            <div className="text-sm text-gray-900 max-w-xs">
+                              {request.requester_reason || "No reason provided"}
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Reason */}
-                        <td className="px-4 py-3 w-[22%] min-w-[180px]">
-                          <div className="text-sm text-gray-900 max-w-xs">
-                            {request.requester_reason || "No reason provided"}
-                          </div>
-                        </td>
+                          {/* Status */}
+                          <td className="px-4 py-3 w-[12%] min-w-[100px]">
+                            {getStatusBadge(request.status)}
+                            <div className="text-xs text-gray-500 mt-1">
+                              {request.created_at && formatDate(request.created_at)}
+                            </div>
+                          </td>
 
-                        {/* Status */}
-                        <td className="px-4 py-3 w-[14%] min-w-[120px]">
-                          {getStatusBadge(request.status)}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {request.created_at && formatDate(request.created_at)}
-                          </div>
-                        </td>
+                          {/* Actions */}
+                          <td className="px-4 py-3 w-[16%] min-w-[150px] text-sm font-medium">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleViewDetails(request.id)}
+                                className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
+                                title="View Details"
+                              >
+                                <FaEye size={10} /> View
+                              </button>
 
-                        {/* Actions */}
-                        <td className="px-4 py-3 w-[24%] min-w-[200px] text-sm font-medium">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleViewDetails(request.id)}
-                              className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
-                              title="View Details"
-                            >
-                              <FaEye size={10} /> View
-                            </button>
+                              {request.status === "pending" && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveRequest(request.id)}
+                                    className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
+                                    title="Approve"
+                                  >
+                                    <FaCheck /> Approve
+                                  </button>
+                                  <button
+                                    onClick={() => openRejectModal(request.id)}
+                                    className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                                    title="Reject"
+                                  >
+                                    <FaTimes /> Reject
+                                  </button>
+                                </>
+                              )}
 
-                            {request.status === "pending" && (
-                              <>
-                                <button
-                                  onClick={() => handleApproveRequest(request.id)}
-                                  className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-1"
-                                  title="Approve"
-                                >
-                                  <FaCheck /> Approve
-                                </button>
-                                <button
-                                  onClick={() => openRejectModal(request.id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                                  title="Reject"
-                                >
-                                  <FaTimes /> Reject
-                                </button>
-                              </>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteRequest(request.id)}
-                              className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              <button
+                                onClick={() => handleDeleteRequest(request.id)}
+                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                                title="Delete"
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1001,7 +1158,7 @@ const ShiftSwapping = () => {
             </div>
           )}
 
-          {/* Request Form Modal */}
+          {/* Request Form Modal - Updated with Rate Information */}
           {showShiftForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
               <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1040,13 +1197,16 @@ const ShiftSwapping = () => {
                           const shift = shifts.find(
                             (s) => s.id === roster.shift_id,
                           );
+                          const hours = calculateNetWorkingHours(shift);
+                          const amount = hours * getEmployeeRate(currentUserId);
                           return (
                             <option key={roster.id} value={roster.id}>
                               {roster.roster_date
                                 ? formatDate(roster.roster_date)
                                 : "No date"}{" "}
-                              -{roster.start_time} to {roster.end_time}
+                              - {roster.start_time} to {roster.end_time}
                               {shift ? ` (${shift.name})` : ""}
+                              {" - "}{hours}h - {formatCurrency(amount)}
                             </option>
                           );
                         })}
@@ -1070,7 +1230,7 @@ const ShiftSwapping = () => {
                           .map((emp) => (
                             <option key={emp.id} value={emp.id}>
                               {emp.name} ({emp.employee_code}) -{" "}
-                              {emp.department_name}
+                              {emp.department_name} - {formatCurrency(emp.hourly_rate || 25)}/hr
                             </option>
                           ))}
                       </select>
@@ -1099,17 +1259,62 @@ const ShiftSwapping = () => {
                             const shift = shifts.find(
                               (s) => s.id === roster.shift_id,
                             );
+                            const hours = calculateNetWorkingHours(shift);
+                            const amount = hours * getEmployeeRate(roster.employee_id);
                             return (
                               <option key={roster.id} value={roster.id}>
                                 {roster.roster_date
                                   ? formatDate(roster.roster_date)
                                   : "No date"}{" "}
-                                -{roster.start_time} to {roster.end_time}
+                                - {roster.start_time} to {roster.end_time}
                                 {shift ? ` (${shift.name})` : ""}
+                                {" - "}{hours}h - {formatCurrency(amount)}
                               </option>
                             );
                           })}
                         </select>
+                      </div>
+                    )}
+
+                    {/* NEW: Swap Difference Summary */}
+                    {newRequest.requester_roster_id && newRequest.requested_roster_id && (
+                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                        <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                          <FaCalculator className="text-blue-500" />
+                          Swap Financial Impact
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="text-xs text-gray-500">Your Shift Amount</div>
+                            <div className="text-sm font-bold text-blue-600">
+                              {formatCurrency(calculateShiftAmount(newRequest.requester_roster_id))}
+                            </div>
+                          </div>
+                          <div className="text-center flex items-center justify-center">
+                            <FaExchangeAlt className="text-gray-400" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Requested Shift Amount</div>
+                            <div className="text-sm font-bold text-green-600">
+                              {formatCurrency(calculateShiftAmount(newRequest.requested_roster_id))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-700">Difference:</span>
+                            <span className={`text-lg font-bold ${swapAmountDifference > 0 ? 'text-green-600' : swapAmountDifference < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                              {swapAmountDifference > 0 ? '+' : ''}{formatCurrency(swapAmountDifference)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {swapAmountDifference > 0 
+                              ? "You will earn more after this swap" 
+                              : swapAmountDifference < 0 
+                                ? "You will earn less after this swap"
+                                : "No change in earnings"}
+                          </p>
+                        </div>
                       </div>
                     )}
 
@@ -1145,6 +1350,13 @@ const ShiftSwapping = () => {
                       className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
                     >
                       <FaExchangeAlt /> Submit Request
+                      {swapAmountDifference !== 0 && (
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                          swapAmountDifference > 0 ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                        }`}>
+                          {swapAmountDifference > 0 ? '+' : ''}{formatCurrency(swapAmountDifference)}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </form>
@@ -1206,7 +1418,7 @@ const ShiftSwapping = () => {
             </div>
           )}
 
-          {/* Request Details Modal */}
+          {/* Request Details Modal - Updated with Rate Information */}
           {selectedRequest && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
               <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1234,7 +1446,7 @@ const ShiftSwapping = () => {
                     </div>
                   </div>
 
-                  {/* Swap Summary */}
+                  {/* Swap Summary with Rates */}
                   <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
                     <div className="flex items-center justify-center gap-6">
                       <div className="text-center">
@@ -1253,6 +1465,12 @@ const ShiftSwapping = () => {
                         <div className="text-sm text-gray-500">
                           {selectedRequest.requester_roster?.start_time} -{" "}
                           {selectedRequest.requester_roster?.end_time}
+                        </div>
+                        <div className="mt-2 text-xs font-medium text-blue-600">
+                          Rate: {formatCurrency(getEmployeeRate(selectedRequest.requester_employee_id))}/hr
+                        </div>
+                        <div className="text-xs font-bold text-green-600">
+                          Amount: {formatCurrency(calculateShiftAmount(selectedRequest.requester_roster_id))}
                         </div>
                       </div>
 
@@ -1275,6 +1493,28 @@ const ShiftSwapping = () => {
                           {selectedRequest.requested_roster?.start_time} -{" "}
                           {selectedRequest.requested_roster?.end_time}
                         </div>
+                        <div className="mt-2 text-xs font-medium text-purple-600">
+                          Rate: {formatCurrency(getEmployeeRate(selectedRequest.requested_employee_id))}/hr
+                        </div>
+                        <div className="text-xs font-bold text-green-600">
+                          Amount: {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Difference Summary */}
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-700">Difference:</span>
+                        <span className={`text-lg font-bold ${
+                          (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) > 0 
+                            ? 'text-green-600' 
+                            : (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) < 0 
+                              ? 'text-red-600' 
+                              : 'text-gray-600'
+                        }`}>
+                          {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id))}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1303,6 +1543,12 @@ const ShiftSwapping = () => {
                           </span>
                         </div>
                         <div>
+                          <span className="text-gray-600">Hourly Rate:</span>
+                          <span className="ml-2 font-medium text-green-600">
+                            {formatCurrency(getEmployeeRate(selectedRequest.requester_employee_id))}/hr
+                          </span>
+                        </div>
+                        <div>
                           <span className="text-gray-600">Shift Date:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requester_roster?.roster_date
@@ -1319,6 +1565,12 @@ const ShiftSwapping = () => {
                               "N/A"}{" "}
                             -{" "}
                             {selectedRequest.requester_roster?.end_time || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Shift Amount:</span>
+                          <span className="ml-2 font-medium text-green-600">
+                            {formatCurrency(calculateShiftAmount(selectedRequest.requester_roster_id))}
                           </span>
                         </div>
                         {selectedRequest.requester_roster?.shift_id && (
@@ -1359,6 +1611,12 @@ const ShiftSwapping = () => {
                           </span>
                         </div>
                         <div>
+                          <span className="text-gray-600">Hourly Rate:</span>
+                          <span className="ml-2 font-medium text-purple-600">
+                            {formatCurrency(getEmployeeRate(selectedRequest.requested_employee_id))}/hr
+                          </span>
+                        </div>
+                        <div>
                           <span className="text-gray-600">Desired Date:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requested_roster?.roster_date
@@ -1375,6 +1633,12 @@ const ShiftSwapping = () => {
                               "N/A"}{" "}
                             -{" "}
                             {selectedRequest.requested_roster?.end_time || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Shift Amount:</span>
+                          <span className="ml-2 font-medium text-green-600">
+                            {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id))}
                           </span>
                         </div>
                         {selectedRequest.requested_roster?.shift_id && (

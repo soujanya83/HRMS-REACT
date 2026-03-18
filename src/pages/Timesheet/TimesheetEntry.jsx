@@ -12,11 +12,16 @@ import {
   FaCheckCircle,
   FaSyncAlt,
   FaUsers,
-  FaSync
+  FaSync,
+  FaDollarSign,
+  FaMoneyBillWave,
+  FaTrash,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import { HiX } from "react-icons/hi";
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import { timesheetService } from '../../services/timesheetService';
+import employeeService from '../../services/employeeService';
 
 // Pastel color options for background
 const PASTEL_COLORS = [
@@ -116,12 +121,121 @@ const TimesheetEntry = () => {
   const [selectedFortnightlyPeriod, setSelectedFortnightlyPeriod] = useState(null);
   const [generatingTimesheet, setGeneratingTimesheet] = useState(false);
 
+  // NEW: State for rate calculations
+  const [employeeRates, setEmployeeRates] = useState({});
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [timesheetAmounts, setTimesheetAmounts] = useState({});
+  const [totalSelectedAmount, setTotalSelectedAmount] = useState(0);
+
+  // NEW: State for delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [timesheetToDelete, setTimesheetToDelete] = useState(null);
+  const [deletingTimesheet, setDeletingTimesheet] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
   // Fetch all data on component mount
   useEffect(() => {
     if (selectedOrganization?.id) {
       fetchAllData();
     }
   }, [selectedOrganization]);
+
+  // NEW: Calculate amounts for all timesheets when data changes
+  useEffect(() => {
+    if (allTimesheets.length > 0 && Object.keys(employeeRates).length > 0) {
+      calculateTimesheetAmounts();
+    }
+  }, [allTimesheets, employeeRates]);
+
+  // NEW: Calculate total amount for selected timesheets
+  useEffect(() => {
+    if (selectedTimesheetIds.length > 0) {
+      const total = selectedTimesheetIds.reduce((sum, id) => {
+        return sum + (timesheetAmounts[id]?.totalAmount || 0);
+      }, 0);
+      setTotalSelectedAmount(total);
+    } else {
+      setTotalSelectedAmount(0);
+    }
+  }, [selectedTimesheetIds, timesheetAmounts]);
+
+  // NEW: Fetch employee rates
+  const fetchEmployeeRates = async () => {
+    if (!selectedOrganization?.id) return;
+    
+    setRatesLoading(true);
+    try {
+      const response = await employeeService.getEmployees({ organization_id: selectedOrganization.id });
+      console.log('👥 Employees API response:', response);
+      
+      // Extract employees data from response
+      let employeesData = [];
+      if (response?.data) {
+        if (Array.isArray(response.data)) {
+          employeesData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          employeesData = response.data.data;
+        }
+      }
+      
+      // Build rates object
+      const rates = {};
+      employeesData.forEach(emp => {
+        // Try different possible rate fields
+        rates[emp.id] = emp.hourly_wage || emp.pay_rate || emp.rate || 25;
+      });
+      
+      setEmployeeRates(rates);
+      console.log('💰 Employee rates loaded:', rates);
+    } catch (error) {
+      console.error('Error fetching employee rates:', error);
+      // Set default rates as fallback
+      const defaultRates = {};
+      allTimesheets.forEach(ts => {
+        const empId = ts.employee_id || ts.employee?.id;
+        if (empId) defaultRates[empId] = 25;
+      });
+      setEmployeeRates(defaultRates);
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+
+  // NEW: Calculate amounts for all timesheets
+  const calculateTimesheetAmounts = () => {
+    const amounts = {};
+    
+    allTimesheets.forEach(timesheet => {
+      const employeeId = timesheet.employee_id || timesheet.employee?.id;
+      const rate = employeeRates[employeeId] || 25;
+      
+      const regularHours = parseFloat(timesheet.regular_hours || 0);
+      const overtimeHours = parseFloat(timesheet.overtime_hours || 0);
+      
+      // Calculate regular amount
+      const regularAmount = regularHours * rate;
+      
+      // Calculate overtime amount (assuming 1.5x rate)
+      const overtimeRate = rate * 1.5;
+      const overtimeAmount = overtimeHours * overtimeRate;
+      
+      // Calculate total
+      const totalAmount = regularAmount + overtimeAmount;
+      
+      amounts[timesheet.id] = {
+        rate,
+        regularHours,
+        overtimeHours,
+        regularAmount,
+        overtimeAmount,
+        totalAmount,
+        overtimeRate
+      };
+    });
+    
+    setTimesheetAmounts(amounts);
+    console.log('💰 Timesheet amounts calculated:', amounts);
+  };
 
   // Fetch all required data from API
   const fetchAllData = async () => {
@@ -131,6 +245,10 @@ const TimesheetEntry = () => {
         fetchPayPeriods(),
         fetchAllOrganizationTimesheets()
       ]);
+      
+      // Fetch employee rates after we have timesheets
+      await fetchEmployeeRates();
+      
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -197,12 +315,15 @@ const TimesheetEntry = () => {
     return timesheets.flatMap(timesheet => {
       const entries = [];
       const employeeName = `${timesheet.employee?.first_name || ''} ${timesheet.employee?.last_name || ''}`.trim();
+      const employeeId = timesheet.employee_id || timesheet.employee?.id;
+      const rate = employeeRates[employeeId] || 25;
       
       // If there's daily breakdown data, create entries for each day
       if (timesheet.daily_breakdown && typeof timesheet.daily_breakdown === 'object') {
         Object.entries(timesheet.daily_breakdown).forEach(([date, hours]) => {
           const hoursNum = parseFloat(hours);
           if (!isNaN(hoursNum) && hoursNum > 0) {
+            const amount = hoursNum * rate;
             entries.push({
               id: `timesheet-${timesheet.id}-${date}`,
               timesheet_id: timesheet.id,
@@ -211,10 +332,13 @@ const TimesheetEntry = () => {
               task: timesheet.task_description || 'Regular Work',
               date: date,
               hours: hoursNum,
+              amount: amount,
               description: `Timesheet for ${employeeName}`,
               billable: true,
               status: timesheet.status || 'pending',
               employee: timesheet.employee,
+              employee_id: employeeId,
+              rate: rate,
               timesheetData: timesheet
             });
           }
@@ -222,6 +346,7 @@ const TimesheetEntry = () => {
       } else if (timesheet.regular_hours) {
         const hoursNum = parseFloat(timesheet.regular_hours);
         if (!isNaN(hoursNum) && hoursNum > 0) {
+          const amount = hoursNum * rate;
           // If no daily breakdown, create a single entry
           entries.push({
             id: `timesheet-${timesheet.id}`,
@@ -231,10 +356,13 @@ const TimesheetEntry = () => {
             task: timesheet.task_description || 'Regular Work',
             date: timesheet.from_date || new Date().toISOString().split('T')[0],
             hours: hoursNum,
+            amount: amount,
             description: `Timesheet for ${employeeName} (${timesheet.from_date || ''} to ${timesheet.to_date || ''})`,
             billable: true,
             status: timesheet.status || 'pending',
             employee: timesheet.employee,
+            employee_id: employeeId,
+            rate: rate,
             timesheetData: timesheet
           });
         }
@@ -251,6 +379,7 @@ const TimesheetEntry = () => {
         totalHours: 0,
         billableHours: 0,
         nonBillableHours: 0,
+        totalAmount: 0,
         entriesCount: 0
       };
     }
@@ -263,11 +392,13 @@ const TimesheetEntry = () => {
     const billableHours = pendingEntries
       .filter(entry => entry.billable)
       .reduce((sum, entry) => sum + (entry.hours || 0), 0);
+    const totalAmount = pendingEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
     
     return {
       totalHours,
       billableHours,
       nonBillableHours: totalHours - billableHours,
+      totalAmount,
       entriesCount: pendingEntries.length
     };
   };
@@ -283,15 +414,15 @@ const TimesheetEntry = () => {
       return;
     }
 
-    if (window.confirm(`Submit ${selectedTimesheetIds.length} timesheet(s) for approval?`)) {
+    if (window.confirm(`Submit ${selectedTimesheetIds.length} timesheet(s) for approval? Total amount: ${formatCurrency(totalSelectedAmount)}`)) {
       setApiLoading(true);
       try {
         const response = await timesheetService.submitTimesheets(selectedTimesheetIds);
         
         if (response.status) {
-          alert('Timesheets submitted successfully for approval!');
+          alert(`Timesheets submitted successfully for approval! Total amount: ${formatCurrency(totalSelectedAmount)}`);
           // Refresh data
-          fetchAllOrganizationTimesheets();
+          await fetchAllOrganizationTimesheets();
           setSelectedTimesheetIds([]);
         } else {
           alert(response.message || 'Failed to submit timesheets');
@@ -303,6 +434,50 @@ const TimesheetEntry = () => {
         setApiLoading(false);
       }
     }
+  };
+
+  // NEW: Handle delete timesheet
+  const handleDeleteClick = (timesheet) => {
+    setTimesheetToDelete(timesheet);
+    setShowDeleteConfirm(true);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!timesheetToDelete) return;
+    
+    setDeletingTimesheet(true);
+    setDeleteError(null);
+    
+    try {
+      // Call the delete API - you'll need to add this to your timesheetService
+      const response = await timesheetService.deleteTimesheet(timesheetToDelete.id);
+      
+      if (response.status) {
+        alert(`Timesheet for ${timesheetToDelete.employee?.first_name} ${timesheetToDelete.employee?.last_name} deleted successfully!`);
+        
+        // Remove from selection if present
+        setSelectedTimesheetIds(prev => prev.filter(id => id !== timesheetToDelete.id));
+        
+        // Refresh data
+        await fetchAllOrganizationTimesheets();
+      } else {
+        throw new Error(response.message || 'Failed to delete timesheet');
+      }
+    } catch (error) {
+      console.error('Error deleting timesheet:', error);
+      setDeleteError(error.message || 'Failed to delete timesheet. Please try again.');
+    } finally {
+      setDeletingTimesheet(false);
+      setShowDeleteConfirm(false);
+      setTimesheetToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setTimesheetToDelete(null);
+    setDeleteError(null);
   };
 
   // Open generate timesheet modal
@@ -335,40 +510,39 @@ const TimesheetEntry = () => {
   };
 
   // Generate timesheets for selected fortnightly period
-  // Generate timesheets for selected fortnightly period
-const handleGenerateTimesheets = async () => {
-  if (!selectedFortnightlyPeriod) {
-    alert('Please select a fortnightly period');
-    return;
-  }
-
-  if (!window.confirm(`Generate timesheets for period: ${formatDate(selectedFortnightlyPeriod.start_date)} to ${formatDate(selectedFortnightlyPeriod.end_date)}?`)) {
-    return;
-  }
-
-  setGeneratingTimesheet(true);
-  try {
-    const response = await timesheetService.generateTimesheets(
-      selectedFortnightlyPeriod.start_date.split('T')[0],
-      selectedFortnightlyPeriod.end_date.split('T')[0],
-      selectedOrganization.id  // ← ADD THIS: Pass organization_id as third parameter
-    );
-    
-    if (response.status) {
-      alert(`Successfully generated ${response.created} timesheets for the selected period!`);
-      // Refresh data
-      fetchAllOrganizationTimesheets();
-      setShowGenerateModal(false);
-    } else {
-      alert(response.message || 'Failed to generate timesheets');
+  const handleGenerateTimesheets = async () => {
+    if (!selectedFortnightlyPeriod) {
+      alert('Please select a fortnightly period');
+      return;
     }
-  } catch (error) {
-    console.error('Error generating timesheets:', error);
-    alert('Failed to generate timesheets. Please try again.');
-  } finally {
-    setGeneratingTimesheet(false);
-  }
-};
+
+    if (!window.confirm(`Generate timesheets for period: ${formatDate(selectedFortnightlyPeriod.start_date)} to ${formatDate(selectedFortnightlyPeriod.end_date)}?`)) {
+      return;
+    }
+
+    setGeneratingTimesheet(true);
+    try {
+      const response = await timesheetService.generateTimesheets(
+        selectedFortnightlyPeriod.start_date.split('T')[0],
+        selectedFortnightlyPeriod.end_date.split('T')[0],
+        selectedOrganization.id
+      );
+      
+      if (response.status) {
+        alert(`Successfully generated ${response.created} timesheets for the selected period!`);
+        // Refresh data
+        await fetchAllOrganizationTimesheets();
+        setShowGenerateModal(false);
+      } else {
+        alert(response.message || 'Failed to generate timesheets');
+      }
+    } catch (error) {
+      console.error('Error generating timesheets:', error);
+      alert('Failed to generate timesheets. Please try again.');
+    } finally {
+      setGeneratingTimesheet(false);
+    }
+  };
 
   // Filter timesheets - Only show pending/draft timesheets (not submitted/approved/pushed)
   const getPendingTimesheets = () => {
@@ -415,7 +589,8 @@ const handleGenerateTimesheets = async () => {
     pendingTimesheets: allTimesheets.filter(t => t.status === 'pending' || t.status === 'draft').length,
     submittedTimesheets: allTimesheets.filter(t => t.status === 'submitted').length,
     approvedTimesheets: allTimesheets.filter(t => t.status === 'approved').length,
-    pushedToXero: allTimesheets.filter(t => t.xero_status === 'pushed').length
+    pushedToXero: allTimesheets.filter(t => t.xero_status === 'pushed').length,
+    totalPendingAmount: getPendingTimesheets().reduce((sum, ts) => sum + (timesheetAmounts[ts.id]?.totalAmount || 0), 0)
   };
 
   const formatDate = (dateString) => {
@@ -425,6 +600,15 @@ const handleGenerateTimesheets = async () => {
       month: 'short',
       year: 'numeric'
     });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
   };
 
   if (loading) {
@@ -488,32 +672,32 @@ const handleGenerateTimesheets = async () => {
               )}
             </div>
             
-            {/* Organization Stats */}
+            {/* Organization Stats - Updated with Amount */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <div className="text-sm text-gray-600 mb-2 font-medium">Organization Stats</div>
-              <div className="flex gap-4">
+              <div className="flex gap-6">
                 <div className="text-center">
                   <div className="text-lg font-bold text-blue-600">{orgStats.pendingTimesheets}</div>
-                  <div className="text-xs text-gray-500">Pending Timesheets</div>
+                  <div className="text-xs text-gray-500">Pending</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-green-600">
-                    {orgStats.submittedTimesheets}
-                  </div>
+                  <div className="text-lg font-bold text-green-600">{orgStats.submittedTimesheets}</div>
                   <div className="text-xs text-gray-500">Submitted</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-purple-600">
-                    {orgStats.pushedToXero}
-                  </div>
-                  <div className="text-xs text-gray-500">Pushed to Xero</div>
+                  <div className="text-lg font-bold text-purple-600">{orgStats.pushedToXero}</div>
+                  <div className="text-xs text-gray-500">Pushed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-emerald-600">{formatCurrency(orgStats.totalPendingAmount)}</div>
+                  <div className="text-xs text-gray-500">Total Amount</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Cards Grid - Only for pending/draft timesheets */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Stats Cards Grid - Updated with Amount */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -538,6 +722,19 @@ const handleGenerateTimesheets = async () => {
                 </div>
               </div>
               <div className="mt-2 text-xs text-gray-500">Revenue generating hours</div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estimated Amount</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(stats.totalAmount)}</p>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <FaMoneyBillWave className="text-purple-500 text-lg" />
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">Based on hourly rates</div>
             </div>
             
             <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
@@ -644,12 +841,75 @@ const handleGenerateTimesheets = async () => {
                 >
                   <FaPaperPlane />
                   Submit Selected ({selectedTimesheetIds.length})
+                  {selectedTimesheetIds.length > 0 && (
+                    <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
+                      {formatCurrency(totalSelectedAmount)}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Main Timesheets Table - Only shows pending/draft timesheets */}
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && timesheetToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[90] p-4">
+              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-red-100 rounded-full">
+                    <FaExclamationTriangle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">Delete Timesheet</h2>
+                    <p className="text-sm text-gray-500">This action cannot be undone</p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete the timesheet for <strong>{timesheetToDelete.employee?.first_name} {timesheetToDelete.employee?.last_name}</strong>?
+                  <br />
+                  Period: {formatDate(timesheetToDelete.from_date)} - {formatDate(timesheetToDelete.to_date)}
+                  <br />
+                  Amount: {formatCurrency(timesheetAmounts[timesheetToDelete.id]?.totalAmount || 0)}
+                </p>
+
+                {deleteError && (
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                    {deleteError}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={handleCancelDelete}
+                    disabled={deletingTimesheet}
+                    className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium border border-gray-300 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    disabled={deletingTimesheet}
+                    className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {deletingTimesheet ? (
+                      <>
+                        <FaSync className="animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FaTrash />
+                        Delete Timesheet
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Timesheets Table - Updated with Delete Button */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
@@ -689,7 +949,7 @@ const handleGenerateTimesheets = async () => {
                 </div>
               </div>
 
-              {/* Selection Summary */}
+              {/* Selection Summary with Total Amount */}
               {selectedTimesheetIds.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center justify-between">
@@ -699,19 +959,24 @@ const handleGenerateTimesheets = async () => {
                         {selectedTimesheetIds.length} timesheet(s) selected
                       </span>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={selectAllTimesheets}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        {selectedTimesheetIds.length === getPendingTimesheets().length ? 'Deselect All' : 'Select All'}
-                      </button>
-                      <button
-                        onClick={() => setSelectedTimesheetIds([])}
-                        className="text-sm text-red-600 hover:text-red-800"
-                      >
-                        Clear Selection
-                      </button>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-bold text-green-600">
+                        Total: {formatCurrency(totalSelectedAmount)}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={selectAllTimesheets}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          {selectedTimesheetIds.length === getPendingTimesheets().length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        <button
+                          onClick={() => setSelectedTimesheetIds([])}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Clear Selection
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -743,6 +1008,12 @@ const handleGenerateTimesheets = async () => {
                       Hours
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -753,7 +1024,7 @@ const handleGenerateTimesheets = async () => {
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {getPendingTimesheets().length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center">
+                      <td colSpan="8" className="px-6 py-12 text-center">
                         <FaFileAlt className="mx-auto text-4xl text-gray-300 mb-4" />
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">No Pending Timesheets</h3>
                         <p className="text-gray-600 mb-4">
@@ -769,7 +1040,7 @@ const handleGenerateTimesheets = async () => {
                     </tr>
                   ) : filteredTimesheets.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center">
+                      <td colSpan="8" className="px-6 py-12 text-center">
                         <FaSearch className="mx-auto text-4xl text-gray-300 mb-4" />
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">No matching timesheets</h3>
                         <p className="text-gray-600">
@@ -778,96 +1049,140 @@ const handleGenerateTimesheets = async () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredTimesheets.map((timesheet) => (
-                      <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedTimesheetIds.includes(timesheet.id)}
-                            onChange={() => toggleTimesheetSelection(timesheet.id)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                              <FaUser className="text-blue-600" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                {timesheet.employee?.first_name} {timesheet.employee?.last_name}
+                    filteredTimesheets.map((timesheet) => {
+                      const amount = timesheetAmounts[timesheet.id] || {
+                        rate: 25,
+                        regularHours: 0,
+                        overtimeHours: 0,
+                        regularAmount: 0,
+                        overtimeAmount: 0,
+                        totalAmount: 0,
+                        overtimeRate: 37.5
+                      };
+                      
+                      return (
+                        <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedTimesheetIds.includes(timesheet.id)}
+                              onChange={() => toggleTimesheetSelection(timesheet.id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                <FaUser className="text-blue-600" />
                               </div>
-                              <div className="text-sm text-gray-500">{timesheet.employee?.employee_code}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="bg-gray-100 p-2 rounded-lg mr-3">
-                              <FaCalendar className="text-gray-600" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {timesheet.from_date && timesheet.to_date 
-                                  ? Math.round((new Date(timesheet.to_date) - new Date(timesheet.from_date)) / (1000 * 60 * 60 * 24)) + 1 + ' days'
-                                  : 'N/A'
-                                }
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {timesheet.employee?.first_name} {timesheet.employee?.last_name}
+                                </div>
+                                <div className="text-sm text-gray-500">{timesheet.employee?.employee_code}</div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-lg font-bold text-gray-900">
-                            {parseFloat(timesheet.regular_hours || 0).toFixed(2)}
-                          </div>
-                          <div className="text-sm text-gray-500">Regular hours</div>
-                          {parseFloat(timesheet.overtime_hours || 0) > 0 && (
-                            <div className="text-xs text-orange-600 mt-1">
-                              +{parseFloat(timesheet.overtime_hours).toFixed(2)} overtime
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="bg-gray-100 p-2 rounded-lg mr-3">
+                                <FaCalendar className="text-gray-600" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {timesheet.from_date && timesheet.to_date 
+                                    ? Math.round((new Date(timesheet.to_date) - new Date(timesheet.from_date)) / (1000 * 60 * 60 * 24)) + 1 + ' days'
+                                    : 'N/A'
+                                  }
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            timesheet.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                              : timesheet.status === 'draft'
-                              ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                              : 'bg-blue-100 text-blue-800 border border-blue-200'
-                          }`}>
-                            {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                // View timesheet details
-                                alert(`Timesheet Details:\nEmployee: ${timesheet.employee?.first_name} ${timesheet.employee?.last_name}\nPeriod: ${timesheet.from_date} to ${timesheet.to_date}\nHours: ${timesheet.regular_hours}\nStatus: ${timesheet.status}`);
-                              }}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="View Details"
-                            >
-                              <FaSearch size={14} />
-                            </button>
-                            <button
-                              onClick={() => toggleTimesheetSelection(timesheet.id)}
-                              className={`p-2 rounded-lg transition-colors ${
-                                selectedTimesheetIds.includes(timesheet.id)
-                                  ? 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                              }`}
-                              title="Select for Submission"
-                            >
-                              <FaCheckCircle size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-lg font-bold text-gray-900">
+                              {amount.regularHours.toFixed(2)}
+                            </div>
+                            <div className="text-sm text-gray-500">Regular hours</div>
+                            {amount.overtimeHours > 0 && (
+                              <div className="text-xs text-orange-600 mt-1">
+                                +{amount.overtimeHours.toFixed(2)} overtime
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-blue-600">
+                              {formatCurrency(amount.rate)}/hr
+                            </div>
+                            {amount.overtimeHours > 0 && (
+                              <div className="text-xs text-orange-600">
+                                Overtime: {formatCurrency(amount.overtimeRate)}/hr
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-lg font-bold text-green-600">
+                              {formatCurrency(amount.regularAmount)}
+                            </div>
+                            {amount.overtimeAmount > 0 && (
+                              <div className="text-xs text-orange-600">
+                                +{formatCurrency(amount.overtimeAmount)} overtime
+                              </div>
+                            )}
+                            <div className="text-xs font-bold text-purple-600 mt-1">
+                              Total: {formatCurrency(amount.totalAmount)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              timesheet.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
+                                : timesheet.status === 'draft'
+                                ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}>
+                              {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  // View timesheet details
+                                  alert(`Timesheet Details:\nEmployee: ${timesheet.employee?.first_name} ${timesheet.employee?.last_name}\nPeriod: ${timesheet.from_date} to ${timesheet.to_date}\nHours: ${timesheet.regular_hours}\nRate: ${formatCurrency(amount.rate)}/hr\nAmount: ${formatCurrency(amount.totalAmount)}\nStatus: ${timesheet.status}`);
+                                }}
+                                className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View Details"
+                              >
+                                <FaSearch size={14} />
+                              </button>
+                              <button
+                                onClick={() => toggleTimesheetSelection(timesheet.id)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  selectedTimesheetIds.includes(timesheet.id)
+                                    ? 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                }`}
+                                title="Select for Submission"
+                              >
+                                <FaCheckCircle size={14} />
+                              </button>
+                              {/* NEW: Delete button for pending timesheets */}
+                              <button
+                                onClick={() => handleDeleteClick(timesheet)}
+                                className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete Timesheet"
+                                disabled={apiLoading || deletingTimesheet}
+                              >
+                                <FaTrash size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

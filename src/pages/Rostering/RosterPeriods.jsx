@@ -21,7 +21,9 @@ import {
   FaClock,
   FaUserCheck,
   FaUserClock,
-  FaCalendarMinus
+  FaCalendarMinus,
+  FaDollarSign,
+  FaMoneyBillWave
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import { rosterPeriodService } from "../../services/rosterPeriodService";
@@ -136,6 +138,11 @@ const RosterPeriods = () => {
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   
+  // NEW: State for rate calculations
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [estimatedAmount, setEstimatedAmount] = useState(0);
+  const [selectedEmployeesData, setSelectedEmployeesData] = useState([]);
+  
   // Color palette state
   const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
@@ -195,6 +202,15 @@ const RosterPeriods = () => {
     }
   }, []);
 
+  const formatCurrency = useCallback((amount) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
+  }, []);
+
   const resetForm = useCallback(() => {
     setFormData({
       type: "fortnightly",
@@ -210,6 +226,9 @@ const RosterPeriods = () => {
       shift_id: "",
       created_by: 4
     });
+    setSelectedShift(null);
+    setEstimatedAmount(0);
+    setSelectedEmployeesData([]);
   }, []);
 
   // API calls with error handling
@@ -310,7 +329,7 @@ const RosterPeriods = () => {
         params: {
           organization_id: selectedOrganization.id
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 10000
       });
 
       if (response.data?.success === true) {
@@ -389,6 +408,61 @@ const RosterPeriods = () => {
       setRosters([]);
       setError("Failed to load rosters. Please try again.");
     }
+  }, []);
+
+  // NEW: Calculate estimated amount when shift or employees change
+  useEffect(() => {
+    if (bulkAssignForm.shift_id && bulkAssignForm.employee_ids.length > 0 && selectedPeriod) {
+      // Find selected shift details
+      const shift = availableShifts.find(s => s.id.toString() === bulkAssignForm.shift_id.toString());
+      setSelectedShift(shift);
+      
+      // Find selected employees data
+      const selectedEmps = availableEmployees.filter(emp => 
+        bulkAssignForm.employee_ids.includes(emp.id.toString())
+      );
+      setSelectedEmployeesData(selectedEmps);
+      
+      // Calculate shift duration in hours
+      let shiftHours = 8; // Default
+      if (shift) {
+        if (shift.start_time && shift.end_time) {
+          const start = new Date(`2000-01-01T${shift.start_time}`);
+          const end = new Date(`2000-01-01T${shift.end_time}`);
+          const hours = (end - start) / (1000 * 60 * 60);
+          shiftHours = hours > 0 ? hours : 8;
+        }
+      }
+      
+      // Calculate average rate from selected employees
+      let totalRate = 0;
+      let rateCount = 0;
+      
+      selectedEmps.forEach(emp => {
+        // Try to get rate from employee data
+        const rate = emp.hourly_rate || emp.pay_rate || emp.rate || 25; // Default fallback
+        totalRate += parseFloat(rate);
+        rateCount++;
+      });
+      
+      const avgRate = rateCount > 0 ? totalRate / rateCount : 25;
+      
+      // Calculate total estimated amount: shift hours × 14 days × number of employees × avg rate
+      const totalHours = shiftHours * 14 * bulkAssignForm.employee_ids.length;
+      const totalAmount = totalHours * avgRate;
+      
+      setEstimatedAmount(totalAmount);
+    } else {
+      setEstimatedAmount(0);
+      setSelectedShift(null);
+      setSelectedEmployeesData([]);
+    }
+  }, [bulkAssignForm.shift_id, bulkAssignForm.employee_ids, selectedPeriod, availableShifts, availableEmployees]);
+
+  // Get employee hourly rate
+  const getEmployeeRate = useCallback((employee) => {
+    // Try different possible rate fields
+    return employee.hourly_rate || employee.pay_rate || employee.rate || 25;
   }, []);
 
   // Initial data fetch
@@ -537,7 +611,7 @@ const RosterPeriods = () => {
       const response = await rosterPeriodService.bulkAssignRoster(dataToSend);
 
       if (response.data?.success === true) {
-        setSuccessMessage(`✅ Successfully assigned ${response.data.count} rosters!`);
+        setSuccessMessage(`✅ Successfully assigned ${response.data.count} rosters! Estimated total: ${formatCurrency(estimatedAmount)}`);
         setShowBulkAssignModal(false);
         resetBulkAssignForm();
         await fetchRosterPeriods();
@@ -562,7 +636,7 @@ const RosterPeriods = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedPeriod, bulkAssignForm, resetBulkAssignForm, fetchRosterPeriods]);
+  }, [selectedPeriod, bulkAssignForm, resetBulkAssignForm, fetchRosterPeriods, estimatedAmount, formatCurrency]);
 
   const handlePublishPeriod = useCallback(async () => {
     if (!selectedPeriod) return;
@@ -1342,7 +1416,7 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* Bulk Assign Modal */}
+      {/* Bulk Assign Modal - Updated with Rate Information */}
       {showBulkAssignModal && selectedPeriod && (
         <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="bulk-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1354,7 +1428,7 @@ const RosterPeriods = () => {
               &#8203;
             </span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex justify-between items-center mb-6">
                   <div>
@@ -1449,69 +1523,85 @@ const RosterPeriods = () => {
                       ) : availableEmployees.length > 0 ? (
                         <div className="border border-gray-300 rounded-lg overflow-hidden">
                           <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id="select-all-employees"
-                                checked={bulkAssignForm.employee_ids.length === availableEmployees.length && availableEmployees.length > 0}
-                                onChange={handleSelectAllEmployees}
-                                className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                                aria-label="Select all employees"
-                              />
-                              <label htmlFor="select-all-employees" className="ml-3 text-sm font-medium text-gray-700">
-                                Select All Employees ({availableEmployees.length})
-                              </label>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id="select-all-employees"
+                                  checked={bulkAssignForm.employee_ids.length === availableEmployees.length && availableEmployees.length > 0}
+                                  onChange={handleSelectAllEmployees}
+                                  className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                  aria-label="Select all employees"
+                                />
+                                <label htmlFor="select-all-employees" className="ml-3 text-sm font-medium text-gray-700">
+                                  Select All Employees ({availableEmployees.length})
+                                </label>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Avg Rate: {formatCurrency(
+                                  availableEmployees.reduce((sum, emp) => sum + (getEmployeeRate(emp)), 0) / availableEmployees.length
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
                             <div className="space-y-1">
-                              {availableEmployees.map((employee) => (
-                                <div key={employee.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
-                                  <input
-                                    type="checkbox"
-                                    id={`employee-${employee.id}`}
-                                    checked={isEmployeeSelected(employee.id.toString())}
-                                    onChange={(e) => handleEmployeeSelection(employee.id.toString(), e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                                    aria-label={`Select ${employee.first_name} ${employee.last_name}`}
-                                  />
-                                  <label htmlFor={`employee-${employee.id}`} className="ml-3 flex-1 cursor-pointer">
-                                    <div className="flex items-center">
-                                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                        {employee.status === "Active" ? (
-                                          <FaUserCheck className="h-5 w-5 text-green-600" />
-                                        ) : (
-                                          <FaUserClock className="h-5 w-5 text-yellow-600" />
-                                        )}
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex justify-between items-start">
-                                          <div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                              {employee.first_name} {employee.last_name}
+                              {availableEmployees.map((employee) => {
+                                const rate = getEmployeeRate(employee);
+                                return (
+                                  <div key={employee.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
+                                    <input
+                                      type="checkbox"
+                                      id={`employee-${employee.id}`}
+                                      checked={isEmployeeSelected(employee.id.toString())}
+                                      onChange={(e) => handleEmployeeSelection(employee.id.toString(), e.target.checked)}
+                                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                      aria-label={`Select ${employee.first_name} ${employee.last_name}`}
+                                    />
+                                    <label htmlFor={`employee-${employee.id}`} className="ml-3 flex-1 cursor-pointer">
+                                      <div className="flex items-center">
+                                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                          {employee.status === "Active" ? (
+                                            <FaUserCheck className="h-5 w-5 text-green-600" />
+                                          ) : (
+                                            <FaUserClock className="h-5 w-5 text-yellow-600" />
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex justify-between items-start">
+                                            <div>
+                                              <div className="text-sm font-medium text-gray-900">
+                                                {employee.first_name} {employee.last_name}
+                                              </div>
+                                              <div className="text-xs text-gray-500">
+                                                ID: {employee.id} | Code: {employee.employee_code}
+                                              </div>
                                             </div>
-                                            <div className="text-xs text-gray-500">
-                                              ID: {employee.id} | Code: {employee.employee_code}
+                                            <div className="flex items-center gap-2">
+                                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                                employee.status === "Active" 
+                                                  ? "bg-green-100 text-green-800" 
+                                                  : "bg-yellow-100 text-yellow-800"
+                                              }`}>
+                                                {employee.status}
+                                              </span>
+                                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                                                <FaDollarSign className="text-xs" />
+                                                {formatCurrency(rate)}
+                                              </span>
                                             </div>
                                           </div>
-                                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                            employee.status === "Active" 
-                                              ? "bg-green-100 text-green-800" 
-                                              : "bg-yellow-100 text-yellow-800"
-                                          }`}>
-                                            {employee.status}
-                                          </span>
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                          Department: {employee.department?.name || "N/A"}
-                                          {employee.designation && ` | ${employee.designation.title}`}
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            Department: {employee.department?.name || "N/A"}
+                                            {employee.designation && ` | ${employee.designation.title}`}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  </label>
-                                </div>
-                              ))}
+                                    </label>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
@@ -1573,6 +1663,12 @@ const RosterPeriods = () => {
                                     <div className="text-sm text-gray-600 mt-1">
                                       {shift.start_time || '00:00'} - {shift.end_time || '00:00'}
                                     </div>
+                                    {shift.hourly_rate && (
+                                      <div className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                                        <FaDollarSign />
+                                        Rate: {formatCurrency(shift.hourly_rate)}/hr
+                                      </div>
+                                    )}
                                     {shift.description && (
                                       <div className="text-xs text-gray-500 mt-1">
                                         {shift.description}
@@ -1586,6 +1682,86 @@ const RosterPeriods = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* NEW: Rate and Amount Summary */}
+                    {(bulkAssignForm.shift_id || bulkAssignForm.employee_ids.length > 0) && (
+                      <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                          <FaMoneyBillWave className="text-blue-500" />
+                          Rate & Amount Summary
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600 mb-2">Rate Information</p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="text-sm text-gray-600">Number of Employees:</span>
+                                <span className="text-sm font-medium text-blue-600">
+                                  {bulkAssignForm.employee_ids.length}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="text-sm text-gray-600">Average Rate:</span>
+                                <span className="text-sm font-medium text-green-600">
+                                  {selectedEmployeesData.length > 0 
+                                    ? formatCurrency(selectedEmployeesData.reduce((sum, emp) => sum + getEmployeeRate(emp), 0) / selectedEmployeesData.length)
+                                    : formatCurrency(25)}
+                                </span>
+                              </div>
+                              {selectedShift && (
+                                <div className="flex justify-between items-center p-2 bg-white rounded">
+                                  <span className="text-sm text-gray-600">Shift Duration:</span>
+                                  <span className="text-sm font-medium text-purple-600">
+                                    {(() => {
+                                      if (selectedShift.start_time && selectedShift.end_time) {
+                                        const start = new Date(`2000-01-01T${selectedShift.start_time}`);
+                                        const end = new Date(`2000-01-01T${selectedShift.end_time}`);
+                                        const hours = (end - start) / (1000 * 60 * 60);
+                                        return hours > 0 ? `${hours.toFixed(1)} hrs/day` : '8 hrs/day';
+                                      }
+                                      return '8 hrs/day';
+                                    })()}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm text-gray-600 mb-2">Estimated Amount</p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="text-sm text-gray-600">Period Days:</span>
+                                <span className="text-sm font-medium">14 days</span>
+                              </div>
+                              <div className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="text-sm text-gray-600">Total Hours:</span>
+                                <span className="text-sm font-medium">
+                                  {(() => {
+                                    const hoursPerDay = selectedShift?.start_time && selectedShift?.end_time
+                                      ? (new Date(`2000-01-01T${selectedShift.end_time}`) - new Date(`2000-01-01T${selectedShift.start_time}`)) / (1000 * 60 * 60)
+                                      : 8;
+                                    const totalHours = hoursPerDay * 14 * bulkAssignForm.employee_ids.length;
+                                    return totalHours.toFixed(1);
+                                  })()} hrs
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                                <span className="text-sm font-bold text-gray-700">Total Estimated:</span>
+                                <span className="text-lg font-bold text-green-600">
+                                  {formatCurrency(estimatedAmount)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 text-xs text-gray-500">
+                          * Estimated amount is calculated as: (Shift Hours × 14 days × Number of Employees × Average Rate)
+                        </div>
+                      </div>
+                    )}
 
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <h4 className="font-medium text-gray-900 mb-3">Assignment Summary</h4>
@@ -1613,15 +1789,21 @@ const RosterPeriods = () => {
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Selected Shift:</span>
                           <span className="text-sm font-medium text-gray-900">
-                            {bulkAssignForm.shift_id ? `Shift ID: ${bulkAssignForm.shift_id}` : 'Not selected'}
+                            {bulkAssignForm.shift_id ? (selectedShift?.name || `Shift ID: ${bulkAssignForm.shift_id}`) : 'Not selected'}
                           </span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between border-t border-gray-300 pt-2 mt-2">
                           <span className="text-sm text-gray-600">Total Rosters to Create:</span>
                           <span className="text-sm font-medium text-blue-600">
                             {selectedPeriod && bulkAssignForm.employee_ids.length > 0 
                               ? 14 * bulkAssignForm.employee_ids.length
                               : 0} roster entries
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Total Estimated Amount:</span>
+                          <span className="text-sm font-bold text-green-600">
+                            {formatCurrency(estimatedAmount)}
                           </span>
                         </div>
                       </div>
@@ -1637,6 +1819,7 @@ const RosterPeriods = () => {
                           </p>
                           <p className="text-sm text-yellow-700 mt-2">
                             <strong>Note:</strong> Only employees with "Active" status can be assigned rosters.
+                            Estimated amount is calculated dynamically based on employee rates.
                           </p>
                         </div>
                       </div>
@@ -1668,7 +1851,7 @@ const RosterPeriods = () => {
                       ) : (
                         <>
                           <FaUsers />
-                          Assign Rosters
+                          Assign Rosters ({formatCurrency(estimatedAmount)})
                         </>
                       )}
                     </button>
@@ -1680,7 +1863,7 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* View Rosters Modal */}
+      {/* View Rosters Modal - Updated with Rate and Amount */}
       {showRostersModal && selectedPeriod && (
         <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="rosters-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1788,7 +1971,7 @@ const RosterPeriods = () => {
 
                 {rosters.length > 0 && (
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex justify-between items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">Total Rosters</p>
                         <p className="text-lg font-bold text-gray-900">{rosters.length}</p>

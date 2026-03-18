@@ -1,5 +1,5 @@
 // pages/RostersPage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -20,10 +20,12 @@ import {
   FaMoneyBillWave,
   FaHourglassHalf,
   FaCalculator,
-  FaDoorOpen
+  FaDoorOpen,
+  FaDollarSign
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import rosterService from "../../services/rosterService"; 
+import employeeService from "../../services/employeeService"; // Import employee service
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -119,9 +121,6 @@ const RostersPage = () => {
     search: "",
   });
 
-  // Hourly rate state
-  const [hourlyRate, setHourlyRate] = useState(25.00);
-
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -143,16 +142,24 @@ const RostersPage = () => {
   const [departments, setDepartments] = useState([]);
   const [shifts, setShifts] = useState([]);
 
-  // Weekly totals state
+  // State for rate calculations
+  const [employeeRates, setEmployeeRates] = useState({});
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [estimatedAmount, setEstimatedAmount] = useState(0);
+  const [ratesLoading, setRatesLoading] = useState(false);
+
+  // Weekly totals state - will be updated dynamically
   const [weeklyTotals, setWeeklyTotals] = useState({
     totalHours: 0,
     totalAmount: 0,
     byEmployee: {},
-    byDepartment: {}
+    byDepartment: {},
+    averageRate: 0,
+    lastUpdated: null
   });
 
   // Calculate net working hours
-  const calculateNetWorkingHours = (shift) => {
+  const calculateNetWorkingHours = useCallback((shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 0;
     
     const start = new Date(`2000-01-01T${shift.start_time}`);
@@ -161,22 +168,52 @@ const RostersPage = () => {
     let totalDuration = (end - start) / (1000 * 60 * 60);
     if (totalDuration < 0) totalDuration += 24;
     
-    if (shift.break_duration) {
+    if (shift.total_break_minutes) {
+      totalDuration -= (parseInt(shift.total_break_minutes) / 60);
+    } else if (shift.break_duration) {
       totalDuration -= (shift.break_duration / 60);
     }
     
     return parseFloat(totalDuration.toFixed(2));
-  };
+  }, []);
 
-  // Calculate amount for a shift
-  const calculateShiftAmount = (shift) => {
+  // Get employee hourly rate from employee data
+  const getEmployeeRate = useCallback((employee) => {
+    if (!employee) return 25; // Default fallback rate
+    
+    // Try different possible rate fields
+    return employee.hourly_wage || 
+           employee.pay_rate || 
+           employee.rate || 
+           employee.hourly_rate || 
+           25; // Default fallback
+  }, []);
+
+  // Calculate amount for a roster
+  const calculateRosterAmount = useCallback((roster) => {
+    if (!roster) return 0;
+    
+    const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
+    if (!shift) return 0;
+    
     const hours = calculateNetWorkingHours(shift);
-    return hours * hourlyRate;
-  };
+    
+    // Get rate from employee data
+    let rate = 25; // Default
+    if (roster.employee) {
+      rate = getEmployeeRate(roster.employee);
+    } else {
+      const employee = employees.find(e => e.id === roster.employee_id);
+      rate = getEmployeeRate(employee);
+    }
+    
+    return hours * rate;
+  }, [shifts, employees, getEmployeeRate, calculateNetWorkingHours]);
 
   // Get shift color style
-  const getShiftColor = (shiftId) => {
-    const shift = shifts.find(s => s.id === shiftId);
+  const getShiftColor = useCallback((shiftId) => {
+    const shift = shifts.find(s => s.id === shiftId) || 
+                  rosters.find(r => r.shift?.id === shiftId)?.shift;
     if (!shift) return {
       backgroundColor: '#f3f4f6',
       color: '#374151',
@@ -196,6 +233,39 @@ const RostersPage = () => {
       color: '#374151', 
       borderColor: '#d1d5db' 
     };
+  }, [shifts, rosters]);
+
+  // Fetch employee rates separately
+  const fetchEmployeeRates = async () => {
+    if (!selectedOrganization?.id) return;
+    
+    setRatesLoading(true);
+    try {
+      const response = await employeeService.getEmployees({ organization_id: selectedOrganization.id });
+      
+      // Extract employees data from response
+      let employeesData = [];
+      if (response?.data) {
+        if (Array.isArray(response.data)) {
+          employeesData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          employeesData = response.data.data;
+        }
+      }
+      
+      // Build rates object
+      const rates = {};
+      employeesData.forEach(emp => {
+        rates[emp.id] = getEmployeeRate(emp);
+      });
+      
+      setEmployeeRates(rates);
+      console.log("💰 Employee rates loaded:", rates);
+    } catch (error) {
+      console.error("Error fetching employee rates:", error);
+    } finally {
+      setRatesLoading(false);
+    }
   };
 
   // Fetch all data
@@ -229,46 +299,47 @@ const RostersPage = () => {
         return [];
       };
 
-      // Fetch all data
+      // Fetch all data in parallel
+      const [rostersRes, employeesRes, shiftsRes, departmentsRes] = await Promise.allSettled([
+        rosterService.getRosters({ organization_id: selectedOrganization.id }),
+        rosterService.getEmployees({ organization_id: selectedOrganization.id }),
+        rosterService.getShifts({ organization_id: selectedOrganization.id }),
+        rosterService.getDepartments(selectedOrganization.id)
+      ]);
+
+      // Process rosters
       let rostersData = [];
-      let employeesData = [];
-      let shiftsData = [];
-      let departmentsData = [];
-
-      // Fetch rosters
-      try {
-        const rostersRes = await rosterService.getRosters({ organization_id: selectedOrganization.id });
-        rostersData = extractData(rostersRes);
+      if (rostersRes.status === "fulfilled") {
+        rostersData = extractData(rostersRes.value);
         console.log("Rosters loaded:", rostersData.length);
-      } catch (error) {
-        console.error("Error loading rosters:", error);
       }
 
-      // Fetch employees
-      try {
-        const employeesRes = await rosterService.getEmployees({ organization_id: selectedOrganization.id });
-        employeesData = extractData(employeesRes);
+      // Process employees and their rates
+      let employeesData = [];
+      if (employeesRes.status === "fulfilled") {
+        employeesData = extractData(employeesRes.value);
         console.log("Employees loaded:", employeesData.length);
-      } catch (error) {
-        console.error("Error loading employees:", error);
+        
+        // Extract and store employee rates
+        const rates = {};
+        employeesData.forEach(emp => {
+          rates[emp.id] = getEmployeeRate(emp);
+        });
+        setEmployeeRates(rates);
       }
 
-      // Fetch shifts
-      try {
-        const shiftsRes = await rosterService.getShifts({ organization_id: selectedOrganization.id });
-        shiftsData = extractData(shiftsRes);
+      // Process shifts
+      let shiftsData = [];
+      if (shiftsRes.status === "fulfilled") {
+        shiftsData = extractData(shiftsRes.value);
         console.log("Shifts loaded:", shiftsData.length);
-      } catch (error) {
-        console.error("Error loading shifts:", error);
       }
 
-      // Fetch departments
-      try {
-        const deptsRes = await rosterService.getDepartments(selectedOrganization.id);
-        departmentsData = extractData(deptsRes);
+      // Process departments
+      let departmentsData = [];
+      if (departmentsRes.status === "fulfilled") {
+        departmentsData = extractData(departmentsRes.value);
         console.log("Departments loaded:", departmentsData.length);
-      } catch (error) {
-        console.error("Error loading departments:", error);
       }
 
       // Update all states
@@ -291,13 +362,135 @@ const RostersPage = () => {
     }
   };
 
+  // Calculate weekly totals - This will run whenever rosters, employees, shifts, or currentDate changes
+  const calculateWeeklyTotals = useCallback(() => {
+    if (!rosters.length || !employees.length || !shifts.length) {
+      setWeeklyTotals({
+        totalHours: 0,
+        totalAmount: 0,
+        byEmployee: {},
+        byDepartment: {},
+        averageRate: 0,
+        lastUpdated: new Date()
+      });
+      return;
+    }
+
+    const weekDates = getWeekDates();
+    const weekStart = weekDates[0].toISOString().split('T')[0];
+    const weekEnd = weekDates[6].toISOString().split('T')[0];
+    
+    // Filter rosters for current week
+    const weekRosters = rosters.filter(roster => {
+      if (!roster.roster_date) return false;
+      const rosterDate = typeof roster.roster_date === 'string' 
+        ? roster.roster_date.split('T')[0]
+        : new Date(roster.roster_date).toISOString().split('T')[0];
+      return rosterDate >= weekStart && rosterDate <= weekEnd;
+    });
+
+    console.log("📊 Calculating weekly totals for", weekRosters.length, "rosters");
+
+    let totalHours = 0;
+    let totalAmount = 0;
+    const byEmployee = {};
+    const byDepartment = {};
+
+    weekRosters.forEach(roster => {
+      const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
+      if (!shift) return;
+
+      const hours = calculateNetWorkingHours(shift);
+      const amount = calculateRosterAmount(roster);
+
+      totalHours += hours;
+      totalAmount += amount;
+
+      // Calculate by employee
+      const employee = roster.employee || employees.find(e => e.id === roster.employee_id);
+      if (employee) {
+        const employeeId = employee.id;
+        if (!byEmployee[employeeId]) {
+          byEmployee[employeeId] = {
+            id: employeeId,
+            name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown',
+            hours: 0,
+            amount: 0,
+            department: employee.department_id,
+            rate: getEmployeeRate(employee)
+          };
+        }
+        byEmployee[employeeId].hours += hours;
+        byEmployee[employeeId].amount += amount;
+
+        // Calculate by department
+        const deptId = employee.department_id;
+        if (deptId) {
+          if (!byDepartment[deptId]) {
+            const dept = departments.find(d => d.id === deptId);
+            byDepartment[deptId] = {
+              id: deptId,
+              name: dept?.name || 'Unknown Department',
+              hours: 0,
+              amount: 0,
+              employeeCount: new Set()
+            };
+          }
+          byDepartment[deptId].hours += hours;
+          byDepartment[deptId].amount += amount;
+          byDepartment[deptId].employeeCount.add(employeeId);
+        }
+      }
+    });
+
+    // Calculate average rate
+    const averageRate = totalHours > 0 ? totalAmount / totalHours : 0;
+
+    // Convert employeeCount Set to count for departments
+    Object.keys(byDepartment).forEach(deptId => {
+      byDepartment[deptId].employeeCount = byDepartment[deptId].employeeCount.size;
+    });
+
+    const newTotals = {
+      totalHours: parseFloat(totalHours.toFixed(2)),
+      totalAmount: parseFloat(totalAmount.toFixed(2)),
+      byEmployee,
+      byDepartment,
+      averageRate: parseFloat(averageRate.toFixed(2)),
+      lastUpdated: new Date(),
+      rosterCount: weekRosters.length,
+      uniqueEmployees: Object.keys(byEmployee).length
+    };
+
+    console.log("✅ Weekly totals updated:", newTotals);
+    setWeeklyTotals(newTotals);
+
+  }, [rosters, employees, shifts, departments, currentDate, calculateNetWorkingHours, calculateRosterAmount, getEmployeeRate]);
+
   // Update weekly totals when data changes
   useEffect(() => {
     if (rosters.length > 0 && employees.length > 0 && shifts.length > 0) {
-      const weekDates = getWeekDates();
-      calculateWeeklyTotals(rosters, employees, shifts, weekDates);
+      calculateWeeklyTotals();
     }
-  }, [rosters, employees, shifts, departments, hourlyRate, currentDate]);
+  }, [rosters, employees, shifts, departments, currentDate, calculateWeeklyTotals]);
+
+  // Calculate estimated amount when shift is selected in form
+  useEffect(() => {
+    if (formData.shift_id && formData.employee_id) {
+      const shift = shifts.find(s => s.id === parseInt(formData.shift_id));
+      setSelectedShift(shift);
+      
+      const employee = employees.find(e => e.id === parseInt(formData.employee_id));
+      const rate = employee ? getEmployeeRate(employee) : 25;
+      const hours = calculateNetWorkingHours(shift);
+      const amount = hours * rate;
+      
+      setEstimatedAmount(amount);
+    } else {
+      setEstimatedAmount(0);
+      setSelectedShift(null);
+    }
+  }, [formData.shift_id, formData.employee_id, shifts, employees, getEmployeeRate, calculateNetWorkingHours]);
 
   useEffect(() => {
     if (selectedOrganization?.id) {
@@ -305,7 +498,7 @@ const RostersPage = () => {
     }
   }, [selectedOrganization]);
 
-  const getWeekDates = () => {
+  const getWeekDates = useCallback(() => {
     const start = new Date(currentDate);
     start.setHours(0, 0, 0, 0);
     
@@ -319,14 +512,14 @@ const RostersPage = () => {
       date.setDate(start.getDate() + i);
       return date;
     });
-  };
+  }, [currentDate]);
 
-  const getMonthDates = () => {
+  const getMonthDates = useCallback(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const lastDay = new Date(year, month + 1, 0).getDate();
     return Array.from({ length: lastDay }, (_, i) => new Date(year, month, i + 1));
-  };
+  }, [currentDate]);
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
@@ -338,7 +531,7 @@ const RostersPage = () => {
     setCurrentDate(newDate);
   };
 
-  const getRostersForEmployeeAndDate = (employeeId, date) => {
+  const getRostersForEmployeeAndDate = useCallback((employeeId, date) => {
     if (!date || !employeeId) return [];
     
     const year = date.getFullYear();
@@ -347,7 +540,7 @@ const RostersPage = () => {
     const targetDateStr = `${year}-${month}-${day}`;
     
     return rosters.filter((roster) => {
-      if (roster.employee_id !== employeeId || !roster.roster_date) return false;
+      if (roster.employee_id !== employeeId && roster.employee?.id !== employeeId) return false;
       
       let rosterDateStr = '';
       if (typeof roster.roster_date === 'string') {
@@ -359,105 +552,40 @@ const RostersPage = () => {
       
       return rosterDateStr === targetDateStr;
     });
-  };
-
-  // Calculate weekly totals
-  const calculateWeeklyTotals = (rostersList, employeesList, shiftsList, weekDates) => {
-    const weekStart = weekDates[0].toISOString().split('T')[0];
-    const weekEnd = weekDates[6].toISOString().split('T')[0];
-    
-    const weekRosters = rostersList.filter(roster => {
-      if (!roster.roster_date) return false;
-      const rosterDate = typeof roster.roster_date === 'string' 
-        ? roster.roster_date.split('T')[0]
-        : new Date(roster.roster_date).toISOString().split('T')[0];
-      return rosterDate >= weekStart && rosterDate <= weekEnd;
-    });
-
-    console.log("Week rosters:", weekRosters.length);
-
-    let totalHours = 0;
-    let totalAmount = 0;
-    const byEmployee = {};
-    const byDepartment = {};
-
-    weekRosters.forEach(roster => {
-      const shift = shiftsList.find(s => s.id === roster.shift_id);
-      if (!shift) return;
-
-      const hours = calculateNetWorkingHours(shift);
-      const amount = hours * hourlyRate;
-
-      totalHours += hours;
-      totalAmount += amount;
-
-      // Calculate by employee
-      const employee = employeesList.find(e => e.id === roster.employee_id);
-      if (employee) {
-        if (!byEmployee[employee.id]) {
-          byEmployee[employee.id] = {
-            name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown',
-            hours: 0,
-            amount: 0,
-            department: employee.department_id
-          };
-        }
-        byEmployee[employee.id].hours += hours;
-        byEmployee[employee.id].amount += amount;
-
-        // Calculate by department
-        const deptId = employee.department_id;
-        if (deptId) {
-          if (!byDepartment[deptId]) {
-            const dept = departments.find(d => d.id === deptId);
-            byDepartment[deptId] = {
-              name: dept?.name || 'Unknown Department',
-              hours: 0,
-              amount: 0
-            };
-          }
-          byDepartment[deptId].hours += hours;
-          byDepartment[deptId].amount += amount;
-        }
-      }
-    });
-
-    setWeeklyTotals({
-      totalHours: parseFloat(totalHours.toFixed(2)),
-      totalAmount: parseFloat(totalAmount.toFixed(2)),
-      byEmployee,
-      byDepartment
-    });
-  };
+  }, [rosters]);
 
   // Filter employees based on search and department
-  const filteredEmployees = employees.filter((employee) => {
-    const matchesDepartment = filters.department === "all" || 
-      employee.department_id?.toString() === filters.department;
-    
-    const matchesSearch = filters.search === "" ||
-      (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
-      (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
-      (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
-    
-    return matchesDepartment && matchesSearch;
-  });
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee) => {
+      const matchesDepartment = filters.department === "all" || 
+        employee.department_id?.toString() === filters.department;
+      
+      const matchesSearch = filters.search === "" ||
+        (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+        (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+        (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
+      
+      return matchesDepartment && matchesSearch;
+    });
+  }, [employees, filters]);
 
-  const formatTime = (timeString) => {
+  const formatTime = useCallback((timeString) => {
     if (!timeString) return "N/A";
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const formattedHour = hour % 12 || 12;
     return `${formattedHour}:${minutes} ${ampm}`;
-  };
+  }, []);
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = useCallback((amount) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'AUD'
-    }).format(amount);
-  };
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
+  }, []);
 
   const handleRefresh = () => {
     fetchData();
@@ -469,9 +597,12 @@ const RostersPage = () => {
     
     const csvContent = [
       [`Weekly Roster Report - ${weekRange}`],
-      [`Hourly Rate: ${formatCurrency(hourlyRate)}`],
+      [`Generated: ${new Date().toLocaleString()}`],
+      [`Total Hours: ${weeklyTotals.totalHours}`],
+      [`Total Amount: ${formatCurrency(weeklyTotals.totalAmount)}`],
+      [`Average Rate: ${formatCurrency(weeklyTotals.averageRate)}/hr`],
       [],
-      ["Employee", "Department", "Shift", "Date", "Hours", "Amount"],
+      ["Employee", "Department", "Shift", "Date", "Hours", "Rate", "Amount"],
       ...rosters
         .filter(roster => {
           if (!roster.roster_date) return false;
@@ -483,10 +614,11 @@ const RostersPage = () => {
           return rosterDate >= weekStart && rosterDate <= weekEnd;
         })
         .map((roster) => {
-          const employee = employees.find(e => e.id === roster.employee_id);
-          const shift = shifts.find(s => s.id === roster.shift_id);
+          const employee = roster.employee || employees.find(e => e.id === roster.employee_id);
+          const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
           const hours = calculateNetWorkingHours(shift);
-          const amount = hours * hourlyRate;
+          const rate = employee ? getEmployeeRate(employee) : 25;
+          const amount = hours * rate;
           
           const dept = departments.find(d => d.id === employee?.department_id);
           
@@ -496,30 +628,35 @@ const RostersPage = () => {
             shift?.name || "N/A",
             new Date(roster.roster_date).toLocaleDateString(),
             hours.toFixed(2),
-            amount.toFixed(2)
+            formatCurrency(rate),
+            formatCurrency(amount)
           ];
         }),
       [],
       ["WEEKLY TOTALS"],
       ["Total Hours", weeklyTotals.totalHours.toFixed(2)],
       ["Total Amount", formatCurrency(weeklyTotals.totalAmount)],
+      ["Average Rate", formatCurrency(weeklyTotals.averageRate)],
+      ["Unique Employees", weeklyTotals.uniqueEmployees || 0],
       [],
       ["TOTALS BY DEPARTMENT"],
-      ["Department", "Hours", "Amount"],
+      ["Department", "Hours", "Amount", "Employees"],
       ...Object.entries(weeklyTotals.byDepartment).map(([id, data]) => [
         data.name,
         data.hours.toFixed(2),
-        formatCurrency(data.amount)
+        formatCurrency(data.amount),
+        data.employeeCount || 0
       ]),
       [],
       ["TOTALS BY EMPLOYEE"],
-      ["Employee", "Hours", "Amount", "Department"],
+      ["Employee", "Hours", "Amount", "Rate", "Department"],
       ...Object.entries(weeklyTotals.byEmployee).map(([id, data]) => {
         const dept = departments.find(d => d.id === data.department);
         return [
           data.name,
           data.hours.toFixed(2),
           formatCurrency(data.amount),
+          formatCurrency(data.rate || 25),
           dept?.name || "N/A"
         ];
       })
@@ -563,8 +700,8 @@ const RostersPage = () => {
     setSelectedRoster(roster);
     
     setFormData({
-      employee_id: roster.employee_id,
-      shift_id: roster.shift_id,
+      employee_id: roster.employee_id || roster.employee?.id,
+      shift_id: roster.shift_id || roster.shift?.id,
       roster_date: typeof roster.roster_date === 'string' 
         ? roster.roster_date.split('T')[0]
         : new Date(roster.roster_date).toISOString().split('T')[0],
@@ -650,10 +787,11 @@ const RostersPage = () => {
     }
   };
 
-  const getEmployeeName = (employeeId) => {
-    const employee = employees.find(emp => emp.id === employeeId);
+  const getEmployeeName = useCallback((employeeId) => {
+    const employee = employees.find(emp => emp.id === employeeId) || 
+                     rosters.find(r => r.employee?.id === employeeId)?.employee;
     return employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : "Unknown Employee";
-  };
+  }, [employees, rosters]);
 
   // If no organization is selected
   if (!selectedOrganization?.id) {
@@ -755,6 +893,7 @@ const RostersPage = () => {
                             <option key={employee.id} value={employee.id}>
                               {employee.first_name || ''} {employee.last_name || ''} 
                               {employee.employee_code ? ` (${employee.employee_code})` : ''}
+                              {' - '}{formatCurrency(getEmployeeRate(employee))}/hr
                             </option>
                           ))}
                         </select>
@@ -766,6 +905,9 @@ const RostersPage = () => {
                         </label>
                         <div className="p-3 bg-gray-50 rounded-lg">
                           {getEmployeeName(formData.employee_id)}
+                          <div className="text-xs text-green-600 mt-1">
+                            Rate: {formatCurrency(getEmployeeRate(employees.find(e => e.id === parseInt(formData.employee_id))))}/hr
+                          </div>
                         </div>
                       </div>
                     )}
@@ -782,18 +924,16 @@ const RostersPage = () => {
                         required
                       >
                         <option value="">Select Shift</option>
-                        {shifts.map(shift => (
-                          <option key={shift.id} value={shift.id}>
-                            {shift.name} ({formatTime(shift.start_time)} - {formatTime(shift.end_time)})
-                            {shift.break_start && shift.break_end && ` • Break: ${formatTime(shift.break_start)}-${formatTime(shift.break_end)}`}
-                          </option>
-                        ))}
+                        {shifts.map(shift => {
+                          const hours = calculateNetWorkingHours(shift);
+                          return (
+                            <option key={shift.id} value={shift.id}>
+                              {shift.name} ({formatTime(shift.start_time)} - {formatTime(shift.end_time)}) • {hours}h
+                              {shift.break_start && shift.break_end && ` • Break: ${formatTime(shift.break_start)}-${formatTime(shift.break_end)}`}
+                            </option>
+                          );
+                        })}
                       </select>
-                      {formData.shift_id && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          <p>Selected shift: {shifts.find(s => s.id === parseInt(formData.shift_id))?.name}</p>
-                        </div>
-                      )}
                     </div>
 
                     <div>
@@ -824,7 +964,8 @@ const RostersPage = () => {
                       />
                     </div>
 
-                    {formData.shift_id && (
+                    {/* Show estimated amount */}
+                    {estimatedAmount > 0 && (
                       <div className="p-3 bg-green-50 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -832,11 +973,11 @@ const RostersPage = () => {
                             <span className="text-sm font-medium text-gray-700">Estimated Amount:</span>
                           </div>
                           <span className="text-lg font-bold text-green-700">
-                            {formatCurrency(calculateShiftAmount(shifts.find(s => s.id === parseInt(formData.shift_id))))}
+                            {formatCurrency(estimatedAmount)}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Based on {formatCurrency(hourlyRate)}/hr rate
+                          Based on employee's hourly rate and shift duration
                         </p>
                       </div>
                     )}
@@ -877,18 +1018,6 @@ const RostersPage = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow">
-                  <label className="text-sm font-medium text-gray-700">Hourly Rate:</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.50"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(parseFloat(e.target.value) || 0)}
-                    className="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-500">AUD</span>
-                </div>
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -902,7 +1031,7 @@ const RostersPage = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -948,10 +1077,20 @@ const RostersPage = () => {
                 <div>
                   <p className="text-sm text-gray-600">Avg Hours/Employee</p>
                   <p className="text-2xl font-bold text-gray-800">
-                    {(weeklyTotals.totalHours / Math.max(Object.keys(weeklyTotals.byEmployee).length, 1)).toFixed(1)}
+                    {(weeklyTotals.totalHours / Math.max(weeklyTotals.uniqueEmployees || 1, 1)).toFixed(1)}
                   </p>
                 </div>
                 <FaHourglassHalf className="text-indigo-500 text-xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-pink-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Avg Rate</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatCurrency(weeklyTotals.averageRate)}/hr</p>
+                </div>
+                <FaDollarSign className="text-pink-500 text-xl" />
               </div>
             </div>
           </div>
@@ -1073,6 +1212,7 @@ const RostersPage = () => {
                 {filteredEmployees.length > 0 ? (
                   filteredEmployees.map(employee => {
                     const employeeTotal = weeklyTotals.byEmployee[employee.id] || { hours: 0, amount: 0 };
+                    const employeeRate = getEmployeeRate(employee);
                     
                     return (
                       <div key={employee.id} className="grid grid-cols-8 border-b hover:bg-gray-50">
@@ -1088,6 +1228,9 @@ const RostersPage = () => {
                           </div>
                           <div className="mt-2 pt-2 border-t border-gray-200">
                             <div className="text-xs font-semibold text-green-600">
+                              Rate: {formatCurrency(employeeRate)}/hr
+                            </div>
+                            <div className="text-xs font-semibold text-blue-600 mt-1">
                               Week Total: {employeeTotal.hours.toFixed(1)}h
                             </div>
                             <div className="text-xs font-bold text-purple-600">
@@ -1102,10 +1245,10 @@ const RostersPage = () => {
                               day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
                             }`}>
                               {dayRosters.map(roster => {
-                                const shift = shifts.find(s => s.id === roster.shift_id);
+                                const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                                 const shiftColor = getShiftColor(roster.shift_id);
                                 const hours = calculateNetWorkingHours(shift);
-                                const amount = hours * hourlyRate;
+                                const amount = calculateRosterAmount(roster);
                                 
                                 return (
                                   <div
@@ -1187,10 +1330,12 @@ const RostersPage = () => {
                   });
                   
                   const dayTotalHours = dayRosters.reduce((total, roster) => {
-                    const shift = shifts.find(s => s.id === roster.shift_id);
+                    const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                     return total + calculateNetWorkingHours(shift);
                   }, 0);
-                  const dayTotalAmount = dayTotalHours * hourlyRate;
+                  const dayTotalAmount = dayRosters.reduce((total, roster) => {
+                    return total + calculateRosterAmount(roster);
+                  }, 0);
                   
                   return (
                     <div key={dateStr} className={`min-h-32 border-r border-b p-2 ${
@@ -1229,8 +1374,8 @@ const RostersPage = () => {
                       
                       <div className="space-y-1 overflow-y-auto max-h-24">
                         {dayRosters.slice(0, 3).map(roster => {
-                          const employee = employees.find(e => e.id === roster.employee_id);
-                          const shift = shifts.find(s => s.id === roster.shift_id);
+                          const employee = roster.employee || employees.find(e => e.id === roster.employee_id);
+                          const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                           const shiftColor = getShiftColor(roster.shift_id);
                           
                           return (
@@ -1264,7 +1409,7 @@ const RostersPage = () => {
             </div>
           )}
 
-          {/* Weekly Totals Summary */}
+          {/* Weekly Totals Summary - Now Dynamic */}
           {view === "week" && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Total Summary */}
@@ -1272,9 +1417,22 @@ const RostersPage = () => {
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <FaCalculator className="text-blue-500" />
                   Weekly Summary
+                  {weeklyTotals.lastUpdated && (
+                    <span className="text-xs text-gray-400 ml-2">
+                      Updated: {weeklyTotals.lastUpdated.toLocaleTimeString()}
+                    </span>
+                  )}
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Total Rosters:</span>
+                    <span className="text-sm font-medium text-gray-900">{weeklyTotals.rosterCount || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Unique Employees:</span>
+                    <span className="text-sm font-medium text-gray-900">{weeklyTotals.uniqueEmployees || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-sm text-gray-600">Total Hours:</span>
                     <span className="text-lg font-bold text-blue-600">{weeklyTotals.totalHours}h</span>
                   </div>
@@ -1284,9 +1442,13 @@ const RostersPage = () => {
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-sm text-gray-600">Average Rate:</span>
-                    <span className="text-sm font-medium">
-                      {formatCurrency(weeklyTotals.totalHours > 0 ? weeklyTotals.totalAmount / weeklyTotals.totalHours : 0)}/hr
+                    <span className="text-sm font-bold text-purple-600">
+                      {formatCurrency(weeklyTotals.averageRate)}/hr
                     </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-gray-500">
+                    <span>Based on {weeklyTotals.rosterCount || 0} rosters</span>
+                    <span>Auto-calculated</span>
                   </div>
                 </div>
               </div>
@@ -1297,19 +1459,25 @@ const RostersPage = () => {
                   <FaBuilding className="text-orange-500" />
                   Totals by Department
                 </h3>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {Object.entries(weeklyTotals.byDepartment).map(([id, data]) => (
-                    <div key={id} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">{data.name}:</span>
-                      <div className="text-right">
-                        <span className="font-medium text-blue-600">{data.hours.toFixed(1)}h</span>
-                        <span className="mx-1 text-gray-400">|</span>
-                        <span className="font-medium text-green-600">{formatCurrency(data.amount)}</span>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {Object.entries(weeklyTotals.byDepartment).length > 0 ? (
+                    Object.entries(weeklyTotals.byDepartment).map(([id, data]) => (
+                      <div key={id} className="flex justify-between items-center text-sm border-b pb-2">
+                        <div>
+                          <span className="text-gray-600">{data.name}</span>
+                          <span className="text-xs text-gray-400 ml-2">
+                            ({data.employeeCount || 0} employees)
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-medium text-blue-600">{data.hours.toFixed(1)}h</span>
+                          <span className="mx-1 text-gray-400">|</span>
+                          <span className="font-medium text-green-600">{formatCurrency(data.amount)}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {Object.keys(weeklyTotals.byDepartment).length === 0 && (
-                    <p className="text-sm text-gray-400 text-center">No data available</p>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-4">No department data available</p>
                   )}
                 </div>
               </div>
@@ -1348,6 +1516,11 @@ const RostersPage = () => {
               </div>
               <div className="text-sm font-semibold text-gray-800">
                 Total this period: {weeklyTotals.totalHours}h ({formatCurrency(weeklyTotals.totalAmount)})
+                {weeklyTotals.averageRate > 0 && (
+                  <span className="text-xs text-gray-500 ml-2">
+                    Avg {formatCurrency(weeklyTotals.averageRate)}/hr
+                  </span>
+                )}
               </div>
             </div>
           </div>

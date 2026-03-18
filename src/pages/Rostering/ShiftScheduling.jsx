@@ -20,13 +20,15 @@ import {
   FaCoffee,
   FaHourglassHalf,
   FaMoneyBillWave,
-  FaStopwatch
+  FaStopwatch,
+  FaDollarSign
 } from 'react-icons/fa';
 import {
   HiX,
 } from "react-icons/hi";
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import shiftSchedulingService from '../../services/shiftSchedulingService';
+import employeeService from '../../services/employeeService';
 
 // Pastel color options for background
 const PASTEL_COLORS = [
@@ -99,6 +101,7 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
 
 const ShiftScheduling = () => {
   const [shifts, setShifts] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [editingShift, setEditingShift] = useState(null);
@@ -109,6 +112,8 @@ const ShiftScheduling = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  const [hourlyRates, setHourlyRates] = useState({});
+  const [loadingRates, setLoadingRates] = useState(false);
 
   const { selectedOrganization, organizations, isLoading: orgLoading } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -120,11 +125,14 @@ const ShiftScheduling = () => {
     end_time: '17:00',
     break_start: '13:00',
     break_end: '14:00',
-    break_duration: 60,
     break_grace_minutes: 0,
     color_code: '#4CAF50',
     notes: '',
-    shift_type: 'custom'
+    shift_type: 'custom',
+    // New fields for employee assignment
+    employee_id: '',
+    hourly_rate: 0,
+    estimated_amount: 0
   });
 
   // Predefined shift options with break times
@@ -181,6 +189,7 @@ const ShiftScheduling = () => {
   useEffect(() => {
     if (organizationId) {
       setNewShift(prev => ({ ...prev, organization_id: organizationId }));
+      fetchEmployees();
     }
   }, [organizationId]);
 
@@ -190,6 +199,75 @@ const ShiftScheduling = () => {
       fetchShifts();
     }
   }, [organizationId, showDeleted, orgLoading]);
+
+  // Calculate estimated amount whenever net hours or hourly rate changes
+  useEffect(() => {
+    if (newShift.employee_id && hourlyRates[newShift.employee_id]) {
+      const netHours = calculateNetWorkingHours(
+        newShift.start_time,
+        newShift.end_time,
+        newShift.break_start,
+        newShift.break_end,
+        newShift.break_grace_minutes
+      );
+      
+      const rate = hourlyRates[newShift.employee_id];
+      const estimatedAmount = netHours * rate;
+      
+      setNewShift(prev => ({
+        ...prev,
+        hourly_rate: rate,
+        estimated_amount: parseFloat(estimatedAmount.toFixed(2))
+      }));
+    }
+  }, [
+    newShift.employee_id,
+    newShift.start_time,
+    newShift.end_time,
+    newShift.break_start,
+    newShift.break_end,
+    newShift.break_grace_minutes,
+    hourlyRates
+  ]);
+
+  const fetchEmployees = async () => {
+    if (!organizationId) return;
+    
+    try {
+      setLoadingRates(true);
+      // Fetch employees for this organization
+      const response = await employeeService.getEmployees({ organization_id: organizationId });
+      console.log('📋 Employees API response:', response);
+      
+      // Handle different response structures based on your API
+      let employeesData = [];
+      if (response?.data) {
+        if (Array.isArray(response.data)) {
+          employeesData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          employeesData = response.data.data;
+        }
+      } else if (Array.isArray(response)) {
+        employeesData = response;
+      }
+      
+      setEmployees(employeesData);
+      
+      // Fetch hourly rates for employees (you may need to adjust this based on your API)
+      const rates = {};
+      employeesData.forEach(employee => {
+        // Try to get rate from employee data if available, otherwise use default
+        rates[employee.id] = employee.hourly_rate || employee.pay_rate || 25; // Default fallback rate
+      });
+      
+      setHourlyRates(rates);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingRates(false);
+    }
+  };
 
   const fetchShifts = async () => {
     if (!organizationId) {
@@ -208,13 +286,23 @@ const ShiftScheduling = () => {
         response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
       }
       
-      if (response && response.success) {
-        const shiftsData = response.data || [];
-        setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
-      } else {
-        const shiftsData = response?.data || response || [];
-        setShifts(Array.isArray(shiftsData) ? shiftsData : [shiftsData]);
+      console.log('📋 Shifts API response:', response);
+      
+      // Handle the response structure you showed
+      let shiftsData = [];
+      if (response?.success && Array.isArray(response.data)) {
+        shiftsData = response.data;
+      } else if (response?.data) {
+        if (Array.isArray(response.data)) {
+          shiftsData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          shiftsData = response.data.data;
+        }
+      } else if (Array.isArray(response)) {
+        shiftsData = response;
       }
+      
+      setShifts(shiftsData);
     } catch (error) {
       console.error('Error fetching shifts:', error);
       setError(error.response?.data?.message || 'Failed to load shifts. Please try again.');
@@ -258,7 +346,6 @@ const ShiftScheduling = () => {
     const graceHours = breakGraceMinutes / 60;
     
     // Grace minutes are usually added to break time (buffer before/after break)
-    // For example, if break is 60 minutes with 10 minutes grace, total break allowance is 70 minutes
     const totalBreakHours = (breakMinutes + breakGraceMinutes) / 60;
     
     return parseFloat((totalDuration - totalBreakHours).toFixed(1));
@@ -287,6 +374,8 @@ const ShiftScheduling = () => {
         ...prev,
         [name]: Math.max(0, Math.min(120, numValue)) // Limit grace minutes between 0-120
       }));
+    } else if (name === 'employee_id') {
+      setNewShift(prev => ({ ...prev, [name]: value }));
     } else {
       setNewShift(prev => ({ ...prev, [name]: value }));
     }
@@ -362,13 +451,28 @@ const ShiftScheduling = () => {
     }
 
     try {
+      // Prepare shift data - only include fields that exist in your API
+      const shiftData = {
+        organization_id: organizationId,
+        name: newShift.name,
+        start_time: newShift.start_time,
+        end_time: newShift.end_time,
+        break_start: newShift.break_start,
+        break_end: newShift.break_end,
+        break_grace_minutes: newShift.break_grace_minutes,
+        color_code: newShift.color_code,
+        notes: newShift.notes,
+        // Add employee-related fields (you may need to add these to your backend)
+        employee_id: newShift.employee_id || null,
+        hourly_rate: newShift.hourly_rate || 0,
+        estimated_amount: newShift.estimated_amount || 0
+      };
+
       if (editingShift) {
-        const { organization, shift_type, ...updateData } = newShift;
-        await shiftSchedulingService.updateShift(editingShift.id, updateData);
+        await shiftSchedulingService.updateShift(editingShift.id, shiftData);
         setSuccessMessage('Shift updated successfully!');
       } else {
-        const { shift_type, ...createData } = newShift;
-        await shiftSchedulingService.createShift(createData);
+        await shiftSchedulingService.createShift(shiftData);
         setSuccessMessage('Shift created successfully!');
       }
 
@@ -400,7 +504,11 @@ const ShiftScheduling = () => {
       break_grace_minutes: shift.break_grace_minutes || 0,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
-      shift_type: 'custom'
+      shift_type: 'custom',
+      // Load employee data if it exists in the shift
+      employee_id: shift.employee_id || '',
+      hourly_rate: shift.hourly_rate || 0,
+      estimated_amount: shift.estimated_amount || 0
     });
     setShowShiftForm(true);
   };
@@ -444,7 +552,10 @@ const ShiftScheduling = () => {
       break_grace_minutes: shift.break_grace_minutes || 0,
       color_code: shift.color_code || '#4CAF50',
       notes: shift.notes || '',
-      shift_type: 'custom'
+      shift_type: 'custom',
+      employee_id: shift.employee_id || '',
+      hourly_rate: shift.hourly_rate || 0,
+      estimated_amount: shift.estimated_amount || 0
     });
     setEditingShift(null);
     setShowShiftForm(true);
@@ -462,12 +573,16 @@ const ShiftScheduling = () => {
       break_grace_minutes: 0,
       color_code: '#4CAF50',
       notes: '',
-      shift_type: 'custom'
+      shift_type: 'custom',
+      employee_id: '',
+      hourly_rate: 0,
+      estimated_amount: 0
     });
   };
 
   const formatTimeForInput = (timeString) => {
     if (!timeString) return '09:00';
+    // Handle time format from API (e.g., "09:00:00" -> "09:00")
     return timeString.substring(0, 5);
   };
 
@@ -486,6 +601,15 @@ const ShiftScheduling = () => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
   };
 
   const exportShifts = () => {
@@ -576,7 +700,7 @@ const ShiftScheduling = () => {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -616,6 +740,16 @@ const ShiftScheduling = () => {
                 <FaCoffee className="text-purple-500 text-xl" />
               </div>
             </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Employees</p>
+                  <p className="text-2xl font-bold text-gray-800">{employees.length}</p>
+                </div>
+                <FaUser className="text-yellow-500 text-xl" />
+              </div>
+            </div>
             
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
@@ -625,7 +759,7 @@ const ShiftScheduling = () => {
                     {showDeleted ? 'Deleted' : 'Active'}
                   </p>
                 </div>
-                <FaUser className="text-orange-500 text-xl" />
+                <FaClock className="text-orange-500 text-xl" />
               </div>
             </div>
           </div>
@@ -710,7 +844,10 @@ const ShiftScheduling = () => {
                       const netHours = calculateNetWorkingHours(
                         shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
                       );
-                      const totalBreakWithGrace = calculateTotalBreakWithGrace(shift.break_duration, shift.break_grace_minutes);
+                      const totalBreakWithGrace = calculateTotalBreakWithGrace(
+                        shift.total_break_minutes || 60, 
+                        shift.break_grace_minutes || 0
+                      );
                       
                       return (
                         <tr key={shift.id} className="hover:bg-gray-50 transition-colors">
@@ -747,7 +884,7 @@ const ShiftScheduling = () => {
                                   {formatTime(shift.break_start)} - {formatTime(shift.break_end)}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {formatMinutes(shift.break_duration || 60)}
+                                  {formatMinutes(parseInt(shift.total_break_minutes) || 60)}
                                   {shift.break_grace_minutes > 0 && (
                                     <span className="ml-1 text-xs text-purple-600">
                                       (+{shift.break_grace_minutes}m grace)
@@ -979,6 +1116,42 @@ const ShiftScheduling = () => {
                       </div>
                     </div>
 
+                    {/* Optional: Employee Assignment Section (you can uncomment this if you want to add employees to shifts) */}
+                    {/* 
+                    <div className="border-t pt-6 mb-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <FaUser className="text-blue-500" />
+                        Employee Assignment (Optional)
+                      </h3>
+                      
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Select Employee
+                        </label>
+                        <select
+                          name="employee_id"
+                          value={newShift.employee_id}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select an employee (optional)</option>
+                          {employees.map(employee => (
+                            <option key={employee.id} value={employee.id}>
+                              {employee.first_name} {employee.last_name} - {employee.employee_code || 'No Code'}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {loadingRates && (
+                        <div className="text-center py-2">
+                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <span className="ml-2 text-sm text-gray-500">Loading employees...</span>
+                        </div>
+                      )}
+                    </div>
+                    */}
+
                     {/* Shift Times Section */}
                     <div className="border-t pt-6 mb-6">
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">Shift Times</h3>
@@ -1047,7 +1220,7 @@ const ShiftScheduling = () => {
                         </div>
                       </div>
 
-                      {/* NEW: Break Grace Minutes Input */}
+                      {/* Break Grace Minutes Input */}
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                           <FaStopwatch className="text-indigo-500" />
