@@ -220,11 +220,11 @@
       //   path: "/dashboard/payroll/review",
       //   icon: HiOutlineDocumentReport,
       // },
-      {
-        name: "Payslip",
-        path: "/dashboard/payroll/payslip",
-        icon: HiOutlinePrinter,
-      },
+      // {
+      //   name: "Payslip",
+      //   path: "/dashboard/payroll/payslip",
+      //   icon: HiOutlinePrinter,
+      // },
     ],
     },
 
