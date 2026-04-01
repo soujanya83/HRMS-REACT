@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import "./index.css";
 
-import PublicEmployeeForm from './pages/Public/PublicEmployeeForm';
+import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -39,7 +39,6 @@ import HolidaysCalendars from "./pages/Attendance/HolidaysCalendars";
 import TimesheetEntry from "./pages/Timesheet/TimesheetEntry";
 import TimesheetApprovals from "./pages/Timesheet/TimesheetApprovals";
 
-
 // --- Import Rostering Pages ---
 import ShiftScheduling from "./pages/Rostering/ShiftScheduling";
 import ShiftSwapping from "./pages/Rostering/ShiftSwapping";
@@ -49,9 +48,7 @@ import RosterPeriods from "./pages/Rostering/RosterPeriods";
 
 // --- Import Payroll Pages ---
 import RunPayroll from "./pages/Payroll/RunPayroll";
-// import ReviewPayroll from "./pages/Payroll/ReviewPayroll";
 import PayslipGeneration from "./pages/Payroll/PayslipGeneration";
-
 
 // --- Import Performance Pages ---
 import GoalSetting from "./pages/Performance/GoalSetting";
@@ -67,7 +64,7 @@ import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
 import AssignRolePage from "./pages/setting /AssignRolePage";
 
-// --- Placeholder Pages (for routes that are not yet built) ---
+// --- Placeholder Pages ---
 const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
 // --- Route Protectors ---
@@ -105,10 +102,16 @@ function App() {
   };
 
   const router = createBrowserRouter([
+    // ✅ PUBLIC ROUTES - No authentication required
+    {
+      path: "/apply",
+      element: <PublicEmployeeForm />,
+    },
     {
       path: "/login",
       element: <PublicRoute isLoggedIn={isLoggedIn}><LoginPage onLogin={handleLogin} /></PublicRoute>,
     },
+    // ✅ PROTECTED ROUTES - Authentication required
     {
       path: "/dashboard",
       element: (
@@ -162,7 +165,6 @@ function App() {
           children: [
             { path: "entry", element: <TimesheetEntry /> },
             { path: "approvals", element: <TimesheetApprovals /> },
-           
             { index: true, element: <Navigate to="entry" replace /> }
           ]
         },
@@ -173,26 +175,18 @@ function App() {
             { path: "swapping", element: <ShiftSwapping /> },
             { path: "rosters", element: <RostersPage /> },
             { path: "notifications", element: <NotificationsPage /> },
-            { path: "notifications", element: <NotificationsPage /> },
-             { path: "periods", element: <RosterPeriods /> },
+            { path: "periods", element: <RosterPeriods /> },
             { index: true, element: <Navigate to="scheduling" replace /> }
           ]
         },
-       {
-  path: "payroll",
-  children: [
-    { path: "run", element: <RunPayroll /> },
-    // { path: "review", element: <ReviewPayroll /> },
-    // Change line 184 in App.jsx:
-{ path: "payslip", element: <PayslipGeneration /> },  // Changed from <Payslip />
-
-
-    // default route
-    { index: true, element: <Navigate to="run" replace /> },
-  ],
-},
-
-
+        {
+          path: "payroll",
+          children: [
+            { path: "run", element: <RunPayroll /> },
+            { path: "payslip", element: <PayslipGeneration /> },
+            { index: true, element: <Navigate to="run" replace /> },
+          ],
+        },
         { 
           path: "performance", 
           children: [
@@ -203,24 +197,24 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-{
-  path: "settings/*", 
-  children: [
-    { path: "roles", element: <RoleManagementPage /> },
-    { path: "assign-role", element: <AssignRolePage /> }, // Add this line
-    { path: "permissions", element: <PermissionManagementPage /> },
-    { path: "xero", element: <XeroIntegrationPage /> },
-    { index: true, element: <Navigate to="roles" replace /> }
-  ]
-}
+        {
+          path: "settings/*", 
+          children: [
+            { path: "roles", element: <RoleManagementPage /> },
+            { path: "assign-role", element: <AssignRolePage /> },
+            { path: "permissions", element: <PermissionManagementPage /> },
+            { path: "xero", element: <XeroIntegrationPage /> },
+            { index: true, element: <Navigate to="roles" replace /> }
+          ]
+        }
       ],
     },
+    // ✅ Default redirects
     { path: "/", element: <Navigate to="/login" /> },
     { path: "*", element: <Navigate to="/login" /> },
   ]);
 
   return <RouterProvider router={router} />;
 }
-<Route path="/employee-application" element={<PublicEmployeeForm />} />
 
 export default App;
