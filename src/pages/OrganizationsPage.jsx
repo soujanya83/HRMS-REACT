@@ -105,74 +105,82 @@ const COLOR_OPTIONS = [
 
 // Room data with names, age groups, and colors - MATCHING IMAGE
 const ROOM_TEMPLATES = [
-  { 
-    name: "Cozy Nido", 
-    ageGroup: "6 - 12 months", 
+  {
+    name: "Cozy Nido",
+    ageGroup: "6 - 12 months",
     colorCode: "#8176B7",
     colorLabel: "Lavender",
     icon: "🍼",
-    description: "A warm, nurturing space for our youngest learners. Focus on sensory exploration and building secure attachments."
+    description:
+      "A warm, nurturing space for our youngest learners. Focus on sensory exploration and building secure attachments.",
   },
-  { 
-    name: "Little Sprouts", 
-    ageGroup: "12 - 24 Months", 
+  {
+    name: "Little Sprouts",
+    ageGroup: "12 - 24 Months",
     colorCode: "#CFA5CA",
     colorLabel: "Light Pink",
     icon: "🌱",
-    description: "Toddlers discover independence through play-based learning, language development, and social interaction."
+    description:
+      "Toddlers discover independence through play-based learning, language development, and social interaction.",
   },
-  { 
-    name: "Investigator's Hub", 
-    ageGroup: "2 - 3 Years", 
+  {
+    name: "Investigator's Hub",
+    ageGroup: "2 - 3 Years",
     colorCode: "#C57F9A",
     colorLabel: "Dusty Rose",
     icon: "🔍",
-    description: "Curious preschoolers explore, question, and investigate the world around them through hands-on activities."
+    description:
+      "Curious preschoolers explore, question, and investigate the world around them through hands-on activities.",
   },
-  { 
-    name: "Creator's Studio", 
-    ageGroup: "3 - 5 Years (Non Kinder)", 
+  {
+    name: "Creator's Studio",
+    ageGroup: "3 - 5 Years (Non Kinder)",
     colorCode: "#3FA2DB",
     colorLabel: "Sky Blue",
     icon: "🎨",
-    description: "Creative expression through art, music, and imaginative play. Developing fine motor skills and self-expression."
+    description:
+      "Creative expression through art, music, and imaginative play. Developing fine motor skills and self-expression.",
   },
-  { 
-    name: "Dreamer's Den", 
-    ageGroup: "3 Years Kinder", 
+  {
+    name: "Dreamer's Den",
+    ageGroup: "3 Years Kinder",
     colorCode: "#8DBA90",
     colorLabel: "Sage Green",
     icon: "💭",
-    description: "Kindergarten readiness program focusing on literacy, numeracy, and social-emotional development."
+    description:
+      "Kindergarten readiness program focusing on literacy, numeracy, and social-emotional development.",
   },
-  { 
-    name: "Inventor's Lab", 
-    ageGroup: "4 Years Kinder", 
+  {
+    name: "Inventor's Lab",
+    ageGroup: "4 Years Kinder",
     colorCode: "#EBAF94",
     colorLabel: "Peach",
     icon: "🔬",
-    description: "STEM-focused learning with experiments, construction, and problem-solving activities."
-  }
+    description:
+      "STEM-focused learning with experiments, construction, and problem-solving activities.",
+  },
 ];
 
 // Kitchen and Management room templates
 const OTHER_ROOM_TEMPLATES = [
-  { 
-    name: "Kitchen", 
-    ageGroup: "All Ages", 
+  {
+    name: "Kitchen",
+    ageGroup: "All Ages",
     colorCode: "#CAC87F",
     colorLabel: "Olive Green",
     icon: "🍳",
-    description: "Nutrition and culinary experiences. Teaching healthy eating habits and food preparation skills."
+    description:
+      "Nutrition and culinary experiences. Teaching healthy eating habits and food preparation skills.",
   },
-  { 
-    name: "Management", 
-    ageGroup: "Staff Only", 
+  {
+    name: "Management",
+    ageGroup: "Staff Only",
     colorCode: "#A4A1A2",
     colorLabel: "Gray",
     icon: "📋",
-    description: "Administrative office for center management, parent communications, and staff coordination."
-  }
+    description:
+      "Administrative office for center management, parent communications, and staff coordination.",
+  },
 ];
 
 // All room templates combined
@@ -180,18 +188,53 @@ const ALL_ROOM_TEMPLATES = [...ROOM_TEMPLATES, ...OTHER_ROOM_TEMPLATES];
 
 // Age group options with icons - Updated to match image
 const AGE_GROUPS = [
-  { value: "6 - 12 months", label: "6 - 12 months", icon: "🍼", colorHint: "#8176B7" },
-  { value: "12 - 24 Months", label: "12 - 24 Months", icon: "🌱", colorHint: "#CFA5CA" },
-  { value: "2 - 3 Years", label: "2 - 3 Years", icon: "🔍", colorHint: "#C57F9A" },
-  { value: "3 - 5 Years (Non Kinder)", label: "3 - 5 Years (Non Kinder)", icon: "🎨", colorHint: "#3FA2DB" },
-  { value: "3 Years Kinder", label: "3 Years Kinder", icon: "💭", colorHint: "#8DBA90" },
-  { value: "4 Years Kinder", label: "4 Years Kinder", icon: "🔬", colorHint: "#EBAF94" },
+  {
+    value: "6 - 12 months",
+    label: "6 - 12 months",
+    icon: "🍼",
+    colorHint: "#8176B7",
+  },
+  {
+    value: "12 - 24 Months",
+    label: "12 - 24 Months",
+    icon: "🌱",
+    colorHint: "#CFA5CA",
+  },
+  {
+    value: "2 - 3 Years",
+    label: "2 - 3 Years",
+    icon: "🔍",
+    colorHint: "#C57F9A",
+  },
+  {
+    value: "3 - 5 Years (Non Kinder)",
+    label: "3 - 5 Years (Non Kinder)",
+    icon: "🎨",
+    colorHint: "#3FA2DB",
+  },
+  {
+    value: "3 Years Kinder",
+    label: "3 Years Kinder",
+    icon: "💭",
+    colorHint: "#8DBA90",
+  },
+  {
+    value: "4 Years Kinder",
+    label: "4 Years Kinder",
+    icon: "🔬",
+    colorHint: "#EBAF94",
+  },
   { value: "All Ages", label: "All Ages", icon: "👥", colorHint: "#CAC87F" },
-  { value: "Staff Only", label: "Staff Only", icon: "👔", colorHint: "#A4A1A2" },
+  {
+    value: "Staff Only",
+    label: "Staff Only",
+    icon: "👔",
+    colorHint: "#A4A1A2",
+  },
 ];
 
 // Helper function to extract color from localStorage
-const extractColorFromCode = (roomId, defaultColor = '#3FA2DB') => {
+const extractColorFromCode = (roomId, defaultColor = "#3FA2DB") => {
   const savedColor = localStorage.getItem(`room_color_${roomId}`);
   if (savedColor) {
     return savedColor;
@@ -201,7 +244,7 @@ const extractColorFromCode = (roomId, defaultColor = '#3FA2DB') => {
 
 // Save color to localStorage
 const saveColorToStorage = (roomId, colorCode) => {
-  const colorOption = COLOR_OPTIONS.find(c => c.code === colorCode);
+  const colorOption = COLOR_OPTIONS.find((c) => c.code === colorCode);
   if (colorOption) {
     localStorage.setItem(`room_color_${roomId}`, colorOption.value);
   }
@@ -211,52 +254,56 @@ const saveColorToStorage = (roomId, colorCode) => {
 const getColorOption = (roomId) => {
   const savedColor = localStorage.getItem(`room_color_${roomId}`);
   if (savedColor) {
-    const option = COLOR_OPTIONS.find(c => c.value === savedColor);
+    const option = COLOR_OPTIONS.find((c) => c.value === savedColor);
     if (option) return option;
   }
-  return COLOR_OPTIONS.find(c => c.value === "#3FA2DB");
+  return COLOR_OPTIONS.find((c) => c.value === "#3FA2DB");
 };
 
 // Get color code from value
 const getColorCode = (value) => {
-  if (!value) return 'sky-blue';
-  
-  const hexOption = COLOR_OPTIONS.find(opt => opt.value === value);
+  if (!value) return "sky-blue";
+
+  const hexOption = COLOR_OPTIONS.find((opt) => opt.value === value);
   if (hexOption) return hexOption.code;
-  
-  const labelOption = COLOR_OPTIONS.find(opt => opt.label.toLowerCase() === value.toLowerCase());
+
+  const labelOption = COLOR_OPTIONS.find(
+    (opt) => opt.label.toLowerCase() === value.toLowerCase(),
+  );
   if (labelOption) return labelOption.code;
-  
-  const codeOption = COLOR_OPTIONS.find(opt => opt.code === value);
+
+  const codeOption = COLOR_OPTIONS.find((opt) => opt.code === value);
   if (codeOption) return codeOption.code;
-  
-  return 'sky-blue';
+
+  return "sky-blue";
 };
 
 // Get age group icon
 const getAgeGroupIcon = (ageGroup) => {
-  if (!ageGroup) return '👶';
-  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
-  return found ? found.icon : '👶';
+  if (!ageGroup) return "👶";
+  const found = AGE_GROUPS.find((ag) => ag.value === ageGroup);
+  return found ? found.icon : "👶";
 };
 
 // Get color for age group
 const getColorForAgeGroup = (ageGroup) => {
-  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
+  const found = AGE_GROUPS.find((ag) => ag.value === ageGroup);
   if (found && found.colorHint) return found.colorHint;
-  
+
   // Match with room templates
-  const roomTemplate = ALL_ROOM_TEMPLATES.find(room => room.ageGroup === ageGroup);
+  const roomTemplate = ALL_ROOM_TEMPLATES.find(
+    (room) => room.ageGroup === ageGroup,
+  );
   if (roomTemplate) return roomTemplate.colorCode;
-  
+
   return "#3FA2DB";
 };
 
 // Helper function to get color with opacity
 const getColorWithOpacity = (colorValue, opacity = 0.1) => {
   if (!colorValue) return `rgba(63, 162, 219, ${opacity})`;
-  
-  if (colorValue.startsWith('#')) {
+
+  if (colorValue.startsWith("#")) {
     const r = parseInt(colorValue.slice(1, 3), 16);
     const g = parseInt(colorValue.slice(3, 5), 16);
     const b = parseInt(colorValue.slice(5, 7), 16);
@@ -271,23 +318,25 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
         onClick={onClose}
       />
-      
+
       <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Room Color</h3>
-            <button 
+            <h3 className="text-xl font-semibold text-gray-800">
+              Choose Room Color
+            </h3>
+            <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
             >
               <HiX size={24} />
             </button>
           </div>
-          
+
           <div className="space-y-3">
             {COLOR_OPTIONS.map((color, index) => (
               <button
@@ -299,8 +348,13 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
                 className="w-full p-3 rounded-lg transition-transform hover:scale-105 flex items-center justify-between border border-gray-200"
                 style={{ backgroundColor: color.value }}
               >
-                <span className="font-medium text-white drop-shadow-sm">{color.label}</span>
-                <div className="w-6 h-6 rounded-full border-2 border-white shadow" style={{ backgroundColor: color.value }} />
+                <span className="font-medium text-white drop-shadow-sm">
+                  {color.label}
+                </span>
+                <div
+                  className="w-6 h-6 rounded-full border-2 border-white shadow"
+                  style={{ backgroundColor: color.value }}
+                />
               </button>
             ))}
           </div>
@@ -367,14 +421,14 @@ const FormTextarea = ({ label, name, error, ...props }) => (
 // ColorPicker Component
 const ColorPicker = ({ label, name, value, onChange, error }) => {
   const currentCode = getColorCode(value);
-  const selectedColor = COLOR_OPTIONS.find(c => c.code === currentCode);
+  const selectedColor = COLOR_OPTIONS.find((c) => c.code === currentCode);
 
   const handleColorChange = (e) => {
     const event = {
       target: {
         name: name,
-        value: e.target.value
-      }
+        value: e.target.value,
+      },
     };
     onChange(event);
   };
@@ -404,8 +458,8 @@ const ColorPicker = ({ label, name, value, onChange, error }) => {
         </div>
         <div
           className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-sm"
-          style={{ backgroundColor: selectedColor?.value || '#3FA2DB' }}
-          title={selectedColor?.label || 'Sky Blue'}
+          style={{ backgroundColor: selectedColor?.value || "#3FA2DB" }}
+          title={selectedColor?.label || "Sky Blue"}
         />
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
@@ -422,8 +476,8 @@ function OrganizationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
-  const [activeTab, setActiveTab] = useState('rooms');
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [activeTab, setActiveTab] = useState("rooms");
+  const [backgroundColor, setBackgroundColor] = useState("#f9fafb");
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -440,20 +494,25 @@ function OrganizationsPage() {
 
   const [isDesignationModalOpen, setIsDesignationModalOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState(null);
-  const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
+  const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] =
+    useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
 
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await getOrganizations();
-      
+
       let organizationsData = [];
-      
+
       if (response && response.success === true) {
-        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        if (
+          response.data &&
+          response.data.data &&
+          Array.isArray(response.data.data)
+        ) {
           organizationsData = response.data.data;
         } else if (response.data && Array.isArray(response.data)) {
           organizationsData = response.data;
@@ -461,10 +520,10 @@ function OrganizationsPage() {
           organizationsData = response;
         }
       }
-      
+
       setOrganizations(organizationsData);
     } catch (err) {
-      console.error('Error fetching organizations:', err);
+      console.error("Error fetching organizations:", err);
       setError(err.response?.data?.message || "Failed to fetch organizations.");
       setOrganizations([]);
     } finally {
@@ -481,50 +540,60 @@ function OrganizationsPage() {
 
     try {
       let apiResponse;
-      
+
       if (editingOrg) {
         apiResponse = await updateOrganization(editingOrg.id, orgData);
       } else {
         apiResponse = await createOrganization(orgData);
       }
-      
+
       if (apiResponse.success !== true) {
-        throw new Error(apiResponse.message || 'API returned unsuccessful');
+        throw new Error(apiResponse.message || "API returned unsuccessful");
       }
-      
+
       await fetchOrganizations();
-      
+
       if (selectedOrg && editingOrg && selectedOrg.id === editingOrg.id) {
         const updatedOrgData = apiResponse.data;
         setSelectedOrg(updatedOrgData);
       }
-      
+
       setIsModalOpen(false);
       setEditingOrg(null);
-      
-      alert(apiResponse.message || (editingOrg ? 'Organization updated successfully!' : 'Organization created successfully!'));
-      
+
+      alert(
+        apiResponse.message ||
+          (editingOrg
+            ? "Organization updated successfully!"
+            : "Organization created successfully!"),
+      );
     } catch (err) {
-      console.error('Error in handleSave:', err);
-      
-      let errorMessage = 'Failed to save organization. ';
-      
+      console.error("Error in handleSave:", err);
+
+      let errorMessage = "Failed to save organization. ";
+
       if (err.response?.status === 401) {
-        errorMessage = 'Session expired. Please login again.';
-        localStorage.removeItem('ACCESS_TOKEN');
-        setTimeout(() => window.location.href = '/login', 1000);
+        errorMessage = "Session expired. Please login again.";
+        localStorage.removeItem("ACCESS_TOKEN");
+        setTimeout(() => (window.location.href = "/login"), 1000);
       } else if (err.response?.status === 422) {
         const errors = err.response?.data?.errors;
-        errorMessage = 'Validation errors:\n' + 
-          (errors ? Object.entries(errors).map(([field, msgs]) => 
-            `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`
-          ).join('\n') : 'Invalid data provided.');
+        errorMessage =
+          "Validation errors:\n" +
+          (errors
+            ? Object.entries(errors)
+                .map(
+                  ([field, msgs]) =>
+                    `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`,
+                )
+                .join("\n")
+            : "Invalid data provided.");
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -540,17 +609,16 @@ function OrganizationsPage() {
     if (orgToDelete) {
       try {
         await deleteOrganization(orgToDelete.id);
-        
+
         if (selectedOrg && selectedOrg.id === orgToDelete.id) {
           setSelectedOrg(null);
         }
-        
+
         await fetchOrganizations();
-        alert('Organization deleted successfully!');
-        
+        alert("Organization deleted successfully!");
       } catch (err) {
-        console.error('Failed to delete organization:', err);
-        alert(err.response?.data?.message || 'Failed to delete organization');
+        console.error("Failed to delete organization:", err);
+        alert(err.response?.data?.message || "Failed to delete organization");
       } finally {
         setIsConfirmOpen(false);
         setOrgToDelete(null);
@@ -573,38 +641,40 @@ function OrganizationsPage() {
   const handleSaveRoom = async (roomData) => {
     setIsSubmitting(true);
     try {
-      console.log('Saving room with data:', roomData);
-      
+      console.log("Saving room with data:", roomData);
+
       const apiData = {
         name: roomData.name,
-        description: roomData.description || ''
+        description: roomData.description || "",
       };
-      
+
       let response;
       if (editingRoom) {
         response = await updateDepartment(editingRoom.id, apiData);
       } else {
         response = await createDepartment(currentOrgId, apiData);
       }
-      
-      console.log('Save room response:', response);
-      
+
+      console.log("Save room response:", response);
+
       if (response && response.success === true) {
         if (editingRoom) {
           saveColorToStorage(editingRoom.id, roomData.color_code);
         } else if (response.data && response.data.id) {
           saveColorToStorage(response.data.id, roomData.color_code);
         }
-        
+
         handleCloseRoomModal();
         window.location.reload();
-        alert(response.message || 'Room saved successfully!');
+        alert(response.message || "Room saved successfully!");
       } else {
-        throw new Error(response?.message || 'Failed to save room');
+        throw new Error(response?.message || "Failed to save room");
       }
     } catch (err) {
-      console.error('Failed to save room:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to save room');
+      console.error("Failed to save room:", err);
+      alert(
+        err.response?.data?.message || err.message || "Failed to save room",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -623,10 +693,10 @@ function OrganizationsPage() {
         setIsRoomConfirmOpen(false);
         setRoomToDelete(null);
         window.location.reload();
-        alert('Room deleted successfully!');
+        alert("Room deleted successfully!");
       } catch (err) {
-        console.error('Failed to delete room:', err);
-        alert(err.response?.data?.message || 'Failed to delete room');
+        console.error("Failed to delete room:", err);
+        alert(err.response?.data?.message || "Failed to delete room");
       }
     }
   };
@@ -646,21 +716,28 @@ function OrganizationsPage() {
     try {
       let response;
       if (editingDesignation) {
-        response = await updateDesignation(editingDesignation.id, designationData);
+        response = await updateDesignation(
+          editingDesignation.id,
+          designationData,
+        );
       } else {
         response = await createDesignation(selectedOrg.id, designationData);
       }
-      
+
       if (response && response.success === true) {
         handleCloseDesignationModal();
         window.location.reload();
-        alert(response.message || 'Designation saved successfully!');
+        alert(response.message || "Designation saved successfully!");
       } else {
-        throw new Error(response?.message || 'Failed to save designation');
+        throw new Error(response?.message || "Failed to save designation");
       }
     } catch (err) {
-      console.error('Failed to save designation:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to save designation');
+      console.error("Failed to save designation:", err);
+      alert(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to save designation",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -678,22 +755,22 @@ function OrganizationsPage() {
         setIsDesignationConfirmOpen(false);
         setDesignationToDelete(null);
         window.location.reload();
-        alert('Designation deleted successfully!');
+        alert("Designation deleted successfully!");
       } catch (err) {
-        console.error('Failed to delete designation:', err);
-        alert(err.response?.data?.message || 'Failed to delete designation');
+        console.error("Failed to delete designation:", err);
+        alert(err.response?.data?.message || "Failed to delete designation");
       }
     }
   };
 
   const roomModalContextValue = {
     openRoomModal: handleOpenRoomModal,
-    deleteRoom: handleRoomDeleteClick
+    deleteRoom: handleRoomDeleteClick,
   };
 
   const designationModalContextValue = {
     openDesignationModal: handleOpenDesignationModal,
-    deleteDesignation: handleDesignationDeleteClick
+    deleteDesignation: handleDesignationDeleteClick,
   };
 
   return (
@@ -702,23 +779,33 @@ function OrganizationsPage() {
         <button
           onClick={() => setIsColorPaletteOpen(true)}
           className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
-          style={{ writingMode: 'vertical-rl' }}
+          style={{ writingMode: "vertical-rl" }}
         >
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            <svg
+              className="w-5 h-5 rotate-90"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+              />
             </svg>
             <span className="text-sm font-medium">Colors</span>
           </div>
         </button>
 
-        <ColorPalette 
+        <ColorPalette
           isOpen={isColorPaletteOpen}
           onClose={() => setIsColorPaletteOpen(false)}
           onColorSelect={setBackgroundColor}
         />
 
-        <div 
+        <div
           className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
           style={{ backgroundColor }}
         >
@@ -846,12 +933,12 @@ function OrganizationListView({
           <span className="ml-3 text-gray-600">Loading Centers...</span>
         </div>
       )}
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-600 font-medium">Error:</p>
           <p className="text-red-600">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-2 text-sm text-red-700 hover:text-red-900"
           >
@@ -899,11 +986,11 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
       <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
-      
+
       <div className="p-6 pl-8">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div className="flex-1">
-            <h2 
+            <h2
               onClick={() => onSelectOrg(organization)}
               className="text-xl font-bold text-gray-900 mb-2 truncate cursor-pointer hover:text-blue-600 transition"
             >
@@ -911,7 +998,8 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
             </h2>
             <p className="text-gray-600 mb-1 text-sm">
               <span className="font-medium">ID:</span> {organization.id}
-              {organization.registration_number && ` • ${organization.registration_number}`}
+              {organization.registration_number &&
+                ` • ${organization.registration_number}`}
             </p>
             <p className="text-sm text-gray-500 truncate">
               {organization.contact_email}
@@ -920,7 +1008,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
               Created: {new Date(organization.created_at).toLocaleDateString()}
             </p>
           </div>
-          
+
           <div className="flex flex-col items-end gap-3 self-start sm:self-center flex-shrink-0">
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -934,7 +1022,7 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
                 <HiPencil />
               </button>
             </div>
-            
+
             <button
               onClick={() => onSelectOrg(organization)}
               className="text-sm font-semibold text-blue-600 hover:underline transition-colors"
@@ -948,7 +1036,13 @@ function OrganizationCard({ organization, onSelectOrg, onEdit }) {
   );
 }
 
-function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTabChange }) {
+function OrganizationDetailView({
+  organization,
+  onBack,
+  onEdit,
+  activeTab,
+  onTabChange,
+}) {
   const roomModalContext = React.useContext(RoomModalContext);
   const designationModalContext = React.useContext(DesignationModalContext);
 
@@ -963,7 +1057,7 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
 
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8 relative">
         <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
-        
+
         <div className="pl-6">
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
             <div className="flex-1">
@@ -973,38 +1067,53 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 <div>
                   <p className="text-sm text-gray-500">Service ID</p>
-                  <p className="font-medium">{organization.registration_number || 'Not specified'}</p>
+                  <p className="font-medium">
+                    {organization.registration_number || "Not specified"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{organization.contact_email || 'Not specified'}</p>
+                  <p className="font-medium">
+                    {organization.contact_email || "Not specified"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Phone</p>
-                  <p className="font-medium">{organization.contact_phone || 'Not specified'}</p>
+                  <p className="font-medium">
+                    {organization.contact_phone || "Not specified"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Industry</p>
-                  <p className="font-medium">{organization.industry_type || 'Not specified'}</p>
+                  <p className="font-medium">
+                    {organization.industry_type || "Not specified"}
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-sm text-gray-500">Address</p>
-                  <p className="font-medium">{organization.address || 'Not specified'}</p>
+                  <p className="font-medium">
+                    {organization.address || "Not specified"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Timezone</p>
-                  <p className="font-medium">{organization.timezone || 'Australia/Sydney'}</p>
+                  <p className="font-medium">
+                    {organization.timezone || "Australia/Sydney"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Created Date</p>
                   <p className="font-medium">
-                    {new Date(organization.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {new Date(organization.created_at).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -1022,21 +1131,21 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex gap-8">
           <button
-            onClick={() => onTabChange('rooms')}
+            onClick={() => onTabChange("rooms")}
             className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
-              activeTab === 'rooms'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              activeTab === "rooms"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
             Rooms
           </button>
           <button
-            onClick={() => onTabChange('designations')}
+            onClick={() => onTabChange("designations")}
             className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
-              activeTab === 'designations'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              activeTab === "designations"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
             Designations
@@ -1044,7 +1153,7 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
         </nav>
       </div>
 
-      {activeTab === 'rooms' ? (
+      {activeTab === "rooms" ? (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Rooms</h2>
@@ -1080,19 +1189,19 @@ function RoomsList({ orgId }) {
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState("grid");
   const roomModalContext = React.useContext(RoomModalContext);
 
   const fetchRooms = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      console.log('Rooms API response:', response);
-      
+      console.log("Rooms API response:", response);
+
       let roomsData = [];
-      
+
       if (response && response.success === true) {
         if (response.data && response.data.data) {
           roomsData = response.data.data;
@@ -1102,8 +1211,8 @@ function RoomsList({ orgId }) {
       } else if (Array.isArray(response)) {
         roomsData = response;
       }
-      
-      console.log('Processed rooms data:', roomsData);
+
+      console.log("Processed rooms data:", roomsData);
       setRooms(roomsData);
     } catch (error) {
       console.error("Failed to fetch rooms", error);
@@ -1139,7 +1248,9 @@ function RoomsList({ orgId }) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
         <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No Rooms Added Yet</h3>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">
+          No Rooms Added Yet
+        </h3>
         <p className="mt-1 text-sm text-gray-500">
           Click "Add New Room" to create your first room.
         </p>
@@ -1151,7 +1262,10 @@ function RoomsList({ orgId }) {
               className="text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition"
             >
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: template.colorCode }}>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                  style={{ backgroundColor: template.colorCode }}
+                >
                   <span className="text-lg">{template.icon}</span>
                 </div>
                 <div>
@@ -1171,21 +1285,21 @@ function RoomsList({ orgId }) {
       <div className="flex justify-end mb-4">
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => setViewMode("list")}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              viewMode === 'list' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-800'
+              viewMode === "list"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
             }`}
           >
             <HiViewList className="inline mr-1" /> List
           </button>
           <button
-            onClick={() => setViewMode('grid')}
+            onClick={() => setViewMode("grid")}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              viewMode === 'grid' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-800'
+              viewMode === "grid"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
             }`}
           >
             <HiViewGrid className="inline mr-1" /> Grid
@@ -1193,7 +1307,7 @@ function RoomsList({ orgId }) {
         </div>
       </div>
 
-      {viewMode === 'list' ? (
+      {viewMode === "list" ? (
         <div className="space-y-3">
           {rooms.map((room) => (
             <RoomItem
@@ -1208,10 +1322,12 @@ function RoomsList({ orgId }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rooms.map((room) => {
             // Find matching template for default color
-            const matchingTemplate = ALL_ROOM_TEMPLATES.find(t => t.name === room.name);
-            const defaultColor = matchingTemplate?.colorCode || '#3FA2DB';
+            const matchingTemplate = ALL_ROOM_TEMPLATES.find(
+              (t) => t.name === room.name,
+            );
+            const defaultColor = matchingTemplate?.colorCode || "#3FA2DB";
             const roomHexColor = extractColorFromCode(room.id, defaultColor);
-            
+
             return (
               <RoomCard
                 key={room.id}
@@ -1230,35 +1346,39 @@ function RoomsList({ orgId }) {
 
 // Room Item Component (List View)
 function RoomItem({ room, onEdit, onDelete }) {
-  const defaultColor = '#3FA2DB';
+  const defaultColor = "#3FA2DB";
   const roomHexColor = extractColorFromCode(room.id, defaultColor);
-  
+
   // Get age group icon
   const ageGroupIcon = getAgeGroupIcon(room.age_group);
-  
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition">
       <div className="flex">
-        <div 
-          className="w-2 flex-shrink-0" 
+        <div
+          className="w-2 flex-shrink-0"
           style={{ backgroundColor: roomHexColor }}
         />
         <div className="flex-1 p-5">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <div 
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
                   style={{ backgroundColor: roomHexColor }}
                 >
                   {room.name?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {room.name}
+                  </h3>
                   {room.age_group && (
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-lg">{ageGroupIcon}</span>
-                      <span className="text-sm text-gray-600">{room.age_group}</span>
+                      <span className="text-sm text-gray-600">
+                        {room.age_group}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1297,18 +1417,15 @@ function RoomItem({ room, onEdit, onDelete }) {
 // Room Card Component (Grid View)
 function RoomCard({ room, roomHexColor, onEdit, onDelete }) {
   const ageGroupIcon = getAgeGroupIcon(room.age_group);
-  
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group">
-      <div 
-        className="h-2 w-full" 
-        style={{ backgroundColor: roomHexColor }}
-      />
-      
+      <div className="h-2 w-full" style={{ backgroundColor: roomHexColor }} />
+
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div 
+            <div
               className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md"
               style={{ backgroundColor: roomHexColor }}
             >
@@ -1318,7 +1435,7 @@ function RoomCard({ room, roomHexColor, onEdit, onDelete }) {
               <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={onEdit}
@@ -1339,24 +1456,31 @@ function RoomCard({ room, roomHexColor, onEdit, onDelete }) {
 
         {room.age_group && (
           <div className="mb-4">
-            <div 
+            <div
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border"
-              style={{ 
+              style={{
                 backgroundColor: getColorWithOpacity(roomHexColor, 0.1),
-                borderColor: roomHexColor
+                borderColor: roomHexColor,
               }}
             >
               <span className="text-2xl">{ageGroupIcon}</span>
               <div>
                 <p className="text-xs text-gray-500">Age Group</p>
-                <p className="text-sm font-semibold" style={{ color: roomHexColor }}>{room.age_group}</p>
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: roomHexColor }}
+                >
+                  {room.age_group}
+                </p>
               </div>
             </div>
           </div>
         )}
 
         {room.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">{room.description}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">
+            {room.description}
+          </p>
         )}
       </div>
     </div>
@@ -1373,18 +1497,18 @@ function DesignationsList({ orgId }) {
   const fetchDesignations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await getDesignationsByOrgId(orgId);
-      
+
       let designationsData = [];
-      
+
       if (response && response.success === true) {
         if (Array.isArray(response.data)) {
           designationsData = response.data;
         }
       }
-      
+
       setDesignations(designationsData);
     } catch (error) {
       console.error("Failed to fetch designations", error);
@@ -1420,7 +1544,9 @@ function DesignationsList({ orgId }) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
         <HiOutlineOfficeBuilding className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No Designations Added Yet</h3>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">
+          No Designations Added Yet
+        </h3>
         <p className="mt-1 text-sm text-gray-500">
           Click "Add New Designation" to create your first designation.
         </p>
@@ -1437,7 +1563,7 @@ function DesignationsList({ orgId }) {
         >
           <div className="flex items-center gap-4">
             <div className="w-1 h-10 rounded-full bg-blue-500" />
-            
+
             <div>
               <p className="font-semibold text-gray-800">{desig.title}</p>
               <div className="flex items-center gap-2 mt-1">
@@ -1446,16 +1572,16 @@ function DesignationsList({ orgId }) {
                     Level: {desig.level}
                   </span>
                 )}
-                <span className="text-xs text-gray-500">
-                  ID: {desig.id}
-                </span>
+                <span className="text-xs text-gray-500">ID: {desig.id}</span>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
             <button
-              onClick={() => designationModalContext.openDesignationModal(desig)}
+              onClick={() =>
+                designationModalContext.openDesignationModal(desig)
+              }
               className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
               title="Edit Designation"
             >
@@ -1477,11 +1603,17 @@ function DesignationsList({ orgId }) {
 
 // ============ Modal Components ============
 
-function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting }) {
+function OrganizationModal({
+  isOpen,
+  onClose,
+  onSave,
+  organization,
+  isSubmitting,
+}) {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState('');
-  
+  const [submitError, setSubmitError] = useState("");
+
   useEffect(() => {
     setFormData(
       organization || {
@@ -1492,10 +1624,10 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
         contact_phone: "",
         industry_type: "Child Care Center",
         timezone: "Australia/Sydney",
-      }
+      },
     );
     setErrors({});
-    setSubmitError('');
+    setSubmitError("");
   }, [organization, isOpen]);
 
   const handleChange = (e) =>
@@ -1503,26 +1635,26 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitError('');
+    setSubmitError("");
     setErrors({});
-    
+
     try {
       await onSave(formData);
     } catch (error) {
-      console.error('Modal submission error:', error);
-      
+      console.error("Modal submission error:", error);
+
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
         setSubmitError(error.response.data.message);
       } else {
-        setSubmitError('Failed to save Center. Please try again.');
+        setSubmitError("Failed to save Center. Please try again.");
       }
     }
   };
 
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
@@ -1537,13 +1669,13 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
             <HiX size={24} />
           </button>
         </div>
-        
+
         {submitError && (
           <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 font-medium">Error: {submitError}</p>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -1558,7 +1690,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                   error={errors.name}
                 />
               </div>
-              
+
               <FormInput
                 label="Service ID"
                 name="registration_number"
@@ -1567,7 +1699,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 placeholder="Enter Service ID"
                 error={errors.registration_number}
               />
-              
+
               <FormSelect
                 label="Industry Type"
                 name="industry_type"
@@ -1581,7 +1713,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                   </option>
                 ))}
               </FormSelect>
-              
+
               <FormInput
                 type="email"
                 label="Contact Email *"
@@ -1592,7 +1724,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 required
                 error={errors.contact_email}
               />
-              
+
               <FormInput
                 label="Contact Phone"
                 name="contact_phone"
@@ -1601,7 +1733,7 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                 placeholder="Enter contact phone"
                 error={errors.contact_phone}
               />
-              
+
               <FormSelect
                 label="Timezone"
                 name="timezone"
@@ -1611,11 +1743,11 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
-                    {tz.replace('_', ' ')}
+                    {tz.replace("_", " ")}
                   </option>
                 ))}
               </FormSelect>
-              
+
               <div className="sm:col-span-2">
                 <FormTextarea
                   label="Address"
@@ -1649,8 +1781,8 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
                   ? "Saving..."
                   : "Creating..."
                 : organization
-                ? "Save Changes"
-                : "Create Center"}
+                  ? "Save Changes"
+                  : "Create Center"}
             </button>
           </div>
         </form>
@@ -1662,76 +1794,85 @@ function OrganizationModal({ isOpen, onClose, onSave, organization, isSubmitting
 // RoomModal Component
 function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   // Find matching template for default values
   const getDefaultFromTemplate = (roomName) => {
-    const template = ALL_ROOM_TEMPLATES.find(t => t.name === roomName);
+    const template = ALL_ROOM_TEMPLATES.find((t) => t.name === roomName);
     if (template) {
       return {
         age_group: template.ageGroup,
         color_code: getColorCode(template.colorCode),
-        description: template.description
+        description: template.description,
       };
     }
     return null;
   };
-  
+
   useEffect(() => {
     if (room) {
       const savedColor = localStorage.getItem(`room_color_${room.id}`);
-      const colorCode = savedColor ? getColorCode(savedColor) : 
-        (getDefaultFromTemplate(room.name)?.color_code || 'sky-blue');
-      
-      setFormData({ 
-        name: room.name || "", 
-        description: room.description || (getDefaultFromTemplate(room.name)?.description || ""), 
-        age_group: room.age_group || (getDefaultFromTemplate(room.name)?.age_group || AGE_GROUPS[0].value),
-        color_code: colorCode
+      const colorCode = savedColor
+        ? getColorCode(savedColor)
+        : getDefaultFromTemplate(room.name)?.color_code || "sky-blue";
+
+      setFormData({
+        name: room.name || "",
+        description:
+          room.description ||
+          getDefaultFromTemplate(room.name)?.description ||
+          "",
+        age_group:
+          room.age_group ||
+          getDefaultFromTemplate(room.name)?.age_group ||
+          AGE_GROUPS[0].value,
+        color_code: colorCode,
       });
     } else {
-      setFormData({ 
-        name: "", 
-        description: "", 
+      setFormData({
+        name: "",
+        description: "",
         age_group: AGE_GROUPS[0].value,
-        color_code: "sky-blue"
+        color_code: "sky-blue",
       });
     }
-    setError('');
+    setError("");
   }, [room, isOpen]);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log(`Field changed: ${name} = ${value}`);
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     const submitData = {
       name: formData.name,
-      description: formData.description || '',
+      description: formData.description || "",
       age_group: formData.age_group || AGE_GROUPS[0].value,
-      color_code: formData.color_code || 'sky-blue'
+      color_code: formData.color_code || "sky-blue",
     };
-    
-    console.log('Submitting room data:', submitData);
-    
+
+    console.log("Submitting room data:", submitData);
+
     try {
       await onSave(submitData);
     } catch (err) {
-      console.error('Error saving room:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to save room');
+      console.error("Error saving room:", err);
+      setError(
+        err.response?.data?.message || err.message || "Failed to save room",
+      );
     }
   };
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
@@ -1746,13 +1887,13 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
             <HiX size={24} />
           </button>
         </div>
-        
+
         {error && (
           <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="space-y-4">
@@ -1764,7 +1905,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 placeholder="Enter room name (e.g., Cozy Nido)"
                 required
               />
-              
+
               <FormSelect
                 label="Age Group"
                 name="age_group"
@@ -1777,14 +1918,14 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                   </option>
                 ))}
               </FormSelect>
-              
+
               <ColorPicker
                 label="Room Color"
                 name="color_code"
                 value={formData.color_code}
                 onChange={handleChange}
               />
-              
+
               <FormTextarea
                 label="Description"
                 name="description"
@@ -1815,8 +1956,8 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                   ? "Saving..."
                   : "Creating..."
                 : room
-                ? "Save Changes"
-                : "Create Room"}
+                  ? "Save Changes"
+                  : "Create Room"}
             </button>
           </div>
         </form>
@@ -1825,31 +1966,41 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   );
 }
 
-function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }) {
+function DesignationModal({
+  isOpen,
+  onClose,
+  onSave,
+  designation,
+  isSubmitting,
+}) {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   useEffect(() => {
     setFormData(designation || { title: "", level: "Educator" });
-    setError('');
+    setError("");
   }, [designation, isOpen]);
-  
+
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     try {
       await onSave(formData);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to save designation');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to save designation",
+      );
     }
   };
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
@@ -1864,13 +2015,13 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
             <HiX size={24} />
           </button>
         </div>
-        
+
         {error && (
           <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="space-y-4">
@@ -1882,7 +2033,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                 placeholder="Enter designation title (e.g., Room Leader)"
                 required
               />
-              
+
               <FormSelect
                 label="Level"
                 name="level"
@@ -1920,8 +2071,8 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
                   ? "Saving..."
                   : "Creating..."
                 : designation
-                ? "Save Changes"
-                : "Create Designation"}
+                  ? "Save Changes"
+                  : "Create Designation"}
             </button>
           </div>
         </form>
@@ -1932,7 +2083,7 @@ function DesignationModal({ isOpen, onClose, onSave, designation, isSubmitting }
 
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">

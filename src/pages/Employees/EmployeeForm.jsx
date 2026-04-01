@@ -73,7 +73,7 @@ const MANDATORY_CERTIFICATES = {
         color: "purple",
         bgColor: "bg-purple-100",
         textColor: "text-purple-800",
-        borderColor: "border-purple-300"
+        borderColor: "border-purple-300",
       },
       {
         id: "first_aid",
@@ -87,7 +87,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "🚑",
         color: "purple",
         bgColor: "bg-purple-100",
-        textColor: "text-purple-800"
+        textColor: "text-purple-800",
       },
       {
         id: "police_check",
@@ -100,7 +100,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "👮",
         color: "purple",
         bgColor: "bg-purple-100",
-        textColor: "text-purple-800"
+        textColor: "text-purple-800",
       },
       {
         id: "mandatory_reporting",
@@ -112,7 +112,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "📋",
         color: "purple",
         bgColor: "bg-purple-100",
-        textColor: "text-purple-800"
+        textColor: "text-purple-800",
       },
       {
         id: "child_safe",
@@ -124,9 +124,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "🛡️",
         color: "purple",
         bgColor: "bg-purple-100",
-        textColor: "text-purple-800"
-      }
-    ]
+        textColor: "text-purple-800",
+      },
+    ],
   },
 
   // Qualifications (Blue themed)
@@ -150,7 +150,7 @@ const MANDATORY_CERTIFICATES = {
         qualificationCode: "CHC30121",
         color: "blue",
         bgColor: "bg-blue-100",
-        textColor: "text-blue-800"
+        textColor: "text-blue-800",
       },
       {
         id: "diploma",
@@ -163,7 +163,7 @@ const MANDATORY_CERTIFICATES = {
         qualificationCode: "CHC50121",
         color: "blue",
         bgColor: "bg-blue-100",
-        textColor: "text-blue-800"
+        textColor: "text-blue-800",
       },
       {
         id: "enrollment_proof",
@@ -176,9 +176,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "📝",
         color: "blue",
         bgColor: "bg-blue-100",
-        textColor: "text-blue-800"
-      }
-    ]
+        textColor: "text-blue-800",
+      },
+    ],
   },
 
   // Health & Safety Compliance (Green themed)
@@ -202,7 +202,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "💉",
         color: "green",
         bgColor: "bg-green-100",
-        textColor: "text-green-800"
+        textColor: "text-green-800",
       },
       {
         id: "medical_fitness",
@@ -214,9 +214,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "🩺",
         color: "green",
         bgColor: "bg-green-100",
-        textColor: "text-green-800"
-      }
-    ]
+        textColor: "text-green-800",
+      },
+    ],
   },
 
   // Identity & Legal (Orange themed)
@@ -240,7 +240,7 @@ const MANDATORY_CERTIFICATES = {
         options: ["Passport", "Driver's Licence", "Birth Certificate"],
         color: "orange",
         bgColor: "bg-orange-100",
-        textColor: "text-orange-800"
+        textColor: "text-orange-800",
       },
       {
         id: "right_to_work",
@@ -252,7 +252,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "🇦🇺",
         color: "orange",
         bgColor: "bg-orange-100",
-        textColor: "text-orange-800"
+        textColor: "text-orange-800",
       },
       {
         id: "visa",
@@ -264,9 +264,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "🛂",
         color: "orange",
         bgColor: "bg-orange-100",
-        textColor: "text-orange-800"
-      }
-    ]
+        textColor: "text-orange-800",
+      },
+    ],
   },
 
   // Professional Compliance (Red themed)
@@ -289,7 +289,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "📄",
         color: "red",
         bgColor: "bg-red-100",
-        textColor: "text-red-800"
+        textColor: "text-red-800",
       },
       {
         id: "confidentiality",
@@ -301,9 +301,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "🔒",
         color: "red",
         bgColor: "bg-red-100",
-        textColor: "text-red-800"
-      }
-    ]
+        textColor: "text-red-800",
+      },
+    ],
   },
 
   // Operational Readiness (Teal themed)
@@ -326,7 +326,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "📋",
         color: "teal",
         bgColor: "bg-teal-100",
-        textColor: "text-teal-800"
+        textColor: "text-teal-800",
       },
       {
         id: "food_safety",
@@ -338,7 +338,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "🍽️",
         color: "teal",
         bgColor: "bg-teal-100",
-        textColor: "text-teal-800"
+        textColor: "text-teal-800",
       },
       {
         id: "safe_sleep",
@@ -350,9 +350,9 @@ const MANDATORY_CERTIFICATES = {
         icon: "😴",
         color: "teal",
         bgColor: "bg-teal-100",
-        textColor: "text-teal-800"
-      }
-    ]
+        textColor: "text-teal-800",
+      },
+    ],
   },
 
   // Annual Training (Pink themed)
@@ -376,7 +376,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "☀️",
         color: "pink",
         bgColor: "bg-pink-100",
-        textColor: "text-pink-800"
+        textColor: "text-pink-800",
       },
       {
         id: "allergies",
@@ -389,7 +389,7 @@ const MANDATORY_CERTIFICATES = {
         icon: "⚠️",
         color: "pink",
         bgColor: "bg-pink-100",
-        textColor: "text-pink-800"
+        textColor: "text-pink-800",
       },
       {
         id: "food_safety_annual",
@@ -402,10 +402,10 @@ const MANDATORY_CERTIFICATES = {
         icon: "🍲",
         color: "pink",
         bgColor: "bg-pink-100",
-        textColor: "text-pink-800"
-      }
-    ]
-  }
+        textColor: "text-pink-800",
+      },
+    ],
+  },
 };
 
 // Staff File Requirements
@@ -418,25 +418,25 @@ const STAFF_FILE_REQUIREMENTS = [
   { id: "immunisation_record", name: "Immunisation Record", required: true },
   { id: "training_certs", name: "Training Certificates", required: true },
   { id: "signed_policies", name: "Signed Policies", required: true },
-  { id: "induction_checklist", name: "Induction Checklist", required: true }
+  { id: "induction_checklist", name: "Induction Checklist", required: true },
 ];
 
 // ============================================
 // SUPER FUND SEARCH COMPONENT
 // ============================================
-const SuperFundSearch = ({ 
-  value = '', 
-  onChange, 
+const SuperFundSearch = ({
+  value = "",
+  onChange,
   onSelect,
-  placeholder = "Search for super fund...", 
+  placeholder = "Search for super fund...",
   disabled = false,
   error = null,
 }) => {
-  const [query, setQuery] = useState(value || '');
+  const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selected, setSelected] = useState(value || '');
+  const [selected, setSelected] = useState(value || "");
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
   const debounceTimeout = useRef(null);
@@ -458,7 +458,7 @@ const SuperFundSearch = ({
         const results = await searchSuperFunds(searchQuery);
         setSuggestions(results);
       } catch (error) {
-        console.error('Search error:', error);
+        console.error("Search error:", error);
         setSuggestions([]);
       } finally {
         setIsLoading(false);
@@ -469,12 +469,12 @@ const SuperFundSearch = ({
   const handleInputChange = (e) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
-    setSelected('');
-    
+    setSelected("");
+
     if (onChange) {
       onChange(newQuery);
     }
-    
+
     setShowSuggestions(true);
     debouncedSearch(newQuery);
   };
@@ -483,29 +483,29 @@ const SuperFundSearch = ({
     setQuery(fundName);
     setSelected(fundName);
     setShowSuggestions(false);
-    
+
     if (onSelect) {
       onSelect(fundName);
     }
-    
+
     if (onChange) {
       onChange(fundName);
     }
   };
 
   const handleClear = () => {
-    setQuery('');
-    setSelected('');
+    setQuery("");
+    setSelected("");
     setSuggestions([]);
-    
+
     if (onChange) {
-      onChange('');
+      onChange("");
     }
-    
+
     if (onSelect) {
-      onSelect('');
+      onSelect("");
     }
-    
+
     inputRef.current?.focus();
   };
 
@@ -515,17 +515,17 @@ const SuperFundSearch = ({
         setShowSuggestions(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   useEffect(() => {
     if (value !== query) {
-      setQuery(value || '');
-      setSelected(value || '');
+      setQuery(value || "");
+      setSelected(value || "");
     }
   }, [value]);
 
@@ -533,16 +533,21 @@ const SuperFundSearch = ({
     if (!highlight.trim()) {
       return text;
     }
-    
-    const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+    const regex = new RegExp(
+      `(${highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi",
+    );
     const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
+
+    return parts.map((part, index) =>
       regex.test(part) ? (
-        <span key={index} className="bg-yellow-200 font-semibold">{part}</span>
+        <span key={index} className="bg-yellow-200 font-semibold">
+          {part}
+        </span>
       ) : (
         <span key={index}>{part}</span>
-      )
+      ),
     );
   };
 
@@ -552,7 +557,7 @@ const SuperFundSearch = ({
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <FaSearch className="h-4 w-4 text-gray-400" />
         </div>
-        
+
         <input
           ref={inputRef}
           type="text"
@@ -562,13 +567,13 @@ const SuperFundSearch = ({
           placeholder={placeholder}
           disabled={disabled}
           className={`w-full pl-10 pr-10 py-2.5 border ${
-            error ? 'border-red-500 bg-red-50' : 'border-gray-300'
+            error ? "border-red-500 bg-red-50" : "border-gray-300"
           } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-            disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+            disabled ? "bg-gray-100 cursor-not-allowed" : ""
           }`}
           autoComplete="off"
         />
-        
+
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
           {isLoading ? (
             <FaSpinner className="h-4 w-4 text-gray-400 animate-spin" />
@@ -596,11 +601,9 @@ const SuperFundSearch = ({
           ) : null}
         </div>
       </div>
-      
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
-      
+
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+
       {showSuggestions && (suggestions.length > 0 || isLoading) && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {isLoading ? (
@@ -624,12 +627,15 @@ const SuperFundSearch = ({
           )}
         </div>
       )}
-      
-      {showSuggestions && !isLoading && query.length >= 1 && suggestions.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
-          No super funds found matching "{query}"
-        </div>
-      )}
+
+      {showSuggestions &&
+        !isLoading &&
+        query.length >= 1 &&
+        suggestions.length === 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
+            No super funds found matching "{query}"
+          </div>
+        )}
     </div>
   );
 };
@@ -637,131 +643,155 @@ const SuperFundSearch = ({
 // File Icon Component
 const FileIcon = ({ fileName }) => {
   if (!fileName) return <FaFileAlt className="text-gray-400 text-2xl" />;
-  
-  const ext = fileName.split('.').pop()?.toLowerCase();
+
+  const ext = fileName.split(".").pop()?.toLowerCase();
   const className = "text-2xl";
-  
-  if (ext === 'pdf') return <FaFilePdf className={`${className} text-red-500`} />;
-  if (['doc', 'docx'].includes(ext)) return <FaFileWord className={`${className} text-blue-500`} />;
-  if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className={`${className} text-green-500`} />;
+
+  if (ext === "pdf")
+    return <FaFilePdf className={`${className} text-red-500`} />;
+  if (["doc", "docx"].includes(ext))
+    return <FaFileWord className={`${className} text-blue-500`} />;
+  if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext))
+    return <FaFileImage className={`${className} text-green-500`} />;
   return <FaFileAlt className={`${className} text-gray-500`} />;
 };
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = {}, employeeId }) => {
+const DocumentUploadModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  isEdit,
+  initialData = {},
+  employeeId,
+}) => {
   const [formData, setFormData] = useState({
-    document_type: initialData.document_type || '',
-    issue_date: initialData.issue_date || '',
-    expiry_date: initialData.expiry_date || '',
+    document_type: initialData.document_type || "",
+    issue_date: initialData.issue_date || "",
+    expiry_date: initialData.expiry_date || "",
     file: null,
-    file_name: initialData.file_name || '',
-    category: initialData.category || '',
+    file_name: initialData.file_name || "",
+    category: initialData.category || "",
   });
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const allCertificateTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(category => 
-    category.items.map(item => ({
-      ...item,
-      category: category.title,
-      categoryColor: category.color
-    }))
+  const allCertificateTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(
+    (category) =>
+      category.items.map((item) => ({
+        ...item,
+        category: category.title,
+        categoryColor: category.color,
+      })),
   );
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        document_type: initialData.document_type || '',
-        issue_date: initialData.issue_date || '',
-        expiry_date: initialData.expiry_date || '',
+        document_type: initialData.document_type || "",
+        issue_date: initialData.issue_date || "",
+        expiry_date: initialData.expiry_date || "",
         file: null,
-        file_name: initialData.file_name || '',
-        category: initialData.category || '',
+        file_name: initialData.file_name || "",
+        category: initialData.category || "",
       });
-      setError('');
+      setError("");
     }
   }, [isOpen, initialData]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
-      
-      setFormData(prev => ({
+      const fileNameWithoutExt = file.name.split(".").slice(0, -1).join(".");
+
+      setFormData((prev) => ({
         ...prev,
         file,
-        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        file_name:
+          prev.file_name ||
+          fileNameWithoutExt
+            .replace(/[_-]/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
       }));
     }
   };
 
   const handleDocumentTypeChange = (e) => {
     const selectedValue = e.target.value;
-    const selectedCert = allCertificateTypes.find(cert => cert.type === selectedValue);
-    
-    setFormData(prev => ({
+    const selectedCert = allCertificateTypes.find(
+      (cert) => cert.type === selectedValue,
+    );
+
+    setFormData((prev) => ({
       ...prev,
       document_type: selectedValue,
-      category: selectedCert?.category || '',
-      expiry_date: prev.expiry_date || (selectedCert?.hasExpiry ? 
-        new Date(Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '')
+      category: selectedCert?.category || "",
+      expiry_date:
+        prev.expiry_date ||
+        (selectedCert?.hasExpiry
+          ? new Date(
+              Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000,
+            )
+              .toISOString()
+              .split("T")[0]
+          : ""),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.file && !isEdit) {
-      setError('Please select a file to upload');
+      setError("Please select a file to upload");
       return;
     }
 
     if (!formData.document_type) {
-      setError('Please select a document type');
+      setError("Please select a document type");
       return;
     }
 
     if (!formData.file_name) {
-      setError('Please enter a file name');
+      setError("Please enter a file name");
       return;
     }
 
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
       const data = new FormData();
-      
-      data.append('employee_id', employeeId);
-      data.append('document_type', formData.document_type);
-      data.append('file_name', formData.file_name);
-      data.append('category', formData.category);
-      
+
+      data.append("employee_id", employeeId);
+      data.append("document_type", formData.document_type);
+      data.append("file_name", formData.file_name);
+      data.append("category", formData.category);
+
       if (formData.file) {
-        data.append('file', formData.file);
+        data.append("file", formData.file);
       }
-      
+
       if (formData.issue_date) {
-        data.append('issue_date', formData.issue_date);
+        data.append("issue_date", formData.issue_date);
       }
       if (formData.expiry_date) {
-        data.append('expiry_date', formData.expiry_date);
+        data.append("expiry_date", formData.expiry_date);
       }
 
       if (isEdit) {
-        data.append('_method', 'PUT');
+        data.append("_method", "PUT");
       }
 
       await onSubmit(employeeId, data, isEdit);
       onClose();
     } catch (err) {
-      console.error('Upload error:', err);
+      console.error("Upload error:", err);
       if (err.response?.status === 422) {
         const errors = err.response.data?.errors || {};
         const errorMessages = Object.values(errors).flat();
-        setError(errorMessages.join(', ') || 'Validation failed');
+        setError(errorMessages.join(", ") || "Validation failed");
       } else {
-        setError(err.response?.data?.message || 'Failed to upload document');
+        setError(err.response?.data?.message || "Failed to upload document");
       }
     } finally {
       setUploading(false);
@@ -770,18 +800,22 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
 
   if (!isOpen) return null;
 
-  const groupedTypes = Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => ({
-    ...category,
-    key
-  }));
+  const groupedTypes = Object.entries(MANDATORY_CERTIFICATES).map(
+    ([key, category]) => ({
+      ...category,
+      key,
+    }),
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">{isEdit ? 'Edit Document' : 'Upload New Document'}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isEdit ? "Edit Document" : "Upload New Document"}
+          </h2>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -802,10 +836,15 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               >
                 <option value="">Select Document Type</option>
                 {groupedTypes.map((category) => (
-                  <optgroup key={category.key} label={category.title} className={category.textColor}>
+                  <optgroup
+                    key={category.key}
+                    label={category.title}
+                    className={category.textColor}
+                  >
                     {category.items.map((item) => (
                       <option key={item.id} value={item.type} className="py-1">
-                        {item.icon} {item.name} {item.required ? '(Required)' : ''}
+                        {item.icon} {item.name}{" "}
+                        {item.required ? "(Required)" : ""}
                       </option>
                     ))}
                   </optgroup>
@@ -813,7 +852,8 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               </select>
               {formData.category && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Category: <span className="font-medium">{formData.category}</span>
+                  Category:{" "}
+                  <span className="font-medium">{formData.category}</span>
                 </p>
               )}
             </div>
@@ -825,7 +865,9 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               <input
                 type="text"
                 value={formData.file_name}
-                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, file_name: e.target.value })
+                }
                 placeholder="Enter a descriptive file name"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
@@ -843,7 +885,9 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
                 <input
                   type="date"
                   value={formData.issue_date}
-                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, issue_date: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -854,7 +898,9 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
                 <input
                   type="date"
                   value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expiry_date: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -911,7 +957,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onSubmit, isEdit, initialData = 
               className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {uploading && <FaSpinner className="animate-spin" />}
-              {isEdit ? 'Update Document' : 'Upload Document'}
+              {isEdit ? "Update Document" : "Upload Document"}
             </button>
           </div>
         </form>
@@ -956,15 +1002,17 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 // Document Card Component
 const DocumentCard = ({ document, onDelete, onEdit }) => {
   const today = new Date();
-  const expiryDate = document.expiry_date ? new Date(document.expiry_date) : null;
-  
+  const expiryDate = document.expiry_date
+    ? new Date(document.expiry_date)
+    : null;
+
   let daysRemaining = null;
   let statusColor = "bg-green-100 text-green-800 border-green-200";
   let statusText = "Valid";
-  
+
   if (expiryDate) {
     daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    
+
     if (daysRemaining < 0) {
       statusColor = "bg-red-100 text-red-800 border-red-200";
       statusText = "Expired";
@@ -975,12 +1023,12 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString('en-AU', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -989,20 +1037,24 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
 
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
-    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
+    const ext = fileName.split(".").pop()?.toLowerCase();
+
+    if (ext === "pdf") return <FaFilePdf className="text-red-500" />;
+    if (["doc", "docx"].includes(ext))
+      return <FaFileWord className="text-blue-500" />;
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext))
+      return <FaFileImage className="text-green-500" />;
     return <FaFileAlt className="text-gray-500" />;
   };
 
-  const baseUrl = 'https://api.chrispp.com';
+  const baseUrl = "https://api.chrispp.com";
 
   const findCertType = () => {
     for (const category of Object.values(MANDATORY_CERTIFICATES)) {
-      const found = category.items.find(item => 
-        item.type === document.document_type || item.name.includes(document.document_type)
+      const found = category.items.find(
+        (item) =>
+          item.type === document.document_type ||
+          item.name.includes(document.document_type),
       );
       if (found) return found;
     }
@@ -1015,46 +1067,59 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="text-xl">
-            {getFileIcon(document.file_name)}
-          </div>
+          <div className="text-xl">{getFileIcon(document.file_name)}</div>
           <div>
-            <h4 className="font-semibold text-gray-900">{document.document_type || 'Document'}</h4>
+            <h4 className="font-semibold text-gray-900">
+              {document.document_type || "Document"}
+            </h4>
             <p className="text-sm text-gray-500">{document.file_name}</p>
             {certType?.includes && (
               <div className="flex gap-1 mt-1">
                 {certType.includes.map((item, idx) => (
-                  <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  <span
+                    key={idx}
+                    className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full"
+                  >
                     {item}
                   </span>
                 ))}
               </div>
             )}
             {document.category && (
-              <span className="text-xs text-gray-400 mt-1 block">{document.category}</span>
+              <span className="text-xs text-gray-400 mt-1 block">
+                {document.category}
+              </span>
             )}
           </div>
         </div>
         {expiryDate && (
-          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}
+          >
             {statusText}
           </span>
         )}
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         {document.issue_date && (
           <div>
             <p className="text-xs text-gray-500">Issue Date</p>
-            <p className="text-sm font-medium">{formatDate(document.issue_date)}</p>
+            <p className="text-sm font-medium">
+              {formatDate(document.issue_date)}
+            </p>
           </div>
         )}
         {document.expiry_date && (
           <div>
             <p className="text-xs text-gray-500">Expiry Date</p>
-            <p className="text-sm font-medium">{formatDate(document.expiry_date)}</p>
+            <p className="text-sm font-medium">
+              {formatDate(document.expiry_date)}
+            </p>
             {daysRemaining > 0 && daysRemaining <= 90 && (
-              <p className="text-xs text-orange-600 mt-1">{daysRemaining} days remaining</p>
+              <p className="text-xs text-orange-600 mt-1">
+                {daysRemaining} days remaining
+              </p>
             )}
           </div>
         )}
@@ -1063,17 +1128,20 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
       {expiryDate && daysRemaining > 0 && daysRemaining <= 90 && (
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className={`h-2 rounded-full ${
-                daysRemaining <= 30 ? 'bg-red-500' : 
-                daysRemaining <= 60 ? 'bg-orange-500' : 'bg-yellow-500'
+                daysRemaining <= 30
+                  ? "bg-red-500"
+                  : daysRemaining <= 60
+                    ? "bg-orange-500"
+                    : "bg-yellow-500"
               }`}
               style={{ width: `${Math.min(100, (daysRemaining / 90) * 100)}%` }}
             ></div>
           </div>
         </div>
       )}
-      
+
       <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
         {document.file_url && (
           <>
@@ -1111,7 +1179,7 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
           Delete
         </button>
       </div>
-      
+
       <div className="mt-3 text-xs text-gray-400">
         Uploaded: {formatDate(document.created_at)}
       </div>
@@ -1122,73 +1190,93 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
 // Compliance Checklist Component with Colors
 const ComplianceChecklist = ({ certificates = [] }) => {
   const [expandedCategories, setExpandedCategories] = useState(
-    Object.keys(MANDATORY_CERTIFICATES).reduce((acc, key) => ({ ...acc, [key]: true }), {})
+    Object.keys(MANDATORY_CERTIFICATES).reduce(
+      (acc, key) => ({ ...acc, [key]: true }),
+      {},
+    ),
   );
 
   const toggleCategory = (categoryKey) => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev) => ({
       ...prev,
-      [categoryKey]: !prev[categoryKey]
+      [categoryKey]: !prev[categoryKey],
     }));
   };
 
   const isCertificateUploaded = (certType) => {
-    return certificates.some(doc => 
-      doc.document_type === certType || 
-      doc.document_type?.includes(certType) ||
-      (certType === "Working With Children Check" && doc.document_type?.includes("WWCC")) ||
-      (certType === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+    return certificates.some(
+      (doc) =>
+        doc.document_type === certType ||
+        doc.document_type?.includes(certType) ||
+        (certType === "Working With Children Check" &&
+          doc.document_type?.includes("WWCC")) ||
+        (certType === "First Aid Certificate" &&
+          doc.document_type?.includes("First Aid")),
     );
   };
 
   const getUploadedCertificate = (certType) => {
-    return certificates.find(doc => 
-      doc.document_type === certType || 
-      doc.document_type?.includes(certType) ||
-      (certType === "Working With Children Check" && doc.document_type?.includes("WWCC")) ||
-      (certType === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+    return certificates.find(
+      (doc) =>
+        doc.document_type === certType ||
+        doc.document_type?.includes(certType) ||
+        (certType === "Working With Children Check" &&
+          doc.document_type?.includes("WWCC")) ||
+        (certType === "First Aid Certificate" &&
+          doc.document_type?.includes("First Aid")),
     );
   };
 
-  const totalRequired = Object.values(MANDATORY_CERTIFICATES)
-    .flatMap(cat => cat.items.filter(item => item.required)).length;
-  
-  const uploadedRequired = Object.values(MANDATORY_CERTIFICATES)
-    .flatMap(cat => cat.items.filter(item => item.required))
-    .filter(item => isCertificateUploaded(item.type)).length;
+  const totalRequired = Object.values(MANDATORY_CERTIFICATES).flatMap((cat) =>
+    cat.items.filter((item) => item.required),
+  ).length;
 
-  const compliancePercentage = Math.round((uploadedRequired / totalRequired) * 100) || 0;
+  const uploadedRequired = Object.values(MANDATORY_CERTIFICATES)
+    .flatMap((cat) => cat.items.filter((item) => item.required))
+    .filter((item) => isCertificateUploaded(item.type)).length;
+
+  const compliancePercentage =
+    Math.round((uploadedRequired / totalRequired) * 100) || 0;
 
   const getStatusColor = (percentage) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return "text-green-600";
+    if (percentage >= 50) return "text-yellow-600";
+    return "text-red-600";
   };
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Compliance Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Compliance Summary
+        </h3>
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <div className="flex justify-between mb-2">
               <span className="text-sm text-gray-600">Overall Compliance</span>
-              <span className={`text-sm font-bold ${getStatusColor(compliancePercentage)}`}>
+              <span
+                className={`text-sm font-bold ${getStatusColor(compliancePercentage)}`}
+              >
                 {compliancePercentage}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
+              <div
                 className={`h-3 rounded-full ${
-                  compliancePercentage >= 80 ? 'bg-green-500' : 
-                  compliancePercentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                  compliancePercentage >= 80
+                    ? "bg-green-500"
+                    : compliancePercentage >= 50
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
                 }`}
                 style={{ width: `${compliancePercentage}%` }}
               ></div>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-gray-800">{uploadedRequired}/{totalRequired}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {uploadedRequired}/{totalRequired}
+            </p>
             <p className="text-xs text-gray-500">Required Documents</p>
           </div>
         </div>
@@ -1196,25 +1284,35 @@ const ComplianceChecklist = ({ certificates = [] }) => {
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-md font-semibold text-gray-800">Staff File Requirements</h3>
+          <h3 className="text-md font-semibold text-gray-800">
+            Staff File Requirements
+          </h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {STAFF_FILE_REQUIREMENTS.map(req => {
-              const isUploaded = certificates.some(doc => 
-                doc.document_type?.includes(req.name) ||
-                (req.name === "WWCC Copy" && doc.document_type?.includes("WWCC")) ||
-                (req.name === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
+            {STAFF_FILE_REQUIREMENTS.map((req) => {
+              const isUploaded = certificates.some(
+                (doc) =>
+                  doc.document_type?.includes(req.name) ||
+                  (req.name === "WWCC Copy" &&
+                    doc.document_type?.includes("WWCC")) ||
+                  (req.name === "First Aid Certificate" &&
+                    doc.document_type?.includes("First Aid")),
               );
-              
+
               return (
-                <div key={req.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <div
+                  key={req.id}
+                  className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
+                >
                   {isUploaded ? (
                     <FaCheck className="text-green-500 flex-shrink-0" />
                   ) : (
                     <FaTimes className="text-red-500 flex-shrink-0" />
                   )}
-                  <span className={`text-sm ${isUploaded ? 'text-gray-800' : 'text-gray-500'}`}>
+                  <span
+                    className={`text-sm ${isUploaded ? "text-gray-800" : "text-gray-500"}`}
+                  >
                     {req.name}
                   </span>
                 </div>
@@ -1225,23 +1323,29 @@ const ComplianceChecklist = ({ certificates = [] }) => {
       </div>
 
       {Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => {
-        const uploadedInCategory = category.items.filter(item => 
-          isCertificateUploaded(item.type)
+        const uploadedInCategory = category.items.filter((item) =>
+          isCertificateUploaded(item.type),
         ).length;
 
         return (
-          <div 
-            key={key} 
-            className={`rounded-lg border overflow-hidden ${category.borderColor || 'border-gray-200'}`}
+          <div
+            key={key}
+            className={`rounded-lg border overflow-hidden ${category.borderColor || "border-gray-200"}`}
           >
             <button
               onClick={() => toggleCategory(key)}
-              className={`w-full px-6 py-4 flex items-center justify-between hover:opacity-90 transition-colors ${category.bgColor || 'bg-gray-50'}`}
+              className={`w-full px-6 py-4 flex items-center justify-between hover:opacity-90 transition-colors ${category.bgColor || "bg-gray-50"}`}
             >
               <div className="flex items-center gap-3">
-                <span className={`text-${category.color || 'gray'}-600 text-xl`}>{category.icon}</span>
+                <span
+                  className={`text-${category.color || "gray"}-600 text-xl`}
+                >
+                  {category.icon}
+                </span>
                 <div>
-                  <h3 className={`text-md font-semibold ${category.textColor || 'text-gray-800'} text-left`}>
+                  <h3
+                    className={`text-md font-semibold ${category.textColor || "text-gray-800"} text-left`}
+                  >
                     {category.title}
                   </h3>
                   <p className="text-xs text-gray-500 text-left">
@@ -1249,21 +1353,25 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                   </p>
                 </div>
               </div>
-              {expandedCategories[key] ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
+              {expandedCategories[key] ? (
+                <FaChevronUp className="text-gray-500" />
+              ) : (
+                <FaChevronDown className="text-gray-500" />
+              )}
             </button>
-            
+
             {expandedCategories[key] && (
               <div className="px-6 pb-6 pt-2 border-t border-gray-200 bg-white">
                 <div className="space-y-3">
                   {category.items.map((item) => {
                     const uploaded = isCertificateUploaded(item.type);
                     const uploadedDoc = getUploadedCertificate(item.type);
-                    
+
                     return (
-                      <div 
-                        key={item.id} 
+                      <div
+                        key={item.id}
                         className={`flex items-start gap-3 p-3 rounded-lg ${
-                          item.bgColor || 'bg-gray-50'
+                          item.bgColor || "bg-gray-50"
                         }`}
                       >
                         <div className="mt-1">
@@ -1279,27 +1387,41 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{item.icon}</span>
                             <div>
-                              <p className={`font-medium ${item.textColor || 'text-gray-800'}`}>
+                              <p
+                                className={`font-medium ${item.textColor || "text-gray-800"}`}
+                              >
                                 {item.name}
-                                {item.required && <span className="text-red-500 ml-1">*</span>}
+                                {item.required && (
+                                  <span className="text-red-500 ml-1">*</span>
+                                )}
                               </p>
-                              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {item.description}
+                              </p>
                             </div>
                           </div>
                           {uploaded && uploadedDoc && (
                             <div className="mt-2 pl-7">
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="text-gray-500">Uploaded:</span>
-                                <span className="font-medium text-gray-700">{uploadedDoc.file_name}</span>
+                                <span className="font-medium text-gray-700">
+                                  {uploadedDoc.file_name}
+                                </span>
                                 {uploadedDoc.expiry_date && (
                                   <>
                                     <span className="text-gray-400">|</span>
-                                    <span className={`${
-                                      new Date(uploadedDoc.expiry_date) < new Date() 
-                                        ? 'text-red-600' 
-                                        : 'text-green-600'
-                                    }`}>
-                                      Exp: {new Date(uploadedDoc.expiry_date).toLocaleDateString()}
+                                    <span
+                                      className={`${
+                                        new Date(uploadedDoc.expiry_date) <
+                                        new Date()
+                                          ? "text-red-600"
+                                          : "text-green-600"
+                                      }`}
+                                    >
+                                      Exp:{" "}
+                                      {new Date(
+                                        uploadedDoc.expiry_date,
+                                      ).toLocaleDateString()}
                                     </span>
                                   </>
                                 )}
@@ -1308,15 +1430,19 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                           )}
                           {item.recommendations && (
                             <p className="text-xs text-gray-400 mt-1 pl-7">
-                              Recommended: {item.recommendations.join(', ')}
+                              Recommended: {item.recommendations.join(", ")}
                             </p>
                           )}
                           {item.includes && (
                             <div className="flex flex-wrap gap-1 mt-1 pl-7">
                               {item.includes.map((inc, idx) => (
-                                <span key={idx} className={`text-xs px-2 py-0.5 rounded-full ${
-                                  category.badgeColor || 'bg-gray-100 text-gray-800'
-                                }`}>
+                                <span
+                                  key={idx}
+                                  className={`text-xs px-2 py-0.5 rounded-full ${
+                                    category.badgeColor ||
+                                    "bg-gray-100 text-gray-800"
+                                  }`}
+                                >
                                   {inc}
                                 </span>
                               ))}
@@ -1349,7 +1475,10 @@ const InputField = ({
   disabled = false,
 }) => (
   <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      htmlFor={name}
+      className="block text-sm font-medium text-gray-700 mb-1"
+    >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
@@ -1363,7 +1492,9 @@ const InputField = ({
       disabled={disabled}
       placeholder={placeholder}
       className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
       } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
     />
     {error && (
@@ -1388,7 +1519,10 @@ const SelectField = ({
   disabled = false,
 }) => (
   <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      htmlFor={name}
+      className="block text-sm font-medium text-gray-700 mb-1"
+    >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
@@ -1400,7 +1534,9 @@ const SelectField = ({
       required={required}
       disabled={disabled}
       className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
       } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
     >
       <option value="">{placeholder}</option>
@@ -1431,7 +1567,10 @@ const TextAreaField = ({
   rows = 3,
 }) => (
   <div className="w-full">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      htmlFor={name}
+      className="block text-sm font-medium text-gray-700 mb-1"
+    >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
@@ -1444,7 +1583,9 @@ const TextAreaField = ({
       placeholder={placeholder}
       rows={rows}
       className={`w-full px-4 py-2.5 rounded-lg border ${
-        error ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
       } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
     />
     {error && (
@@ -1467,13 +1608,21 @@ const TabButton = ({ active, onClick, icon, label, step, completed }) => (
         : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
     }`}
   >
-    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-      active ? "bg-blue-100 text-blue-600" : completed ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-    }`}>
+    <div
+      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+        active
+          ? "bg-blue-100 text-blue-600"
+          : completed
+            ? "bg-green-100 text-green-600"
+            : "bg-gray-100 text-gray-400"
+      }`}
+    >
       {completed && !active ? <FaCheck className="text-sm" /> : icon}
     </div>
     <div className="flex flex-col items-start">
-      <span className={`text-sm font-medium ${active ? "text-blue-700" : completed ? "text-green-700" : "text-gray-600"}`}>
+      <span
+        className={`text-sm font-medium ${active ? "text-blue-700" : completed ? "text-green-700" : "text-gray-600"}`}
+      >
         {label}
       </span>
       <span className={`text-xs ${active ? "text-blue-500" : "text-gray-400"}`}>
@@ -1501,11 +1650,11 @@ export default function EmployeeForm() {
   const [formErrors, setFormErrors] = useState({});
   const [completedTabs, setCompletedTabs] = useState(new Set());
   const [employeeId, setEmployeeId] = useState(null);
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState("list");
 
   const [certificates, setCertificates] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
-  const [certificateError, setCertificateError] = useState('');
+  const [certificateError, setCertificateError] = useState("");
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState(null);
@@ -1525,7 +1674,7 @@ export default function EmployeeForm() {
     emergency_contact_name: "",
     emergency_contact_phone: "",
     emergency_contact_relationship: "",
-    
+
     employee_code: "",
     joining_date: "",
     room_id: "",
@@ -1534,7 +1683,7 @@ export default function EmployeeForm() {
     employment_type: "",
     status: "On Probation",
     hourly_wage: "",
-    
+
     tax_file_number: "",
     superannuation_fund_name: "",
     superannuation_member_number: "",
@@ -1550,49 +1699,55 @@ export default function EmployeeForm() {
 
   const tabs = [
     { id: "personal", label: "Personal Info", icon: <FaUser />, step: 1 },
-    { id: "certificates", label: "Certificates", icon: <FaCertificate />, step: 2 },
+    {
+      id: "certificates",
+      label: "Certificates",
+      icon: <FaCertificate />,
+      step: 2,
+    },
     { id: "employment", label: "Employment", icon: <FaBriefcase />, step: 3 },
     { id: "payroll", label: "Payroll", icon: <FaDollarSign />, step: 4 },
   ];
 
   const tabDescriptions = {
     personal: "Step 1: Enter basic personal details to create the employee",
-    certificates: "Step 2: Upload certificates and documents - View by list or compliance checklist",
+    certificates:
+      "Step 2: Upload certificates and documents - View by list or compliance checklist",
     employment: "Step 3: Add employment details",
     payroll: "Step 4: Add payroll information",
   };
 
   useEffect(() => {
     if (id) {
-      console.log('URL has ID param:', id);
+      console.log("URL has ID param:", id);
       setEmployeeId(id);
     }
   }, [id]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && tabs.some(tab => tab.id === tabParam)) {
-      console.log('Setting active tab from URL:', tabParam);
+    const tabParam = params.get("tab");
+    if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
+      console.log("Setting active tab from URL:", tabParam);
       setActiveTab(tabParam);
     }
   }, [location.search]);
 
   useEffect(() => {
     if (employeeId) {
-      console.log('Employee ID changed to:', employeeId, '- fetching data');
+      console.log("Employee ID changed to:", employeeId, "- fetching data");
       fetchEmployeeData();
       fetchCertificates();
-      setCompletedTabs(prev => new Set([...prev, "personal"]));
+      setCompletedTabs((prev) => new Set([...prev, "personal"]));
     }
   }, [employeeId]);
 
   useEffect(() => {
     if (employeeId) {
       const params = new URLSearchParams(location.search);
-      params.set('tab', activeTab);
+      params.set("tab", activeTab);
       navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-      console.log('URL updated with tab:', activeTab);
+      console.log("URL updated with tab:", activeTab);
     }
   }, [activeTab, employeeId, navigate, location.pathname]);
 
@@ -1610,17 +1765,17 @@ export default function EmployeeForm() {
 
   const fetchCertificates = async () => {
     if (!employeeId) return;
-    
+
     setLoadingCertificates(true);
-    setCertificateError('');
-    
+    setCertificateError("");
+
     try {
-      console.log('Fetching certificates for employee:', employeeId);
+      console.log("Fetching certificates for employee:", employeeId);
       const response = await getEmployeeDocuments(employeeId);
-      console.log('Documents response:', response);
-      
+      console.log("Documents response:", response);
+
       let documentsData = [];
-      
+
       if (response.data) {
         if (response.data.success === true && response.data.data) {
           documentsData = response.data.data;
@@ -1632,12 +1787,12 @@ export default function EmployeeForm() {
       } else if (Array.isArray(response)) {
         documentsData = response;
       }
-      
+
       setCertificates(Array.isArray(documentsData) ? documentsData : []);
     } catch (error) {
-      console.error('Error fetching certificates:', error);
+      console.error("Error fetching certificates:", error);
       setCertificates([]);
-      setCertificateError('Failed to load certificates. Please try again.');
+      setCertificateError("Failed to load certificates. Please try again.");
     } finally {
       setLoadingCertificates(false);
     }
@@ -1650,17 +1805,17 @@ export default function EmployeeForm() {
           if (res && res.data && res.data.success === true) {
             const roomsData = res.data.data || [];
             setDepartments(
-              roomsData.map((r) => ({ 
-                value: r.id, 
+              roomsData.map((r) => ({
+                value: r.id,
                 label: r.name,
-              }))
+              })),
             );
           } else if (res && res.data && Array.isArray(res.data)) {
             setDepartments(
-              res.data.map((r) => ({ 
-                value: r.id, 
+              res.data.map((r) => ({
+                value: r.id,
                 label: r.name,
-              }))
+              })),
             );
           } else {
             setDepartments([]);
@@ -1679,14 +1834,14 @@ export default function EmployeeForm() {
               employeesData.map((e) => ({
                 value: e.id,
                 label: `${e.first_name} ${e.last_name}`,
-              }))
+              })),
             );
           } else if (response.data && Array.isArray(response.data)) {
             setManagers(
               response.data.map((e) => ({
                 value: e.id,
                 label: `${e.first_name} ${e.last_name}`,
-              }))
+              })),
             );
           } else {
             setManagers([]);
@@ -1701,21 +1856,24 @@ export default function EmployeeForm() {
     const fetchDesignations = async () => {
       // Only fetch if we have an organization ID
       if (!organizationId) {
-        console.log('No organization ID available');
+        console.log("No organization ID available");
         setDesignations([]);
         return;
       }
 
       try {
-        console.log('Fetching all designations for organization:', organizationId);
-        
+        console.log(
+          "Fetching all designations for organization:",
+          organizationId,
+        );
+
         // Use the organization-level endpoint to get all designations
         const response = await getDesignationsByDeptId(organizationId);
-        
-        console.log('Designations API response:', response);
-        
+
+        console.log("Designations API response:", response);
+
         let designationsData = [];
-        
+
         if (response && response.data) {
           if (response.data.success === true && response.data.data) {
             designationsData = response.data.data;
@@ -1725,28 +1883,27 @@ export default function EmployeeForm() {
             designationsData = response.data.data;
           }
         }
-        
-        console.log('Processed designations:', designationsData);
-        
+
+        console.log("Processed designations:", designationsData);
+
         // Map to the format expected by SelectField
         setDesignations(
-          designationsData.map((d) => ({ 
-            value: d.id, 
-            label: d.title || d.name || 'Unknown'
-          }))
+          designationsData.map((d) => ({
+            value: d.id,
+            label: d.title || d.name || "Unknown",
+          })),
         );
-        
+
         // Clear any previous designation errors
-        setFormErrors(prev => ({ ...prev, designation_id: null }));
-        
+        setFormErrors((prev) => ({ ...prev, designation_id: null }));
       } catch (err) {
         console.error("Error fetching designations:", err);
         setDesignations([]);
-        
+
         // Show user-friendly error message
-        setFormErrors(prev => ({
+        setFormErrors((prev) => ({
           ...prev,
-          designation_id: "Could not load designations. Please try again."
+          designation_id: "Could not load designations. Please try again.",
         }));
       }
     };
@@ -1757,9 +1914,9 @@ export default function EmployeeForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log(`Field changed: ${name} = ${value}`);
-    
+
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: null }));
@@ -1767,79 +1924,80 @@ export default function EmployeeForm() {
   };
 
   const handleSuperFundChange = (value) => {
-    setFormData(prev => ({ ...prev, superannuation_fund_name: value }));
+    setFormData((prev) => ({ ...prev, superannuation_fund_name: value }));
     if (formErrors.superannuation_fund_name) {
-      setFormErrors(prev => ({ ...prev, superannuation_fund_name: null }));
+      setFormErrors((prev) => ({ ...prev, superannuation_fund_name: null }));
     }
   };
 
   const handleSuperFundSelect = (value) => {
-    setFormData(prev => ({ ...prev, superannuation_fund_name: value }));
+    setFormData((prev) => ({ ...prev, superannuation_fund_name: value }));
   };
 
   const handleUploadDocument = async (empId, formData, isEdit = false) => {
     try {
-      console.log('Uploading document with employee ID:', empId);
-      console.log('Is edit mode:', isEdit);
-      
+      console.log("Uploading document with employee ID:", empId);
+      console.log("Is edit mode:", isEdit);
+
       let response;
       if (isEdit && editingDocument) {
-        console.log('Updating document with ID:', editingDocument.id);
+        console.log("Updating document with ID:", editingDocument.id);
         response = await updateEmployeeDocument(editingDocument.id, formData);
       } else {
-        console.log('Creating new document');
+        console.log("Creating new document");
         response = await uploadEmployeeDocument(formData);
       }
-      
-      console.log('Upload response:', response);
-      
+
+      console.log("Upload response:", response);
+
       await fetchCertificates();
-      alert(`Document ${isEdit ? 'updated' : 'uploaded'} successfully!`);
+      alert(`Document ${isEdit ? "updated" : "uploaded"} successfully!`);
     } catch (error) {
-      console.error('Error in document operation:', error);
-      
+      console.error("Error in document operation:", error);
+
       if (error.response) {
-        console.error('Error response status:', error.response.status);
-        console.error('Error response data:', error.response.data);
-        
+        console.error("Error response status:", error.response.status);
+        console.error("Error response data:", error.response.data);
+
         if (error.response.data?.errors) {
-          const errorMessages = Object.values(error.response.data.errors).flat();
-          setCertificateError(errorMessages.join(', '));
+          const errorMessages = Object.values(
+            error.response.data.errors,
+          ).flat();
+          setCertificateError(errorMessages.join(", "));
         } else if (error.response.data?.message) {
           setCertificateError(error.response.data.message);
         } else {
-          setCertificateError('Upload failed. Please try again.');
+          setCertificateError("Upload failed. Please try again.");
         }
       } else {
-        setCertificateError(error.message || 'Operation failed');
+        setCertificateError(error.message || "Operation failed");
       }
-      
+
       throw error;
     }
   };
 
   const handleDeleteDocument = async () => {
     if (!documentToDelete) return;
-    
+
     try {
       await deleteEmployeeDocument(documentToDelete);
       await fetchCertificates();
       setIsDeleteModalOpen(false);
       setDocumentToDelete(null);
-      alert('Document deleted successfully!');
+      alert("Document deleted successfully!");
     } catch (error) {
-      console.error('Error deleting document:', error);
-      setCertificateError('Failed to delete document');
+      console.error("Error deleting document:", error);
+      setCertificateError("Failed to delete document");
     }
   };
 
   const validatePersonalTab = () => {
     const errors = {};
-    
+
     if (!formData.first_name?.trim())
       errors.first_name = "First Name is required";
-    if (!formData.last_name?.trim())
-      errors.last_name = "Last Name is required";
+    if (!formData.last_name?.trim()) errors.last_name = "Last Name is required";
     if (!formData.personal_email?.trim())
       errors.personal_email = "Personal Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(formData.personal_email))
@@ -1848,31 +2006,31 @@ export default function EmployeeForm() {
       errors.phone_number = "Phone Number is required";
     if (!formData.date_of_birth)
       errors.date_of_birth = "Date of Birth is required";
-    if (!formData.gender)
-      errors.gender = "Gender is required";
-    if (!formData.address?.trim())
-      errors.address = "Address is required";
-    
+    if (!formData.gender) errors.gender = "Gender is required";
+    if (!formData.address?.trim()) errors.address = "Address is required";
+
     return errors;
   };
 
   const handleCreateEmployee = async () => {
     const errors = validatePersonalTab();
-    
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
-      
+
       const firstErrorField = Object.keys(errors)[0];
       const element = document.getElementById(firstErrorField);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
         element.focus();
       }
-      
-      alert("Please fill in all required personal information fields marked with *");
+
+      alert(
+        "Please fill in all required personal information fields marked with *",
+      );
       return;
     }
-    
+
     setIsSubmitting(true);
     setFormErrors({});
 
@@ -1885,29 +2043,36 @@ export default function EmployeeForm() {
       date_of_birth: formData.date_of_birth,
       gender: formData.gender,
       address: formData.address,
-      emergency_contact_name: formData.emergency_contact_name || '',
-      emergency_contact_phone: formData.emergency_contact_phone || '',
-      emergency_contact_relationship: formData.emergency_contact_relationship || '',
+      emergency_contact_name: formData.emergency_contact_name || "",
+      emergency_contact_phone: formData.emergency_contact_phone || "",
+      emergency_contact_relationship:
+        formData.emergency_contact_relationship || "",
     };
 
     try {
-      console.log('Creating employee with data:', basicEmployeeData);
+      console.log("Creating employee with data:", basicEmployeeData);
       const response = await createEmployeeBasic(basicEmployeeData);
-      console.log('Create employee response:', response);
-      
-      const newEmployeeId = response.data?.data?.employee?.id || 
-                            response.data?.data?.id || 
-                            response.data?.id;
-      
+      console.log("Create employee response:", response);
+
+      const newEmployeeId =
+        response.data?.data?.employee?.id ||
+        response.data?.data?.id ||
+        response.data?.id;
+
       if (newEmployeeId) {
         setEmployeeId(newEmployeeId);
-        setCompletedTabs(prev => new Set([...prev, "personal"]));
+        setCompletedTabs((prev) => new Set([...prev, "personal"]));
         setActiveTab("certificates");
-        navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=certificates`, { replace: true });
-        alert('Employee created successfully! Now you can upload documents.');
+        navigate(
+          `/dashboard/employees/edit/${newEmployeeId}?tab=certificates`,
+          { replace: true },
+        );
+        alert("Employee created successfully! Now you can upload documents.");
       } else {
-        console.error('No employee ID in response:', response);
-        alert('Employee created but no ID returned. Please check the employee list.');
+        console.error("No employee ID in response:", response);
+        alert(
+          "Employee created but no ID returned. Please check the employee list.",
+        );
         navigate("/dashboard/employees");
       }
     } catch (error) {
@@ -1916,7 +2081,10 @@ export default function EmployeeForm() {
         setFormErrors(error.response.data.errors || {});
         alert("Please correct the validation errors below.");
       } else {
-        alert(error.response?.data?.message || "An unexpected error occurred. Please try again.");
+        alert(
+          error.response?.data?.message ||
+            "An unexpected error occurred. Please try again.",
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -1925,13 +2093,17 @@ export default function EmployeeForm() {
 
   const handleUpdateEmployee = async () => {
     if (!employeeId) return;
-    
+
     setIsSubmitting(true);
     setFormErrors({});
 
     const data = new FormData();
     for (const key in formData) {
-      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+      if (
+        formData[key] !== null &&
+        formData[key] !== undefined &&
+        formData[key] !== ""
+      ) {
         data.append(key, formData[key]);
       }
     }
@@ -1941,14 +2113,14 @@ export default function EmployeeForm() {
 
     try {
       await updateEmployee(employeeId, data);
-      
-      setCompletedTabs(prev => new Set([...prev, activeTab]));
-      
+
+      setCompletedTabs((prev) => new Set([...prev, activeTab]));
+
       if (activeTab === "employment") {
-        alert('Employment details saved! Now add payroll information.');
+        alert("Employment details saved! Now add payroll information.");
         setActiveTab("payroll");
       } else if (activeTab === "payroll") {
-        alert('Employee profile completed successfully!');
+        alert("Employee profile completed successfully!");
         navigate("/dashboard/employees");
       }
     } catch (error) {
@@ -1966,21 +2138,19 @@ export default function EmployeeForm() {
 
   const handleEmploymentSubmit = async () => {
     if (!employeeId) return;
-    
+
     const employmentErrors = {};
-    
+
     if (!formData.employee_code?.trim())
       employmentErrors.employee_code = "Employee Code is required";
     if (!formData.joining_date)
       employmentErrors.joining_date = "Joining Date is required";
-    if (!formData.room_id)
-      employmentErrors.room_id = "Room is required";
+    if (!formData.room_id) employmentErrors.room_id = "Room is required";
     if (!formData.designation_id)
       employmentErrors.designation_id = "Designation is required";
     if (!formData.employment_type)
       employmentErrors.employment_type = "Employment Type is required";
-    if (!formData.status)
-      employmentErrors.status = "Status is required";
+    if (!formData.status) employmentErrors.status = "Status is required";
 
     if (Object.keys(employmentErrors).length > 0) {
       setFormErrors(employmentErrors);
@@ -1993,7 +2163,11 @@ export default function EmployeeForm() {
 
     const data = new FormData();
     for (const key in formData) {
-      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+      if (
+        formData[key] !== null &&
+        formData[key] !== undefined &&
+        formData[key] !== ""
+      ) {
         data.append(key, formData[key]);
       }
     }
@@ -2003,12 +2177,11 @@ export default function EmployeeForm() {
 
     try {
       await updateEmployee(employeeId, data);
-      
-      setCompletedTabs(prev => new Set([...prev, "employment"]));
-      
-      alert('Employment details saved! Now add payroll information.');
+
+      setCompletedTabs((prev) => new Set([...prev, "employment"]));
+
+      alert("Employment details saved! Now add payroll information.");
       setActiveTab("payroll");
-      
     } catch (error) {
       console.error("Failed to update employee", error);
       if (error.response && error.response.status === 422) {
@@ -2024,12 +2197,16 @@ export default function EmployeeForm() {
 
   const handlePayrollSubmit = async () => {
     if (!employeeId) return;
-    
+
     setIsSubmitting(true);
 
     const data = new FormData();
     for (const key in formData) {
-      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+      if (
+        formData[key] !== null &&
+        formData[key] !== undefined &&
+        formData[key] !== ""
+      ) {
         data.append(key, formData[key]);
       }
     }
@@ -2037,12 +2214,12 @@ export default function EmployeeForm() {
       data.append("organization_id", organizationId);
     }
 
-    try { 
+    try {
       await updateEmployee(employeeId, data);
-      
-      setCompletedTabs(prev => new Set([...prev, "payroll"]));
-      
-      alert('Employee profile completed successfully!');
+
+      setCompletedTabs((prev) => new Set([...prev, "payroll"]));
+
+      alert("Employee profile completed successfully!");
       navigate("/dashboard/employees");
     } catch (error) {
       console.error("Failed to update employee", error);
@@ -2116,15 +2293,15 @@ export default function EmployeeForm() {
             <FaArrowLeft className="text-sm" />
             Back to Employees
           </button>
-          
+
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             {!employeeId ? "Add New Employee" : "Complete Employee Profile"}
           </h1>
           <p className="text-gray-600">
-            {!employeeId 
-              ? "Step 1: Enter basic information to create the employee" 
-              : activeTab === "certificates" 
-                ? "Step 2: Upload certificates and documents - View by list or compliance checklist" 
+            {!employeeId
+              ? "Step 1: Enter basic information to create the employee"
+              : activeTab === "certificates"
+                ? "Step 2: Upload certificates and documents - View by list or compliance checklist"
                 : activeTab === "employment"
                   ? "Step 3: Add employment details"
                   : activeTab === "payroll"
@@ -2133,7 +2310,8 @@ export default function EmployeeForm() {
           </p>
           {employeeId && (
             <p className="text-sm text-blue-600 mt-2">
-              Employee ID: <span className="font-mono font-bold">{employeeId}</span>
+              Employee ID:{" "}
+              <span className="font-mono font-bold">{employeeId}</span>
             </p>
           )}
         </div>
@@ -2147,10 +2325,12 @@ export default function EmployeeForm() {
                   active={activeTab === tab.id}
                   onClick={() => {
                     if (!employeeId && tab.id !== "personal") {
-                      alert("Please create the employee first by completing Step 1");
+                      alert(
+                        "Please create the employee first by completing Step 1",
+                      );
                       return;
                     }
-                    
+
                     if (tab.id === "personal") {
                       setActiveTab(tab.id);
                     } else if (employeeId) {
@@ -2169,20 +2349,18 @@ export default function EmployeeForm() {
           <div className="p-6 md:p-8">
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                {tabs.find(t => t.id === activeTab)?.label}
+                {tabs.find((t) => t.id === activeTab)?.label}
               </h2>
-              <p className="text-gray-600">
-                {tabDescriptions[activeTab]}
-              </p>
+              <p className="text-gray-600">{tabDescriptions[activeTab]}</p>
             </div>
 
             {activeTab === "personal" && (
               <div className="space-y-8">
-                <SectionHeader 
-                  title="Personal Information" 
+                <SectionHeader
+                  title="Personal Information"
                   description="Basic personal details about the employee"
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     label="First Name"
@@ -2194,7 +2372,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="Enter first name"
                   />
-                  
+
                   <InputField
                     label="Last Name"
                     name="last_name"
@@ -2205,7 +2383,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="Enter last name"
                   />
-                  
+
                   <InputField
                     label="Email Address"
                     name="personal_email"
@@ -2217,7 +2395,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="employee@company.com"
                   />
-                  
+
                   <InputField
                     label="Phone Number"
                     name="phone_number"
@@ -2228,7 +2406,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="+61 123 456 789"
                   />
-                  
+
                   <InputField
                     label="Date of Birth"
                     name="date_of_birth"
@@ -2239,7 +2417,7 @@ export default function EmployeeForm() {
                     error={formErrors.date_of_birth}
                     required
                   />
-                  
+
                   <SelectField
                     label="Gender"
                     name="gender"
@@ -2250,13 +2428,16 @@ export default function EmployeeForm() {
                       { value: "Male", label: "Male" },
                       { value: "Female", label: "Female" },
                       { value: "Other", label: "Other" },
-                      { value: "Prefer not to say", label: "Prefer not to say" },
+                      {
+                        value: "Prefer not to say",
+                        label: "Prefer not to say",
+                      },
                     ]}
                     error={formErrors.gender}
                     required
                     placeholder="-- Select --"
                   />
-                  
+
                   <div className="md:col-span-2">
                     <TextAreaField
                       label="Address"
@@ -2272,11 +2453,11 @@ export default function EmployeeForm() {
                   </div>
                 </div>
 
-                <SectionHeader 
-                  title="Emergency Contact" 
+                <SectionHeader
+                  title="Emergency Contact"
                   description="Emergency contact details (optional)"
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     label="Emergency Contact Name"
@@ -2287,7 +2468,7 @@ export default function EmployeeForm() {
                     error={formErrors.emergency_contact_name}
                     placeholder="Enter contact name"
                   />
-                  
+
                   <InputField
                     label="Emergency Contact Phone"
                     name="emergency_contact_phone"
@@ -2297,7 +2478,7 @@ export default function EmployeeForm() {
                     error={formErrors.emergency_contact_phone}
                     placeholder="Enter contact phone"
                   />
-                  
+
                   <InputField
                     label="Emergency Contact Relationship"
                     name="emergency_contact_relationship"
@@ -2314,34 +2495,34 @@ export default function EmployeeForm() {
             {activeTab === "certificates" && (
               <div className="space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <SectionHeader 
-                    title="Certificates & Documents" 
+                  <SectionHeader
+                    title="Certificates & Documents"
                     description="Upload and manage employee certificates - View by list or compliance checklist"
                   />
                   <div className="flex items-center gap-3">
                     <div className="flex items-center bg-gray-100 rounded-lg p-1">
                       <button
-                        onClick={() => setViewMode('list')}
+                        onClick={() => setViewMode("list")}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                          viewMode === 'list' 
-                            ? 'bg-white text-blue-600 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-800'
+                          viewMode === "list"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
                         }`}
                       >
                         List View
                       </button>
                       <button
-                        onClick={() => setViewMode('checklist')}
+                        onClick={() => setViewMode("checklist")}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                          viewMode === 'checklist' 
-                            ? 'bg-white text-blue-600 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-800'
+                          viewMode === "checklist"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
                         }`}
                       >
                         Compliance Checklist
                       </button>
                     </div>
-                    
+
                     {employeeId ? (
                       <button
                         type="button"
@@ -2367,7 +2548,9 @@ export default function EmployeeForm() {
                       <FaExclamationTriangle className="text-red-500 mt-0.5" />
                       <div>
                         <p className="text-red-700 font-medium">Error</p>
-                        <p className="text-red-600 text-sm">{certificateError}</p>
+                        <p className="text-red-600 text-sm">
+                          {certificateError}
+                        </p>
                         {employeeId && (
                           <button
                             onClick={fetchCertificates}
@@ -2384,22 +2567,28 @@ export default function EmployeeForm() {
                 {!employeeId ? (
                   <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
                     <FaInfoCircle className="mx-auto text-gray-400 text-5xl mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Create Employee First</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Create Employee First
+                    </h3>
                     <p className="text-gray-500 max-w-md mx-auto">
-                      Please complete Step 1 (Personal Information) first to create the employee.
+                      Please complete Step 1 (Personal Information) first to
+                      create the employee.
                     </p>
                   </div>
                 ) : loadingCertificates ? (
                   <div className="flex justify-center items-center py-16">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Loading certificates...</span>
+                    <span className="ml-3 text-gray-600">
+                      Loading certificates...
+                    </span>
                   </div>
-                ) : viewMode === 'list' ? (
+                ) : viewMode === "list" ? (
                   certificates.length > 0 ? (
                     <>
                       <div className="flex items-center gap-3 mb-4">
                         <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                          {certificates.length} {certificates.length === 1 ? 'document' : 'documents'}
+                          {certificates.length}{" "}
+                          {certificates.length === 1 ? "document" : "documents"}
                         </span>
                       </div>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2424,7 +2613,9 @@ export default function EmployeeForm() {
                       <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
                         <FaFileAlt className="text-4xl text-gray-400" />
                       </div>
-                      <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
+                      <h4 className="text-xl font-semibold text-gray-700 mb-3">
+                        No documents found
+                      </h4>
                       <p className="text-gray-500 mb-8 max-w-md mx-auto">
                         Upload certificates and documents for this employee.
                       </p>
@@ -2447,11 +2638,11 @@ export default function EmployeeForm() {
 
             {activeTab === "employment" && employeeId && (
               <div className="space-y-8">
-                <SectionHeader 
-                  title="Employment Details" 
+                <SectionHeader
+                  title="Employment Details"
                   description="Add employment information"
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     label="Employee Code"
@@ -2463,7 +2654,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="e.g., EMP-001"
                   />
-                  
+
                   <InputField
                     label="Joining Date"
                     name="joining_date"
@@ -2474,7 +2665,7 @@ export default function EmployeeForm() {
                     error={formErrors.joining_date}
                     required
                   />
-                  
+
                   <SelectField
                     label="Room"
                     name="room_id"
@@ -2482,7 +2673,7 @@ export default function EmployeeForm() {
                     value={formData.room_id || ""}
                     onChange={(e) => {
                       const value = e.target.value;
-                      console.log('Room selected, value:', value);
+                      console.log("Room selected, value:", value);
                       handleChange(e);
                     }}
                     options={departments}
@@ -2490,7 +2681,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="-- Select Room --"
                   />
-                  
+
                   <SelectField
                     label="Designation"
                     name="designation_id"
@@ -2500,10 +2691,14 @@ export default function EmployeeForm() {
                     options={designations}
                     error={formErrors.designation_id}
                     required
-                    placeholder={designations.length === 0 ? "No designations available" : "-- Select Designation --"}
+                    placeholder={
+                      designations.length === 0
+                        ? "No designations available"
+                        : "-- Select Designation --"
+                    }
                     disabled={designations.length === 0}
                   />
-                  
+
                   <SelectField
                     label="Employment Type"
                     name="employment_type"
@@ -2521,7 +2716,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="-- Select Type --"
                   />
-                  
+
                   <SelectField
                     label="Status"
                     name="status"
@@ -2539,7 +2734,7 @@ export default function EmployeeForm() {
                     required
                     placeholder="-- Select Status --"
                   />
-                  
+
                   <InputField
                     label="Hourly Wage (AUD)"
                     name="hourly_wage"
@@ -2552,7 +2747,7 @@ export default function EmployeeForm() {
                     step="0.01"
                     min="0"
                   />
-                  
+
                   <div className="md:col-span-2">
                     <SelectField
                       label="Reporting Manager (Optional)"
@@ -2571,11 +2766,11 @@ export default function EmployeeForm() {
 
             {activeTab === "payroll" && employeeId && (
               <div className="space-y-8">
-                <SectionHeader 
-                  title="Payroll Information" 
+                <SectionHeader
+                  title="Payroll Information"
                   description="Add payroll and financial details (optional)"
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     label="Tax File Number (TFN)"
@@ -2586,13 +2781,16 @@ export default function EmployeeForm() {
                     error={formErrors.tax_file_number}
                     placeholder="Enter TFN"
                   />
-                  
+
                   <div className="w-full">
-                    <label htmlFor="superannuation_fund_name" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="superannuation_fund_name"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Superannuation Fund Name
                     </label>
                     <SuperFundSearch
-                      value={formData.superannuation_fund_name || ''}
+                      value={formData.superannuation_fund_name || ""}
                       onChange={handleSuperFundChange}
                       onSelect={handleSuperFundSelect}
                       placeholder="Search for super fund (e.g., AustralianSuper)"
@@ -2602,7 +2800,7 @@ export default function EmployeeForm() {
                       Start typing to search for your super fund
                     </p>
                   </div>
-                  
+
                   <InputField
                     label="Superannuation Member Number"
                     name="superannuation_member_number"
@@ -2612,7 +2810,7 @@ export default function EmployeeForm() {
                     error={formErrors.superannuation_member_number}
                     placeholder="Enter member number"
                   />
-                  
+
                   <InputField
                     label="Bank BSB"
                     name="bank_bsb"
@@ -2622,7 +2820,7 @@ export default function EmployeeForm() {
                     error={formErrors.bank_bsb}
                     placeholder="000-000"
                   />
-                  
+
                   <InputField
                     label="Bank Account Number"
                     name="bank_account_number"
@@ -2632,7 +2830,7 @@ export default function EmployeeForm() {
                     error={formErrors.bank_account_number}
                     placeholder="Enter account number"
                   />
-                  
+
                   <InputField
                     label="Visa Type"
                     name="visa_type"
@@ -2642,7 +2840,7 @@ export default function EmployeeForm() {
                     error={formErrors.visa_type}
                     placeholder="e.g., Permanent Residency"
                   />
-                  
+
                   <div className="md:col-span-2">
                     <InputField
                       label="Visa Expiry Date"
@@ -2671,7 +2869,7 @@ export default function EmployeeForm() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -2680,7 +2878,7 @@ export default function EmployeeForm() {
                 >
                   Cancel
                 </button>
-                
+
                 {!employeeId && activeTab === "personal" ? (
                   <button
                     type="button"
@@ -2757,12 +2955,20 @@ export default function EmployeeForm() {
           <FaInfoCircle className="text-blue-600 mt-0.5" />
           <div>
             <p className="text-sm text-blue-800">
-              <span className="font-medium">Progress:</span> 
+              <span className="font-medium">Progress:</span>
               {!employeeId && " Step 1 of 4 - Create employee first"}
-              {employeeId && activeTab === "personal" && " Step 1 of 4 - Edit personal information"}
-              {employeeId && activeTab === "certificates" && " Step 2 of 4 - Upload documents"}
-              {employeeId && activeTab === "employment" && " Step 3 of 4 - Add employment details"}
-              {employeeId && activeTab === "payroll" && " Step 4 of 4 - Complete payroll information"}
+              {employeeId &&
+                activeTab === "personal" &&
+                " Step 1 of 4 - Edit personal information"}
+              {employeeId &&
+                activeTab === "certificates" &&
+                " Step 2 of 4 - Upload documents"}
+              {employeeId &&
+                activeTab === "employment" &&
+                " Step 3 of 4 - Add employment details"}
+              {employeeId &&
+                activeTab === "payroll" &&
+                " Step 4 of 4 - Complete payroll information"}
             </p>
           </div>
         </div>
