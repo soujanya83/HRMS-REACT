@@ -91,48 +91,107 @@ const INDUSTRY_TYPES = [
   "Other",
 ];
 
-// Color options for rooms - Mapped to color codes
+// Color options for rooms - Updated with exact colors from image
 const COLOR_OPTIONS = [
-  { value: "#EF4444", label: "Red", class: "bg-red-500", code: "red" },
-  { value: "#F97316", label: "Orange", class: "bg-orange-500", code: "orange" },
-  { value: "#F59E0B", label: "Amber", class: "bg-amber-500", code: "amber" },
-  { value: "#EAB308", label: "Yellow", class: "bg-yellow-500", code: "yellow" },
-  { value: "#84CC16", label: "Lime", class: "bg-lime-500", code: "lime" },
-  { value: "#10B981", label: "Green", class: "bg-green-500", code: "green" },
-  { value: "#14B8A6", label: "Teal", class: "bg-teal-500", code: "teal" },
-  { value: "#06B6D4", label: "Cyan", class: "bg-cyan-500", code: "cyan" },
-  { value: "#3B82F6", label: "Blue", class: "bg-blue-500", code: "blue" },
-  { value: "#8B5CF6", label: "Violet", class: "bg-violet-500", code: "violet" },
-  { value: "#A855F7", label: "Purple", class: "bg-purple-500", code: "purple" },
-  { value: "#EC4899", label: "Pink", class: "bg-pink-500", code: "pink" },
-  { value: "#F43F5E", label: "Rose", class: "bg-rose-500", code: "rose" },
+  { value: "#8176B7", label: "Lavender", code: "lavender" },
+  { value: "#CFA5CA", label: "Light Pink", code: "light-pink" },
+  { value: "#C57F9A", label: "Dusty Rose", code: "dusty-rose" },
+  { value: "#3FA2DB", label: "Sky Blue", code: "sky-blue" },
+  { value: "#8DBA90", label: "Sage Green", code: "sage-green" },
+  { value: "#EBAF94", label: "Peach", code: "peach" },
+  { value: "#CAC87F", label: "Olive Green", code: "olive-green" },
+  { value: "#A4A1A2", label: "Gray", code: "gray" },
 ];
 
-// Pastel color options for background
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
+// Room data with names, age groups, and colors - MATCHING IMAGE
+const ROOM_TEMPLATES = [
+  { 
+    name: "Cozy Nido", 
+    ageGroup: "6 - 12 months", 
+    colorCode: "#8176B7",
+    colorLabel: "Lavender",
+    icon: "🍼",
+    description: "A warm, nurturing space for our youngest learners. Focus on sensory exploration and building secure attachments."
+  },
+  { 
+    name: "Little Sprouts", 
+    ageGroup: "12 - 24 Months", 
+    colorCode: "#CFA5CA",
+    colorLabel: "Light Pink",
+    icon: "🌱",
+    description: "Toddlers discover independence through play-based learning, language development, and social interaction."
+  },
+  { 
+    name: "Investigator's Hub", 
+    ageGroup: "2 - 3 Years", 
+    colorCode: "#C57F9A",
+    colorLabel: "Dusty Rose",
+    icon: "🔍",
+    description: "Curious preschoolers explore, question, and investigate the world around them through hands-on activities."
+  },
+  { 
+    name: "Creator's Studio", 
+    ageGroup: "3 - 5 Years (Non Kinder)", 
+    colorCode: "#3FA2DB",
+    colorLabel: "Sky Blue",
+    icon: "🎨",
+    description: "Creative expression through art, music, and imaginative play. Developing fine motor skills and self-expression."
+  },
+  { 
+    name: "Dreamer's Den", 
+    ageGroup: "3 Years Kinder", 
+    colorCode: "#8DBA90",
+    colorLabel: "Sage Green",
+    icon: "💭",
+    description: "Kindergarten readiness program focusing on literacy, numeracy, and social-emotional development."
+  },
+  { 
+    name: "Inventor's Lab", 
+    ageGroup: "4 Years Kinder", 
+    colorCode: "#EBAF94",
+    colorLabel: "Peach",
+    icon: "🔬",
+    description: "STEM-focused learning with experiments, construction, and problem-solving activities."
+  }
 ];
 
-// Age group options with icons
+// Kitchen and Management room templates
+const OTHER_ROOM_TEMPLATES = [
+  { 
+    name: "Kitchen", 
+    ageGroup: "All Ages", 
+    colorCode: "#CAC87F",
+    colorLabel: "Olive Green",
+    icon: "🍳",
+    description: "Nutrition and culinary experiences. Teaching healthy eating habits and food preparation skills."
+  },
+  { 
+    name: "Management", 
+    ageGroup: "Staff Only", 
+    colorCode: "#A4A1A2",
+    colorLabel: "Gray",
+    icon: "📋",
+    description: "Administrative office for center management, parent communications, and staff coordination."
+  }
+];
+
+// All room templates combined
+const ALL_ROOM_TEMPLATES = [...ROOM_TEMPLATES, ...OTHER_ROOM_TEMPLATES];
+
+// Age group options with icons - Updated to match image
 const AGE_GROUPS = [
-  { value: "Infants (0-12 months)", label: "Infants (0-12 months)", icon: "🍼" },
-  { value: "Toddlers (1-2 years)", label: "Toddlers (1-2 years)", icon: "🧸" },
-  { value: "Twos (2-3 years)", label: "Twos (2-3 years)", icon: "🐻" },
-  { value: "Preschool (3-4 years)", label: "Preschool (3-4 years)", icon: "🎨" },
-  { value: "Pre-K (4-5 years)", label: "Pre-K (4-5 years)", icon: "✏️" },
-  { value: "School Age (5+ years)", label: "School Age (5+ years)", icon: "📚" },
-  { value: "Mixed Age Group", label: "Mixed Age Group", icon: "👥" },
+  { value: "6 - 12 months", label: "6 - 12 months", icon: "🍼", colorHint: "#8176B7" },
+  { value: "12 - 24 Months", label: "12 - 24 Months", icon: "🌱", colorHint: "#CFA5CA" },
+  { value: "2 - 3 Years", label: "2 - 3 Years", icon: "🔍", colorHint: "#C57F9A" },
+  { value: "3 - 5 Years (Non Kinder)", label: "3 - 5 Years (Non Kinder)", icon: "🎨", colorHint: "#3FA2DB" },
+  { value: "3 Years Kinder", label: "3 Years Kinder", icon: "💭", colorHint: "#8DBA90" },
+  { value: "4 Years Kinder", label: "4 Years Kinder", icon: "🔬", colorHint: "#EBAF94" },
+  { value: "All Ages", label: "All Ages", icon: "👥", colorHint: "#CAC87F" },
+  { value: "Staff Only", label: "Staff Only", icon: "👔", colorHint: "#A4A1A2" },
 ];
 
-// Helper function to extract color - NOW USES LOCAL STORAGE
-const extractColorFromCode = (roomId, defaultColor = '#3B82F6') => {
-  // Try to get color from localStorage
+// Helper function to extract color from localStorage
+const extractColorFromCode = (roomId, defaultColor = '#3FA2DB') => {
   const savedColor = localStorage.getItem(`room_color_${roomId}`);
   if (savedColor) {
     return savedColor;
@@ -152,18 +211,15 @@ const saveColorToStorage = (roomId, colorCode) => {
 const getColorOption = (roomId) => {
   const savedColor = localStorage.getItem(`room_color_${roomId}`);
   if (savedColor) {
-    return COLOR_OPTIONS.find(c => c.value === savedColor) || COLOR_OPTIONS.find(c => c.code === 'blue');
+    const option = COLOR_OPTIONS.find(c => c.value === savedColor);
+    if (option) return option;
   }
-  return COLOR_OPTIONS.find(c => c.code === 'blue');
+  return COLOR_OPTIONS.find(c => c.value === "#3FA2DB");
 };
 
 // Get color code from value
 const getColorCode = (value) => {
-  if (!value) return 'blue';
-  
-  if (COLOR_OPTIONS.some(opt => opt.code === value)) {
-    return value;
-  }
+  if (!value) return 'sky-blue';
   
   const hexOption = COLOR_OPTIONS.find(opt => opt.value === value);
   if (hexOption) return hexOption.code;
@@ -171,7 +227,10 @@ const getColorCode = (value) => {
   const labelOption = COLOR_OPTIONS.find(opt => opt.label.toLowerCase() === value.toLowerCase());
   if (labelOption) return labelOption.code;
   
-  return 'blue';
+  const codeOption = COLOR_OPTIONS.find(opt => opt.code === value);
+  if (codeOption) return codeOption.code;
+  
+  return 'sky-blue';
 };
 
 // Get age group icon
@@ -181,11 +240,22 @@ const getAgeGroupIcon = (ageGroup) => {
   return found ? found.icon : '👶';
 };
 
+// Get color for age group
+const getColorForAgeGroup = (ageGroup) => {
+  const found = AGE_GROUPS.find(ag => ag.value === ageGroup);
+  if (found && found.colorHint) return found.colorHint;
+  
+  // Match with room templates
+  const roomTemplate = ALL_ROOM_TEMPLATES.find(room => room.ageGroup === ageGroup);
+  if (roomTemplate) return roomTemplate.colorCode;
+  
+  return "#3FA2DB";
+};
+
 // Helper function to get color with opacity
 const getColorWithOpacity = (colorValue, opacity = 0.1) => {
-  if (!colorValue) return `rgba(59, 130, 246, ${opacity})`;
+  if (!colorValue) return `rgba(63, 162, 219, ${opacity})`;
   
-  // If it's a hex color
   if (colorValue.startsWith('#')) {
     const r = parseInt(colorValue.slice(1, 3), 16);
     const g = parseInt(colorValue.slice(3, 5), 16);
@@ -201,17 +271,15 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
 
   return (
     <>
-      {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
         onClick={onClose}
       />
       
-      {/* Side panel */}
       <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <h3 className="text-xl font-semibold text-gray-800">Choose Room Color</h3>
             <button 
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -220,33 +288,22 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
             </button>
           </div>
           
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color, index) => (
+          <div className="space-y-3">
+            {COLOR_OPTIONS.map((color, index) => (
               <button
                 key={index}
                 onClick={() => {
                   onColorSelect(color.value);
                   onClose();
                 }}
-                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
+                className="w-full p-3 rounded-lg transition-transform hover:scale-105 flex items-center justify-between border border-gray-200"
                 style={{ backgroundColor: color.value }}
               >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
+                <span className="font-medium text-white drop-shadow-sm">{color.label}</span>
+                <div className="w-6 h-6 rounded-full border-2 border-white shadow" style={{ backgroundColor: color.value }} />
               </button>
             ))}
           </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb'); // Default bg-gray-50
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-          >
-            Reset to Default
-          </button>
         </div>
       </div>
     </>
@@ -310,6 +367,7 @@ const FormTextarea = ({ label, name, error, ...props }) => (
 // ColorPicker Component
 const ColorPicker = ({ label, name, value, onChange, error }) => {
   const currentCode = getColorCode(value);
+  const selectedColor = COLOR_OPTIONS.find(c => c.code === currentCode);
 
   const handleColorChange = (e) => {
     const event = {
@@ -346,8 +404,8 @@ const ColorPicker = ({ label, name, value, onChange, error }) => {
         </div>
         <div
           className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-sm"
-          style={{ backgroundColor: COLOR_OPTIONS.find(c => c.code === currentCode)?.value || '#3B82F6' }}
-          title={COLOR_OPTIONS.find(c => c.code === currentCode)?.label || 'Blue'}
+          style={{ backgroundColor: selectedColor?.value || '#3FA2DB' }}
+          title={selectedColor?.label || 'Sky Blue'}
         />
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
@@ -364,8 +422,8 @@ function OrganizationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrg, setSelectedOrg] = useState(null);
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'designations'
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb'); // Default bg-gray-50
+  const [activeTab, setActiveTab] = useState('rooms');
+  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -374,20 +432,17 @@ function OrganizationsPage() {
   const [orgToDelete, setOrgToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Room modal states
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [currentOrgId, setCurrentOrgId] = useState(null);
   const [isRoomConfirmOpen, setIsRoomConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
 
-  // Designation modal states
   const [isDesignationModalOpen, setIsDesignationModalOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState(null);
   const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] = useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
 
-  // Fetch organizations
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -421,7 +476,6 @@ function OrganizationsPage() {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  // Handle save organization
   const handleSave = async (orgData) => {
     setIsSubmitting(true);
 
@@ -504,7 +558,6 @@ function OrganizationsPage() {
     }
   };
 
-  // Room modal handlers
   const handleOpenRoomModal = (orgId, room = null) => {
     setCurrentOrgId(orgId);
     setEditingRoom(room);
@@ -522,7 +575,6 @@ function OrganizationsPage() {
     try {
       console.log('Saving room with data:', roomData);
       
-      // Prepare data for API (API expects name and description only)
       const apiData = {
         name: roomData.name,
         description: roomData.description || ''
@@ -538,7 +590,6 @@ function OrganizationsPage() {
       console.log('Save room response:', response);
       
       if (response && response.success === true) {
-        // Save color to localStorage
         if (editingRoom) {
           saveColorToStorage(editingRoom.id, roomData.color_code);
         } else if (response.data && response.data.id) {
@@ -568,7 +619,6 @@ function OrganizationsPage() {
     if (roomToDelete) {
       try {
         await deleteDepartment(roomToDelete.id);
-        // Remove color from localStorage
         localStorage.removeItem(`room_color_${roomToDelete.id}`);
         setIsRoomConfirmOpen(false);
         setRoomToDelete(null);
@@ -581,7 +631,6 @@ function OrganizationsPage() {
     }
   };
 
-  // Designation modal handlers
   const handleOpenDesignationModal = (designation = null) => {
     setEditingDesignation(designation);
     setIsDesignationModalOpen(true);
@@ -637,7 +686,6 @@ function OrganizationsPage() {
     }
   };
 
-  // Context values
   const roomModalContextValue = {
     openRoomModal: handleOpenRoomModal,
     deleteRoom: handleRoomDeleteClick
@@ -651,7 +699,6 @@ function OrganizationsPage() {
   return (
     <RoomModalContext.Provider value={roomModalContextValue}>
       <DesignationModalContext.Provider value={designationModalContextValue}>
-        {/* Color Palette Toggle Button */}
         <button
           onClick={() => setIsColorPaletteOpen(true)}
           className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
@@ -665,7 +712,6 @@ function OrganizationsPage() {
           </div>
         </button>
 
-        {/* Color Palette Component */}
         <ColorPalette 
           isOpen={isColorPaletteOpen}
           onClose={() => setIsColorPaletteOpen(false)}
@@ -708,7 +754,6 @@ function OrganizationsPage() {
           </div>
         </div>
 
-        {/* Organization Modal */}
         <OrganizationModal
           isOpen={isModalOpen}
           onClose={() => {
@@ -731,7 +776,6 @@ function OrganizationsPage() {
           message={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
         />
 
-        {/* Room Modal */}
         <RoomModal
           isOpen={isRoomModalOpen}
           onClose={handleCloseRoomModal}
@@ -751,7 +795,6 @@ function OrganizationsPage() {
           message={`Are you sure you want to delete "${roomToDelete?.name}"? This action cannot be undone.`}
         />
 
-        {/* Designation Modal */}
         <DesignationModal
           isOpen={isDesignationModalOpen}
           onClose={handleCloseDesignationModal}
@@ -976,7 +1019,6 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
         </div>
       </div>
 
-      {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex gap-8">
           <button
@@ -1002,7 +1044,6 @@ function OrganizationDetailView({ organization, onBack, onEdit, activeTab, onTab
         </nav>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'rooms' ? (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
@@ -1039,7 +1080,7 @@ function RoomsList({ orgId }) {
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState('grid');
   const roomModalContext = React.useContext(RoomModalContext);
 
   const fetchRooms = useCallback(async () => {
@@ -1102,13 +1143,31 @@ function RoomsList({ orgId }) {
         <p className="mt-1 text-sm text-gray-500">
           Click "Add New Room" to create your first room.
         </p>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto">
+          {ALL_ROOM_TEMPLATES.map((template, idx) => (
+            <button
+              key={idx}
+              onClick={() => roomModalContext.openRoomModal(orgId, null)}
+              className="text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: template.colorCode }}>
+                  <span className="text-lg">{template.icon}</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{template.name}</p>
+                  <p className="text-xs text-gray-500">{template.ageGroup}</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      {/* View Toggle */}
       <div className="flex justify-end mb-4">
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <button
@@ -1146,15 +1205,23 @@ function RoomsList({ orgId }) {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {rooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-              onEdit={() => roomModalContext.openRoomModal(orgId, room)}
-              onDelete={() => roomModalContext.deleteRoom(room)}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rooms.map((room) => {
+            // Find matching template for default color
+            const matchingTemplate = ALL_ROOM_TEMPLATES.find(t => t.name === room.name);
+            const defaultColor = matchingTemplate?.colorCode || '#3FA2DB';
+            const roomHexColor = extractColorFromCode(room.id, defaultColor);
+            
+            return (
+              <RoomCard
+                key={room.id}
+                room={room}
+                roomHexColor={roomHexColor}
+                onEdit={() => roomModalContext.openRoomModal(orgId, room)}
+                onDelete={() => roomModalContext.deleteRoom(room)}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -1163,11 +1230,12 @@ function RoomsList({ orgId }) {
 
 // Room Item Component (List View)
 function RoomItem({ room, onEdit, onDelete }) {
-  // Get color from localStorage
-  const roomHexColor = extractColorFromCode(room.id);
-  const colorOption = getColorOption(room.id);
-  const colorLabel = colorOption?.label || 'Blue';
-
+  const defaultColor = '#3FA2DB';
+  const roomHexColor = extractColorFromCode(room.id, defaultColor);
+  
+  // Get age group icon
+  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+  
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition">
       <div className="flex">
@@ -1180,41 +1248,22 @@ function RoomItem({ room, onEdit, onDelete }) {
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
                   style={{ backgroundColor: roomHexColor }}
                 >
                   {room.name?.charAt(0).toUpperCase()}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
-              </div>
-
-              <div className="mt-2 flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-500">Color:</span>
-                  <span 
-                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
-                    style={{ 
-                      backgroundColor: getColorWithOpacity(roomHexColor, 0.15),
-                      color: roomHexColor
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: roomHexColor }} />
-                    {colorLabel}
-                  </span>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
+                  {room.age_group && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-lg">{ageGroupIcon}</span>
+                      <span className="text-sm text-gray-600">{room.age_group}</span>
+                    </div>
+                  )}
                 </div>
-
-                {room.age_group && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Age Group:</span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                      <span>{getAgeGroupIcon(room.age_group)}</span>
-                      {room.age_group}
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* Show description if it exists */}
               {room.description && (
                 <p className="text-gray-600 text-sm mt-3 bg-gray-50 p-3 rounded-lg">
                   {room.description}
@@ -1246,14 +1295,11 @@ function RoomItem({ room, onEdit, onDelete }) {
 }
 
 // Room Card Component (Grid View)
-function RoomCard({ room, onEdit, onDelete }) {
-  // Get color from localStorage
-  const roomHexColor = extractColorFromCode(room.id);
-  const colorOption = getColorOption(room.id);
-  const colorLabel = colorOption?.label || 'Blue';
-
+function RoomCard({ room, roomHexColor, onEdit, onDelete }) {
+  const ageGroupIcon = getAgeGroupIcon(room.age_group);
+  
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group">
       <div 
         className="h-2 w-full" 
         style={{ backgroundColor: roomHexColor }}
@@ -1269,20 +1315,11 @@ function RoomCard({ room, onEdit, onDelete }) {
               {room.name?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
-              <span 
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ 
-                  backgroundColor: getColorWithOpacity(roomHexColor, 0.15),
-                  color: roomHexColor
-                }}
-              >
-                {colorLabel}
-              </span>
+              <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
             </div>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={onEdit}
               className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
@@ -1302,24 +1339,31 @@ function RoomCard({ room, onEdit, onDelete }) {
 
         {room.age_group && (
           <div className="mb-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-2xl">{getAgeGroupIcon(room.age_group)}</span>
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border"
+              style={{ 
+                backgroundColor: getColorWithOpacity(roomHexColor, 0.1),
+                borderColor: roomHexColor
+              }}
+            >
+              <span className="text-2xl">{ageGroupIcon}</span>
               <div>
                 <p className="text-xs text-gray-500">Age Group</p>
-                <p className="text-sm font-semibold text-gray-800">{room.age_group}</p>
+                <p className="text-sm font-semibold" style={{ color: roomHexColor }}>{room.age_group}</p>
               </div>
             </div>
           </div>
         )}
 
         {room.description && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">{room.description}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">{room.description}</p>
         )}
       </div>
     </div>
   );
 }
-// Designations List Component (complete)
+
+// Designations List Component
 function DesignationsList({ orgId }) {
   const [designations, setDesignations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1392,9 +1436,7 @@ function DesignationsList({ orgId }) {
           className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
         >
           <div className="flex items-center gap-4">
-            <div 
-              className="w-1 h-10 rounded-full bg-blue-500"
-            />
+            <div className="w-1 h-10 rounded-full bg-blue-500" />
             
             <div>
               <p className="font-semibold text-gray-800">{desig.title}</p>
@@ -1622,16 +1664,29 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
   
+  // Find matching template for default values
+  const getDefaultFromTemplate = (roomName) => {
+    const template = ALL_ROOM_TEMPLATES.find(t => t.name === roomName);
+    if (template) {
+      return {
+        age_group: template.ageGroup,
+        color_code: getColorCode(template.colorCode),
+        description: template.description
+      };
+    }
+    return null;
+  };
+  
   useEffect(() => {
     if (room) {
-      // Get saved color from localStorage
       const savedColor = localStorage.getItem(`room_color_${room.id}`);
-      const colorCode = savedColor ? getColorCode(savedColor) : 'blue';
+      const colorCode = savedColor ? getColorCode(savedColor) : 
+        (getDefaultFromTemplate(room.name)?.color_code || 'sky-blue');
       
       setFormData({ 
         name: room.name || "", 
-        description: room.description || "", 
-        age_group: room.age_group || AGE_GROUPS[0].value,
+        description: room.description || (getDefaultFromTemplate(room.name)?.description || ""), 
+        age_group: room.age_group || (getDefaultFromTemplate(room.name)?.age_group || AGE_GROUPS[0].value),
         color_code: colorCode
       });
     } else {
@@ -1639,7 +1694,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
         name: "", 
         description: "", 
         age_group: AGE_GROUPS[0].value,
-        color_code: "blue"
+        color_code: "sky-blue"
       });
     }
     setError('');
@@ -1662,7 +1717,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
       name: formData.name,
       description: formData.description || '',
       age_group: formData.age_group || AGE_GROUPS[0].value,
-      color_code: formData.color_code || 'blue'
+      color_code: formData.color_code || 'sky-blue'
     };
     
     console.log('Submitting room data:', submitData);
@@ -1706,7 +1761,7 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 name="name"
                 value={formData.name || ""}
                 onChange={handleChange}
-                placeholder="Enter room name (e.g., Sunshine Room)"
+                placeholder="Enter room name (e.g., Cozy Nido)"
                 required
               />
               
