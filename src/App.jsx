@@ -6,6 +6,8 @@ import {
 } from "react-router-dom";
 import "./index.css";
 
+import PublicEmployeeForm from './pages/Public/PublicEmployeeForm';
+
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
@@ -184,10 +186,12 @@ function App() {
     // Change line 184 in App.jsx:
 { path: "payslip", element: <PayslipGeneration /> },  // Changed from <Payslip />
 
+
     // default route
     { index: true, element: <Navigate to="run" replace /> },
   ],
 },
+
 
         { 
           path: "performance", 
@@ -217,5 +221,6 @@ function App() {
 
   return <RouterProvider router={router} />;
 }
+<Route path="/employee-application" element={<PublicEmployeeForm />} />
 
 export default App;
