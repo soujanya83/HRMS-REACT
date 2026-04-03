@@ -7,6 +7,7 @@ import {
 import "./index.css";
 
 import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
+import InterviewPage from "./pages/Recruitment/InterviewPage";  // ← ADD THIS
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -63,9 +64,6 @@ import XeroIntegrationPage from "./pages/setting /XeroIntegrationPage";
 import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
 import AssignRolePage from "./pages/setting /AssignRolePage";
-
-// --- Placeholder Pages ---
-const SettingsPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Settings Page</h1></div>;
 
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -131,6 +129,8 @@ function App() {
             { path: "jobs/*", element: <JobOpeningsPage /> },
             { path: "applicants/*", element: <ApplicantsPage /> },
             { path: "interviews", element: <InterviewSchedulingPage /> },
+            { path: "interview", element: <InterviewPage /> },        // ← ADD THIS
+            { path: "interview/:id", element: <InterviewPage /> },   // ← ADD THIS
             { path: "offers", element: <SelectionAndOffersPage /> },
             { path: "onboarding", element: <OnboardingPage /> },
           ]

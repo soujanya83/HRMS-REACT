@@ -957,7 +957,7 @@ const PublicEmployeeForm = () => {
       toast.error('Please fill all required fields');
       setSubmitting(false);
       return;
-    }
+    } 
     
     try {
       const response = await createEmployeeBasic({

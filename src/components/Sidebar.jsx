@@ -13,6 +13,7 @@
     HiOutlineCreditCard,
     HiOutlineChartBar,
     HiOutlineLogout,
+    HiOutlineMicrophone,
     HiChevronDown,
     HiOutlineBriefcase,
     HiOutlineIdentification,
@@ -74,6 +75,11 @@
           path: "/dashboard/recruitment/interviews",
           icon: HiOutlineCalendar,
         },
+         {
+        name: "Interview",  // ← ADD THIS NEW MENU ITEM
+        path: "/dashboard/recruitment/interview",  // ← ADD THIS
+        icon: HiOutlineMicrophone,  // ← ADD THIS (or any icon you prefer)
+      },
         {
           name: "Selection & Offers",
           path: "/dashboard/recruitment/offers",
