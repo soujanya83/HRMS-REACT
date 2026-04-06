@@ -7,7 +7,6 @@ import {
   FaBriefcase,
   FaEnvelope,
   FaPhoneAlt,
-  FaMapMarkerAlt,
   FaSearch,
   FaDownload,
   FaPrint,
@@ -17,8 +16,6 @@ import {
   FaUsers,
   FaClipboardList,
   FaMicrophone,
-  FaRegCommentDots,
-  FaUserCircle,
   FaCalendarAlt,
   FaCheckCircle,
   FaClock,
@@ -26,48 +23,41 @@ import {
   FaMedal,
   FaUserTie,
   FaGraduationCap,
-  FaHeart,
-  FaBrain,
-  FaLightbulb,
-  FaBuilding,
-  FaUserPlus,
-  FaFileAlt,
-  FaPhone,
-  FaEnvelopeOpen,
-  FaCalendarCheck,
-  FaThumbsUp,
-  FaThumbsDown
+  FaUserCircle
 } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import interviewService from '../../services/interviewService';
+import { getApplicants } from '../../services/recruitmentService';
 
-// API Service functions
-import axiosClient from '../../axiosClient.js';
+// Helper function to get initials from name
+const getInitials = (name) => {
+  if (!name || name === 'N/A' || name === 'Unknown Applicant') return 'NA';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
 
-// ============================================
-// API SERVICE FUNCTIONS
-// ============================================
-
-// Questions API
-const getQuestions = () => axiosClient.get('/questions');
-const createQuestion = (data) => axiosClient.post('/questions', data);
-const updateQuestion = (id, data) => axiosClient.put(`/questions/${id}`, data);
-const deleteQuestion = (id) => axiosClient.delete(`/questions/${id}`);
-
-// Answers API
-const submitAnswer = (data) => axiosClient.post('/answers', data);
-const getAnswersByApplicant = (applicantId) => axiosClient.get(`/answers/applicant/${applicantId}`);
-const rateAnswer = (answerId, rating) => axiosClient.put(`/answers/rating/${answerId}`, { rating });
-const getAverageRating = (applicantId) => axiosClient.get(`/answers/average/${applicantId}`);
-const deleteAnswer = (id) => axiosClient.delete(`/answers/${id}`);
-
-// Applicants API
-const getApplicants = (params) => axiosClient.get('/recruitment/applicants', { params });
-
-// ============================================
-// COMPONENTS
-// ============================================
+// Helper function to get display name
+const getDisplayName = (applicant) => {
+  if (applicant.name && applicant.name !== 'N/A') {
+    return applicant.name;
+  }
+  if (applicant.first_name || applicant.last_name) {
+    const firstName = applicant.first_name || '';
+    const lastName = applicant.last_name || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+  }
+  if (applicant.email) {
+    return applicant.email.split('@')[0];
+  }
+  return 'Unknown Applicant';
+};
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) => {
@@ -112,7 +102,9 @@ const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) =
 };
 
 // Question Card Component
-const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, index, saving }) => {
+const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, onSave, index, saving, savingId }) => {
+  const isSavingThis = saving && savingId === question.id;
+  
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
@@ -131,7 +123,7 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, in
               rating={answerData?.rating || 0} 
               onRatingChange={(rating) => onRatingChange(question.id, rating)}
               size="md"
-              readonly={saving}
+              readonly={isSavingThis}
             />
           </div>
         </div>
@@ -147,42 +139,22 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, in
           rows={3}
           placeholder="Type the candidate's answer here..."
           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 hover:bg-white transition-colors"
-          disabled={saving}
+          disabled={isSavingThis}
         />
         
-        {/* Quick Response Suggestions */}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex justify-end">
           <button
             type="button"
-            onClick={() => onAnswerChange(question.id, "Excellent response - demonstrated deep understanding and relevant experience")}
-            className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
-            disabled={saving}
+            onClick={() => onSave(question.id)}
+            disabled={isSavingThis || (!answerData?.answer?.trim() && !answerData?.rating)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
           >
-            ⭐ Excellent
-          </button>
-          <button
-            type="button"
-            onClick={() => onAnswerChange(question.id, "Good response - showed competence and knowledge")}
-            className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
-            disabled={saving}
-          >
-            👍 Good
-          </button>
-          <button
-            type="button"
-            onClick={() => onAnswerChange(question.id, "Average response - basic understanding, needs more detail")}
-            className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors"
-            disabled={saving}
-          >
-            📝 Average
-          </button>
-          <button
-            type="button"
-            onClick={() => onAnswerChange(question.id, "Weak response - lacked detail and understanding")}
-            className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
-            disabled={saving}
-          >
-            ⚠️ Weak
+            {isSavingThis ? (
+              <FaSpinner className="animate-spin" size={14} />
+            ) : (
+              <FaSave size={14} />
+            )}
+            Save Answer & Rating
           </button>
         </div>
       </div>
@@ -190,29 +162,42 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, in
   );
 };
 
-// Applicant Card Component
+// Applicant Card Component - With Name, Avatar Initials, and Rating
+// Applicant Card Component - With Average Rating Display
+// Applicant Card Component - Complete
 const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
-  const getStatusColor = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'scheduled': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+  const getDisplayName = (applicant) => {
+    if (applicant.name && applicant.name !== 'N/A') {
+      return applicant.name;
     }
-  };
-
-  const getStatusIcon = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'completed': return <FaCheckCircle className="text-green-600" size={12} />;
-      case 'in_progress': return <FaClock className="text-blue-600" size={12} />;
-      case 'scheduled': return <FaCalendarAlt className="text-yellow-600" size={12} />;
-      default: return null;
+    if (applicant.first_name || applicant.last_name) {
+      const firstName = applicant.first_name || '';
+      const lastName = applicant.last_name || '';
+      if (firstName || lastName) {
+        return `${firstName} ${lastName}`.trim();
+      }
     }
+    if (applicant.email) {
+      return applicant.email.split('@')[0];
+    }
+    return 'Unknown Applicant';
   };
 
   const getInitials = (name) => {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+    if (!name || name === 'N/A' || name === 'Unknown Applicant') return 'NA';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase();
+    }
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
+
+  const displayName = getDisplayName(applicant);
+  const initials = getInitials(displayName);
+  const position = applicant.position || applicant.designation?.title || 'Applied';
+
+  // Debug log to check averageRating
+  console.log(`Applicant: ${displayName}, Rating: ${averageRating}`);
 
   return (
     <div
@@ -224,73 +209,60 @@ const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
       }`}
     >
       <div className="flex items-start gap-3">
-        {/* Avatar */}
+        {/* Avatar with Initials */}
         <div className="flex-shrink-0">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base ${
-            isSelected ? 'bg-gradient-to-br from-blue-600 to-blue-800' : 'bg-gradient-to-br from-gray-600 to-gray-800'
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm ${
+            isSelected 
+              ? 'bg-gradient-to-br from-blue-600 to-blue-800' 
+              : 'bg-gradient-to-br from-purple-500 to-pink-500'
           }`}>
-            {getInitials(applicant.name)}
+            {initials}
           </div>
         </div>
         
-        {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Applicant Name and Rating in same row */}
           <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-            <h4 className="font-semibold text-gray-800">
-              {applicant.name}
+            <h4 className="font-semibold text-gray-800 truncate text-sm">
+              {displayName}
             </h4>
-            {averageRating > 0 && (
-              <div className="flex items-center gap-1">
-                <StarRating rating={averageRating} readonly size="sm" />
-                <span className="text-xs font-semibold text-gray-600">
-                  {averageRating.toFixed(1)}
-                </span>
-              </div>
-            )}
+            {/* Average Rating with Stars */}
+            <div className="flex items-center gap-1">
+              <StarRating rating={averageRating} readonly size="sm" />
+              <span className="text-xs font-semibold text-gray-600">
+                {averageRating.toFixed(1)}
+              </span>
+            </div>
           </div>
           
+          {/* Position/Status */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-gray-700">{applicant.position || 'N/A'}</span>
-            {applicant.experience && (
-              <>
-                <span className="text-xs text-gray-300">•</span>
-                <span className="text-xs text-gray-500">{applicant.experience}</span>
-              </>
-            )}
+            <span className="text-xs font-medium text-gray-500">{position}</span>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <FaEnvelope size={10} /> {applicant.email}
+          {/* Email and Phone */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+            <span className="flex items-center gap-1 truncate max-w-[150px]">
+              <FaEnvelope size={10} /> {applicant.email || 'No email'}
             </span>
             <span className="flex items-center gap-1">
-              <FaPhoneAlt size={10} /> {applicant.phone || 'N/A'}
+              <FaPhoneAlt size={10} /> {applicant.phone || applicant.mobile || 'No phone'}
             </span>
           </div>
-        </div>
-        
-        {/* Status Badge */}
-        <div className="flex-shrink-0 text-right">
-          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-medium border ${getStatusColor(applicant.status)}`}>
-            {getStatusIcon(applicant.status)}
-            {applicant.status || 'New'}
-          </span>
         </div>
       </div>
     </div>
   );
 };
 
-// ============================================
-// MAIN INTERVIEW PAGE COMPONENT
-// ============================================
+// Main Interview Page Component
 const InterviewPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
-  // State
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingQuestionId, setSavingQuestionId] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [applicants, setApplicants] = useState([]);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
@@ -298,13 +270,11 @@ const InterviewPage = () => {
   const [averageRatings, setAverageRatings] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [overallComment, setOverallComment] = useState('');
-  const [recommend, setRecommend] = useState(false);
 
   // Fetch all questions
   const fetchQuestions = useCallback(async () => {
     try {
-      const response = await getQuestions();
+      const response = await interviewService.getQuestions();
       const questionsData = response.data?.data || [];
       setQuestions(questionsData);
     } catch (error) {
@@ -313,35 +283,38 @@ const InterviewPage = () => {
     }
   }, []);
 
-  // Fetch all applicants
-  const fetchApplicants = useCallback(async () => {
-    try {
-      const response = await getApplicants({});
-      const applicantsData = response.data?.data || [];
-      setApplicants(applicantsData);
-      
-      // Fetch average ratings for all applicants
-      for (const applicant of applicantsData) {
-        try {
-          const ratingResponse = await getAverageRating(applicant.id);
-          setAverageRatings(prev => ({
-            ...prev,
-            [applicant.id]: ratingResponse.data?.average_rating || 0
-          }));
-        } catch (error) {
-          console.error(`Error fetching rating for applicant ${applicant.id}:`, error);
-        }
+  // Fetch all applicants with their average ratings
+  // Fetch all applicants with their average ratings
+const fetchApplicants = useCallback(async () => {
+  try {
+    const response = await getApplicants({});
+    const applicantsData = response.data?.data || [];
+    setApplicants(applicantsData);
+    
+    // ✅ Fetch average ratings for all applicants
+    for (const applicant of applicantsData) {
+      try {
+        const ratingResponse = await interviewService.getAverageRatingByApplicant(applicant.id);
+        console.log(`Rating for ${applicant.id}:`, ratingResponse.data); // Debug log
+        setAverageRatings(prev => ({
+          ...prev,
+          [applicant.id]: ratingResponse.data?.average_rating || 0
+        }));
+      } catch (error) {
+        console.error(`Error fetching rating for applicant ${applicant.id}:`, error);
+        setAverageRatings(prev => ({ ...prev, [applicant.id]: 0 }));
       }
-    } catch (error) {
-      console.error('Error fetching applicants:', error);
-      toast.error('Failed to load applicants');
     }
-  }, []);
+  } catch (error) {
+    console.error('Error fetching applicants:', error);
+    toast.error('Failed to load applicants');
+  }
+}, []);
 
   // Fetch answers for selected applicant
   const fetchAnswersForApplicant = useCallback(async (applicantId) => {
     try {
-      const response = await getAnswersByApplicant(applicantId);
+      const response = await interviewService.getAnswersByApplicant(applicantId);
       const answersData = response.data?.data || [];
       
       const answersMap = {};
@@ -355,8 +328,7 @@ const InterviewPage = () => {
       
       setAnswers(answersMap);
       
-      // Also fetch average rating
-      const ratingResponse = await getAverageRating(applicantId);
+      const ratingResponse = await interviewService.getAverageRatingByApplicant(applicantId);
       setAverageRatings(prev => ({
         ...prev,
         [applicantId]: ratingResponse.data?.average_rating || 0
@@ -398,7 +370,6 @@ const InterviewPage = () => {
     }
   }, [id, applicants]);
 
-  // Handle answer change
   const handleAnswerChange = (questionId, answer) => {
     setAnswers(prev => ({
       ...prev,
@@ -409,11 +380,7 @@ const InterviewPage = () => {
     }));
   };
 
-  // Handle rating change
-  const handleRatingChange = async (questionId, rating) => {
-    const currentAnswer = answers[questionId];
-    
-    // Update local state
+  const handleRatingChange = (questionId, rating) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: {
@@ -421,103 +388,60 @@ const InterviewPage = () => {
         rating: rating
       }
     }));
-    
-    // If answer already exists, update rating via API
-    if (currentAnswer?.answer_id) {
-      try {
-        await rateAnswer(currentAnswer.answer_id, rating);
-        toast.success('Rating updated!');
-        
-        // Refresh average rating
-        if (selectedApplicant) {
-          const ratingResponse = await getAverageRating(selectedApplicant.id);
-          setAverageRatings(prev => ({
-            ...prev,
-            [selectedApplicant.id]: ratingResponse.data?.average_rating || 0
-          }));
-        }
-      } catch (error) {
-        console.error('Error updating rating:', error);
-        toast.error('Failed to update rating');
-      }
-    }
   };
 
-  // Calculate overall rating from current answers
-  const calculateOverallRating = () => {
-    const ratingValues = Object.values(answers).filter(a => a?.rating > 0);
-    if (ratingValues.length === 0) return 0;
-    const sum = ratingValues.reduce((a, b) => a + b.rating, 0);
-    return sum / ratingValues.length;
-  };
-
-  // Save all answers
-  const handleSaveFeedback = async () => {
+  const handleSaveAnswer = async (questionId) => {
     if (!selectedApplicant) return;
     
+    const answerData = answers[questionId];
+    if (!answerData?.answer?.trim() && !answerData?.rating) {
+      toast.warning('Please add an answer or rating before saving');
+      return;
+    }
+    
     setSaving(true);
-    let successCount = 0;
-    let errorCount = 0;
+    setSavingQuestionId(questionId);
     
     try {
-      // Submit each answer
-      for (const [questionId, answerData] of Object.entries(answers)) {
-        if (!answerData.answer?.trim()) continue;
-        
-        try {
-          if (answerData.answer_id) {
-            // Answer exists - update rating only (since PUT for answer might not exist)
-            if (answerData.rating > 0) {
-              await rateAnswer(answerData.answer_id, answerData.rating);
-            }
-            successCount++;
-          } else {
-            // New answer - create it
-            const submitResponse = await submitAnswer({
-              question_id: parseInt(questionId),
-              applicant_id: selectedApplicant.id,
-              answer: answerData.answer
-            });
-            
-            // If rating provided, update it
-            if (answerData.rating > 0 && submitResponse.data?.data?.id) {
-              await rateAnswer(submitResponse.data.data.id, answerData.rating);
-            }
-            successCount++;
+      if (answerData?.answer_id) {
+        if (answerData.rating > 0) {
+          await interviewService.rateAnswer(answerData.answer_id, answerData.rating);
+          toast.success('Rating updated successfully!');
+        }
+      } else {
+        if (answerData?.answer?.trim()) {
+          const submitResponse = await interviewService.submitAnswer({
+            question_id: questionId,
+            applicant_id: selectedApplicant.id,
+            answer: answerData.answer
+          });
+          
+          if (answerData.rating > 0 && submitResponse.data?.data?.id) {
+            await interviewService.rateAnswer(submitResponse.data.data.id, answerData.rating);
           }
-        } catch (error) {
-          console.error(`Error saving answer for question ${questionId}:`, error);
-          errorCount++;
+          toast.success('Answer saved successfully!');
         }
       }
       
-      // Refresh answers and rating
       await fetchAnswersForApplicant(selectedApplicant.id);
       
-      if (errorCount === 0) {
-        toast.success(`✅ All answers saved successfully! (${successCount} answers)`);
-      } else {
-        toast.warning(`⚠️ ${successCount} saved, ${errorCount} failed`);
-      }
-      
     } catch (error) {
-      console.error('Error saving feedback:', error);
-      toast.error('Failed to save feedback');
+      console.error('Error saving answer:', error);
+      toast.error(error.response?.data?.message || 'Failed to save answer');
     } finally {
       setSaving(false);
+      setSavingQuestionId(null);
     }
   };
 
-  // Filter applicants
   const filteredApplicants = applicants.filter(applicant => {
-    const matchesSearch = applicant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         applicant.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const displayName = getDisplayName(applicant);
+    const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (applicant.email && applicant.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filterStatus === 'all' || applicant.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  // Calculate stats
-  const overallRating = calculateOverallRating();
   const answeredQuestions = Object.values(answers).filter(a => a?.answer?.trim()).length;
   const ratedQuestions = Object.values(answers).filter(a => a?.rating > 0).length;
   const completionPercentage = questions.length > 0 ? (answeredQuestions / questions.length) * 100 : 0;
@@ -616,12 +540,11 @@ const InterviewPage = () => {
               <div className="text-center py-12">
                 <FaUsers className="text-5xl text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">No applicants found</p>
-                <p className="text-sm text-gray-400">Try adjusting your search or filter</p>
               </div>
             )}
           </div>
           
-          {/* Stats Footer */}
+          {/* Footer Stats */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Total Applicants</span>
@@ -638,21 +561,19 @@ const InterviewPage = () => {
         <div className="flex-1 overflow-y-auto bg-gray-100">
           {selectedApplicant ? (
             <div className="p-6 max-w-5xl mx-auto">
-              {/* Applicant Header Card */}
+              {/* Applicant Header */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-6 text-white shadow-lg">
                 <div className="flex items-start justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-3xl font-bold backdrop-blur-sm">
-                      {selectedApplicant.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'}
+                      {getInitials(getDisplayName(selectedApplicant))}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold mb-1">{selectedApplicant.name}</h2>
-                      <p className="text-blue-100 flex items-center gap-2">
-                        <FaBriefcase size={12} /> {selectedApplicant.position || 'Position not set'}
-                      </p>
+                      <h2 className="text-2xl font-bold mb-1">{getDisplayName(selectedApplicant)}</h2>
+                      <p className="text-blue-100">{selectedApplicant.position || 'Position not set'}</p>
                       <div className="flex flex-wrap gap-3 mt-2 text-sm text-blue-100">
                         <span className="flex items-center gap-1">
-                          <FaEnvelope size={12} /> {selectedApplicant.email}
+                          <FaEnvelope size={12} /> {selectedApplicant.email || 'No email'}
                         </span>
                         <span className="flex items-center gap-1">
                           <FaPhoneAlt size={12} /> {selectedApplicant.phone || 'No phone'}
@@ -674,14 +595,13 @@ const InterviewPage = () => {
                 </div>
               </div>
 
-              {/* Progress Stats Grid */}
+              {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Answered</p>
                       <p className="text-2xl font-bold text-gray-800">{answeredQuestions}/{questions.length}</p>
-                      <p className="text-xs text-gray-400">Questions</p>
                     </div>
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                       <FaClipboardList className="text-blue-600 text-xl" />
@@ -694,7 +614,6 @@ const InterviewPage = () => {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Rated</p>
                       <p className="text-2xl font-bold text-gray-800">{ratedQuestions}/{questions.length}</p>
-                      <p className="text-xs text-gray-400">Questions</p>
                     </div>
                     <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                       <FaStar className="text-yellow-600 text-xl" />
@@ -707,7 +626,6 @@ const InterviewPage = () => {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Completion</p>
                       <p className="text-2xl font-bold text-gray-800">{Math.round(completionPercentage)}%</p>
-                      <p className="text-xs text-gray-400">Overall</p>
                     </div>
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                       <FaChartLine className="text-green-600 text-xl" />
@@ -726,7 +644,6 @@ const InterviewPage = () => {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Rating</p>
                       <p className="text-2xl font-bold text-gray-800">{currentAvgRating.toFixed(1)}</p>
-                      <p className="text-xs text-gray-400">Out of 5</p>
                     </div>
                     <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                       <FaMedal className="text-purple-600 text-xl" />
@@ -742,7 +659,6 @@ const InterviewPage = () => {
                     <FaMicrophone className="text-blue-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800">Interview Questions</h3>
-                  <span className="text-sm text-gray-400 ml-2">Rate each answer from 1-5 stars</span>
                 </div>
                 
                 {questions.length === 0 ? (
@@ -757,70 +673,13 @@ const InterviewPage = () => {
                       answerData={answers[question.id]}
                       onAnswerChange={handleAnswerChange}
                       onRatingChange={handleRatingChange}
+                      onSave={handleSaveAnswer}
                       index={idx + 1}
                       saving={saving}
+                      savingId={savingQuestionId}
                     />
                   ))
                 )}
-              </div>
-
-              {/* Overall Comments */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FaRegCommentDots className="text-purple-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800">Overall Assessment</h3>
-                </div>
-                
-                <textarea
-                  value={overallComment}
-                  onChange={(e) => setOverallComment(e.target.value)}
-                  placeholder="Enter overall comments about the candidate. Highlight strengths, areas for improvement, and final recommendation..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 hover:bg-white transition-colors"
-                  disabled={saving}
-                />
-                
-                <div className="mt-4 flex flex-wrap gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={recommend}
-                      onChange={(e) => setRecommend(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">✅ Recommend for next round</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 text-green-600 rounded focus:ring-green-500" />
-                    <span className="text-sm text-gray-700">🎓 Montessori experience preferred</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500" />
-                    <span className="text-sm text-gray-700">📅 Available for immediate start</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 sticky bottom-0 bg-gray-100 py-4 border-t border-gray-200 -mx-6 px-6">
-                <button
-                  onClick={() => setSelectedApplicant(null)}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveFeedback}
-                  disabled={saving}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium shadow-sm"
-                >
-                  {saving && <FaSpinner className="animate-spin" />}
-                  <FaSave />
-                  Save Interview Feedback
-                </button>
               </div>
             </div>
           ) : (
@@ -831,13 +690,8 @@ const InterviewPage = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Select an Applicant</h3>
                 <p className="text-gray-500">
-                  Choose an applicant from the left panel to conduct the phone screening interview and record their responses.
+                  Choose an applicant from the left panel to conduct the phone screening interview.
                 </p>
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    💡 Tip: Rate each answer and add detailed notes for accurate assessment
-                  </p>
-                </div>
               </div>
             </div>
           )}
