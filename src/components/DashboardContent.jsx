@@ -1,17 +1,86 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
+// Pastel color options for background
 const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC' },
-  { name: 'Mint Green', value: '#C1E1C1' },
-  { name: 'Peach', value: '#FFDAB9' },
-  { name: 'Baby Blue', value: '#B5D8FF' },
-  { name: 'Soft Yellow', value: '#FFFACD' },
-  { name: 'Cultured White', value: '#FCFCFC' },
-  { name: 'Soft White', value: '#FDFDFE' },
+  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
+  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
+  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
+  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
+  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
+  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
+  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
 ];
 
 const DEFAULT_BG = '#FCFCFC';
+
+// Color Palette Component - SAME STYLE AS ATTENDANCE PAGE
+const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close color palette"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {PASTEL_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  onColorSelect(color.value);
+                  onClose();
+                }}
+                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Select ${color.name} background`}
+              >
+                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
+                  style={{ backgroundColor: color.value }} 
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Reset to default button */}
+          <button
+            onClick={() => {
+              onColorSelect('#f9fafb');
+              onClose();
+            }}
+            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
+            aria-label="Reset to default background"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // Icons as inline SVGs
 const Icons = {
@@ -157,15 +226,15 @@ const month = today.getMonth();
 const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const daysInMonth = new Date(year, month + 1, 0).getDate();
 const firstDay = new Date(year, month, 1).getDay();
-const holidays = [15, 26]; // placeholder
-const events = [10, 22]; // placeholder
+const holidays = [15, 26];
+const events = [10, 22];
 
-// ── HOLIDAYS & EVENTS ──
+// ── HOLIDAYS & EVENTS (Australian Holidays)
 const holidaysEvents = [
   { date: 'Apr 14', title: 'Ambedkar Jayanti', type: 'holiday' },
   { date: 'Apr 17', title: 'Team Offsite', type: 'event' },
   { date: 'Apr 21', title: 'Easter Monday', type: 'holiday' },
-  { date: 'Apr 25', title: 'Town Hall Meeting', type: 'event' },
+  { date: 'Apr 25', title: 'ANZAC Day', type: 'holiday' },
   { date: 'May 1', title: 'May Day', type: 'holiday' },
 ];
 
@@ -225,7 +294,29 @@ const DashboardContent = () => {
   for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
 
   return (
-    <div className="p-6 min-h-screen relative">
+    <div className="p-6 min-h-screen relative" style={{ backgroundColor: activeColor }}>
+      {/* ── COLOR PALETTE BUTTON ── SAME AS ATTENDANCE PAGE STYLE */}
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
+        style={{ writingMode: 'vertical-rl' }}
+        aria-label="Open color palette"
+      >
+        <div className="flex items-center space-x-1">
+          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span className="text-xs font-medium">Colors</span>
+        </div>
+      </button>
+
+      {/* Color Palette Component */}
+      <ColorPalette 
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onColorSelect={setBackgroundColor}
+      />
+
       {/* ── ROW 1: STAT CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
         {statCards.map((s) => (
@@ -254,7 +345,6 @@ const DashboardContent = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
         <DashCard accentColor="#C1E1C1">
           <CardTitle icon={<Icons.Chart />}>Attendance Summary</CardTitle>
-          {/* Segmented bar */}
           <div className="flex rounded-full overflow-hidden h-5 mb-4">
             {attendance.map(a => (
               <div key={a.label} style={{ width: `${a.pct}%`, backgroundColor: a.color }} className="transition-all" title={`${a.label}: ${a.count}`} />
@@ -363,8 +453,8 @@ const DashboardContent = () => {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
-                  <button onClick={() => {}} className="px-2.5 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-semibold hover:bg-green-200 transition-colors">Approve</button>
-                  <button onClick={() => {}} className="px-2.5 py-1 rounded-lg bg-red-100 text-red-600 text-xs font-semibold hover:bg-red-200 transition-colors">Reject</button>
+                  <button className="px-2.5 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-semibold hover:bg-green-200 transition-colors">Approve</button>
+                  <button className="px-2.5 py-1 rounded-lg bg-red-100 text-red-600 text-xs font-semibold hover:bg-red-200 transition-colors">Reject</button>
                 </div>
               </div>
             ))}
@@ -437,7 +527,6 @@ const DashboardContent = () => {
             {quickActions.map(q => (
               <button
                 key={q.label}
-                onClick={() => {}}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50/80 hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800"
               >
                 {q.icon}
@@ -447,59 +536,6 @@ const DashboardContent = () => {
           </div>
         </DashCard>
       </div>
-
-      {/* ── THEME FLOATING BUTTON ── */}
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1.5 bg-white/90 backdrop-blur border border-white/60 rounded-l-xl px-2 py-3 hover:shadow-lg transition-all"
-        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}
-      >
-        <span className="w-5 h-5 rounded-full border-2 border-white" style={{ backgroundColor: activeColor, boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }} />
-        <span className="text-xs font-semibold text-gray-500" style={{ writingMode: 'vertical-rl' }}>Theme</span>
-      </button>
-
-      {/* ── DRAWER OVERLAY ── */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setDrawerOpen(false)}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
-          <div
-            className="relative w-72 h-full bg-white shadow-2xl p-6 overflow-y-auto animate-slide-in-right"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-800">Choose Theme</h2>
-              <button onClick={() => setDrawerOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                <Icons.X />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {PASTEL_COLORS.map(c => (
-                <button
-                  key={c.value}
-                  onClick={() => { setBackgroundColor(c.value); }}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeColor === c.value ? 'ring-2 ring-gray-300 bg-gray-50' : 'hover:bg-gray-50'}`}
-                >
-                  <span className="w-8 h-8 rounded-full border-2 border-white flex-shrink-0" style={{ backgroundColor: c.value, boxShadow: '0 0 0 1px rgba(0,0,0,0.08)' }} />
-                  <span className="text-sm font-medium text-gray-700 flex-1 text-left">{c.name}</span>
-                  {activeColor === c.value && <span className="text-green-600"><Icons.Check /></span>}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => { setBackgroundColor(DEFAULT_BG); }}
-              className="mt-6 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Reset to Default
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Drawer animation */}
-      <style>{`
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
-      `}</style>
     </div>
   );
 };
