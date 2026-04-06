@@ -26,7 +26,7 @@ import {
   deleteJobOpening,
   getJobOpeningById,
   getDepartmentsByOrgId,
-  getDesignationsByDeptId,
+  getDesignationsByOrgId,  // ✅ ADD THIS
 } from "../../services/recruitmentService";
 
 // Pastel color options for background
@@ -616,16 +616,12 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
   const [designations, setDesignations] = useState([]);
   const { selectedOrganization } = useOrganizations();
 
-  // Fixed date formatting function
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
-    
     try {
-      // Handle both ISO format (2025-10-10T00:00:00.000000Z) and simple date format
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return ''; // Invalid date
-      
-      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
     } catch {
       return '';
     }
@@ -638,11 +634,12 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
       closing_date: formatDateForInput(job.closing_date),
       department_id: job.department_id || "",
       designation_id: job.designation_id || "",
-      status: job.status?.toLowerCase() || "open"
+      status: job.status?.toLowerCase() || "open",
+      employment_type: job.employment_type?.toLowerCase() || "full-time"
     } : {
       title: "",
       location: "",
-      employment_type: "Full-time",
+      employment_type: "full-time",  // ✅ Changed to lowercase
       status: "open",
       description: "",
       requirements: "",
@@ -655,35 +652,27 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     setFormData(initialData);
 
     if (isOpen && selectedOrganization) {
-      getDepartmentsByOrgId(selectedOrganization.id).then((res) => {
-        setDepartments(res.data.data || []);
-        if (initialData.department_id) {
-          getDesignationsByDeptId(initialData.department_id).then(
-            (desigRes) => {
-              setDesignations(desigRes.data.data || []);
-            }
-          );
-        }
-      }).catch(err => {
-        console.error("Failed to load Rooms:", err);
-        setDepartments([]);
-      });
+      // Get departments
+      getDepartmentsByOrgId(selectedOrganization.id)
+        .then((res) => {
+          setDepartments(res.data.data || []);
+        })
+        .catch(err => {
+          console.error("Failed to load Rooms:", err);
+          setDepartments([]);
+        });
+
+      // Get all designations for the organization
+      getDesignationsByOrgId(selectedOrganization.id)
+        .then((res) => {
+          setDesignations(res.data.data || []);
+        })
+        .catch(err => {
+          console.error("Failed to load designations:", err);
+          setDesignations([]);
+        });
     }
   }, [job, isOpen, selectedOrganization]);
-
-  useEffect(() => {
-    const deptId = formData.department_id;
-    if (deptId) {
-      getDesignationsByDeptId(deptId).then((res) => {
-        setDesignations(res.data.data || []);
-      }).catch(err => {
-        console.error("Failed to load designations:", err);
-        setDesignations([]);
-      });
-    } else {
-      setDesignations([]);
-    }
-  }, [formData.department_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -696,6 +685,27 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    console.log('📤 Submitting job opening:', formData);
+    
+    // Validate required fields
+    if (!formData.title) {
+      alert('Job Title is required');
+      return;
+    }
+    if (!formData.department_id) {
+      alert('Please select a Room/Department');
+      return;
+    }
+    if (!formData.designation_id) {
+      alert('Please select a Designation');
+      return;
+    }
+    if (!formData.location) {
+      alert('Location is required');
+      return;
+    }
+    
     onSave(formData);
   };
 
@@ -708,17 +718,15 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
           <h2 className="text-2xl font-bold text-gray-800">
             {job ? "Edit Job Opening" : "Create New Job Opening"}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200"
-          >
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
             <HiX size={24} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* <div className="sm:col-span-2">
+              {/* Job Title */}
+              <div className="sm:col-span-2">
                 <FormInput
                   label="Job Title"
                   name="title"
@@ -727,9 +735,10 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   error={errors?.title}
                   required
                 />
-              </div> */}
+              </div>
+              
               <FormSelect
-                label="Room "
+                label="Room / Department"
                 name="department_id"
                 value={formData.department_id || ""}
                 onChange={handleChange}
@@ -743,6 +752,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   </option>
                 ))}
               </FormSelect>
+              
               <FormSelect
                 label="Designation"
                 name="designation_id"
@@ -750,7 +760,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.designation_id}
                 required
-                disabled={!formData.department_id}
               >
                 <option value="">Select a Designation</option>
                 {designations.map((desig) => (
@@ -759,6 +768,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   </option>
                 ))}
               </FormSelect>
+              
               <FormInput
                 label="Location"
                 name="location"
@@ -767,19 +777,22 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 error={errors?.location}
                 required
               />
+              
+              {/* ✅ FIXED: Employment Type with correct values */}
               <FormSelect
                 label="Employment Type"
                 name="employment_type"
-                value={formData.employment_type || "Full-time"}
+                value={formData.employment_type || "full-time"}
                 onChange={handleChange}
                 error={errors?.employment_type}
               >
                 <option value="full-time">Full-time</option>
                 <option value="part-time">Part-time</option>
-                <option value="contract">Casual</option>
+                <option value="contract">Contract / Casual</option>
                 <option value="fixed-term">Fixed Term</option>
                 <option value="trainee">Trainee</option>
               </FormSelect>
+              
               <div className="sm:col-span-2">
                 <FormTextarea
                   label="Description"
@@ -788,8 +801,10 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   onChange={handleChange}
                   error={errors?.description}
                   rows="4"
+                  placeholder="Describe the role, responsibilities, and what the job entails..."
                 />
               </div>
+              
               <div className="sm:col-span-2">
                 <FormTextarea
                   label="Requirements"
@@ -798,8 +813,10 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                   onChange={handleChange}
                   error={errors?.requirements}
                   rows="4"
+                  placeholder="List the qualifications, skills, and experience required..."
                 />
               </div>
+              
               <FormInput
                 type="date"
                 label="Posting Date"
@@ -808,6 +825,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.posting_date}
               />
+              
               <FormInput
                 type="date"
                 label="Closing Date"
@@ -816,6 +834,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 onChange={handleChange}
                 error={errors?.closing_date}
               />
+              
               <div className="sm:col-span-2">
                 <FormSelect
                   label="Status"

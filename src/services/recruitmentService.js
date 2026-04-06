@@ -141,12 +141,20 @@ export const deleteJobOpening = (id) => {
 };
 
 // Departments and designations
+// Departments and designations - ADD THIS NEW FUNCTION
 export const getDepartmentsByOrgId = (orgId) => {
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
 
+// ✅ ADD THIS NEW FUNCTION - Get designations by ORGANIZATION
+export const getDesignationsByOrgId = (orgId) => {
+  return axiosClient.get(`/organizations/${orgId}/designations`);
+};
+
+// ⚠️ Keep this for backward compatibility but it will return empty array
 export const getDesignationsByDeptId = (deptId) => {
-  return axiosClient.get(`/departments/${deptId}/designations`);
+  console.warn('⚠️ getDesignationsByDeptId is deprecated. Use getDesignationsByOrgId instead.');
+  return Promise.resolve({ data: { data: [] } });
 };
 
 

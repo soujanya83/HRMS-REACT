@@ -388,7 +388,7 @@ const TimesheetEntry = () => {
       entry.status === 'pending' || entry.status === 'draft'
     );
     
-    const totalHours = pendingEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+    const totalHours = pendingEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);  
     const billableHours = pendingEntries
       .filter(entry => entry.billable)
       .reduce((sum, entry) => sum + (entry.hours || 0), 0);

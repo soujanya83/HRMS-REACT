@@ -1,5 +1,5 @@
 // src/pages/Recruitment/InterviewPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FaStar,
   FaStarHalfAlt,
@@ -29,149 +29,45 @@ import {
   FaHeart,
   FaBrain,
   FaLightbulb,
-  FaRocket,
-  FaAward
+  FaBuilding,
+  FaUserPlus,
+  FaFileAlt,
+  FaPhone,
+  FaEnvelopeOpen,
+  FaCalendarCheck,
+  FaThumbsUp,
+  FaThumbsDown
 } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Sample Interview Questions
-const INTERVIEW_QUESTIONS = [
-  {
-    id: 1,
-    question: "Please tell me about yourself?",
-    description: "Experience, background, and motivation",
-    category: "General",
-    icon: <FaUserCircle className="text-blue-500" />
-  },
-  {
-    id: 2,
-    question: "What do you like the most & least about working with children?",
-    description: "Passion for kids and challenges faced",
-    category: "Experience",
-    icon: <FaHeart className="text-pink-500" />
-  },
-  {
-    id: 3,
-    question: "What five items would you put in an empty classroom?",
-    description: "Creativity and reasoning",
-    category: "Creative Thinking",
-    icon: <FaLightbulb className="text-yellow-500" />
-  },
-  {
-    id: 4,
-    question: "How do you stay up to date on the latest information in the sector?",
-    description: "Professional development and learning",
-    category: "Professional Development",
-    icon: <FaGraduationCap className="text-green-500" />
-  },
-  {
-    id: 5,
-    question: "Describe a challenging situation with a child and how you handled it?",
-    description: "Problem-solving and conflict resolution",
-    category: "Problem Solving",
-    icon: <FaBrain className="text-purple-500" />
-  }
-];
+// API Service functions
+import axiosClient from '../../axiosClient.js';
 
-// Sample Applicants Data
-const SAMPLE_APPLICANTS = [
-  {
-    id: 1,
-    name: "Alexandra Westwood",
-    email: "alexandra.westwood@email.com",
-    phone: "+61 412 345 678",
-    position: "Childcare Educator",
-    experience: "8 years",
-    currentRole: "Lead Educator (3 years)",
-    location: "Melbourne, VIC",
-    appliedDate: "2026-01-10",
-    status: "Completed",
-    overallRating: 4.5,
-    hasMontessori: true,
-    interviewDate: "2026-01-14",
-    interviewer: "Kavisha Dassanayake",
-    avatar: "AW",
-    answers: {
-      1: { answer: "experience for 8 years, lead educator for 3 years, has alot of experience, familiar with montessori approach, did not previously have the montessori approach", rating: 4 },
-      2: { answer: "passion for kids, surrounded by other educators without the same commitment", rating: 4 },
-      3: { answer: "said good examples and why, creative things, good reasoning", rating: 4 },
-      4: { answer: "follows sector updates through professional networks, attends workshops, reads industry publications", rating: 4 },
-      5: { answer: "", rating: 0 }
-    }
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    email: "michael.chen@email.com",
-    phone: "+61 423 456 789",
-    position: "Early Childhood Teacher",
-    experience: "5 years",
-    currentRole: "Room Leader",
-    location: "Sydney, NSW",
-    appliedDate: "2026-01-09",
-    status: "In Progress",
-    overallRating: 4.2,
-    hasMontessori: false,
-    interviewDate: "2026-01-15",
-    interviewer: "Sarah Johnson",
-    avatar: "MC",
-    answers: {
-      1: { answer: "5 years in early childhood education, passionate about child development", rating: 4 },
-      2: { answer: "Love seeing children's growth, challenge is managing large groups", rating: 4 },
-      3: { answer: "Books, art supplies, building blocks, sensory toys, plants", rating: 3 },
-      4: { answer: "Regular webinars, ACEQA updates", rating: 4 },
-      5: { answer: "", rating: 0 }
-    }
-  },
-  {
-    id: 3,
-    name: "Emma Watson",
-    email: "emma.watson@email.com",
-    phone: "+61 434 567 890",
-    position: "Assistant Educator",
-    experience: "3 years",
-    currentRole: "Assistant Educator",
-    location: "Brisbane, QLD",
-    appliedDate: "2026-01-08",
-    status: "Scheduled",
-    overallRating: 0,
-    hasMontessori: false,
-    interviewDate: "2026-01-16",
-    interviewer: "Michael Brown",
-    avatar: "EW",
-    answers: {
-      1: { answer: "", rating: 0 },
-      2: { answer: "", rating: 0 },
-      3: { answer: "", rating: 0 },
-      4: { answer: "", rating: 0 },
-      5: { answer: "", rating: 0 }
-    }
-  },
-  {
-    id: 4,
-    name: "James Wilson",
-    email: "james.wilson@email.com",
-    phone: "+61 445 678 901",
-    position: "Childcare Educator",
-    experience: "6 years",
-    currentRole: "Lead Educator",
-    location: "Perth, WA",
-    appliedDate: "2026-01-07",
-    status: "Completed",
-    overallRating: 4.8,
-    hasMontessori: true,
-    interviewDate: "2026-01-12",
-    interviewer: "Kavisha Dassanayake",
-    avatar: "JW",
-    answers: {
-      1: { answer: "6 years experience, Montessori trained, passionate about child-led learning", rating: 5 },
-      2: { answer: "Love fostering independence, challenge is maintaining work-life balance", rating: 4 },
-      3: { answer: "Sensory table, art easel, reading nook, building area, quiet corner", rating: 5 },
-      4: { answer: "Active member of Early Childhood Australia", rating: 5 },
-      5: { answer: "Handled biting incident by observing patterns and working with parents", rating: 5 }
-    }
-  }
-];
+// ============================================
+// API SERVICE FUNCTIONS
+// ============================================
+
+// Questions API
+const getQuestions = () => axiosClient.get('/questions');
+const createQuestion = (data) => axiosClient.post('/questions', data);
+const updateQuestion = (id, data) => axiosClient.put(`/questions/${id}`, data);
+const deleteQuestion = (id) => axiosClient.delete(`/questions/${id}`);
+
+// Answers API
+const submitAnswer = (data) => axiosClient.post('/answers', data);
+const getAnswersByApplicant = (applicantId) => axiosClient.get(`/answers/applicant/${applicantId}`);
+const rateAnswer = (answerId, rating) => axiosClient.put(`/answers/rating/${answerId}`, { rating });
+const getAverageRating = (applicantId) => axiosClient.get(`/answers/average/${applicantId}`);
+const deleteAnswer = (id) => axiosClient.delete(`/answers/${id}`);
+
+// Applicants API
+const getApplicants = (params) => axiosClient.get('/recruitment/applicants', { params });
+
+// ============================================
+// COMPONENTS
+// ============================================
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) => {
@@ -216,7 +112,7 @@ const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) =
 };
 
 // Question Card Component
-const QuestionCard = ({ question, answer, rating, onAnswerChange, onRatingChange, index }) => {
+const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, index, saving }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
@@ -225,12 +121,6 @@ const QuestionCard = ({ question, answer, rating, onAnswerChange, onRatingChange
             <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
               {index}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{question.icon}</span>
-              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-                {question.category}
-              </span>
-            </div>
             <h3 className="font-semibold text-gray-800">
               {question.question}
             </h3>
@@ -238,9 +128,10 @@ const QuestionCard = ({ question, answer, rating, onAnswerChange, onRatingChange
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Rating:</span>
             <StarRating 
-              rating={rating} 
-              onRatingChange={onRatingChange}
+              rating={answerData?.rating || 0} 
+              onRatingChange={(rating) => onRatingChange(question.id, rating)}
               size="md"
+              readonly={saving}
             />
           </div>
         </div>
@@ -251,40 +142,45 @@ const QuestionCard = ({ question, answer, rating, onAnswerChange, onRatingChange
           Candidate's Response
         </label>
         <textarea
-          value={answer}
-          onChange={(e) => onAnswerChange(e.target.value)}
+          value={answerData?.answer || ''}
+          onChange={(e) => onAnswerChange(question.id, e.target.value)}
           rows={3}
           placeholder="Type the candidate's answer here..."
           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 hover:bg-white transition-colors"
+          disabled={saving}
         />
         
         {/* Quick Response Suggestions */}
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => onAnswerChange("Excellent response - demonstrated deep understanding and relevant experience")}
+            onClick={() => onAnswerChange(question.id, "Excellent response - demonstrated deep understanding and relevant experience")}
             className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+            disabled={saving}
           >
             ⭐ Excellent
           </button>
           <button
             type="button"
-            onClick={() => onAnswerChange("Good response - showed competence and knowledge")}
+            onClick={() => onAnswerChange(question.id, "Good response - showed competence and knowledge")}
             className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+            disabled={saving}
           >
             👍 Good
           </button>
           <button
             type="button"
-            onClick={() => onAnswerChange("Average response - basic understanding, needs more detail")}
+            onClick={() => onAnswerChange(question.id, "Average response - basic understanding, needs more detail")}
             className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors"
+            disabled={saving}
           >
             📝 Average
           </button>
           <button
             type="button"
-            onClick={() => onAnswerChange("Weak response - lacked detail and understanding")}
+            onClick={() => onAnswerChange(question.id, "Weak response - lacked detail and understanding")}
             className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+            disabled={saving}
           >
             ⚠️ Weak
           </button>
@@ -295,23 +191,27 @@ const QuestionCard = ({ question, answer, rating, onAnswerChange, onRatingChange
 };
 
 // Applicant Card Component
-const ApplicantCard = ({ applicant, isSelected, onSelect }) => {
+const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Scheduled': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    switch(status?.toLowerCase()) {
+      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
+      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'scheduled': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
-      case 'Completed': return <FaCheckCircle className="text-green-600" size={12} />;
-      case 'In Progress': return <FaClock className="text-blue-600" size={12} />;
-      case 'Scheduled': return <FaCalendarAlt className="text-yellow-600" size={12} />;
+    switch(status?.toLowerCase()) {
+      case 'completed': return <FaCheckCircle className="text-green-600" size={12} />;
+      case 'in_progress': return <FaClock className="text-blue-600" size={12} />;
+      case 'scheduled': return <FaCalendarAlt className="text-yellow-600" size={12} />;
       default: return null;
     }
+  };
+
+  const getInitials = (name) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
   };
 
   return (
@@ -329,7 +229,7 @@ const ApplicantCard = ({ applicant, isSelected, onSelect }) => {
           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base ${
             isSelected ? 'bg-gradient-to-br from-blue-600 to-blue-800' : 'bg-gradient-to-br from-gray-600 to-gray-800'
           }`}>
-            {applicant.avatar}
+            {getInitials(applicant.name)}
           </div>
         </div>
         
@@ -339,24 +239,23 @@ const ApplicantCard = ({ applicant, isSelected, onSelect }) => {
             <h4 className="font-semibold text-gray-800">
               {applicant.name}
             </h4>
-            {applicant.overallRating > 0 && (
+            {averageRating > 0 && (
               <div className="flex items-center gap-1">
-                <StarRating rating={applicant.overallRating} readonly size="sm" />
+                <StarRating rating={averageRating} readonly size="sm" />
                 <span className="text-xs font-semibold text-gray-600">
-                  {applicant.overallRating.toFixed(1)}
+                  {averageRating.toFixed(1)}
                 </span>
               </div>
             )}
           </div>
           
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-gray-700">{applicant.position}</span>
-            <span className="text-xs text-gray-300">•</span>
-            <span className="text-xs text-gray-500">{applicant.experience}</span>
-            {applicant.hasMontessori && (
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                Montessori
-              </span>
+            <span className="text-xs font-medium text-gray-700">{applicant.position || 'N/A'}</span>
+            {applicant.experience && (
+              <>
+                <span className="text-xs text-gray-300">•</span>
+                <span className="text-xs text-gray-500">{applicant.experience}</span>
+              </>
             )}
           </div>
           
@@ -365,10 +264,7 @@ const ApplicantCard = ({ applicant, isSelected, onSelect }) => {
               <FaEnvelope size={10} /> {applicant.email}
             </span>
             <span className="flex items-center gap-1">
-              <FaPhoneAlt size={10} /> {applicant.phone}
-            </span>
-            <span className="flex items-center gap-1">
-              <FaMapMarkerAlt size={10} /> {applicant.location}
+              <FaPhoneAlt size={10} /> {applicant.phone || 'N/A'}
             </span>
           </div>
         </div>
@@ -377,35 +273,124 @@ const ApplicantCard = ({ applicant, isSelected, onSelect }) => {
         <div className="flex-shrink-0 text-right">
           <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-medium border ${getStatusColor(applicant.status)}`}>
             {getStatusIcon(applicant.status)}
-            {applicant.status}
+            {applicant.status || 'New'}
           </span>
-          {applicant.interviewDate && (
-            <p className="text-xs text-gray-400 mt-1">
-              {applicant.interviewDate}
-            </p>
-          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Main Interview Page Component
+// ============================================
+// MAIN INTERVIEW PAGE COMPONENT
+// ============================================
 const InterviewPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [applicants, setApplicants] = useState(SAMPLE_APPLICANTS);
+  
+  // State
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [applicants, setApplicants] = useState([]);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [answers, setAnswers] = useState({});
-  const [ratings, setRatings] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [averageRatings, setAverageRatings] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [overallComment, setOverallComment] = useState('');
   const [recommend, setRecommend] = useState(false);
 
+  // Fetch all questions
+  const fetchQuestions = useCallback(async () => {
+    try {
+      const response = await getQuestions();
+      const questionsData = response.data?.data || [];
+      setQuestions(questionsData);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      toast.error('Failed to load questions');
+    }
+  }, []);
+
+  // Fetch all applicants
+  const fetchApplicants = useCallback(async () => {
+    try {
+      const response = await getApplicants({});
+      const applicantsData = response.data?.data || [];
+      setApplicants(applicantsData);
+      
+      // Fetch average ratings for all applicants
+      for (const applicant of applicantsData) {
+        try {
+          const ratingResponse = await getAverageRating(applicant.id);
+          setAverageRatings(prev => ({
+            ...prev,
+            [applicant.id]: ratingResponse.data?.average_rating || 0
+          }));
+        } catch (error) {
+          console.error(`Error fetching rating for applicant ${applicant.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching applicants:', error);
+      toast.error('Failed to load applicants');
+    }
+  }, []);
+
+  // Fetch answers for selected applicant
+  const fetchAnswersForApplicant = useCallback(async (applicantId) => {
+    try {
+      const response = await getAnswersByApplicant(applicantId);
+      const answersData = response.data?.data || [];
+      
+      const answersMap = {};
+      answersData.forEach(answer => {
+        answersMap[answer.question_id] = {
+          answer_id: answer.id,
+          answer: answer.answer,
+          rating: answer.rating || 0
+        };
+      });
+      
+      setAnswers(answersMap);
+      
+      // Also fetch average rating
+      const ratingResponse = await getAverageRating(applicantId);
+      setAverageRatings(prev => ({
+        ...prev,
+        [applicantId]: ratingResponse.data?.average_rating || 0
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching answers:', error);
+      setAnswers({});
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
-    if (id) {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchQuestions(),
+        fetchApplicants()
+      ]);
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchQuestions, fetchApplicants]);
+
+  // Load answers when applicant is selected
+  useEffect(() => {
+    if (selectedApplicant) {
+      fetchAnswersForApplicant(selectedApplicant.id);
+    }
+  }, [selectedApplicant, fetchAnswersForApplicant]);
+
+  // Handle URL param
+  useEffect(() => {
+    if (id && applicants.length > 0) {
       const applicant = applicants.find(a => a.id === parseInt(id));
       if (applicant) {
         setSelectedApplicant(applicant);
@@ -413,98 +398,146 @@ const InterviewPage = () => {
     }
   }, [id, applicants]);
 
-  useEffect(() => {
-    if (selectedApplicant) {
-      setAnswers(selectedApplicant.answers || {});
-      const ratingsObj = {};
-      Object.keys(selectedApplicant.answers || {}).forEach(key => {
-        ratingsObj[key] = selectedApplicant.answers[key]?.rating || 0;
-      });
-      setRatings(ratingsObj);
-    }
-  }, [selectedApplicant]);
-
+  // Handle answer change
   const handleAnswerChange = (questionId, answer) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: { ...prev[questionId], answer, rating: prev[questionId]?.rating || 0 }
+      [questionId]: {
+        ...prev[questionId],
+        answer: answer
+      }
     }));
   };
 
-  const handleRatingChange = (questionId, rating) => {
-    setRatings(prev => ({
-      ...prev,
-      [questionId]: rating
-    }));
+  // Handle rating change
+  const handleRatingChange = async (questionId, rating) => {
+    const currentAnswer = answers[questionId];
+    
+    // Update local state
     setAnswers(prev => ({
       ...prev,
-      [questionId]: { ...prev[questionId], answer: prev[questionId]?.answer || '', rating }
+      [questionId]: {
+        ...prev[questionId],
+        rating: rating
+      }
     }));
+    
+    // If answer already exists, update rating via API
+    if (currentAnswer?.answer_id) {
+      try {
+        await rateAnswer(currentAnswer.answer_id, rating);
+        toast.success('Rating updated!');
+        
+        // Refresh average rating
+        if (selectedApplicant) {
+          const ratingResponse = await getAverageRating(selectedApplicant.id);
+          setAverageRatings(prev => ({
+            ...prev,
+            [selectedApplicant.id]: ratingResponse.data?.average_rating || 0
+          }));
+        }
+      } catch (error) {
+        console.error('Error updating rating:', error);
+        toast.error('Failed to update rating');
+      }
+    }
   };
 
+  // Calculate overall rating from current answers
   const calculateOverallRating = () => {
-    const ratingValues = Object.values(ratings).filter(r => r > 0);
+    const ratingValues = Object.values(answers).filter(a => a?.rating > 0);
     if (ratingValues.length === 0) return 0;
-    const sum = ratingValues.reduce((a, b) => a + b, 0);
+    const sum = ratingValues.reduce((a, b) => a + b.rating, 0);
     return sum / ratingValues.length;
   };
 
+  // Save all answers
   const handleSaveFeedback = async () => {
+    if (!selectedApplicant) return;
+    
     setSaving(true);
+    let successCount = 0;
+    let errorCount = 0;
     
-    const feedbackData = {
-      applicantId: selectedApplicant.id,
-      applicantName: selectedApplicant.name,
-      interviewDate: new Date().toISOString(),
-      interviewer: "Current User",
-      answers: answers,
-      ratings: ratings,
-      overallRating: calculateOverallRating(),
-      overallComment: overallComment,
-      recommend: recommend,
-      status: "Completed"
-    };
-    
-    console.log("Saving feedback:", feedbackData);
-    
-    setTimeout(() => {
-      setApplicants(prev => prev.map(app => 
-        app.id === selectedApplicant.id 
-          ? { 
-              ...app, 
-              answers: answers,
-              overallRating: calculateOverallRating(),
-              status: "Completed"
+    try {
+      // Submit each answer
+      for (const [questionId, answerData] of Object.entries(answers)) {
+        if (!answerData.answer?.trim()) continue;
+        
+        try {
+          if (answerData.answer_id) {
+            // Answer exists - update rating only (since PUT for answer might not exist)
+            if (answerData.rating > 0) {
+              await rateAnswer(answerData.answer_id, answerData.rating);
             }
-          : app
-      ));
+            successCount++;
+          } else {
+            // New answer - create it
+            const submitResponse = await submitAnswer({
+              question_id: parseInt(questionId),
+              applicant_id: selectedApplicant.id,
+              answer: answerData.answer
+            });
+            
+            // If rating provided, update it
+            if (answerData.rating > 0 && submitResponse.data?.data?.id) {
+              await rateAnswer(submitResponse.data.data.id, answerData.rating);
+            }
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Error saving answer for question ${questionId}:`, error);
+          errorCount++;
+        }
+      }
       
-      setSelectedApplicant(prev => ({
-        ...prev,
-        answers: answers,
-        overallRating: calculateOverallRating(),
-        status: "Completed"
-      }));
+      // Refresh answers and rating
+      await fetchAnswersForApplicant(selectedApplicant.id);
       
+      if (errorCount === 0) {
+        toast.success(`✅ All answers saved successfully! (${successCount} answers)`);
+      } else {
+        toast.warning(`⚠️ ${successCount} saved, ${errorCount} failed`);
+      }
+      
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      toast.error('Failed to save feedback');
+    } finally {
       setSaving(false);
-      alert("✅ Feedback saved successfully!");
-    }, 1000);
+    }
   };
 
+  // Filter applicants
   const filteredApplicants = applicants.filter(applicant => {
-    const matchesSearch = applicant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         applicant.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = applicant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         applicant.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || applicant.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
+  // Calculate stats
   const overallRating = calculateOverallRating();
   const answeredQuestions = Object.values(answers).filter(a => a?.answer?.trim()).length;
-  const ratedQuestions = Object.values(ratings).filter(r => r > 0).length;
-  const completionPercentage = Math.round((answeredQuestions / INTERVIEW_QUESTIONS.length) * 100);
+  const ratedQuestions = Object.values(answers).filter(a => a?.rating > 0).length;
+  const completionPercentage = questions.length > 0 ? (answeredQuestions / questions.length) * 100 : 0;
+  const currentAvgRating = selectedApplicant ? (averageRatings[selectedApplicant.id] || 0) : 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading interview data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         <div className="px-6 py-4">
@@ -551,7 +584,7 @@ const InterviewPage = () => {
             </div>
             
             <div className="flex gap-2 flex-wrap">
-              {['all', 'Scheduled', 'In Progress', 'Completed'].map(status => (
+              {['all', 'new', 'scheduled', 'in_progress', 'completed'].map(status => (
                 <button
                   key={status}
                   onClick={() => setFilterStatus(status)}
@@ -561,7 +594,7 @@ const InterviewPage = () => {
                       : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                   }`}
                 >
-                  {status === 'all' ? 'All' : status}
+                  {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </button>
               ))}
             </div>
@@ -575,6 +608,7 @@ const InterviewPage = () => {
                 applicant={applicant}
                 isSelected={selectedApplicant?.id === applicant.id}
                 onSelect={setSelectedApplicant}
+                averageRating={averageRatings[applicant.id] || 0}
               />
             ))}
             
@@ -594,8 +628,8 @@ const InterviewPage = () => {
               <span className="font-semibold text-gray-800">{applicants.length}</span>
             </div>
             <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-gray-600">Completed Interviews</span>
-              <span className="font-semibold text-green-600">{applicants.filter(a => a.status === 'Completed').length}</span>
+              <span className="text-gray-600">Total Questions</span>
+              <span className="font-semibold text-gray-800">{questions.length}</span>
             </div>
           </div>
         </div>
@@ -609,22 +643,19 @@ const InterviewPage = () => {
                 <div className="flex items-start justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-3xl font-bold backdrop-blur-sm">
-                      {selectedApplicant.avatar}
+                      {selectedApplicant.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'}
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold mb-1">{selectedApplicant.name}</h2>
                       <p className="text-blue-100 flex items-center gap-2">
-                        <FaBriefcase size={12} /> {selectedApplicant.position}
+                        <FaBriefcase size={12} /> {selectedApplicant.position || 'Position not set'}
                       </p>
                       <div className="flex flex-wrap gap-3 mt-2 text-sm text-blue-100">
                         <span className="flex items-center gap-1">
                           <FaEnvelope size={12} /> {selectedApplicant.email}
                         </span>
                         <span className="flex items-center gap-1">
-                          <FaPhoneAlt size={12} /> {selectedApplicant.phone}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FaMapMarkerAlt size={12} /> {selectedApplicant.location}
+                          <FaPhoneAlt size={12} /> {selectedApplicant.phone || 'No phone'}
                         </span>
                       </div>
                     </div>
@@ -633,11 +664,11 @@ const InterviewPage = () => {
                   <div className="text-right bg-white/10 rounded-xl px-4 py-2 backdrop-blur-sm">
                     <div className="text-sm opacity-90">Overall Rating</div>
                     <div className="flex items-center gap-2">
-                      <StarRating rating={overallRating} readonly size="lg" />
-                      <span className="text-2xl font-bold">{overallRating.toFixed(1)}</span>
+                      <StarRating rating={currentAvgRating} readonly size="lg" />
+                      <span className="text-2xl font-bold">{currentAvgRating.toFixed(1)}</span>
                     </div>
                     <div className="text-xs mt-1 opacity-75">
-                      Interview: {selectedApplicant.interviewDate}
+                      Based on {ratedQuestions} rated answers
                     </div>
                   </div>
                 </div>
@@ -649,7 +680,7 @@ const InterviewPage = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Answered</p>
-                      <p className="text-2xl font-bold text-gray-800">{answeredQuestions}/{INTERVIEW_QUESTIONS.length}</p>
+                      <p className="text-2xl font-bold text-gray-800">{answeredQuestions}/{questions.length}</p>
                       <p className="text-xs text-gray-400">Questions</p>
                     </div>
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -662,7 +693,7 @@ const InterviewPage = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Rated</p>
-                      <p className="text-2xl font-bold text-gray-800">{ratedQuestions}/{INTERVIEW_QUESTIONS.length}</p>
+                      <p className="text-2xl font-bold text-gray-800">{ratedQuestions}/{questions.length}</p>
                       <p className="text-xs text-gray-400">Questions</p>
                     </div>
                     <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -675,7 +706,7 @@ const InterviewPage = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Completion</p>
-                      <p className="text-2xl font-bold text-gray-800">{completionPercentage}%</p>
+                      <p className="text-2xl font-bold text-gray-800">{Math.round(completionPercentage)}%</p>
                       <p className="text-xs text-gray-400">Overall</p>
                     </div>
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -693,9 +724,9 @@ const InterviewPage = () => {
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Experience</p>
-                      <p className="text-2xl font-bold text-gray-800">{selectedApplicant.experience}</p>
-                      <p className="text-xs text-gray-400">Total</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Rating</p>
+                      <p className="text-2xl font-bold text-gray-800">{currentAvgRating.toFixed(1)}</p>
+                      <p className="text-xs text-gray-400">Out of 5</p>
                     </div>
                     <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                       <FaMedal className="text-purple-600 text-xl" />
@@ -714,17 +745,23 @@ const InterviewPage = () => {
                   <span className="text-sm text-gray-400 ml-2">Rate each answer from 1-5 stars</span>
                 </div>
                 
-                {INTERVIEW_QUESTIONS.map((question, idx) => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    answer={answers[question.id]?.answer || ''}
-                    rating={ratings[question.id] || 0}
-                    onAnswerChange={(answer) => handleAnswerChange(question.id, answer)}
-                    onRatingChange={(rating) => handleRatingChange(question.id, rating)}
-                    index={idx + 1}
-                  />
-                ))}
+                {questions.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-xl">
+                    <p className="text-gray-500">No questions available. Please add questions first.</p>
+                  </div>
+                ) : (
+                  questions.map((question, idx) => (
+                    <QuestionCard
+                      key={question.id}
+                      question={question}
+                      answerData={answers[question.id]}
+                      onAnswerChange={handleAnswerChange}
+                      onRatingChange={handleRatingChange}
+                      index={idx + 1}
+                      saving={saving}
+                    />
+                  ))
+                )}
               </div>
 
               {/* Overall Comments */}
@@ -742,6 +779,7 @@ const InterviewPage = () => {
                   placeholder="Enter overall comments about the candidate. Highlight strengths, areas for improvement, and final recommendation..."
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 hover:bg-white transition-colors"
+                  disabled={saving}
                 />
                 
                 <div className="mt-4 flex flex-wrap gap-4">
@@ -770,6 +808,7 @@ const InterviewPage = () => {
                 <button
                   onClick={() => setSelectedApplicant(null)}
                   className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  disabled={saving}
                 >
                   Cancel
                 </button>
