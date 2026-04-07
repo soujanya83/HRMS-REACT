@@ -1,6 +1,8 @@
 // EmployeeList.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   FaEdit,
   FaTrash,
@@ -28,6 +30,7 @@ import {
   FaCopy,
   FaTimes,
   FaSpinner,
+  FaEnvelopeOpenText,
 } from "react-icons/fa";
 import {
   HiOutlineArchive,
@@ -43,6 +46,7 @@ import {
   syncEmployeeToXero,
 } from "../../services/employeeService";
 import axiosClient from "../../axiosClient";
+import SendInviteModal from "../../components/SendInviteModal";
 
 // Pastel color options for background
 const PASTEL_COLORS = [
@@ -100,7 +104,7 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
           {/* Reset to default button */}
           <button
             onClick={() => {
-              onColorSelect('#f9fafb'); // Default bg-gray-50
+              onColorSelect('#f9fafb');
               onClose();
             }}
             className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
@@ -261,7 +265,7 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(xeroEmployeeId);
-                  alert('Copied to clipboard!');
+                  toast.success('Copied to clipboard!');
                 }}
                 className="text-blue-600 hover:text-blue-800"
                 title="Copy to clipboard"
@@ -382,6 +386,7 @@ export default function EmployeeList() {
   const [syncingAll, setSyncingAll] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -409,6 +414,7 @@ export default function EmployeeList() {
     employee: null,
   });
 
+  // Quick Actions with Send Invite button
   const quickActions = [
     {
       label: "Add Employee",
@@ -417,24 +423,36 @@ export default function EmployeeList() {
       color: "bg-blue-600 hover:bg-blue-700",
     },
     {
+      label: "Send Invite",
+      icon: <FaEnvelopeOpenText className="h-4 w-4" />,
+      action: () => setIsInviteModalOpen(true),
+      color: "bg-purple-600 hover:bg-purple-700",
+    },
+    {
       label: "Import",
       icon: <FaUpload className="h-4 w-4" />,
-      action: () => alert("Import feature coming soon!"),
+      action: () => toast.info("Import feature coming soon!"),
       color: "bg-green-600 hover:bg-green-700",
     },
     {
       label: "Export",
       icon: <FaFileDownload className="h-4 w-4" />,
       action: () => exportEmployeeList(),
-      color: "bg-purple-600 hover:bg-purple-700",
+      color: "bg-indigo-600 hover:bg-indigo-700",
     },
     {
       label: "Reports",
       icon: <FaChartBar className="h-4 w-4" />,
       action: () => navigate("/dashboard/employees/reports"),
-      color: "bg-indigo-600 hover:bg-indigo-700",
+      color: "bg-cyan-600 hover:bg-cyan-700",
     },
   ];
+
+  // Handle invite sent
+  const handleInviteSent = (response) => {
+    toast.success(`Invite sent successfully! Employee ID: ${response.data?.employee_id}`);
+    fetchEmployees();
+  };
 
   // Apply filters function
   const applyFilters = useCallback((employeesList, search, status, department) => {
@@ -565,7 +583,7 @@ export default function EmployeeList() {
       try {
         await modalState.action();
         fetchEmployees();
-        alert(
+        toast.success(
           `${
             modalState.type === "delete"
               ? "Employee moved to trash"
@@ -574,7 +592,7 @@ export default function EmployeeList() {
         );
       } catch (error) {
         console.error("Error performing action:", error);
-        alert("Failed to perform action. Please try again.");
+        toast.error("Failed to perform action. Please try again.");
       }
     }
     closeModal();
@@ -617,10 +635,10 @@ export default function EmployeeList() {
     try {
       await updateEmployeeStatus(employeeId, newStatus);
       fetchEmployees();
-      alert(`Status updated to ${newStatus} successfully!`);
+      toast.success(`Status updated to ${newStatus} successfully!`);
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Failed to update status. Please try again.");
+      toast.error("Failed to update status. Please try again.");
     }
   };
 
@@ -634,29 +652,25 @@ export default function EmployeeList() {
     }
 
     if (!selectedOrganization?.id) {
-      alert("Please select an organization first");
+      toast.error("Please select an organization first");
       return;
     }
 
     setSyncingEmployees((prev) => ({ ...prev, [employee.id]: true }));
     
     try {
-      console.log(`Syncing employee ${employee.id} to Xero...`);
-      
       const response = await syncEmployeeToXero(
         selectedOrganization.id,
         employee.id
       );
       
-      console.log("Sync response:", response.data);
-      
       if (response.data?.status === true) {
         const xeroEmployeeId = response.data.xero_employee_id;
         
         if (response.data.message === "Employee already linked with Xero.") {
-          alert(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`);
+          toast.info(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`);
         } else {
-          alert(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`);
+          toast.success(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`);
         }
         
         await fetchEmployees();
@@ -667,9 +681,9 @@ export default function EmployeeList() {
       console.error("Failed to sync to Xero:", error);
       
       if (error.response?.data?.error?.includes("No query results for model")) {
-        alert(`Employee ${employee.first_name} ${employee.last_name} not found in the system.`);
+        toast.error(`Employee ${employee.first_name} ${employee.last_name} not found in the system.`);
       } else {
-        alert(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.response?.data?.message || error.message}`);
+        toast.error(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.response?.data?.message || error.message}`);
       }
     } finally {
       setSyncingEmployees((prev) => ({ ...prev, [employee.id]: false }));
@@ -679,7 +693,7 @@ export default function EmployeeList() {
   // Sync all employees to Xero
   const handleSyncAllToXero = async () => {
     if (!selectedOrganization?.id) {
-      alert("Please select an organization first");
+      toast.error("Please select an organization first");
       return;
     }
 
@@ -688,7 +702,7 @@ export default function EmployeeList() {
     );
 
     if (unsyncedEmployees.length === 0) {
-      alert("All employees are already synced with Xero!");
+      toast.info("All employees are already synced with Xero!");
       return;
     }
 
@@ -722,7 +736,7 @@ export default function EmployeeList() {
       }
     }
 
-    alert(`Sync complete: ${successCount} succeeded, ${failCount} failed${failedEmployees.length > 0 ? '\nFailed: ' + failedEmployees.join(', ') : ''}`);
+    toast.success(`Sync complete: ${successCount} succeeded, ${failCount} failed${failedEmployees.length > 0 ? '\nFailed: ' + failedEmployees.join(', ') : ''}`);
     fetchEmployees();
     setSyncingAll(false);
   };
@@ -773,7 +787,7 @@ export default function EmployeeList() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    alert("Export started! Check your downloads folder.");
+    toast.success("Export started! Check your downloads folder.");
   };
 
   const departments = [
@@ -791,6 +805,8 @@ export default function EmployeeList() {
 
   return (
     <>
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       {/* Color Palette Toggle Button */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
@@ -812,6 +828,13 @@ export default function EmployeeList() {
         onColorSelect={setBackgroundColor}
       />
 
+      {/* Send Invite Modal */}
+      <SendInviteModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSuccess={handleInviteSent}
+      />
+
       <ConfirmationModal
         isOpen={modalState.isOpen}
         onClose={closeModal}
@@ -831,7 +854,7 @@ export default function EmployeeList() {
         className="p-3 sm:p-4 lg:p-5 font-sans min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
-        {/* Header - REDUCED MARGINS */}
+        {/* Header */}
         <div className="mb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
             <div>
@@ -874,7 +897,7 @@ export default function EmployeeList() {
             </div>
           </div>
 
-          {/* Quick Stats - COMPACT GRID */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
             <StatsCard
               title="Total Employees"
@@ -902,8 +925,8 @@ export default function EmployeeList() {
             />
           </div>
 
-          {/* Quick Actions - COMPACT */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+          {/* Quick Actions - NOW INCLUDES SEND INVITE BUTTON */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
             {quickActions.map((action, index) => (
               <QuickActionButton
                 key={index}
@@ -918,7 +941,7 @@ export default function EmployeeList() {
 
         {/* Main Content Card */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-          {/* Toolbar - COMPACT */}
+          {/* Toolbar */}
           <div className="p-3 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
               {/* View Toggle */}
@@ -946,7 +969,7 @@ export default function EmployeeList() {
                 </button>
               </div>
 
-              {/* Search and Filters - COMPACT */}
+              {/* Search and Filters */}
               <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <div className="relative flex-grow min-w-[200px]">
                   <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
@@ -990,7 +1013,7 @@ export default function EmployeeList() {
             </div>
           </div>
 
-          {/* Employee Table - COMPACT CELLS */}
+          {/* Employee Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -1218,7 +1241,7 @@ export default function EmployeeList() {
             </table>
           </div>
 
-          {/* Table Footer - COMPACT */}
+          {/* Table Footer */}
           {filteredEmployees.length > 0 && (
             <div className="px-3 py-2 border-t border-gray-200 bg-gray-50">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -1245,7 +1268,7 @@ export default function EmployeeList() {
           )}
         </div>
 
-        {/* Department Distribution Chart - COMPACT */}
+        {/* Department Distribution Chart */}
         {Object.keys(stats.departments).length > 0 && view === "active" && (
           <div className="mt-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-3">
