@@ -7,7 +7,9 @@ import {
 import "./index.css";
 
 import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
-import InterviewPage from "./pages/Recruitment/InterviewPage";  // ← ADD THIS
+import InterviewPage from "./pages/Recruitment/InterviewPage";
+import ApplyWithOrgId from './pages/Public/ApplyWithOrgId';
+
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -105,6 +107,11 @@ function App() {
       path: "/apply",
       element: <PublicEmployeeForm />,
     },
+    // ✅ NEW ROUTE - Apply with Organization ID
+    {
+      path: "/apply/:organizationId",
+      element: <PublicRoute isLoggedIn={isLoggedIn}><ApplyWithOrgId /></PublicRoute>,
+    },
     {
       path: "/login",
       element: <PublicRoute isLoggedIn={isLoggedIn}><LoginPage onLogin={handleLogin} /></PublicRoute>,
@@ -129,8 +136,8 @@ function App() {
             { path: "jobs/*", element: <JobOpeningsPage /> },
             { path: "applicants/*", element: <ApplicantsPage /> },
             { path: "interviews", element: <InterviewSchedulingPage /> },
-            { path: "interview", element: <InterviewPage /> },        // ← ADD THIS
-            { path: "interview/:id", element: <InterviewPage /> },   // ← ADD THIS
+            { path: "interview", element: <InterviewPage /> },
+            { path: "interview/:id", element: <InterviewPage /> },
             { path: "offers", element: <SelectionAndOffersPage /> },
             { path: "onboarding", element: <OnboardingPage /> },
           ]
