@@ -102,15 +102,16 @@ function App() {
   };
 
   const router = createBrowserRouter([
-    // ✅ PUBLIC ROUTES - No authentication required
+    // ✅ PUBLIC ROUTES - No authentication required (Accessible even when logged in)
     {
       path: "/apply",
       element: <PublicEmployeeForm />,
     },
-    // ✅ NEW ROUTE - Apply with Organization ID
+    // ✅ PUBLIC ROUTE - Apply with Organization ID (NO login redirect)
+    // Employee can fill form even if they are logged in or not
     {
       path: "/apply/:organizationId",
-      element: <PublicRoute isLoggedIn={isLoggedIn}><ApplyWithOrgId /></PublicRoute>,
+      element: <ApplyWithOrgId />,  // REMOVED PublicRoute wrapper
     },
     {
       path: "/login",
