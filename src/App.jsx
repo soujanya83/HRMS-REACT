@@ -8,8 +8,7 @@ import "./index.css";
 
 import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
 import InterviewPage from "./pages/Recruitment/InterviewPage";
-import ApplyWithOrgId from './pages/Public/ApplyWithOrgId';
-
+import ApplicationSuccess from './pages/public/ApplicationSuccess';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -102,16 +101,15 @@ function App() {
   };
 
   const router = createBrowserRouter([
-    // ✅ PUBLIC ROUTES - No authentication required (Accessible even when logged in)
-    {
-      path: "/apply",
-      element: <PublicEmployeeForm />,
-    },
-    // ✅ PUBLIC ROUTE - Apply with Organization ID (NO login redirect)
-    // Employee can fill form even if they are logged in or not
+    // ✅ COMPLETELY PUBLIC ROUTES - No authentication check at all
+    // These routes are accessible to everyone, even if logged in
     {
       path: "/apply/:organizationId",
-      element: <ApplyWithOrgId />,  // REMOVED PublicRoute wrapper
+      element: <PublicEmployeeForm />,
+    },
+    {
+      path: "/apply-success",
+      element: <ApplicationSuccess />,
     },
     {
       path: "/login",
@@ -219,6 +217,7 @@ function App() {
     },
     // ✅ Default redirects
     { path: "/", element: <Navigate to="/login" /> },
+    { path: "/apply", element: <Navigate to="/login" /> },
     { path: "*", element: <Navigate to="/login" /> },
   ]);
 
