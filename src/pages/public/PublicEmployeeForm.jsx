@@ -35,7 +35,10 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaExclamationTriangle,
-  FaHeart
+  FaHeart,
+  FaFolder,
+  FaCheckCircle,
+  FaClock
 } from 'react-icons/fa';
 import axiosClient from '../../axiosClient';
 import {
@@ -47,300 +50,90 @@ import {
 } from '../../services/employeeService';
 
 // ============================================
-// STATIC MANDATORY CERTIFICATES DATA
+// MANDATORY CERTIFICATES CHECKLIST (8 items)
 // ============================================
-const MANDATORY_CERTIFICATES = {
-  mandatory_checks: {
-    title: "🛡️ Mandatory Certificates & Checks",
-    icon: <FaShieldAlt />,
-    color: "purple",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
-    textColor: "text-purple-800",
-    badgeColor: "bg-purple-100 text-purple-800",
-    items: [
-      {
-        id: "wwcc",
-        name: "Working With Children Check",
-        type: "Working With Children Check",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 5,
-        description: "Employee type, linked to service",
-        icon: "🆔",
-      },
-      {
-        id: "first_aid",
-        name: "First Aid Certification (HLTAID012)",
-        type: "First Aid Certificate",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 3,
-        description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
-        icon: "🚑",
-      },
-      {
-        id: "police_check",
-        name: "National Police Check",
-        type: "Police Check",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 3,
-        description: "Current National Police Check",
-        icon: "👮",
-      },
-      {
-        id: "mandatory_reporting",
-        name: "Mandatory Reporting Training",
-        type: "Mandatory Reporting",
-        required: true,
-        hasExpiry: false,
-        description: "Protecting Children – Victoria",
-        icon: "📋",
-      },
-      {
-        id: "child_safe",
-        name: "Child Safe Standards Awareness",
-        type: "Child Safe Standards",
-        required: true,
-        hasExpiry: false,
-        description: "Child Safe Standards Awareness Training",
-        icon: "🛡️",
-      },
-    ],
+const MANDATORY_CERTIFICATES_LIST = [
+  {
+    id: "wwcc",
+    name: "Working With Children Check",
+    type: "Working With Children Check",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 5,
+    description: "Employee type, linked to service",
+    icon: "🆔"
   },
-  qualifications: {
-    title: "🎓 Qualifications",
-    icon: <FaGraduationCap />,
-    color: "blue",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
-    textColor: "text-blue-800",
-    badgeColor: "bg-blue-100 text-blue-800",
-    items: [
-      {
-        id: "cert_3",
-        name: "Certificate III in Early Childhood Education & Care",
-        type: "Certificate III",
-        required: true,
-        hasExpiry: false,
-        description: "Minimum qualification for educators",
-        icon: "🎓",
-      },
-      {
-        id: "diploma",
-        name: "Diploma in Early Childhood Education & Care",
-        type: "Diploma",
-        required: false,
-        hasExpiry: false,
-        description: "Advanced qualification for room leaders",
-        icon: "📜",
-      },
-      {
-        id: "enrollment_proof",
-        name: "Currently Enrolled towards Certificate III",
-        type: "Enrollment Proof",
-        required: false,
-        hasExpiry: true,
-        expiryYears: 1,
-        description: "Proof of current enrollment in qualification",
-        icon: "📝",
-      },
-    ],
+  {
+    id: "first_aid",
+    name: "First Aid Certification (HLTAID012)",
+    type: "First Aid Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 3,
+    description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
+    icon: "🚑"
   },
-  health_safety: {
-    title: "🏥 Health & Safety Compliance",
-    icon: <FaMedkit />,
-    color: "green",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-    textColor: "text-green-800",
-    badgeColor: "bg-green-100 text-green-800",
-    items: [
-      {
-        id: "immunisation",
-        name: "Immunisation Record",
-        type: "Immunisation Record",
-        required: true,
-        hasExpiry: false,
-        description: "Flu and Pertussis recommended for childcare workers",
-        icon: "💉",
-      },
-      {
-        id: "medical_fitness",
-        name: "Medical Fitness Declaration",
-        type: "Medical Fitness",
-        required: true,
-        hasExpiry: false,
-        description: "Medical fitness to work with children",
-        icon: "🩺",
-      },
-    ],
+  {
+    id: "police_check",
+    name: "National Police Check",
+    type: "Police Check",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 3,
+    description: "Current National Police Check",
+    icon: "👮"
   },
-  identity_legal: {
-    title: "🪪 Identity & Legal",
-    icon: <FaIdCard />,
-    color: "orange",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
-    textColor: "text-orange-800",
-    badgeColor: "bg-orange-100 text-orange-800",
-    items: [
-      {
-        id: "proof_of_identity",
-        name: "Proof of Identity",
-        type: "Proof of Identity",
-        required: true,
-        hasExpiry: false,
-        description: "Passport or Driver's Licence",
-        icon: "🛂",
-      },
-      {
-        id: "right_to_work",
-        name: "Right to Work in Australia",
-        type: "Right to Work",
-        required: true,
-        hasExpiry: false,
-        description: "Proof of Australian citizenship or valid work visa",
-        icon: "🇦🇺",
-      },
-      {
-        id: "visa",
-        name: "Visa (if applicable)",
-        type: "Visa",
-        required: false,
-        hasExpiry: true,
-        description: "Current visa for non-citizens",
-        icon: "🛂",
-      },
-    ],
+  {
+    id: "qualification",
+    name: "Qualification Certificate",
+    type: "Certificate III or Diploma",
+    required: true,
+    hasExpiry: false,
+    description: "Certificate III or Diploma in Early Childhood Education",
+    icon: "🎓"
   },
-  professional: {
-    title: "📋 Professional Compliance",
-    icon: <FaGavel />,
-    color: "red",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-    textColor: "text-red-800",
-    badgeColor: "bg-red-100 text-red-800",
-    items: [
-      {
-        id: "code_of_conduct",
-        name: "Signed Code of Conduct",
-        type: "Code of Conduct",
-        required: true,
-        hasExpiry: false,
-        description: "Signed Code of Conduct agreement",
-        icon: "📄",
-      },
-      {
-        id: "confidentiality",
-        name: "Signed Confidentiality Agreement",
-        type: "Confidentiality Agreement",
-        required: true,
-        hasExpiry: false,
-        description: "Signed Confidentiality Agreement",
-        icon: "🔒",
-      },
-    ],
+  {
+    id: "immunisation",
+    name: "Immunisation Record",
+    type: "Immunisation Record",
+    required: true,
+    hasExpiry: false,
+    description: "Flu and Pertussis recommended for childcare workers",
+    icon: "💉"
   },
-  operational: {
-    title: "⚙️ Operational Readiness",
-    icon: <FaClipboardList />,
-    color: "teal",
-    bgColor: "bg-teal-50",
-    borderColor: "border-teal-200",
-    textColor: "text-teal-800",
-    badgeColor: "bg-teal-100 text-teal-800",
-    items: [
-      {
-        id: "induction",
-        name: "Completed Induction",
-        type: "Induction",
-        required: true,
-        hasExpiry: false,
-        description: "Emergency procedures, supervision, child protection",
-        icon: "📋",
-      },
-      {
-        id: "food_safety",
-        name: "Food Safety Awareness",
-        type: "Food Safety",
-        required: false,
-        hasExpiry: false,
-        description: "If handling food",
-        icon: "🍽️",
-      },
-      {
-        id: "safe_sleep",
-        name: "Safe Sleep & SIDS Training",
-        type: "Safe Sleep Training",
-        required: true,
-        hasExpiry: false,
-        description: "For educators working with children under 2 years",
-        icon: "😴",
-      },
-    ],
+  {
+    id: "code_of_conduct",
+    name: "Signed Code of Conduct",
+    type: "Code of Conduct",
+    required: true,
+    hasExpiry: false,
+    description: "Signed Code of Conduct agreement",
+    icon: "📄"
   },
-  annual_training: {
-    title: "📅 Annual Training Requirements",
-    icon: <FaCalendarAlt />,
-    color: "pink",
-    bgColor: "bg-pink-50",
-    borderColor: "border-pink-200",
-    textColor: "text-pink-800",
-    badgeColor: "bg-pink-100 text-pink-800",
-    items: [
-      {
-        id: "sun_smart",
-        name: "Sun Smart Training",
-        type: "Sun Smart",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 1,
-        description: "Annual sun safety awareness training",
-        icon: "☀️",
-      },
-      {
-        id: "allergies",
-        name: "All About Allergies",
-        type: "Allergies Training",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 1,
-        description: "Annual allergy awareness and management training",
-        icon: "⚠️",
-      },
-      {
-        id: "food_safety_annual",
-        name: "Do Food Safety",
-        type: "Food Safety Annual",
-        required: true,
-        hasExpiry: true,
-        expiryYears: 1,
-        description: "Annual food safety certification",
-        icon: "🍲",
-      },
-    ],
+  {
+    id: "induction",
+    name: "Completed Induction",
+    type: "Induction",
+    required: true,
+    hasExpiry: false,
+    description: "Emergency procedures, supervision, child protection",
+    icon: "📋"
   },
-};
-
-const STAFF_FILE_REQUIREMENTS = [
-  { id: "wwcc_copy", name: "WWCC Copy", required: true },
-  { id: "qualification", name: "Qualification Certificate", required: true },
-  { id: "first_aid_copy", name: "First Aid Certificate", required: true },
-  { id: "police_check_copy", name: "Police Check", required: true },
-  { id: "id_proof", name: "ID Proof", required: true },
-  { id: "immunisation_record", name: "Immunisation Record", required: true },
-  { id: "training_certs", name: "Training Certificates", required: true },
-  { id: "signed_policies", name: "Signed Policies", required: true },
-  { id: "induction_checklist", name: "Induction Checklist", required: true },
+  {
+    id: "right_to_work",
+    name: "Right to Work in Australia",
+    type: "Right to Work",
+    required: true,
+    hasExpiry: false,
+    description: "Proof of Australian citizenship or valid work visa",
+    icon: "🇦🇺"
+  }
 ];
 
 // ============================================
 // DOCUMENT UPLOAD MODAL
 // ============================================
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) => {
+const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -354,7 +147,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        document_type: '',
+        document_type: preselectedDocumentType || '',
         issue_date: '',
         expiry_date: '',
         file: null,
@@ -362,7 +155,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
       });
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedDocumentType]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -427,14 +220,6 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
 
   if (!isOpen) return null;
 
-  const allDocumentTypes = Object.values(MANDATORY_CERTIFICATES).flatMap(
-    category => category.items.map(item => ({
-      value: item.type,
-      label: `${item.icon} ${item.name} ${item.required ? '(Required)' : ''}`,
-      category: category.title
-    }))
-  );
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -464,11 +249,15 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
                 required
               >
                 <option value="">Select Document Type</option>
-                {allDocumentTypes.map((doc, idx) => (
-                  <option key={idx} value={doc.value}>
-                    {doc.label}
-                  </option>
-                ))}
+                <option value="Working With Children Check">🆔 Working With Children Check</option>
+                <option value="First Aid Certificate">🚑 First Aid Certificate</option>
+                <option value="Police Check">👮 Police Check</option>
+                <option value="Qualification Certificate">🎓 Qualification Certificate</option>
+                <option value="Immunisation Record">💉 Immunisation Record</option>
+                <option value="Code of Conduct">📄 Signed Code of Conduct</option>
+                <option value="Induction">📋 Completed Induction</option>
+                <option value="Right to Work">🇦🇺 Right to Work in Australia</option>
+                <option value="Other Document">📁 Other Document</option>
               </select>
             </div>
 
@@ -495,7 +284,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
                   type="date"
                   value={formData.issue_date}
                   onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
               <div>
@@ -506,7 +295,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
                   type="date"
                   value={formData.expiry_date}
                   onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
             </div>
@@ -587,240 +376,188 @@ const DocumentCard = ({ document, onDelete, onView }) => {
   };
 
   const getFileIcon = (fileName) => {
-    if (!fileName) return <FaFileAlt className="text-gray-400 text-2xl" />;
+    if (!fileName) return <FaFileAlt className="text-gray-400" />;
     const ext = fileName.split('.').pop()?.toLowerCase();
     
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500 text-2xl" />;
-    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500 text-2xl" />;
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500 text-2xl" />;
-    return <FaFileAlt className="text-gray-500 text-2xl" />;
+    if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
+    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
+    return <FaFileAlt className="text-gray-500" />;
   };
 
   const baseUrl = 'https://api.chrispp.com';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           {getFileIcon(document.file_name)}
           <div>
-            <h4 className="font-semibold text-gray-800">{document.document_type || 'Document'}</h4>
-            <p className="text-sm text-gray-500">{document.file_name}</p>
-            {document.expiry_date && (
-              <span className="text-xs text-yellow-600 mt-1 inline-block">
-                Expires: {formatDate(document.expiry_date)}
-              </span>
-            )}
+            <p className="text-sm font-medium text-gray-800 truncate max-w-[150px]">{document.file_name}</p>
+            <p className="text-xs text-gray-500">{formatDate(document.created_at)}</p>
           </div>
         </div>
         <div className="flex gap-1">
           {document.file_url && (
             <button
               onClick={() => onView(document)}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+              className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
               title="View"
             >
-              <FaEye />
+              <FaEye size={12} />
             </button>
           )}
           <button
             onClick={() => onDelete(document.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+            className="p-1.5 text-red-600 hover:bg-red-100 rounded"
             title="Delete"
           >
-            <FaTrash />
+            <FaTrash size={12} />
           </button>
         </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-        <span className="text-xs text-gray-400">
-          Uploaded: {formatDate(document.created_at)}
-        </span>
-        {document.file_url && (
-          <a
-            href={`${baseUrl}${document.file_url}`}
-            download
-            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            <FaDownload size={10} /> Download
-          </a>
-        )}
-      </div>
     </div>
   );
 };
 
 // ============================================
-// COMPLIANCE CHECKLIST COMPONENT
+// MANDATORY CHECKLIST ITEM COMPONENT
 // ============================================
-const ComplianceChecklist = ({ certificates = [] }) => {
-  const [expandedCategories, setExpandedCategories] = useState(
-    Object.keys(MANDATORY_CERTIFICATES).reduce(
-      (acc, key) => ({ ...acc, [key]: true }),
-      {}
-    )
+const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView }) => {
+  const [showDocuments, setShowDocuments] = useState(false);
+  
+  const itemDocuments = documents.filter(doc => 
+    doc.document_type === item.type || 
+    doc.document_type?.includes(item.type.split(' ')[0])
   );
 
-  const toggleCategory = (categoryKey) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryKey]: !prev[categoryKey]
-    }));
-  };
-
-  const isCertificateUploaded = (certType) => {
-    return certificates.some(
-      doc => doc.document_type === certType || 
-             doc.document_type?.includes(certType) ||
-             (certType === "Working With Children Check" && doc.document_type?.includes("WWCC")) ||
-             (certType === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
-    );
-  };
-
-  const totalRequired = Object.values(MANDATORY_CERTIFICATES).flatMap(cat =>
-    cat.items.filter(item => item.required)
-  ).length;
-
-  const uploadedRequired = Object.values(MANDATORY_CERTIFICATES)
-    .flatMap(cat => cat.items.filter(item => item.required))
-    .filter(item => isCertificateUploaded(item.type)).length;
-
-  const compliancePercentage = Math.round((uploadedRequired / totalRequired) * 100) || 0;
-
-  const getStatusColor = (percentage) => {
-    if (percentage >= 80) return "text-green-600";
-    if (percentage >= 50) return "text-yellow-600";
-    return "text-red-600";
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Compliance Summary</h3>
-        <div className="flex items-center gap-4">
+    <div className={`border rounded-lg p-4 transition-all ${isUploaded ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="mt-1">
+            {isUploaded ? (
+              <FaCheckCircle className="text-green-500 text-xl" />
+            ) : (
+              <div className="w-6 h-6 rounded-full border-2 border-gray-300 bg-gray-100" />
+            )}
+          </div>
           <div className="flex-1">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-gray-600">Overall Compliance</span>
-              <span className={`text-sm font-bold ${getStatusColor(compliancePercentage)}`}>
-                {compliancePercentage}%
-              </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xl">{item.icon}</span>
+              <h4 className="font-semibold text-gray-800">{item.name}</h4>
+              {item.required && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Required</span>}
+              {item.hasExpiry && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Expires every {item.expiryYears} years</span>}
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full ${
-                  compliancePercentage >= 80 ? "bg-green-500" :
-                  compliancePercentage >= 50 ? "bg-yellow-500" : "bg-red-500"
-                }`}
-                style={{ width: `${compliancePercentage}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-gray-800">
-              {uploadedRequired}/{totalRequired}
-            </p>
-            <p className="text-xs text-gray-500">Required Documents</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-md font-semibold text-gray-800">Staff File Requirements</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {STAFF_FILE_REQUIREMENTS.map(req => {
-              const isUploaded = certificates.some(doc =>
-                doc.document_type?.includes(req.name) ||
-                (req.name === "WWCC Copy" && doc.document_type?.includes("WWCC")) ||
-                (req.name === "First Aid Certificate" && doc.document_type?.includes("First Aid"))
-              );
-              return (
-                <div key={req.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                  {isUploaded ? (
-                    <FaCheck className="text-green-500 flex-shrink-0" />
-                  ) : (
-                    <FaTimes className="text-red-500 flex-shrink-0" />
-                  )}
-                  <span className={`text-sm ${isUploaded ? "text-gray-800" : "text-gray-500"}`}>
-                    {req.name}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {Object.entries(MANDATORY_CERTIFICATES).map(([key, category]) => {
-        const uploadedInCategory = category.items.filter(item =>
-          isCertificateUploaded(item.type)
-        ).length;
-
-        return (
-          <div key={key} className={`rounded-lg border overflow-hidden ${category.borderColor || "border-gray-200"}`}>
-            <button
-              onClick={() => toggleCategory(key)}
-              className={`w-full px-6 py-4 flex items-center justify-between hover:opacity-90 transition-colors ${category.bgColor || "bg-gray-50"}`}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`text-${category.color || "gray"}-600 text-xl`}>{category.icon}</span>
-                <div className="text-left">
-                  <h3 className={`text-md font-semibold ${category.textColor || "text-gray-800"}`}>
-                    {category.title}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {uploadedInCategory}/{category.items.length} documents
-                  </p>
-                </div>
-              </div>
-              {expandedCategories[key] ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
-            </button>
-
-            {expandedCategories[key] && (
-              <div className="px-6 pb-6 pt-2 border-t border-gray-200 bg-white">
-                <div className="space-y-3">
-                  {category.items.map(item => {
-                    const uploaded = isCertificateUploaded(item.type);
-                    return (
-                      <div key={item.id} className={`flex items-start gap-3 p-3 rounded-lg ${item.bgColor || "bg-gray-50"}`}>
-                        <div className="mt-1">
-                          {uploaded ? (
-                            <FaCheck className="text-green-500" />
-                          ) : item.required ? (
-                            <FaExclamationTriangle className="text-red-500" />
-                          ) : (
-                            <FaInfoCircle className="text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{item.icon}</span>
-                            <div>
-                              <p className={`font-medium ${item.textColor || "text-gray-800"}`}>
-                                {item.name}
-                                {item.required && <span className="text-red-500 ml-1">*</span>}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+            
+            {/* Uploaded Documents List */}
+            {itemDocuments.length > 0 && (
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowDocuments(!showDocuments)}
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  {showDocuments ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
+                  {itemDocuments.length} document(s) uploaded
+                </button>
+                {showDocuments && (
+                  <div className="mt-2 space-y-2">
+                    {itemDocuments.map(doc => (
+                      <DocumentCard
+                        key={doc.id}
+                        document={doc}
+                        onDelete={onDelete}
+                        onView={onView}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        );
-      })}
+        </div>
+        
+        <button
+          onClick={() => onUpload(item.type)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 whitespace-nowrap ml-3"
+        >
+          <FaUpload size={12} /> Upload
+        </button>
+      </div>
     </div>
   );
 };
 
 // ============================================
-// MAIN PUBLIC EMPLOYEE FORM (WITH ORGANIZATION ID)
+// OTHER DOCUMENTS SECTION
+// ============================================
+const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const otherDocs = documents.filter(doc => 
+    !MANDATORY_CERTIFICATES_LIST.some(m => 
+      doc.document_type === m.type || doc.document_type?.includes(m.type.split(' ')[0])
+    )
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-6">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-5 py-3 bg-gray-100 flex items-center justify-between hover:bg-gray-200 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <FaFolder className="text-gray-600" />
+          <h3 className="font-semibold text-gray-800">Other Documents</h3>
+          <span className="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded-full">
+            {otherDocs.length} document(s)
+          </span>
+        </div>
+        {isExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
+      </button>
+      
+      {isExpanded && (
+        <div className="p-4">
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => onUpload('Other Document')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              <FaPlus size={12} /> Add Other Document
+            </button>
+          </div>
+          
+          {otherDocs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {otherDocs.map(doc => (
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  onDelete={onDelete}
+                  onView={onView}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <FaFileAlt className="text-3xl text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 text-sm">No additional documents uploaded</p>
+              <button
+                onClick={() => onUpload('Other Document')}
+                className="mt-2 text-sm text-purple-600 hover:text-purple-700"
+              >
+                Click here to upload
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// MAIN PUBLIC EMPLOYEE FORM
 // ============================================
 const PublicEmployeeForm = () => {
   const { organizationId } = useParams();
@@ -833,7 +570,7 @@ const PublicEmployeeForm = () => {
   const [employeeData, setEmployeeData] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('list');
+  const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -870,7 +607,6 @@ const PublicEmployeeForm = () => {
     if (organizationId) {
       fetchEmployeeData();
     } else {
-      // If no organizationId, redirect to login or show error
       toast.error('Invalid application link');
       setTimeout(() => navigate('/login'), 2000);
     }
@@ -893,7 +629,6 @@ const PublicEmployeeForm = () => {
         setEmployeeData(employee);
         setEmployeeId(employee.id);
         
-        // Pre-fill form with existing data
         setFormData({
           employee_id: employee.id || '',
           first_name: employee.first_name || '',
@@ -922,7 +657,6 @@ const PublicEmployeeForm = () => {
           hourly_wage: employee.hourly_wage || '',
         });
         
-        // Fetch departments and designations
         if (employee.organization_id) {
           fetchDepartments(employee.organization_id);
           fetchDesignations(employee.organization_id);
@@ -1000,7 +734,7 @@ const PublicEmployeeForm = () => {
       toast.success('Document deleted successfully!');
       fetchDocuments();
     } catch (error) {
-      toast.error('Failed to delete document');
+      toast.error('Failed to delete document',error);
     }
   };
 
@@ -1084,6 +818,27 @@ const PublicEmployeeForm = () => {
     fetchDocuments();
   };
 
+  const openUploadModal = (documentType) => {
+    setSelectedDocumentType(documentType);
+    setUploadModalOpen(true);
+  };
+
+  // Check if a certificate is uploaded
+  const isCertificateUploaded = (certType) => {
+    return documents.some(doc => 
+      doc.document_type === certType || 
+      doc.document_type?.includes(certType.split(' ')[0])
+    );
+  };
+
+  // Get documents for a specific certificate
+  const getDocumentsForCertificate = (certType) => {
+    return documents.filter(doc => 
+      doc.document_type === certType || 
+      doc.document_type?.includes(certType.split(' ')[0])
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1095,18 +850,26 @@ const PublicEmployeeForm = () => {
     );
   }
 
+  // Calculate completion percentage
+  const uploadedCount = MANDATORY_CERTIFICATES_LIST.filter(cert => isCertificateUploaded(cert.type)).length;
+  const completionPercentage = Math.round((uploadedCount / MANDATORY_CERTIFICATES_LIST.length) * 100);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <ToastContainer position="top-right" autoClose={3000} />
       
       <DocumentUploadModal
         isOpen={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
+        onClose={() => {
+          setUploadModalOpen(false);
+          setSelectedDocumentType(null);
+        }}
         employeeId={employeeId}
         onUploadSuccess={handleUploadSuccess}
+        preselectedDocumentType={selectedDocumentType}
       />
       
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Complete Your Profile</h1>
@@ -1133,27 +896,19 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6">
+        {/* Personal Information Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
           {/* Read-only Employee Info */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
               <FaUser /> Employee Information (Read Only)
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-blue-700">First Name</label>
-                <p className="text-sm text-gray-800 font-medium">{formData.first_name || '-'}</p>
-              </div>
-              {formData.middle_name && (
-                <div>
-                  <label className="block text-xs font-medium text-blue-700">Middle Name</label>
-                  <p className="text-sm text-gray-800 font-medium">{formData.middle_name}</p>
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-medium text-blue-700">Last Name</label>
-                <p className="text-sm text-gray-800 font-medium">{formData.last_name || '-'}</p>
+                <label className="block text-xs font-medium text-blue-700">Full Name</label>
+                <p className="text-sm text-gray-800 font-medium">
+                  {formData.first_name} {formData.middle_name} {formData.last_name}
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-blue-700">Email</label>
@@ -1176,41 +931,29 @@ const PublicEmployeeForm = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="tel"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    required
-                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      errors.phone_number ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="+61 123 456 789"
-                  />
-                </div>
-                {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="+61 123 456 789"
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date of Birth <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    name="date_of_birth"
-                    value={formData.date_of_birth}
-                    onChange={handleChange}
-                    required
-                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      errors.date_of_birth ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-                {errors.date_of_birth && <p className="text-red-500 text-xs mt-1">{errors.date_of_birth}</p>}
+                <input
+                  type="date"
+                  name="date_of_birth"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
               </div>
               
               <div>
@@ -1222,9 +965,7 @@ const PublicEmployeeForm = () => {
                   value={formData.gender}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    errors.gender ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -1232,28 +973,21 @@ const PublicEmployeeForm = () => {
                   <option value="Other">Other</option>
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
-                {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
               </div>
               
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Address <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    required
-                    rows="2"
-                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter your full address"
-                  />
-                </div>
-                {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  required
+                  rows="2"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your full address"
+                />
               </div>
             </div>
           </div>
@@ -1265,59 +999,33 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact_name"
-                  value={formData.emergency_contact_name}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    errors.emergency_contact_name ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Full name"
-                />
-                {errors.emergency_contact_name && <p className="text-red-500 text-xs mt-1">{errors.emergency_contact_name}</p>}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="emergency_contact_phone"
-                  value={formData.emergency_contact_phone}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    errors.emergency_contact_phone ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="+61 123 456 789"
-                />
-                {errors.emergency_contact_phone && <p className="text-red-500 text-xs mt-1">{errors.emergency_contact_phone}</p>}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Relationship <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact_relationship"
-                  value={formData.emergency_contact_relationship}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    errors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Spouse, Parent, Sibling"
-                />
-                {errors.emergency_contact_relationship && <p className="text-red-500 text-xs mt-1">{errors.emergency_contact_relationship}</p>}
-              </div>
+              <input
+                type="text"
+                name="emergency_contact_name"
+                value={formData.emergency_contact_name}
+                onChange={handleChange}
+                required
+                placeholder="Contact Name *"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="tel"
+                name="emergency_contact_phone"
+                value={formData.emergency_contact_phone}
+                onChange={handleChange}
+                required
+                placeholder="Contact Phone *"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                name="emergency_contact_relationship"
+                value={formData.emergency_contact_relationship}
+                onChange={handleChange}
+                required
+                placeholder="Relationship *"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
             </div>
           </div>
 
@@ -1328,79 +1036,47 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tax File Number (TFN) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="tax_file_number"
-                  value={formData.tax_file_number}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    errors.tax_file_number ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your TFN"
-                />
-                {errors.tax_file_number && <p className="text-red-500 text-xs mt-1">{errors.tax_file_number}</p>}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Superannuation Fund Name
-                </label>
-                <input
-                  type="text"
-                  name="superannuation_fund_name"
-                  value={formData.superannuation_fund_name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., AustralianSuper"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Superannuation Member Number
-                </label>
-                <input
-                  type="text"
-                  name="superannuation_member_number"
-                  value={formData.superannuation_member_number}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter member number"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank BSB
-                </label>
-                <input
-                  type="text"
-                  name="bank_bsb"
-                  value={formData.bank_bsb}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="000-000"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank Account Number
-                </label>
-                <input
-                  type="text"
-                  name="bank_account_number"
-                  value={formData.bank_account_number}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter account number"
-                />
-              </div>
+              <input
+                type="text"
+                name="tax_file_number"
+                value={formData.tax_file_number}
+                onChange={handleChange}
+                required
+                placeholder="Tax File Number (TFN) *"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                name="superannuation_fund_name"
+                value={formData.superannuation_fund_name}
+                onChange={handleChange}
+                placeholder="Superannuation Fund Name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                name="superannuation_member_number"
+                value={formData.superannuation_member_number}
+                onChange={handleChange}
+                placeholder="Superannuation Member Number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                name="bank_bsb"
+                value={formData.bank_bsb}
+                onChange={handleChange}
+                placeholder="Bank BSB"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                name="bank_account_number"
+                value={formData.bank_account_number}
+                onChange={handleChange}
+                placeholder="Bank Account Number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
             </div>
           </div>
 
@@ -1411,135 +1087,51 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <select
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                  ))}
-                </select>
-              </div>
+              <select
+                name="department_id"
+                value={formData.department_id}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id}>{dept.name}</option>
+                ))}
+              </select>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Position/Designation
-                </label>
-                <select
-                  name="designation_id"
-                  value={formData.designation_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Designation</option>
-                  {designations.map(desig => (
-                    <option key={desig.id} value={desig.id}>{desig.title}</option>
-                  ))}
-                </select>
-              </div>
+              <select
+                name="designation_id"
+                value={formData.designation_id}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Select Designation</option>
+                {designations.map(desig => (
+                  <option key={desig.id} value={desig.id}>{desig.title}</option>
+                ))}
+              </select>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employment Type
-                </label>
-                <select
-                  name="employment_type"
-                  value={formData.employment_type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Casual">Casual</option>
-                </select>
-              </div>
+              <select
+                name="employment_type"
+                value={formData.employment_type}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Casual">Casual</option>
+              </select>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hourly Rate (AUD)
-                </label>
-                <input
-                  type="number"
-                  name="hourly_wage"
-                  value={formData.hourly_wage}
-                  onChange={handleChange}
-                  step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="32.50"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Visa & Citizenship */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaPassport className="text-purple-600" /> Visa & Citizenship
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Citizenship Status
-                </label>
-                <select
-                  name="citizenship_status"
-                  value={formData.citizenship_status}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Status</option>
-                  <option value="Citizen">Australian Citizen</option>
-                  <option value="PR">Permanent Resident</option>
-                  <option value="Visa">Visa Holder</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Visa Type
-                </label>
-                <input
-                  type="text"
-                  name="visa_type"
-                  value={formData.visa_type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Student Visa, Work Visa"
-                />
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="is_australian_citizen"
-                    checked={formData.is_australian_citizen}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Australian Citizen</span>
-                </label>
-                
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="is_pr"
-                    checked={formData.is_pr}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Permanent Resident</span>
-                </label>
-              </div>
+              <input
+                type="number"
+                name="hourly_wage"
+                value={formData.hourly_wage}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="Hourly Rate (AUD)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
             </div>
           </div>
 
@@ -1560,68 +1152,53 @@ const PublicEmployeeForm = () => {
 
         {/* Documents Section - Show after submission */}
         {submitted && employeeId && (
-          <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                  <FaUpload className="text-purple-600" /> Documents & Certificates
+                  <FaUpload className="text-purple-600" /> Mandatory Documents Checklist
                 </h2>
-                <p className="text-gray-600 text-sm">Upload your certificates and documents</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                      viewMode === "list"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-800"
-                    }`}
-                  >
-                    List View
-                  </button>
-                  <button
-                    onClick={() => setViewMode("checklist")}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                      viewMode === "checklist"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-800"
-                    }`}
-                  >
-                    Compliance Checklist
-                  </button>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
+                  <p className="text-xs text-gray-500">Completed</p>
                 </div>
-                <button
-                  onClick={() => setUploadModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  <FaPlus /> Upload Document
-                </button>
               </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div 
+                  className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory documents uploaded
+              </p>
             </div>
 
-            {viewMode === "list" ? (
-              documents.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {documents.map(doc => (
-                    <DocumentCard
-                      key={doc.id}
-                      document={doc}
-                      onDelete={handleDeleteDocument}
-                      onView={handleViewDocument}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                  <FaFileAlt className="text-4xl text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No documents uploaded yet</p>
-                  <p className="text-sm text-gray-400 mt-1">Click "Upload Document" to add your certificates</p>
-                </div>
-              )
-            ) : (
-              <ComplianceChecklist certificates={documents} />
-            )}
+            {/* Checklist Items */}
+            <div className="space-y-3">
+              {MANDATORY_CERTIFICATES_LIST.map((cert) => (
+                <ChecklistItem
+                  key={cert.id}
+                  item={cert}
+                  isUploaded={isCertificateUploaded(cert.type)}
+                  documents={getDocumentsForCertificate(cert.type)}
+                  onUpload={openUploadModal}
+                  onDelete={handleDeleteDocument}
+                  onView={handleViewDocument}
+                />
+              ))}
+            </div>
+
+            {/* Other Documents Section */}
+            <OtherDocumentsSection
+              documents={documents}
+              onUpload={openUploadModal}
+              onDelete={handleDeleteDocument}
+              onView={handleViewDocument}
+            />
           </div>
         )}
 
