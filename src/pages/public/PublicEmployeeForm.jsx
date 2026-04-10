@@ -135,20 +135,10 @@ const MANDATORY_CERTIFICATES_LIST = [
 ];
 
 // ============================================
-// ENCRYPTED INPUT COMPONENT
+// ENCRYPTED INPUT COMPONENT WITH EYE BUTTON
 // ============================================
 const EncryptedInput = ({ label, name, value, onChange, required, placeholder, error }) => {
   const [showValue, setShowValue] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  // Mask the value - show only last 4 digits when not focused and not showing
-  const getDisplayValue = () => {
-    if (showValue || isFocused) return value;
-    if (value && value.length > 4) {
-      return '•'.repeat(value.length - 4) + value.slice(-4);
-    }
-    return value ? '•'.repeat(value.length) : '';
-  };
 
   return (
     <div>
@@ -157,12 +147,10 @@ const EncryptedInput = ({ label, name, value, onChange, required, placeholder, e
       </label>
       <div className="relative">
         <input
-          type={showValue || isFocused ? "text" : "password"}
+          type={showValue ? "text" : "password"}
           name={name}
           value={value}
           onChange={onChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           required={required}
           placeholder={placeholder}
           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 pr-10 ${
@@ -185,14 +173,12 @@ const EncryptedInput = ({ label, name, value, onChange, required, placeholder, e
 // ============================================
 // DOCUMENT UPLOAD MODAL
 // ============================================
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null, onExtractDates }) => {
+const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [showFileNameInput, setShowFileNameInput] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
-    issue_date: '',
-    expiry_date: '',
     file: null,
     file_name: '',
   });
@@ -201,8 +187,6 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     if (isOpen) {
       setFormData({
         document_type: preselectedDocumentType || '',
-        issue_date: '',
-        expiry_date: '',
         file: null,
         file_name: '',
       });
@@ -256,16 +240,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
         actualFormData.append('file_name', formData.file_name);
       }
       
-      const response = await uploadEmployeeDocument(actualFormData);
-      
-      // Check if backend extracted dates
-      const extractedIssueDate = response.data?.issue_date;
-      const extractedExpiryDate = response.data?.expiry_date;
-      
-      if (onExtractDates && (extractedIssueDate || extractedExpiryDate)) {
-        onExtractDates(response.data.document_id, extractedIssueDate, extractedExpiryDate);
-      }
-      
+      await uploadEmployeeDocument(actualFormData);
       toast.success('Document uploaded successfully!');
       onUploadSuccess();
       onClose();
@@ -908,19 +883,6 @@ const PublicEmployeeForm = () => {
     fetchDocuments();
   };
 
-  const handleExtractDates = async (documentId, issueDate, expiryDate) => {
-    // This will be called after upload if backend extracted dates
-    if (issueDate || expiryDate) {
-      try {
-        await updateDocumentDates(documentId, { issue_date: issueDate, expiry_date: expiryDate });
-        fetchDocuments();
-        toast.info('Document dates extracted from file!');
-      } catch (error) {
-        console.error('Error saving extracted dates:', error);
-      }
-    }
-  };
-
   const validateForm = () => {
     const newErrors = {};
     
@@ -1049,7 +1011,6 @@ const PublicEmployeeForm = () => {
         employeeId={employeeId}
         onUploadSuccess={handleUploadSuccess}
         preselectedDocumentType={selectedDocumentType}
-        onExtractDates={handleExtractDates}
       />
 
       <DateEditModal
@@ -1089,30 +1050,8 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Personal Information Form */}
+        {/* Personal Information Form - REMOVED Employee Information Section */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          {/* Read-only Employee Info */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
-              <FaUser /> Employee Information (Read Only)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-blue-700">Full Name</label>
-                <p className="text-sm text-gray-800 font-medium">
-                  {formData.first_name} {formData.middle_name} {formData.last_name}
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-blue-700">Email</label>
-                <p className="text-sm text-gray-800 font-medium">{formData.email || '-'}</p>
-              </div>
-            </div>
-            <p className="text-xs text-blue-600 mt-3">
-              <FaExclamationTriangle className="inline mr-1" /> These details cannot be edited. Contact HR for changes.
-            </p>
-          </div>
-
           {/* Personal Information */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
