@@ -30,6 +30,7 @@ import {
   FaFileImage,
   FaTrash,
   FaEye,
+  FaEyeSlash,
   FaDownload,
   FaPlus,
   FaChevronDown,
@@ -38,7 +39,9 @@ import {
   FaHeart,
   FaFolder,
   FaCheckCircle,
-  FaClock
+  FaClock,
+  FaEdit,
+  FaSave as FaSaveIcon
 } from 'react-icons/fa';
 import axiosClient from '../../axiosClient';
 import {
@@ -46,7 +49,8 @@ import {
   getDesignationsByDeptId,
   uploadEmployeeDocument,
   deleteEmployeeDocument,
-  getEmployeeDocuments
+  getEmployeeDocuments,
+  updateDocumentDates
 } from '../../services/employeeService';
 
 // ============================================
@@ -131,11 +135,60 @@ const MANDATORY_CERTIFICATES_LIST = [
 ];
 
 // ============================================
+// ENCRYPTED INPUT COMPONENT
+// ============================================
+const EncryptedInput = ({ label, name, value, onChange, required, placeholder, error }) => {
+  const [showValue, setShowValue] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Mask the value - show only last 4 digits when not focused and not showing
+  const getDisplayValue = () => {
+    if (showValue || isFocused) return value;
+    if (value && value.length > 4) {
+      return '•'.repeat(value.length - 4) + value.slice(-4);
+    }
+    return value ? '•'.repeat(value.length) : '';
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative">
+        <input
+          type={showValue || isFocused ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          required={required}
+          placeholder={placeholder}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 pr-10 ${
+            error ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowValue(!showValue)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+        >
+          {showValue ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+};
+
+// ============================================
 // DOCUMENT UPLOAD MODAL
 // ============================================
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
+const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null, onExtractDates }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [showFileNameInput, setShowFileNameInput] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
     issue_date: '',
@@ -154,6 +207,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
         file_name: '',
       });
       setError('');
+      setShowFileNameInput(preselectedDocumentType === 'Other Document');
     }
   }, [isOpen, preselectedDocumentType]);
 
@@ -168,6 +222,12 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
         file_name: fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       });
     }
+  };
+
+  const handleDocumentTypeChange = (e) => {
+    const value = e.target.value;
+    setShowFileNameInput(value === 'Other Document');
+    setFormData({ ...formData, document_type: value });
   };
 
   const handleSubmit = async (e) => {
@@ -191,16 +251,21 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       actualFormData.append('employee_id', employeeId);
       actualFormData.append('document_type', formData.document_type);
       actualFormData.append('file', formData.file);
-      actualFormData.append('file_name', formData.file_name);
       
-      if (formData.issue_date) {
-        actualFormData.append('issue_date', formData.issue_date);
+      if (showFileNameInput && formData.file_name) {
+        actualFormData.append('file_name', formData.file_name);
       }
-      if (formData.expiry_date) {
-        actualFormData.append('expiry_date', formData.expiry_date);
+      
+      const response = await uploadEmployeeDocument(actualFormData);
+      
+      // Check if backend extracted dates
+      const extractedIssueDate = response.data?.issue_date;
+      const extractedExpiryDate = response.data?.expiry_date;
+      
+      if (onExtractDates && (extractedIssueDate || extractedExpiryDate)) {
+        onExtractDates(response.data.document_id, extractedIssueDate, extractedExpiryDate);
       }
-
-      await uploadEmployeeDocument(actualFormData);
+      
       toast.success('Document uploaded successfully!');
       onUploadSuccess();
       onClose();
@@ -244,7 +309,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
               </label>
               <select
                 value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                onChange={handleDocumentTypeChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -261,44 +326,21 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                File Name *
-              </label>
-              <input
-                type="text"
-                value={formData.file_name}
-                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
-                placeholder="Enter a descriptive file name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            {showFileNameInput && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Issue Date
+                  Document Name *
                 </label>
                 <input
-                  type="date"
-                  value={formData.issue_date}
-                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  type="text"
+                  value={formData.file_name}
+                  onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                  placeholder="Enter document name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required={showFileNameInput}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expiry Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -359,11 +401,89 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 };
 
 // ============================================
+// DATE EDIT MODAL
+// ============================================
+const DateEditModal = ({ isOpen, onClose, document, onUpdate }) => {
+  const [issueDate, setIssueDate] = useState(document?.issue_date || '');
+  const [expiryDate, setExpiryDate] = useState(document?.expiry_date || '');
+  const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    if (document) {
+      setIssueDate(document.issue_date || '');
+      setExpiryDate(document.expiry_date || '');
+    }
+  }, [document]);
+
+  const handleSubmit = async () => {
+    setUpdating(true);
+    try {
+      await updateDocumentDates(document.id, { issue_date: issueDate, expiry_date: expiryDate });
+      toast.success('Dates updated successfully!');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      toast.error('Failed to update dates');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (!isOpen || !document) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Edit Document Dates</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <FaTimes />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date</label>
+            <input
+              type="date"
+              value={issueDate}
+              onChange={(e) => setIssueDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+            <input
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+        </div>
+        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={updating}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            {updating && <FaSpinner className="animate-spin" />}
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // DOCUMENT CARD COMPONENT
 // ============================================
-const DocumentCard = ({ document, onDelete, onView }) => {
+const DocumentCard = ({ document, onDelete, onView, onEditDates }) => {
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'Not set';
     try {
       return new Date(dateString).toLocaleDateString('en-AU', {
         year: 'numeric',
@@ -385,23 +505,58 @@ const DocumentCard = ({ document, onDelete, onView }) => {
     return <FaFileAlt className="text-gray-500" />;
   };
 
-  const baseUrl = 'https://api.chrispp.com';
+  const isExpiringSoon = (expiryDate) => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const daysDiff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    return daysDiff > 0 && daysDiff <= 30;
+  };
+
+  const isExpired = (expiryDate) => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    return expiry < today;
+  };
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3 flex-1">
           {getFileIcon(document.file_name)}
-          <div>
-            <p className="text-sm font-medium text-gray-800 truncate max-w-[150px]">{document.file_name}</p>
-            <p className="text-xs text-gray-500">{formatDate(document.created_at)}</p>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-gray-800">{document.file_name || document.document_type}</p>
+            <div className="flex flex-wrap gap-3 mt-2 text-xs">
+              <span className="text-gray-500">
+                <FaCalendarAlt className="inline mr-1 text-gray-400" size={10} />
+                Issue: {formatDate(document.issue_date)}
+              </span>
+              <span className={`flex items-center gap-1 ${isExpired(document.expiry_date) ? 'text-red-600' : isExpiringSoon(document.expiry_date) ? 'text-orange-500' : 'text-gray-500'}`}>
+                <FaClock className="inline" size={10} />
+                Expiry: {formatDate(document.expiry_date)}
+                {isExpiringSoon(document.expiry_date) && !isExpired(document.expiry_date) && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">Expiring soon</span>
+                )}
+                {isExpired(document.expiry_date) && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">Expired</span>
+                )}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex gap-1">
+          <button
+            onClick={() => onEditDates(document)}
+            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
+            title="Edit Dates"
+          >
+            <FaEdit size={12} />
+          </button>
           {document.file_url && (
             <button
               onClick={() => onView(document)}
-              className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
+              className="p-1.5 text-green-600 hover:bg-green-100 rounded"
               title="View"
             >
               <FaEye size={12} />
@@ -423,7 +578,7 @@ const DocumentCard = ({ document, onDelete, onView }) => {
 // ============================================
 // MANDATORY CHECKLIST ITEM COMPONENT
 // ============================================
-const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView }) => {
+const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEditDates }) => {
   const [showDocuments, setShowDocuments] = useState(false);
   
   const itemDocuments = documents.filter(doc => 
@@ -469,6 +624,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
                         document={doc}
                         onDelete={onDelete}
                         onView={onView}
+                        onEditDates={onEditDates}
                       />
                     ))}
                   </div>
@@ -492,7 +648,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
 // ============================================
 // OTHER DOCUMENTS SECTION
 // ============================================
-const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView }) => {
+const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEditDates }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const otherDocs = documents.filter(doc => 
     !MANDATORY_CERTIFICATES_LIST.some(m => 
@@ -528,13 +684,14 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView }) => {
           </div>
           
           {otherDocs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-3">
               {otherDocs.map(doc => (
                 <DocumentCard
                   key={doc.id}
                   document={doc}
                   onDelete={onDelete}
                   onView={onView}
+                  onEditDates={onEditDates}
                 />
               ))}
             </div>
@@ -573,6 +730,10 @@ const PublicEmployeeForm = () => {
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [dateEditModalOpen, setDateEditModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [showTfn, setShowTfn] = useState(false);
+  const [showBankAccount, setShowBankAccount] = useState(false);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -642,7 +803,7 @@ const PublicEmployeeForm = () => {
           emergency_contact_name: employee.emergency_contact_name || '',
           emergency_contact_phone: employee.emergency_contact_phone || '',
           emergency_contact_relationship: employee.emergency_contact_relationship || '',
-          tax_file_number: '',
+          tax_file_number: employee.tax_file_number || '',
           superannuation_fund_name: employee.superannuation_fund_name || '',
           superannuation_member_number: employee.superannuation_member_number || '',
           bank_bsb: employee.bank_bsb || '',
@@ -734,7 +895,29 @@ const PublicEmployeeForm = () => {
       toast.success('Document deleted successfully!');
       fetchDocuments();
     } catch (error) {
-      toast.error('Failed to delete document',error);
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const handleEditDates = (document) => {
+    setSelectedDocument(document);
+    setDateEditModalOpen(true);
+  };
+
+  const handleDatesUpdated = () => {
+    fetchDocuments();
+  };
+
+  const handleExtractDates = async (documentId, issueDate, expiryDate) => {
+    // This will be called after upload if backend extracted dates
+    if (issueDate || expiryDate) {
+      try {
+        await updateDocumentDates(documentId, { issue_date: issueDate, expiry_date: expiryDate });
+        fetchDocuments();
+        toast.info('Document dates extracted from file!');
+      } catch (error) {
+        console.error('Error saving extracted dates:', error);
+      }
     }
   };
 
@@ -748,7 +931,6 @@ const PublicEmployeeForm = () => {
     if (!formData.emergency_contact_name?.trim()) newErrors.emergency_contact_name = 'Emergency contact name is required';
     if (!formData.emergency_contact_phone?.trim()) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
     if (!formData.emergency_contact_relationship?.trim()) newErrors.emergency_contact_relationship = 'Emergency contact relationship is required';
-    if (!formData.tax_file_number?.trim()) newErrors.tax_file_number = 'Tax File Number is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -867,6 +1049,17 @@ const PublicEmployeeForm = () => {
         employeeId={employeeId}
         onUploadSuccess={handleUploadSuccess}
         preselectedDocumentType={selectedDocumentType}
+        onExtractDates={handleExtractDates}
+      />
+
+      <DateEditModal
+        isOpen={dateEditModalOpen}
+        onClose={() => {
+          setDateEditModalOpen(false);
+          setSelectedDocument(null);
+        }}
+        document={selectedDocument}
+        onUpdate={handleDatesUpdated}
       />
       
       <div className="max-w-4xl mx-auto">
@@ -940,6 +1133,7 @@ const PublicEmployeeForm = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="+61 123 456 789"
                 />
+                {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
               </div>
               
               <div>
@@ -954,6 +1148,7 @@ const PublicEmployeeForm = () => {
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+                {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
               </div>
               
               <div>
@@ -973,6 +1168,7 @@ const PublicEmployeeForm = () => {
                   <option value="Other">Other</option>
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
+                {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
               </div>
               
               <div className="md:col-span-2">
@@ -988,6 +1184,7 @@ const PublicEmployeeForm = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your full address"
                 />
+                {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
               </div>
             </div>
           </div>
@@ -999,33 +1196,51 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                name="emergency_contact_name"
-                value={formData.emergency_contact_name}
-                onChange={handleChange}
-                required
-                placeholder="Contact Name *"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="tel"
-                name="emergency_contact_phone"
-                value={formData.emergency_contact_phone}
-                onChange={handleChange}
-                required
-                placeholder="Contact Phone *"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="text"
-                name="emergency_contact_relationship"
-                value={formData.emergency_contact_relationship}
-                onChange={handleChange}
-                required
-                placeholder="Relationship *"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="emergency_contact_name"
+                  value={formData.emergency_contact_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contact Name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+                {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="emergency_contact_phone"
+                  value={formData.emergency_contact_phone}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contact Phone"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+                {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Relationship <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="emergency_contact_relationship"
+                  value={formData.emergency_contact_relationship}
+                  onChange={handleChange}
+                  required
+                  placeholder="Relationship"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+                {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
+              </div>
             </div>
           </div>
 
@@ -1036,46 +1251,58 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
+              <EncryptedInput
+                label="Tax File Number (TFN)"
                 name="tax_file_number"
                 value={formData.tax_file_number}
                 onChange={handleChange}
-                required
-                placeholder="Tax File Number (TFN) *"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                placeholder="Enter your TFN"
               />
-              <input
-                type="text"
-                name="superannuation_fund_name"
-                value={formData.superannuation_fund_name}
-                onChange={handleChange}
-                placeholder="Superannuation Fund Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="text"
-                name="superannuation_member_number"
-                value={formData.superannuation_member_number}
-                onChange={handleChange}
-                placeholder="Superannuation Member Number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="text"
-                name="bank_bsb"
-                value={formData.bank_bsb}
-                onChange={handleChange}
-                placeholder="Bank BSB"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="text"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Superannuation Fund Name
+                </label>
+                <input
+                  type="text"
+                  name="superannuation_fund_name"
+                  value={formData.superannuation_fund_name}
+                  onChange={handleChange}
+                  placeholder="Superannuation Fund Name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Superannuation Member Number
+                </label>
+                <input
+                  type="text"
+                  name="superannuation_member_number"
+                  value={formData.superannuation_member_number}
+                  onChange={handleChange}
+                  placeholder="Superannuation Member Number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bank BSB
+                </label>
+                <input
+                  type="text"
+                  name="bank_bsb"
+                  value={formData.bank_bsb}
+                  onChange={handleChange}
+                  placeholder="Bank BSB"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <EncryptedInput
+                label="Bank Account Number"
                 name="bank_account_number"
                 value={formData.bank_account_number}
                 onChange={handleChange}
-                placeholder="Bank Account Number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                placeholder="Enter your bank account number"
               />
             </div>
           </div>
@@ -1087,51 +1314,63 @@ const PublicEmployeeForm = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <select
-                name="department_id"
-                value={formData.department_id}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Select Department</option>
-                {departments.map(dept => (
-                  <option key={dept.id} value={dept.id}>{dept.name}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select
+                  name="department_id"
+                  value={formData.department_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
+                </select>
+              </div>
               
-              <select
-                name="designation_id"
-                value={formData.designation_id}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Select Designation</option>
-                {designations.map(desig => (
-                  <option key={desig.id} value={desig.id}>{desig.title}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                <select
+                  name="designation_id"
+                  value={formData.designation_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map(desig => (
+                    <option key={desig.id} value={desig.id}>{desig.title}</option>
+                  ))}
+                </select>
+              </div>
               
-              <select
-                name="employment_type"
-                value={formData.employment_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Contract">Contract</option>
-                <option value="Casual">Casual</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
+                <select
+                  name="employment_type"
+                  value={formData.employment_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Casual">Casual</option>
+                </select>
+              </div>
               
-              <input
-                type="number"
-                name="hourly_wage"
-                value={formData.hourly_wage}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="Hourly Rate (AUD)"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate (AUD)</label>
+                <input
+                  type="number"
+                  name="hourly_wage"
+                  value={formData.hourly_wage}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="Hourly Rate"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
             </div>
           </div>
 
@@ -1188,6 +1427,7 @@ const PublicEmployeeForm = () => {
                   onUpload={openUploadModal}
                   onDelete={handleDeleteDocument}
                   onView={handleViewDocument}
+                  onEditDates={handleEditDates}
                 />
               ))}
             </div>
@@ -1198,6 +1438,7 @@ const PublicEmployeeForm = () => {
               onUpload={openUploadModal}
               onDelete={handleDeleteDocument}
               onView={handleViewDocument}
+              onEditDates={handleEditDates}
             />
           </div>
         )}

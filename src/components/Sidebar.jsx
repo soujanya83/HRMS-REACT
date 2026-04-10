@@ -1,4 +1,4 @@
-// Sidebar.jsx - Complete working version with persistence
+// Sidebar.jsx - Complete working version with rounded right corners
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -138,10 +138,8 @@ const Sidebar = ({
   sidebarColor: propSidebarColor,
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  // Initialize from localStorage FIRST, then fallback to prop
   const [currentColor, setCurrentColor] = useState(() => {
     const saved = localStorage.getItem('sidebarColor');
-    console.log("🟣 Sidebar initializing - localStorage:", saved, "prop:", propSidebarColor);
     if (saved && saved !== 'undefined' && saved !== 'null') {
       return saved;
     }
@@ -149,19 +147,15 @@ const Sidebar = ({
   });
   const location = useLocation();
 
-  // Update when prop changes (from context)
   useEffect(() => {
     if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== currentColor) {
-      console.log("🔵 Sidebar updating from prop:", propSidebarColor);
       setCurrentColor(propSidebarColor);
       localStorage.setItem('sidebarColor', propSidebarColor);
     }
   }, [propSidebarColor]);
 
-  // Listen for custom events
   useEffect(() => {
     const handleColorUpdate = (event) => {
-      console.log("🎨 Sidebar received color update event:", event.detail.color);
       if (event.detail.color && event.detail.color !== 'undefined') {
         setCurrentColor(event.detail.color);
         localStorage.setItem('sidebarColor', event.detail.color);
@@ -169,10 +163,7 @@ const Sidebar = ({
     };
     
     window.addEventListener('sidebarColorUpdate', handleColorUpdate);
-    
-    return () => {
-      window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
-    };
+    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
   }, []);
 
   useEffect(() => {
@@ -196,17 +187,15 @@ const Sidebar = ({
   const getBorderColor = (color) => {
     if (color === "#0B1A2E") return "#1a2d4e";
     if (color === "#2C2C2C") return "#4a4a4a";
-    if (color === "#008080") return "#1a9e9e";
-    if (color === "#4B0082") return "#6b1aa3";
-    if (color === "#228B22") return "#3aad3a";
-    if (color === "#5B7B9A") return "#7b9aba";
+    if (color === "#1F5F5B") return "#3a8a85";
+    if (color === "#3B1E54") return "#5a2a7a";
+    if (color === "#1B4332") return "#2d6a4f";
+    if (color === "#334155") return "#4a5a6e";
     if (color === "#1a4d4d") return "#2d6a6a";
     return "#2d6a6a";
   };
 
   const borderColor = getBorderColor(currentColor);
-
-  console.log("🎨 Sidebar rendering with color:", currentColor);
 
   return (
     <>
@@ -221,7 +210,12 @@ const Sidebar = ({
           ${isCollapsed ? "md:w-24" : "md:w-64"}
           ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
-        style={{ backgroundColor: currentColor }}
+        style={{ 
+          backgroundColor: currentColor,
+          // 🔥 ADDED: Border radius on top-right and bottom-right corners
+          borderRadius: "0 24px 24px 0",
+          boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)"
+        }}
       >
         <div className="relative h-full flex flex-col">
           <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
