@@ -40,8 +40,7 @@ import {
   FaFolder,
   FaCheckCircle,
   FaClock,
-  FaEdit,
-  FaSave as FaSaveIcon
+  FaEdit
 } from 'react-icons/fa';
 import axiosClient from '../../axiosClient';
 import {
@@ -50,7 +49,7 @@ import {
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   getEmployeeDocuments,
-  updateDocumentDates
+  updateDocumentMetadata
 } from '../../services/employeeService';
 
 // ============================================
@@ -90,7 +89,7 @@ const MANDATORY_CERTIFICATES_LIST = [
   {
     id: "qualification",
     name: "Qualification Certificate",
-    type: "Certificate III or Diploma",
+    type: "Qualification Certificate",
     required: true,
     hasExpiry: false,
     description: "Certificate III or Diploma in Early Childhood Education",
@@ -135,83 +134,42 @@ const MANDATORY_CERTIFICATES_LIST = [
 ];
 
 // ============================================
-// ENCRYPTED INPUT COMPONENT WITH EYE BUTTON
-// ============================================
-const EncryptedInput = ({ label, name, value, onChange, required, placeholder, error }) => {
-  const [showValue, setShowValue] = useState(false);
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative">
-        <input
-          type={showValue ? "text" : "password"}
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-          placeholder={placeholder}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 pr-10 ${
-            error ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        <button
-          type="button"
-          onClick={() => setShowValue(!showValue)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-        >
-          {showValue ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-        </button>
-      </div>
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-    </div>
-  );
-};
-
-// ============================================
 // DOCUMENT UPLOAD MODAL
 // ============================================
 const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [showFileNameInput, setShowFileNameInput] = useState(false);
+  const [showDateFields, setShowDateFields] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
+    issue_date: '',
+    expiry_date: '',
     file: null,
-    file_name: '',
   });
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
         document_type: preselectedDocumentType || '',
+        issue_date: '',
+        expiry_date: '',
         file: null,
-        file_name: '',
       });
+      setShowDateFields(false);
       setError('');
-      setShowFileNameInput(preselectedDocumentType === 'Other Document');
     }
   }, [isOpen, preselectedDocumentType]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+      setFormData({ ...formData, file: file });
       
-      setFormData({ 
-        ...formData, 
-        file: file,
-        file_name: fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      });
+      // Show date fields after file is selected
+      if (file) {
+        setShowDateFields(true);
+      }
     }
-  };
-
-  const handleDocumentTypeChange = (e) => {
-    const value = e.target.value;
-    setShowFileNameInput(value === 'Other Document');
-    setFormData({ ...formData, document_type: value });
   };
 
   const handleSubmit = async (e) => {
@@ -236,10 +194,13 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       actualFormData.append('document_type', formData.document_type);
       actualFormData.append('file', formData.file);
       
-      if (showFileNameInput && formData.file_name) {
-        actualFormData.append('file_name', formData.file_name);
+      if (formData.issue_date) {
+        actualFormData.append('issue_date', formData.issue_date);
       }
-      
+      if (formData.expiry_date) {
+        actualFormData.append('expiry_date', formData.expiry_date);
+      }
+
       await uploadEmployeeDocument(actualFormData);
       toast.success('Document uploaded successfully!');
       onUploadSuccess();
@@ -284,7 +245,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
               </label>
               <select
                 value={formData.document_type}
-                onChange={handleDocumentTypeChange}
+                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -300,22 +261,6 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 <option value="Other Document">📁 Other Document</option>
               </select>
             </div>
-
-            {showFileNameInput && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Document Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.file_name}
-                  onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
-                  placeholder="Enter document name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required={showFileNameInput}
-                />
-              </div>
-            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -349,6 +294,34 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 </label>
               </div>
             </div>
+
+            {/* Issue and Expiry Dates - Show only after file selection */}
+            {showDateFields && (
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Issue Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.issue_date}
+                    onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.expiry_date}
+                    onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
@@ -376,35 +349,45 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 };
 
 // ============================================
-// DATE EDIT MODAL
+// DOCUMENT METADATA EDIT MODAL
 // ============================================
-const DateEditModal = ({ isOpen, onClose, document, onUpdate }) => {
-  const [issueDate, setIssueDate] = useState(document?.issue_date || '');
-  const [expiryDate, setExpiryDate] = useState(document?.expiry_date || '');
+const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) => {
   const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    issue_date: '',
+    expiry_date: '',
+  });
 
   useEffect(() => {
-    if (document) {
-      setIssueDate(document.issue_date || '');
-      setExpiryDate(document.expiry_date || '');
+    if (isOpen && document) {
+      setFormData({
+        issue_date: document.issue_date || '',
+        expiry_date: document.expiry_date || '',
+      });
+      setError('');
     }
-  }, [document]);
+  }, [isOpen, document]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setUpdating(true);
+    setError('');
+
     try {
-      await updateDocumentDates(document.id, { issue_date: issueDate, expiry_date: expiryDate });
-      toast.success('Dates updated successfully!');
-      onUpdate();
+      await updateDocumentMetadata(document.id, formData);
+      toast.success('Document metadata updated successfully!');
+      onUpdateSuccess();
       onClose();
-    } catch (error) {
-      toast.error('Failed to update dates',error);
+    } catch (err) {
+      console.error('Update error:', err);
+      setError(err.response?.data?.message || 'Failed to update document metadata');
     } finally {
       setUpdating(false);
     }
   };
 
-  if (!isOpen || !document) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -415,39 +398,66 @@ const DateEditModal = ({ isOpen, onClose, document, onUpdate }) => {
             <FaTimes />
           </button>
         </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date</label>
-            <input
-              type="date"
-              value={issueDate}
-              onChange={(e) => setIssueDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
+
+        <form onSubmit={handleSubmit} className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Document Name
+              </label>
+              <p className="text-sm text-gray-800 font-medium">{document?.file_name}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Issue Date
+              </label>
+              <input
+                type="date"
+                value={formData.issue_date}
+                onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                value={formData.expiry_date}
+                onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-            <input
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
+
+          <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
+              disabled={updating}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={updating}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {updating && <FaSpinner className="animate-spin" />}
+              Save Changes
+            </button>
           </div>
-        </div>
-        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={updating}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            {updating && <FaSpinner className="animate-spin" />}
-            Save Changes
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -456,7 +466,7 @@ const DateEditModal = ({ isOpen, onClose, document, onUpdate }) => {
 // ============================================
 // DOCUMENT CARD COMPONENT
 // ============================================
-const DocumentCard = ({ document, onDelete, onView, onEditDates }) => {
+const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set';
     try {
@@ -480,49 +490,36 @@ const DocumentCard = ({ document, onDelete, onView, onEditDates }) => {
     return <FaFileAlt className="text-gray-500" />;
   };
 
-  const isExpiringSoon = (expiryDate) => {
-    if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const daysDiff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-    return daysDiff > 0 && daysDiff <= 30;
-  };
-
   const isExpired = (expiryDate) => {
     if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    return expiry < today;
+    return new Date(expiryDate) < new Date();
   };
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
-          {getFileIcon(document.file_name)}
+          <div className="mt-1">
+            {getFileIcon(document.file_name)}
+          </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">{document.file_name || document.document_type}</p>
+            <p className="text-sm font-semibold text-gray-800">{document.file_name}</p>
             <div className="flex flex-wrap gap-3 mt-2 text-xs">
               <span className="text-gray-500">
                 <FaCalendarAlt className="inline mr-1 text-gray-400" size={10} />
                 Issue: {formatDate(document.issue_date)}
               </span>
-              <span className={`flex items-center gap-1 ${isExpired(document.expiry_date) ? 'text-red-600' : isExpiringSoon(document.expiry_date) ? 'text-orange-500' : 'text-gray-500'}`}>
-                <FaClock className="inline" size={10} />
+              <span className={isExpired(document.expiry_date) ? 'text-red-600' : 'text-gray-500'}>
+                <FaClock className="inline mr-1" size={10} />
                 Expiry: {formatDate(document.expiry_date)}
-                {isExpiringSoon(document.expiry_date) && !isExpired(document.expiry_date) && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">Expiring soon</span>
-                )}
-                {isExpired(document.expiry_date) && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">Expired</span>
-                )}
+                {isExpired(document.expiry_date) && <span className="ml-1 text-red-600 font-semibold">(Expired)</span>}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 ml-2">
           <button
-            onClick={() => onEditDates(document)}
+            onClick={() => onEdit(document)}
             className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
             title="Edit Dates"
           >
@@ -532,7 +529,7 @@ const DocumentCard = ({ document, onDelete, onView, onEditDates }) => {
             <button
               onClick={() => onView(document)}
               className="p-1.5 text-green-600 hover:bg-green-100 rounded"
-              title="View"
+              title="View Document"
             >
               <FaEye size={12} />
             </button>
@@ -553,7 +550,7 @@ const DocumentCard = ({ document, onDelete, onView, onEditDates }) => {
 // ============================================
 // MANDATORY CHECKLIST ITEM COMPONENT
 // ============================================
-const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEditDates }) => {
+const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEdit }) => {
   const [showDocuments, setShowDocuments] = useState(false);
   
   const itemDocuments = documents.filter(doc => 
@@ -599,7 +596,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
                         document={doc}
                         onDelete={onDelete}
                         onView={onView}
-                        onEditDates={onEditDates}
+                        onEdit={onEdit}
                       />
                     ))}
                   </div>
@@ -623,7 +620,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
 // ============================================
 // OTHER DOCUMENTS SECTION
 // ============================================
-const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEditDates }) => {
+const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const otherDocs = documents.filter(doc => 
     !MANDATORY_CERTIFICATES_LIST.some(m => 
@@ -659,14 +656,14 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEditDa
           </div>
           
           {otherDocs.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3">
               {otherDocs.map(doc => (
                 <DocumentCard
                   key={doc.id}
                   document={doc}
                   onDelete={onDelete}
                   onView={onView}
-                  onEditDates={onEditDates}
+                  onEdit={onEdit}
                 />
               ))}
             </div>
@@ -689,6 +686,40 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEditDa
 };
 
 // ============================================
+// ENCRYPTED INPUT COMPONENT
+// ============================================
+const EncryptedInput = ({ label, name, value, onChange, required, placeholder, error }) => {
+  const [showValue, setShowValue] = useState(false);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative">
+        <input
+          type={showValue ? 'text' : 'password'}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          placeholder={placeholder}
+          className={`w-full px-4 py-2 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 pr-10`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowValue(!showValue)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+        >
+          {showValue ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+};
+
+// ============================================
 // MAIN PUBLIC EMPLOYEE FORM
 // ============================================
 const PublicEmployeeForm = () => {
@@ -702,11 +733,11 @@ const PublicEmployeeForm = () => {
   const [employeeData, setEmployeeData] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [metadataModalOpen, setMetadataModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
-  const [dateEditModalOpen, setDateEditModalOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -730,7 +761,10 @@ const PublicEmployeeForm = () => {
     is_australian_citizen: false,
     is_pr: false,
     visa_type: '',
-    // Employment fields removed
+    department_id: '',
+    designation_id: '',
+    employment_type: 'Full-time',
+    hourly_wage: '',
   });
 
   // Fetch employee data when organizationId is available
@@ -773,7 +807,7 @@ const PublicEmployeeForm = () => {
           emergency_contact_name: employee.emergency_contact_name || '',
           emergency_contact_phone: employee.emergency_contact_phone || '',
           emergency_contact_relationship: employee.emergency_contact_relationship || '',
-          tax_file_number: employee.tax_file_number || '',
+          tax_file_number: '',
           superannuation_fund_name: employee.superannuation_fund_name || '',
           superannuation_member_number: employee.superannuation_member_number || '',
           bank_bsb: employee.bank_bsb || '',
@@ -782,7 +816,10 @@ const PublicEmployeeForm = () => {
           is_australian_citizen: employee.is_australian_citizen === '1' || employee.is_australian_citizen === true,
           is_pr: employee.is_pr === '1' || employee.is_pr === true,
           visa_type: employee.visa_type || '',
-          // Employment fields removed
+          department_id: employee.department_id || '',
+          designation_id: employee.designation_id || '',
+          employment_type: employee.employment_type || 'Full-time',
+          hourly_wage: employee.hourly_wage || '',
         });
         
         if (employee.organization_id) {
@@ -862,17 +899,13 @@ const PublicEmployeeForm = () => {
       toast.success('Document deleted successfully!');
       fetchDocuments();
     } catch (error) {
-      toast.error('Failed to delete document',error);
+      toast.error('Failed to delete document');
     }
   };
 
-  const handleEditDates = (document) => {
+  const handleEditDocument = (document) => {
     setSelectedDocument(document);
-    setDateEditModalOpen(true);
-  };
-
-  const handleDatesUpdated = () => {
-    fetchDocuments();
+    setMetadataModalOpen(true);
   };
 
   const validateForm = () => {
@@ -885,6 +918,7 @@ const PublicEmployeeForm = () => {
     if (!formData.emergency_contact_name?.trim()) newErrors.emergency_contact_name = 'Emergency contact name is required';
     if (!formData.emergency_contact_phone?.trim()) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
     if (!formData.emergency_contact_relationship?.trim()) newErrors.emergency_contact_relationship = 'Emergency contact relationship is required';
+    if (!formData.tax_file_number?.trim()) newErrors.tax_file_number = 'Tax File Number is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -923,7 +957,10 @@ const PublicEmployeeForm = () => {
         is_australian_citizen: formData.is_australian_citizen,
         is_pr: formData.is_pr,
         visa_type: formData.visa_type,
-        // Employment fields removed from payload
+        department_id: formData.department_id,
+        designation_id: formData.designation_id,
+        employment_type: formData.employment_type,
+        hourly_wage: formData.hourly_wage,
       };
       
       const response = await axiosClient.post('/employee/update-profile', payload);
@@ -1002,14 +1039,14 @@ const PublicEmployeeForm = () => {
         preselectedDocumentType={selectedDocumentType}
       />
 
-      <DateEditModal
-        isOpen={dateEditModalOpen}
+      <DocumentMetadataModal
+        isOpen={metadataModalOpen}
         onClose={() => {
-          setDateEditModalOpen(false);
+          setMetadataModalOpen(false);
           setSelectedDocument(null);
         }}
         document={selectedDocument}
-        onUpdate={handleDatesUpdated}
+        onUpdateSuccess={fetchDocuments}
       />
       
       <div className="max-w-4xl mx-auto">
@@ -1041,6 +1078,28 @@ const PublicEmployeeForm = () => {
 
         {/* Personal Information Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          {/* Read-only Employee Info */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              <FaUser /> Employee Information (Read Only)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-blue-700">Full Name</label>
+                <p className="text-sm text-gray-800 font-medium">
+                  {formData.first_name} {formData.middle_name} {formData.last_name}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-blue-700">Email</label>
+                <p className="text-sm text-gray-800 font-medium">{formData.email || '-'}</p>
+              </div>
+            </div>
+            <p className="text-xs text-blue-600 mt-3">
+              <FaExclamationTriangle className="inline mr-1" /> These details cannot be edited. Contact HR for changes.
+            </p>
+          </div>
+
           {/* Personal Information */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
@@ -1058,7 +1117,7 @@ const PublicEmployeeForm = () => {
                   value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border ${errors.phone_number ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                   placeholder="+61 123 456 789"
                 />
                 {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
@@ -1074,7 +1133,7 @@ const PublicEmployeeForm = () => {
                   value={formData.date_of_birth}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 />
                 {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
               </div>
@@ -1088,7 +1147,7 @@ const PublicEmployeeForm = () => {
                   value={formData.gender}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -1109,7 +1168,7 @@ const PublicEmployeeForm = () => {
                   onChange={handleChange}
                   required
                   rows="2"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                   placeholder="Enter your full address"
                 />
                 {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
@@ -1134,8 +1193,8 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_name}
                   onChange={handleChange}
                   required
-                  placeholder="Emergency Contact Name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Contact Name"
+                  className={`w-full px-4 py-2 border ${errors.emergency_contact_name ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
                 />
                 {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
               </div>
@@ -1149,8 +1208,8 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_phone}
                   onChange={handleChange}
                   required
-                  placeholder="Emergency Contact Phone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Contact Phone"
+                  className={`w-full px-4 py-2 border ${errors.emergency_contact_phone ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
                 />
                 {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
               </div>
@@ -1164,8 +1223,8 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_relationship}
                   onChange={handleChange}
                   required
-                  placeholder="Emergency Contact Relationship"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Relationship"
+                  className={`w-full px-4 py-2 border ${errors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
                 />
                 {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
               </div>
@@ -1184,8 +1243,11 @@ const PublicEmployeeForm = () => {
                 name="tax_file_number"
                 value={formData.tax_file_number}
                 onChange={handleChange}
-                placeholder="Enter your TFN"
+                required={true}
+                placeholder="XXX XXX XXX"
+                error={errors.tax_file_number}
               />
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Superannuation Fund Name
@@ -1195,10 +1257,11 @@ const PublicEmployeeForm = () => {
                   name="superannuation_fund_name"
                   value={formData.superannuation_fund_name}
                   onChange={handleChange}
-                  placeholder="Superannuation Fund Name"
+                  placeholder="e.g., AustralianSuper, REST, Hostplus"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Superannuation Member Number
@@ -1208,10 +1271,11 @@ const PublicEmployeeForm = () => {
                   name="superannuation_member_number"
                   value={formData.superannuation_member_number}
                   onChange={handleChange}
-                  placeholder="Superannuation Member Number"
+                  placeholder="Your superannuation member number"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bank BSB
@@ -1221,59 +1285,95 @@ const PublicEmployeeForm = () => {
                   name="bank_bsb"
                   value={formData.bank_bsb}
                   onChange={handleChange}
-                  placeholder="Bank BSB (e.g., 123-456)"
+                  placeholder="XXX XXX"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
+              
               <EncryptedInput
                 label="Bank Account Number"
                 name="bank_account_number"
                 value={formData.bank_account_number}
                 onChange={handleChange}
-                placeholder="Enter your bank account number"
+                required={false}
+                placeholder="Your bank account number"
+                error={errors.bank_account_number}
               />
             </div>
           </div>
 
-          {/* Citizenship Information */}
+          {/* Employment Information */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaIdCard className="text-blue-600" /> Citizenship Information
+              <FaBriefcase className="text-green-600" /> Employment Information
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Citizenship Status
+                  Department
                 </label>
                 <select
-                  name="citizenship_status"
-                  value={formData.citizenship_status}
+                  name="department_id"
+                  value={formData.department_id}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">Select Citizenship Status</option>
-                  <option value="Australian Citizen">Australian Citizen</option>
-                  <option value="Australian Permanent Resident">Australian Permanent Resident</option>
-                  <option value="Visa Holder">Visa Holder</option>
+                  <option value="">Select Department</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
                 </select>
               </div>
               
-              {formData.citizenship_status === 'Visa Holder' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Visa Type
-                  </label>
-                  <input
-                    type="text"
-                    name="visa_type"
-                    value={formData.visa_type}
-                    onChange={handleChange}
-                    placeholder="Enter visa type"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Designation
+                </label>
+                <select
+                  name="designation_id"
+                  value={formData.designation_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map(desig => (
+                    <option key={desig.id} value={desig.id}>{desig.title}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employment Type
+                </label>
+                <select
+                  name="employment_type"
+                  value={formData.employment_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Casual">Casual</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hourly Rate (AUD)
+                </label>
+                <input
+                  type="number"
+                  name="hourly_wage"
+                  value={formData.hourly_wage}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="e.g., 25.50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
             </div>
           </div>
 
@@ -1330,7 +1430,7 @@ const PublicEmployeeForm = () => {
                   onUpload={openUploadModal}
                   onDelete={handleDeleteDocument}
                   onView={handleViewDocument}
-                  onEditDates={handleEditDates}
+                  onEdit={handleEditDocument}
                 />
               ))}
             </div>
@@ -1341,7 +1441,7 @@ const PublicEmployeeForm = () => {
               onUpload={openUploadModal}
               onDelete={handleDeleteDocument}
               onView={handleViewDocument}
-              onEditDates={handleEditDates}
+              onEdit={handleEditDocument}
             />
           </div>
         )}
