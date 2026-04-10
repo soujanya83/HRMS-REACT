@@ -1,5 +1,5 @@
 // services/employeeService.js
-import axiosClient from '../axiosClient'; // This should be at the very top
+import axiosClient from '../axiosClient';
 
 // ============================================
 // BASIC EMPLOYEE OPERATIONS
@@ -88,23 +88,8 @@ export const forceDeleteEmployee = (id) => {
  * @param {number|string} organizationId - The organization ID
  * @param {number|string} employeeId - The employee ID to sync (REQUIRED)
  * @returns {Promise} - API response with xero_employee_id
- * 
- * API Response (success): 
- * {
- *   "status": true,
- *   "message": "Employee already linked with Xero.",
- *   "xero_employee_id": "c18f519b-c615-4b72-a9fd-9aeb54844f13"
- * }
- * 
- * API Response (error - missing employee):
- * {
- *   "status": false,
- *   "message": "Sync error",
- *   "error": "No query results for model [App\\Models\\Employee\\Employee]."
- * }
  */
 export const syncEmployeeToXero = (organizationId, employeeId) => {
-  // Validate that employeeId is provided
   if (!employeeId) {
     return Promise.reject(new Error("Employee ID is required for sync"));
   }
@@ -112,7 +97,7 @@ export const syncEmployeeToXero = (organizationId, employeeId) => {
   console.log(`Syncing employee ${employeeId} to Xero...`);
   return axiosClient.post('/xero/sync-employee', {
     organization_id: organizationId.toString(),
-    employee_id: employeeId.toString()  // This is REQUIRED
+    employee_id: employeeId.toString()
   });
 };
 
@@ -166,57 +151,76 @@ export const getEmployeeProfile = (id) => {
 };
 
 // ============================================
-// DOCUMENT MANAGEMENT
+// DOCUMENT MANAGEMENT - CORRECT API ENDPOINTS
 // ============================================
 
-// Get employee documents
-export const getEmployeeDocuments = (employeeId) => {
-  console.log(`Fetching documents for employee ID: ${employeeId}`);
-  return axiosClient.get(`/employee-documents`, { 
-    params: { employee_id: employeeId } 
-  });
-};
-
-// Upload new employee document
+/**
+ * Upload a document using the store-flexible endpoint
+ * @param {FormData} documentData - FormData containing employee_id, document_type, and file
+ * @returns {Promise} - API response with document details
+ */
 export const uploadEmployeeDocument = (documentData) => {
-  console.log('DEBUG - uploadEmployeeDocument called with data:');
+  console.log('Uploading document to /employee/document/store-flexible');
   
-  // Log FormData contents for debugging
   if (documentData instanceof FormData) {
     for (let pair of documentData.entries()) {
-      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1]);
+      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
     }
   }
   
-  return axiosClient.post('/employee-documents', documentData, {
+  return axiosClient.post('/employee/document/store-flexible', documentData, {
     headers: {
       'Accept': 'application/json',
+      'Content-Type': 'multipart/form-data',
     },
   });
 };
 
-// Delete employee document
+/**
+ * Get all documents for an employee
+ * @param {number|string} employeeId - The employee ID
+ * @returns {Promise} - API response with array of documents
+ */
+export const getEmployeeDocuments = (employeeId) => {
+  console.log(`Fetching documents for employee ID: ${employeeId}`);
+  return axiosClient.get(`/employee/${employeeId}/documents`);
+};
+
+/**
+ * Get single document details
+ * @param {number|string} documentId - The document ID
+ * @returns {Promise} - API response with document details
+ */
+export const getDocumentDetails = (documentId) => {
+  console.log(`Fetching document details for ID: ${documentId}`);
+  return axiosClient.get(`/employee/document/${documentId}`);
+};
+
+/**
+ * Update document dates (issue_date and expiry_date)
+ * @param {number|string} documentId - The document ID
+ * @param {Object} datesData - Object containing issue_date and/or expiry_date
+ * @returns {Promise} - API response
+ */
+export const updateDocumentDates = (documentId, datesData) => {
+  console.log(`Updating document ${documentId} dates:`, datesData);
+  return axiosClient.post('/employee/document/update-dates', {
+    document_id: documentId,
+    issue_date: datesData.issue_date || '',
+    expiry_date: datesData.expiry_date || ''
+  });
+};
+
+/**
+ * Delete an employee document
+ * @param {number|string} documentId - The document ID
+ * @returns {Promise} - API response
+ */
 export const deleteEmployeeDocument = (documentId) => {
   console.log(`Deleting document ID: ${documentId}`);
-  return axiosClient.delete(`/employee-documents/${documentId}`);
+  return axiosClient.delete(`/employee/document/${documentId}`);
 };
 
-// Update employee document
-export const updateEmployeeDocument = (documentId, documentData) => {
-  console.log(`Updating document ID: ${documentId}`);
-  documentData.append('_method', 'PUT');
-  return axiosClient.post(`/employee-documents/${documentId}`, documentData, {
-    headers: {
-      'Accept': 'application/json',
-    },
-  });
-};
-
-
-
-// Get designations by department ID
-// In employeeService.js - update this function (around line 237)
-// employeeService.js
 // ============================================
 // DEPARTMENTS & ORGANIZATIONS
 // ============================================
@@ -226,12 +230,8 @@ export const getDepartmentsByOrganization = (orgId) => {
   console.log(`Fetching departments for organization ID: ${orgId}`);
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
-export const updateDocumentMetadata = async (documentId, data) => {
-  return await axiosClient.put(`/employee/documents/${documentId}/metadata`, data);
-};
 
-// Get designations by department ID
-// FIXED: Now accepts organizationId as a parameter
+// Get designations by organization ID
 export const getDesignationsByDeptId = async (organizationId) => {
   if (!organizationId) {
     console.error('Organization ID is required to fetch designations');
@@ -240,7 +240,6 @@ export const getDesignationsByDeptId = async (organizationId) => {
   
   console.log(`Fetching designations for organization: ${organizationId}`);
   try {
-    // Use the organization-level endpoint to get all designations
     const response = await axiosClient.get(`/organizations/${organizationId}/designations`);
     return response;
   } catch (error) {
@@ -248,6 +247,7 @@ export const getDesignationsByDeptId = async (organizationId) => {
     throw error;
   }
 };
+
 // ============================================
 // SUPER FUND SEARCH - NEW API ENDPOINT
 // ============================================
@@ -256,9 +256,6 @@ export const getDesignationsByDeptId = async (organizationId) => {
  * Search for superannuation funds by query
  * @param {string} query - Search query (minimum 1 character)
  * @returns {Promise<Array<string>>} - Array of fund names
- * 
- * API Response: Returns array of strings directly
- * Example: ["A G Williams Private Superannuation Fund", "A R Willis Private Superannuation Fund"]
  */
 export const searchSuperFunds = async (query) => {
   if (!query || query.trim().length < 1) {
@@ -271,7 +268,6 @@ export const searchSuperFunds = async (query) => {
       params: { q: query.trim() }
     });
     
-    // API returns array of strings directly
     if (Array.isArray(response.data)) {
       console.log(`Found ${response.data.length} super funds`);
       return response.data;
@@ -378,17 +374,18 @@ export const employeeService = {
   updateEmployeeManager,
   getEmployeeProfile,
   
-  // Document Management
+  // Document Management - UPDATED
   getEmployeeDocuments,
   uploadEmployeeDocument,
   deleteEmployeeDocument,
-  updateEmployeeDocument,
+  getDocumentDetails,
+  updateDocumentDates,
   
   // Departments
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
   
-  // Super Fund Search - NEW
+  // Super Fund Search
   searchSuperFunds,
   
   // Performance Reviews

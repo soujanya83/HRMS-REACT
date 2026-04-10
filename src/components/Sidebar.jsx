@@ -1,4 +1,4 @@
-// Sidebar.jsx - Complete working version with rounded right corners
+// Sidebar.jsx - Complete working version with rounded LEFT corners
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -67,10 +67,10 @@ const navLinks = [
     name: "Employee",
     icon: HiOutlineUsers,
     children: [
-      { name: "Add / Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
+      { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
       { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
-      { name: "Probation / Confirmation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
-      { name: "Exit / Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
+      { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
+      { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
     ],
   },
   {
@@ -212,9 +212,9 @@ const Sidebar = ({
           md:translate-x-0`}
         style={{ 
           backgroundColor: currentColor,
-          // 🔥 ADDED: Border radius on top-right and bottom-right corners
-          borderRadius: "0 24px 24px 0",
-          boxShadow: "4px 0 20px rgba(0, 0, 0, 0.1)"
+          // 🔥 CHANGED: Border radius on LEFT side corners (top-left and bottom-left)
+          borderRadius: "24px 0 0 24px",
+          boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.1)"
         }}
       >
         <div className="relative h-full flex flex-col">

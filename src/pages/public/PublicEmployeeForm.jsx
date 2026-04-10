@@ -49,7 +49,7 @@ import {
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   getEmployeeDocuments,
-  updateDocumentMetadata
+  updateDocumentDates  // ✅ USE THIS INSTEAD
 } from '../../services/employeeService';
 
 // ============================================
@@ -134,16 +134,13 @@ const MANDATORY_CERTIFICATES_LIST = [
 ];
 
 // ============================================
-// DOCUMENT UPLOAD MODAL
+// DOCUMENT UPLOAD MODAL - NO FILE NAME, NO DATE FIELDS
 // ============================================
 const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [showDateFields, setShowDateFields] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
-    issue_date: '',
-    expiry_date: '',
     file: null,
   });
 
@@ -151,11 +148,8 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     if (isOpen) {
       setFormData({
         document_type: preselectedDocumentType || '',
-        issue_date: '',
-        expiry_date: '',
         file: null,
       });
-      setShowDateFields(false);
       setError('');
     }
   }, [isOpen, preselectedDocumentType]);
@@ -164,11 +158,6 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setFormData({ ...formData, file: file });
-      
-      // Show date fields after file is selected
-      if (file) {
-        setShowDateFields(true);
-      }
     }
   };
 
@@ -193,27 +182,28 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       actualFormData.append('employee_id', employeeId);
       actualFormData.append('document_type', formData.document_type);
       actualFormData.append('file', formData.file);
-      
-      if (formData.issue_date) {
-        actualFormData.append('issue_date', formData.issue_date);
-      }
-      if (formData.expiry_date) {
-        actualFormData.append('expiry_date', formData.expiry_date);
-      }
 
-      await uploadEmployeeDocument(actualFormData);
-      toast.success('Document uploaded successfully!');
+      const response = await uploadEmployeeDocument(actualFormData);
+      
+      const extractedIssueDate = response.data?.issue_date;
+      const extractedExpiryDate = response.data?.expiry_date;
+      const documentId = response.data?.document_id || response.data?.id;
+      
+      if ((extractedIssueDate || extractedExpiryDate) && documentId) {
+        await updateDocumentDates(documentId, {
+          issue_date: extractedIssueDate || '',
+          expiry_date: extractedExpiryDate || ''
+        });
+        toast.success('Document uploaded! Dates automatically extracted from file.');
+      } else {
+        toast.success('Document uploaded successfully! You can add issue/expiry dates by clicking Edit.');
+      }
+      
       onUploadSuccess();
       onClose();
     } catch (err) {
       console.error('Upload error:', err);
-      if (err.response?.status === 422) {
-        const errors = err.response.data?.errors || {};
-        const errorMessages = Object.values(errors).flat();
-        setError(errorMessages.join(', ') || 'Validation failed');
-      } else {
-        setError(err.response?.data?.message || 'Failed to upload document');
-      }
+      setError(err.response?.data?.message || 'Failed to upload document');
     } finally {
       setUploading(false);
     }
@@ -223,7 +213,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-800">Upload Document</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -294,34 +284,6 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 </label>
               </div>
             </div>
-
-            {/* Issue and Expiry Dates - Show only after file selection */}
-            {showDateFields && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Issue Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.issue_date}
-                    onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expiry Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.expiry_date}
-                    onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
@@ -349,7 +311,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 };
 
 // ============================================
-// DOCUMENT METADATA EDIT MODAL
+// DOCUMENT METADATA EDIT MODAL - For manual date entry
 // ============================================
 const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) => {
   const [updating, setUpdating] = useState(false);
@@ -375,13 +337,16 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
     setError('');
 
     try {
-      await updateDocumentMetadata(document.id, formData);
-      toast.success('Document metadata updated successfully!');
+      await updateDocumentDates(document.id, {
+        issue_date: formData.issue_date,
+        expiry_date: formData.expiry_date
+      });
+      toast.success('Document dates updated successfully!');
       onUpdateSuccess();
       onClose();
     } catch (err) {
       console.error('Update error:', err);
-      setError(err.response?.data?.message || 'Failed to update document metadata');
+      setError(err.response?.data?.message || 'Failed to update document dates');
     } finally {
       setUpdating(false);
     }
@@ -411,7 +376,9 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Document Name
               </label>
-              <p className="text-sm text-gray-800 font-medium">{document?.file_name}</p>
+              <p className="text-sm text-gray-800 font-medium bg-gray-50 p-2 rounded">
+                {document?.file_name || document?.document_type}
+              </p>
             </div>
 
             <div>
@@ -424,6 +391,7 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
                 onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+              <p className="text-xs text-gray-500 mt-1">Leave empty if not applicable</p>
             </div>
 
             <div>
@@ -436,6 +404,7 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
                 onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+              <p className="text-xs text-gray-500 mt-1">Leave empty if no expiry date</p>
             </div>
           </div>
 
@@ -578,7 +547,6 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
             </div>
             <p className="text-xs text-gray-500 mt-1">{item.description}</p>
             
-            {/* Uploaded Documents List */}
             {itemDocuments.length > 0 && (
               <div className="mt-3">
                 <button
@@ -767,7 +735,6 @@ const PublicEmployeeForm = () => {
     hourly_wage: '',
   });
 
-  // Fetch employee data when organizationId is available
   useEffect(() => {
     if (organizationId) {
       fetchEmployeeData();
@@ -777,7 +744,6 @@ const PublicEmployeeForm = () => {
     }
   }, [organizationId]);
 
-  // Fetch documents when employee is created/loaded
   useEffect(() => {
     if (employeeId) {
       fetchDocuments();
@@ -993,7 +959,6 @@ const PublicEmployeeForm = () => {
     setUploadModalOpen(true);
   };
 
-  // Check if a certificate is uploaded
   const isCertificateUploaded = (certType) => {
     return documents.some(doc => 
       doc.document_type === certType || 
@@ -1001,7 +966,6 @@ const PublicEmployeeForm = () => {
     );
   };
 
-  // Get documents for a specific certificate
   const getDocumentsForCertificate = (certType) => {
     return documents.filter(doc => 
       doc.document_type === certType || 
@@ -1020,7 +984,6 @@ const PublicEmployeeForm = () => {
     );
   }
 
-  // Calculate completion percentage
   const uploadedCount = MANDATORY_CERTIFICATES_LIST.filter(cert => isCertificateUploaded(cert.type)).length;
   const completionPercentage = Math.round((uploadedCount / MANDATORY_CERTIFICATES_LIST.length) * 100);
 
@@ -1050,7 +1013,6 @@ const PublicEmployeeForm = () => {
       />
       
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Complete Your Profile</h1>
           <p className="text-gray-600 mt-2">Please fill in your details to complete your employee profile</p>
@@ -1061,7 +1023,6 @@ const PublicEmployeeForm = () => {
           )}
         </div>
 
-        {/* Success Message */}
         {submitted && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-3">
@@ -1076,9 +1037,7 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Personal Information Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          {/* Read-only Employee Info */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
               <FaUser /> Employee Information (Read Only)
@@ -1100,7 +1059,6 @@ const PublicEmployeeForm = () => {
             </p>
           </div>
 
-          {/* Personal Information */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaUser className="text-blue-600" /> Personal Information
@@ -1176,7 +1134,6 @@ const PublicEmployeeForm = () => {
             </div>
           </div>
 
-          {/* Emergency Contact */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaHeart className="text-red-500" /> Emergency Contact
@@ -1231,7 +1188,6 @@ const PublicEmployeeForm = () => {
             </div>
           </div>
 
-          {/* Tax & Financial Information */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaShieldAlt className="text-green-600" /> Tax & Financial Information
@@ -1302,82 +1258,6 @@ const PublicEmployeeForm = () => {
             </div>
           </div>
 
-          {/* Employment Information */}
-          <div className="mb-6">
-            {/* <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaBriefcase className="text-green-600" /> Employment Information
-            </h2> */}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                {/* <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label> */}
-                {/* <select
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                  ))}
-                </select> */}
-              </div>
-              
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Designation
-                </label>
-                <select
-                  name="designation_id"
-                  value={formData.designation_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Designation</option>
-                  {designations.map(desig => (
-                    <option key={desig.id} value={desig.id}>{desig.title}</option>
-                  ))}
-                </select>
-              </div> */}
-              
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employment Type
-                </label>
-                <select
-                  name="employment_type"
-                  value={formData.employment_type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Casual">Casual</option>
-                </select>
-              </div> */}
-              
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hourly Rate (AUD)
-                </label>
-                <input
-                  type="number"
-                  name="hourly_wage"
-                  value={formData.hourly_wage}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="e.g., 25.50"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div> */}
-            </div>
-          </div>
-
-          {/* Submit Button */}
           {!submitted && (
             <div className="flex justify-end pt-4 border-t border-gray-200">
               <button
@@ -1392,7 +1272,6 @@ const PublicEmployeeForm = () => {
           )}
         </form>
 
-        {/* Documents Section - Show after submission */}
         {submitted && employeeId && (
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="mb-6">
@@ -1406,7 +1285,6 @@ const PublicEmployeeForm = () => {
                 </div>
               </div>
               
-              {/* Progress Bar */}
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                 <div 
                   className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
@@ -1419,7 +1297,6 @@ const PublicEmployeeForm = () => {
               </p>
             </div>
 
-            {/* Checklist Items */}
             <div className="space-y-3">
               {MANDATORY_CERTIFICATES_LIST.map((cert) => (
                 <ChecklistItem
@@ -1435,7 +1312,6 @@ const PublicEmployeeForm = () => {
               ))}
             </div>
 
-            {/* Other Documents Section */}
             <OtherDocumentsSection
               documents={documents}
               onUpload={openUploadModal}
@@ -1446,7 +1322,6 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
           <p>Your information is secure and will be used only for employment purposes.</p>
         </div>
