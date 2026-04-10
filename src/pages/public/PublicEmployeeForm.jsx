@@ -1304,7 +1304,6 @@ const PublicEmployeeForm = () => {
 
          
 
-          {/* Submit Button */}
           {!submitted && (
             <div className="flex justify-end pt-4 border-t border-gray-200">
               <button
