@@ -1,4 +1,4 @@
-// Sidebar.jsx
+// Sidebar.jsx - Complete working version
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -135,10 +135,31 @@ const Sidebar = ({
   onLogout,
   isCollapsed,
   setIsCollapsed,
-  sidebarColor = "#1a4d4d", // Default color
+  sidebarColor = "#1a4d4d",
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
+  const [currentColor, setCurrentColor] = useState(sidebarColor);
   const location = useLocation();
+
+  // Update when prop changes
+  useEffect(() => {
+    console.log("🔵 Sidebar received color prop:", sidebarColor);
+    setCurrentColor(sidebarColor);
+  }, [sidebarColor]);
+
+  // Listen for custom event
+  useEffect(() => {
+    const handleColorChange = (event) => {
+      console.log("🎨 Sidebar heard color change event:", event.detail.color);
+      setCurrentColor(event.detail.color);
+    };
+    
+    window.addEventListener('sidebarColorChange', handleColorChange);
+    
+    return () => {
+      window.removeEventListener('sidebarColorChange', handleColorChange);
+    };
+  }, []);
 
   useEffect(() => {
     const currentParent = navLinks.find((link) => {
@@ -158,54 +179,50 @@ const Sidebar = ({
     if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
-  // Function to get darker/lighter shade for borders and hover states
-  const getDarkerShade = (color, percent = 20) => {
-    // Simple darkening function - you can adjust this
-    if (color.startsWith('#')) {
-      const num = parseInt(color.slice(1), 16);
-      const amt = Math.round(2.55 * percent);
-      const R = Math.max(0, (num >> 16) - amt);
-      const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
-      const B = Math.max(0, (num & 0x0000FF) - amt);
-      return `rgb(${R}, ${G}, ${B})`;
-    }
-    return color;
+  const getBorderColor = (color) => {
+    if (color === "#0B1A2E") return "#1a2d4e";
+    if (color === "#2C2C2C") return "#4a4a4a";
+    if (color === "#008080") return "#1a9e9e";
+    if (color === "#4B0082") return "#6b1aa3";
+    if (color === "#228B22") return "#3aad3a";
+    if (color === "#5B7B9A") return "#7b9aba";
+    if (color === "#1a4d4d") return "#2d6a6a";
+    return "#2d6a6a";
   };
 
-  const darkerColor = getDarkerShade(sidebarColor, 15);
-  const borderColor = getDarkerShade(sidebarColor, 10);
+  const borderColor = getBorderColor(currentColor);
 
   return (
     <>
-      {/* Mobile backdrop */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden ${isSidebarOpen ? "block" : "hidden"}`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar - color changes dynamically */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
           ${isCollapsed ? "md:w-24" : "md:w-64"}
           ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
-        style={{ backgroundColor: sidebarColor }}
+        style={{ backgroundColor: currentColor }}
       >
         <div className="relative h-full flex flex-col">
-          {/* Collapse/Expand button */}
           <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="bg-white bg-opacity-20 text-white p-1.5 rounded-full shadow-lg hover:bg-opacity-30 transition-colors"
+              className="text-white p-1.5 rounded-full shadow-lg transition-colors"
+              style={{ backgroundColor: borderColor }}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? <HiChevronDoubleRight size={18} /> : <HiChevronDoubleLeft size={18} />}
             </button>
           </div>
 
-          {/* Logo section */}
-          <div className="border-b h-[104px] flex-shrink-0" style={{ borderColor: borderColor }}>
+          <div
+            className="border-b h-[104px] flex-shrink-0"
+            style={{ borderColor: borderColor }}
+          >
             <div className="flex items-center p-6 h-full justify-center">
               <Link to="/dashboard" className="flex items-center">
                 <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto flex-shrink-0" />
@@ -218,7 +235,6 @@ const Sidebar = ({
             </div>
           </div>
 
-          {/* Navigation */}
           <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
             <nav className="mt-4 px-4">
               {navLinks.map((link) => (
@@ -292,8 +308,10 @@ const Sidebar = ({
             </nav>
           </div>
 
-          {/* Logout button */}
-          <div className="p-4 border-t flex-shrink-0" style={{ borderColor: borderColor }}>
+          <div
+            className="p-4 border-t flex-shrink-0"
+            style={{ borderColor: borderColor }}
+          >
             <button
               onClick={onLogout}
               className={`flex items-center w-full px-4 h-12 rounded-lg text-base font-semibold transition-colors duration-200 text-gray-300 hover:bg-white hover:bg-opacity-10 hover:text-white ${

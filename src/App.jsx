@@ -66,6 +66,9 @@ import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
 import AssignRolePage from "./pages/setting /AssignRolePage";
 
+// --- Import Theme Context ---
+import { ThemeProvider } from "./contexts/ThemeContext";
+
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
@@ -221,7 +224,11 @@ function App() {
     { path: "*", element: <Navigate to="/login" /> },
   ]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }
 
 export default App;

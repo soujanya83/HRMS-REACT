@@ -1,26 +1,18 @@
 // DashboardContent.jsx
 import { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 
-// Icons
+// Icons (same as before - keeping them to save space)
 const Icons = {
- Palette: () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    className="w-6 h-6"
-  >
-    <path
-      d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z"
-      fill="white"
-    />
-    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
-  </svg>
-),
+  Palette: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+      <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+      <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+      <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+      <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+    </svg>
+  ),
   Close: () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -98,7 +90,7 @@ const Icons = {
   ),
 };
 
-// Color Palette Modal - EXACT match to your image (same size, horizontal layout)
+// Color Palette Modal
 const ColorPaletteModal = ({
   isOpen,
   onClose,
@@ -112,10 +104,10 @@ const ColorPaletteModal = ({
   const sidebarColors = [
     { name: 'Dark Navy', value: '#0B1A2E' },
     { name: 'Charcoal', value: '#2C2C2C' },
-    { name: 'Teal', value: '#1F5F5B' },
-    { name: 'Deep Purple', value: '#3B1E54' },
-    { name: 'Forest Green', value: '#1B4332' },
-    { name: 'Slate Blue', value: '#334155' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
   ];
 
   const backgroundColors = [
@@ -135,29 +127,16 @@ const ColorPaletteModal = ({
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/20 z-[60]"
-        onClick={onClose}
-      />
-
-      {/* 🔥 RIGHT SIDE FLOATING BOX (EXACT LIKE IMAGE) */}
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
       <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
-
-        {/* Sidebar Colors */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          Sidebar Color
-        </h2>
-
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Sidebar Color</h2>
         <div className="grid grid-cols-3 gap-3 mb-5">
           {sidebarColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
               className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value
-                  ? "ring-2 ring-blue-500"
-                  : ""
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
               }`}
               style={{ backgroundColor: c.value }}
             >
@@ -166,20 +145,14 @@ const ColorPaletteModal = ({
           ))}
         </div>
 
-        {/* Background Colors */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          Background Color
-        </h2>
-
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Background Color</h2>
         <div className="grid grid-cols-3 gap-3">
           {backgroundColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
               className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value
-                  ? "ring-2 ring-blue-500"
-                  : ""
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
               }`}
               style={{ backgroundColor: c.value }}
             >
@@ -188,21 +161,8 @@ const ColorPaletteModal = ({
           ))}
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-3 mt-5">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-lg text-gray-600"
-          >
-            Reject
-          </button>
-
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg"
-          >
-            Approve
-          </button>
+          
         </div>
       </div>
     </>
@@ -326,12 +286,8 @@ const quickActions = [
 const DashboardContent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const { 
-    sidebarColor, 
-    setSidebarColor, 
-    backgroundColor, 
-    setBackgroundColor 
-  } = useOutletContext();
+  // Use the theme context instead of outlet context
+  const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
 
   // Calendar grid
   const calendarCells = [];
@@ -340,24 +296,25 @@ const DashboardContent = () => {
 
   return (
     <>
-      {/* Color Palette Button - Bottom Right */}
+      {/* Color Palette Button */}
       <button
-  onClick={() => setIsModalOpen(true)}
-  className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
->
-  <Icons.Palette />
-</button>
-      {/* Color Palette Modal - EXACT match to your image */}
+        onClick={() => setIsModalOpen(true)}
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
+      >
+        <Icons.Palette />
+      </button>
+      
+      {/* Color Palette Modal */}
       <ColorPaletteModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
-          localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
           setBackgroundColor(color);
-          localStorage.setItem('backgroundColor', color);
         }}
         currentSidebarColor={sidebarColor}
         currentBgColor={backgroundColor}
@@ -365,7 +322,7 @@ const DashboardContent = () => {
 
       {/* Main Content */}
       <div className="p-6 min-h-screen transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
-        {/* Row 1: Stat Cards */}
+        {/* Rest of your dashboard content - same as before */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
           {statCards.map((s) => (
             <DashCard key={s.label} accentColor={s.accent}>
@@ -389,7 +346,6 @@ const DashboardContent = () => {
           ))}
         </div>
 
-        {/* Row 2: Attendance & Roster */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           <DashCard accentColor="#4ECDC4">
             <CardTitle icon={<Icons.Chart />}>Attendance Summary</CardTitle>
@@ -441,7 +397,6 @@ const DashboardContent = () => {
           </DashCard>
         </div>
 
-        {/* Row 3: Calendar, Holidays, Leave */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <DashCard accentColor="#FFE66D">
             <CardTitle icon={<Icons.Calendar />}>{monthNames[month]} {year}</CardTitle>
@@ -505,7 +460,6 @@ const DashboardContent = () => {
           </DashCard>
         </div>
 
-        {/* Row 4: Performers & Dept */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           <DashCard accentColor="#4ECDC4">
             <CardTitle icon={<Icons.Chart />}>Top Performers</CardTitle>
@@ -546,7 +500,6 @@ const DashboardContent = () => {
           </DashCard>
         </div>
 
-        {/* Row 5: Announcements & Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <DashCard accentColor="#FFE66D">
             <CardTitle icon={<Icons.Mail />}>Announcements</CardTitle>
