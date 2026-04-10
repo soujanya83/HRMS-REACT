@@ -707,8 +707,6 @@ const PublicEmployeeForm = () => {
   const [errors, setErrors] = useState({});
   const [dateEditModalOpen, setDateEditModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [showTfn, setShowTfn] = useState(false);
-  const [showBankAccount, setShowBankAccount] = useState(false);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -732,10 +730,7 @@ const PublicEmployeeForm = () => {
     is_australian_citizen: false,
     is_pr: false,
     visa_type: '',
-    department_id: '',
-    designation_id: '',
-    employment_type: 'Full-time',
-    hourly_wage: '',
+    // Employment fields removed
   });
 
   // Fetch employee data when organizationId is available
@@ -787,10 +782,7 @@ const PublicEmployeeForm = () => {
           is_australian_citizen: employee.is_australian_citizen === '1' || employee.is_australian_citizen === true,
           is_pr: employee.is_pr === '1' || employee.is_pr === true,
           visa_type: employee.visa_type || '',
-          department_id: employee.department_id || '',
-          designation_id: employee.designation_id || '',
-          employment_type: employee.employment_type || 'Full-time',
-          hourly_wage: employee.hourly_wage || '',
+          // Employment fields removed
         });
         
         if (employee.organization_id) {
@@ -931,10 +923,7 @@ const PublicEmployeeForm = () => {
         is_australian_citizen: formData.is_australian_citizen,
         is_pr: formData.is_pr,
         visa_type: formData.visa_type,
-        department_id: formData.department_id,
-        designation_id: formData.designation_id,
-        employment_type: formData.employment_type,
-        hourly_wage: formData.hourly_wage,
+        // Employment fields removed from payload
       };
       
       const response = await axiosClient.post('/employee/update-profile', payload);
@@ -1050,7 +1039,7 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Personal Information Form - REMOVED Employment Information Section */}
+        {/* Personal Information Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
           {/* Personal Information */}
           <div className="mb-6">
@@ -1243,6 +1232,48 @@ const PublicEmployeeForm = () => {
                 onChange={handleChange}
                 placeholder="Enter your bank account number"
               />
+            </div>
+          </div>
+
+          {/* Citizenship Information */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+              <FaIdCard className="text-blue-600" /> Citizenship Information
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Citizenship Status
+                </label>
+                <select
+                  name="citizenship_status"
+                  value={formData.citizenship_status}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Citizenship Status</option>
+                  <option value="Australian Citizen">Australian Citizen</option>
+                  <option value="Australian Permanent Resident">Australian Permanent Resident</option>
+                  <option value="Visa Holder">Visa Holder</option>
+                </select>
+              </div>
+              
+              {formData.citizenship_status === 'Visa Holder' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Visa Type
+                  </label>
+                  <input
+                    type="text"
+                    name="visa_type"
+                    value={formData.visa_type}
+                    onChange={handleChange}
+                    placeholder="Enter visa type"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
