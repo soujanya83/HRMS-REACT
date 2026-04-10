@@ -1302,8 +1302,82 @@ const PublicEmployeeForm = () => {
             </div>
           </div>
 
-         
+          {/* Employment Information */}
+          <div className="mb-6">
+            {/* <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+              <FaBriefcase className="text-green-600" /> Employment Information
+            </h2> */}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                {/* <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label> */}
+                {/* <select
+                  name="department_id"
+                  value={formData.department_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
+                </select> */}
+              </div>
+              
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Designation
+                </label>
+                <select
+                  name="designation_id"
+                  value={formData.designation_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map(desig => (
+                    <option key={desig.id} value={desig.id}>{desig.title}</option>
+                  ))}
+                </select>
+              </div> */}
+              
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employment Type
+                </label>
+                <select
+                  name="employment_type"
+                  value={formData.employment_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Casual">Casual</option>
+                </select>
+              </div> */}
+              
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hourly Rate (AUD)
+                </label>
+                <input
+                  type="number"
+                  name="hourly_wage"
+                  value={formData.hourly_wage}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="e.g., 25.50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div> */}
+            </div>
+          </div>
 
+          {/* Submit Button */}
           {!submitted && (
             <div className="flex justify-end pt-4 border-t border-gray-200">
               <button

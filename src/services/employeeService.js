@@ -226,6 +226,9 @@ export const getDepartmentsByOrganization = (orgId) => {
   console.log(`Fetching departments for organization ID: ${orgId}`);
   return axiosClient.get(`/organizations/${orgId}/departments`);
 };
+export const updateDocumentMetadata = async (documentId, data) => {
+  return await axiosClient.put(`/employee/documents/${documentId}/metadata`, data);
+};
 
 // Get designations by department ID
 // FIXED: Now accepts organizationId as a parameter
