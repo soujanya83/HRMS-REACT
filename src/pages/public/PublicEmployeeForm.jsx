@@ -136,11 +136,16 @@ const MANDATORY_CERTIFICATES_LIST = [
 // ============================================
 // DOCUMENT UPLOAD MODAL - NO FILE NAME, NO DATE FIELDS
 // ============================================
+// ============================================
+// DOCUMENT UPLOAD MODAL - WITH DOCUMENT NAME INPUT FOR "OTHER DOCUMENT"
+// ============================================
 const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [showDocumentNameInput, setShowDocumentNameInput] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
+    custom_document_name: '', // This will be used as document_type when "Other Document" is selected
     file: null,
   });
 
@@ -148,8 +153,10 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     if (isOpen) {
       setFormData({
         document_type: preselectedDocumentType || '',
+        custom_document_name: '',
         file: null,
       });
+      setShowDocumentNameInput(preselectedDocumentType === 'Other Document');
       setError('');
     }
   }, [isOpen, preselectedDocumentType]);
@@ -161,6 +168,16 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     }
   };
 
+  const handleDocumentTypeChange = (e) => {
+    const value = e.target.value;
+    setShowDocumentNameInput(value === 'Other Document');
+    setFormData({ 
+      ...formData, 
+      document_type: value,
+      custom_document_name: '' // Reset custom name when changing selection
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -169,7 +186,13 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       return;
     }
 
-    if (!formData.document_type) {
+    // Determine the document_type value to send
+    let documentTypeToSend = formData.document_type;
+    
+    // If "Other Document" is selected and custom name is provided, use that as document_type
+    if (formData.document_type === 'Other Document' && formData.custom_document_name.trim()) {
+      documentTypeToSend = formData.custom_document_name.trim();
+    } else if (!formData.document_type) {
       setError('Please select a document type');
       return;
     }
@@ -180,7 +203,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     try {
       const actualFormData = new FormData();
       actualFormData.append('employee_id', employeeId);
-      actualFormData.append('document_type', formData.document_type);
+      actualFormData.append('document_type', documentTypeToSend);
       actualFormData.append('file', formData.file);
 
       const response = await uploadEmployeeDocument(actualFormData);
@@ -235,7 +258,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
               </label>
               <select
                 value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                onChange={handleDocumentTypeChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -251,6 +274,26 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 <option value="Other Document">📁 Other Document</option>
               </select>
             </div>
+
+            {/* Show Document Name input only when "Other Document" is selected */}
+            {showDocumentNameInput && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Document Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.custom_document_name}
+                  onChange={(e) => setFormData({ ...formData, custom_document_name: e.target.value })}
+                  placeholder="Enter document name (e.g., Resume, Cover Letter, etc.)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required={showDocumentNameInput}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This name will be used as the document type
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

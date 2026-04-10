@@ -318,6 +318,26 @@ export const getManagers = async (params = {}) => {
   }
 };
 
+
+// Add this to employeeService.js
+export const updateEmployeeDocument = async (documentId, documentData) => {
+  console.log(`Updating document ID: ${documentId}`);
+  
+  // If it's a FormData with dates
+  if (documentData instanceof FormData) {
+    return axiosClient.post(`/employee-documents/${documentId}`, documentData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+  
+  // For date updates, use the update-dates endpoint
+  return axiosClient.post('/employee/document/update-dates', {
+    document_id: documentId,
+    issue_date: documentData.issue_date || '',
+    expiry_date: documentData.expiry_date || ''
+  });
+};
+
 // Get managers with filters
 export const getManagersWithFilters = async (filters = {}) => {
   try {
