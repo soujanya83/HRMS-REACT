@@ -1,4 +1,4 @@
-// Sidebar.jsx - Complete working version
+// Sidebar.jsx - Complete working version with persistence
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -135,29 +135,43 @@ const Sidebar = ({
   onLogout,
   isCollapsed,
   setIsCollapsed,
-  sidebarColor = "#1a4d4d",
+  sidebarColor: propSidebarColor,
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  const [currentColor, setCurrentColor] = useState(sidebarColor);
+  // Initialize from localStorage FIRST, then fallback to prop
+  const [currentColor, setCurrentColor] = useState(() => {
+    const saved = localStorage.getItem('sidebarColor');
+    console.log("🟣 Sidebar initializing - localStorage:", saved, "prop:", propSidebarColor);
+    if (saved && saved !== 'undefined' && saved !== 'null') {
+      return saved;
+    }
+    return propSidebarColor || '#1a4d4d';
+  });
   const location = useLocation();
 
-  // Update when prop changes
+  // Update when prop changes (from context)
   useEffect(() => {
-    console.log("🔵 Sidebar received color prop:", sidebarColor);
-    setCurrentColor(sidebarColor);
-  }, [sidebarColor]);
+    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== currentColor) {
+      console.log("🔵 Sidebar updating from prop:", propSidebarColor);
+      setCurrentColor(propSidebarColor);
+      localStorage.setItem('sidebarColor', propSidebarColor);
+    }
+  }, [propSidebarColor]);
 
-  // Listen for custom event
+  // Listen for custom events
   useEffect(() => {
-    const handleColorChange = (event) => {
-      console.log("🎨 Sidebar heard color change event:", event.detail.color);
-      setCurrentColor(event.detail.color);
+    const handleColorUpdate = (event) => {
+      console.log("🎨 Sidebar received color update event:", event.detail.color);
+      if (event.detail.color && event.detail.color !== 'undefined') {
+        setCurrentColor(event.detail.color);
+        localStorage.setItem('sidebarColor', event.detail.color);
+      }
     };
     
-    window.addEventListener('sidebarColorChange', handleColorChange);
+    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
     
     return () => {
-      window.removeEventListener('sidebarColorChange', handleColorChange);
+      window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
     };
   }, []);
 
@@ -191,6 +205,8 @@ const Sidebar = ({
   };
 
   const borderColor = getBorderColor(currentColor);
+
+  console.log("🎨 Sidebar rendering with color:", currentColor);
 
   return (
     <>

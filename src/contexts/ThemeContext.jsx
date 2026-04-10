@@ -1,5 +1,5 @@
 // src/context/ThemeContext.jsx
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -7,46 +7,57 @@ const DEFAULT_SIDEBAR_COLOR = '#1a4d4d';
 const DEFAULT_BG_COLOR = '#F5F5F5';
 
 export const ThemeProvider = ({ children }) => {
-  const [sidebarColor, setSidebarColor] = useState(() => {
-    const saved = localStorage.getItem('sidebarColor');
-    return saved || DEFAULT_SIDEBAR_COLOR;
-  });
-  
-  const [backgroundColor, setBackgroundColor] = useState(() => {
-    const saved = localStorage.getItem('backgroundColor');
-    return saved || DEFAULT_BG_COLOR;
-  });
+  // Load from localStorage with proper initialization
+  const [sidebarColor, setSidebarColor] = useState(DEFAULT_SIDEBAR_COLOR);
+  const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BG_COLOR);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Force update function
-  const forceUpdate = useCallback(() => {
-    setSidebarColor(prev => {
-      console.log("Force update - current color:", prev);
-      return prev;
-    });
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedSidebar = localStorage.getItem('sidebarColor');
+    const savedBackground = localStorage.getItem('backgroundColor');
+    
+    console.log("📦 Loading from localStorage - Sidebar:", savedSidebar, "Background:", savedBackground);
+    
+    if (savedSidebar && savedSidebar !== 'undefined') {
+      setSidebarColor(savedSidebar);
+    }
+    if (savedBackground && savedBackground !== 'undefined') {
+      setBackgroundColor(savedBackground);
+    }
+    setIsLoaded(true);
   }, []);
 
+  // Save to localStorage whenever colors change
   useEffect(() => {
-    console.log("💾 Saving sidebar color to localStorage:", sidebarColor);
-    localStorage.setItem('sidebarColor', sidebarColor);
-    // Dispatch a custom event for other components to listen
-    window.dispatchEvent(new CustomEvent('sidebarColorChange', { detail: { color: sidebarColor } }));
-  }, [sidebarColor]);
+    if (isLoaded && sidebarColor) {
+      console.log("💾 Saving sidebar color:", sidebarColor);
+      localStorage.setItem('sidebarColor', sidebarColor);
+      // Dispatch event for Sidebar component
+      window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+    }
+  }, [sidebarColor, isLoaded]);
 
   useEffect(() => {
-    console.log("💾 Saving background color to localStorage:", backgroundColor);
-    localStorage.setItem('backgroundColor', backgroundColor);
-    window.dispatchEvent(new CustomEvent('backgroundColorChange', { detail: { color: backgroundColor } }));
-  }, [backgroundColor]);
+    if (isLoaded && backgroundColor) {
+      console.log("💾 Saving background color:", backgroundColor);
+      localStorage.setItem('backgroundColor', backgroundColor);
+    }
+  }, [backgroundColor, isLoaded]);
 
-  const updateSidebarColor = useCallback((color) => {
+  const updateSidebarColor = (color) => {
     console.log("🔄 Updating sidebar color to:", color);
     setSidebarColor(color);
-  }, []);
+  };
 
-  const updateBackgroundColor = useCallback((color) => {
+  const updateBackgroundColor = (color) => {
     console.log("🔄 Updating background color to:", color);
     setBackgroundColor(color);
-  }, []);
+  };
+
+  if (!isLoaded) {
+    return null; // or a loading spinner
+  }
 
   return (
     <ThemeContext.Provider value={{
@@ -54,7 +65,6 @@ export const ThemeProvider = ({ children }) => {
       setSidebarColor: updateSidebarColor,
       backgroundColor,
       setBackgroundColor: updateBackgroundColor,
-      forceUpdate
     }}>
       {children}
     </ThemeContext.Provider>

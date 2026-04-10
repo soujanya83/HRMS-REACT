@@ -308,14 +308,18 @@ const DashboardContent = () => {
       <ColorPaletteModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
-          setSidebarColor(color);
-        }}
-        onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
-          setBackgroundColor(color);
-        }}
+      onSidebarColorSelect={(color) => {
+  console.log('Setting sidebar color to:', color);
+  setSidebarColor(color);
+  // Also save to localStorage directly as backup
+  localStorage.setItem('sidebarColor', color);
+}}
+onBackgroundColorSelect={(color) => {
+  console.log('Setting background color to:', color);
+  setBackgroundColor(color);
+  localStorage.setItem('backgroundColor', color);
+}}
+
         currentSidebarColor={sidebarColor}
         currentBgColor={backgroundColor}
       />
