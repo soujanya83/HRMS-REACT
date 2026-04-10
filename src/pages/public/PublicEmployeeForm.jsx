@@ -398,7 +398,7 @@ const DateEditModal = ({ isOpen, onClose, document, onUpdate }) => {
       onUpdate();
       onClose();
     } catch (error) {
-      toast.error('Failed to update dates');
+      toast.error('Failed to update dates',error);
     } finally {
       setUpdating(false);
     }
@@ -870,7 +870,7 @@ const PublicEmployeeForm = () => {
       toast.success('Document deleted successfully!');
       fetchDocuments();
     } catch (error) {
-      toast.error('Failed to delete document');
+      toast.error('Failed to delete document',error);
     }
   };
 
@@ -1050,7 +1050,7 @@ const PublicEmployeeForm = () => {
           </div>
         )}
 
-        {/* Personal Information Form - REMOVED Employee Information Section */}
+        {/* Personal Information Form - REMOVED Employment Information Section */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
           {/* Personal Information */}
           <div className="mb-6">
@@ -1145,7 +1145,7 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_name}
                   onChange={handleChange}
                   required
-                  placeholder="Contact Name"
+                  placeholder="Emergency Contact Name"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
                 {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
@@ -1160,7 +1160,7 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_phone}
                   onChange={handleChange}
                   required
-                  placeholder="Contact Phone"
+                  placeholder="Emergency Contact Phone"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
                 {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
@@ -1175,7 +1175,7 @@ const PublicEmployeeForm = () => {
                   value={formData.emergency_contact_relationship}
                   onChange={handleChange}
                   required
-                  placeholder="Relationship"
+                  placeholder="Emergency Contact Relationship"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
                 {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
@@ -1232,7 +1232,7 @@ const PublicEmployeeForm = () => {
                   name="bank_bsb"
                   value={formData.bank_bsb}
                   onChange={handleChange}
-                  placeholder="Bank BSB"
+                  placeholder="Bank BSB (e.g., 123-456)"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -1243,73 +1243,6 @@ const PublicEmployeeForm = () => {
                 onChange={handleChange}
                 placeholder="Enter your bank account number"
               />
-            </div>
-          </div>
-
-          {/* Employment Information */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaBriefcase className="text-green-600" /> Employment Information
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                <select
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
-                <select
-                  name="designation_id"
-                  value={formData.designation_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select Designation</option>
-                  {designations.map(desig => (
-                    <option key={desig.id} value={desig.id}>{desig.title}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
-                <select
-                  name="employment_type"
-                  value={formData.employment_type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Casual">Casual</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate (AUD)</label>
-                <input
-                  type="number"
-                  name="hourly_wage"
-                  value={formData.hourly_wage}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Hourly Rate"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
             </div>
           </div>
 
