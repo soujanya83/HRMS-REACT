@@ -103,7 +103,7 @@ const MANDATORY_CERTIFICATES_LIST = [
     hasExpiry: false,
     description: "Flu and Pertussis recommended for childcare workers",
     icon: "💉"
-  },
+  },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
   {
     id: "code_of_conduct",
     name: "Signed Code of Conduct",

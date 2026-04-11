@@ -15,6 +15,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import ErrorPage from "./pages/ErrorPage";
 import DashboardContent from "./components/DashboardContent";
+import EmployeeDashboard2 from "./components/EmployeeDashboard2"; // ADD THIS IMPORT
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
 import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
@@ -105,7 +106,6 @@ function App() {
 
   const router = createBrowserRouter([
     // ✅ COMPLETELY PUBLIC ROUTES - No authentication check at all
-    // These routes are accessible to everyone, even if logged in
     {
       path: "/apply/:organizationId",
       element: <PublicEmployeeForm />,
@@ -131,6 +131,7 @@ function App() {
       errorElement: <ErrorPage />,
       children: [
         { index: true, element: <DashboardContent /> },
+        { path: "employee-dashboard", element: <EmployeeDashboard2 /> }, // ADD THIS ROUTE
         { path: "organizations/*", element: <OrganizationsPage /> },
         { 
           path: "recruitment", 

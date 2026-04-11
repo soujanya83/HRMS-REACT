@@ -1,4 +1,4 @@
-// Sidebar.jsx - Complete working version with rounded LEFT corners
+// Sidebar.jsx - Complete working version with rounded LEFT corners and Employee Dashboard
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -42,10 +42,12 @@ import {
   HiChevronDoubleRight,
   HiOutlineShieldCheck,
   HiOutlineKey,
+  HiOutlineUserCircle,
 } from "react-icons/hi";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
+  { name: "Employee Dashboard", path: "/dashboard/employee-dashboard", icon: HiOutlineUserCircle },
   {
     name: "Centers",
     path: "/dashboard/organizations",
@@ -212,7 +214,6 @@ const Sidebar = ({
           md:translate-x-0`}
         style={{ 
           backgroundColor: currentColor,
-          // 🔥 CHANGED: Border radius on LEFT side corners (top-left and bottom-left)
           borderRadius: "24px 0 0 24px",
           boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.1)"
         }}
