@@ -31,6 +31,103 @@ import 'react-toastify/dist/ReactToastify.css';
 import interviewService from '../../services/interviewService';
 import { getApplicants } from '../../services/recruitmentService';
 
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
+
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
+  if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
 // Helper function to get initials from name
 const getInitials = (name) => {
   if (!name || name === 'N/A' || name === 'Unknown Applicant') return 'NA';
@@ -162,42 +259,11 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, on
   );
 };
 
-// Applicant Card Component - With Name, Avatar Initials, and Rating
 // Applicant Card Component - With Average Rating Display
-// Applicant Card Component - Complete
 const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
-  const getDisplayName = (applicant) => {
-    if (applicant.name && applicant.name !== 'N/A') {
-      return applicant.name;
-    }
-    if (applicant.first_name || applicant.last_name) {
-      const firstName = applicant.first_name || '';
-      const lastName = applicant.last_name || '';
-      if (firstName || lastName) {
-        return `${firstName} ${lastName}`.trim();
-      }
-    }
-    if (applicant.email) {
-      return applicant.email.split('@')[0];
-    }
-    return 'Unknown Applicant';
-  };
-
-  const getInitials = (name) => {
-    if (!name || name === 'N/A' || name === 'Unknown Applicant') return 'NA';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) {
-      return parts[0].charAt(0).toUpperCase();
-    }
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-  };
-
   const displayName = getDisplayName(applicant);
   const initials = getInitials(displayName);
   const position = applicant.position || applicant.designation?.title || 'Applied';
-
-  // Debug log to check averageRating
-  console.log(`Applicant: ${displayName}, Rating: ${averageRating}`);
 
   return (
     <div
@@ -260,6 +326,14 @@ const InterviewPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f3f4f6';
+  });
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingQuestionId, setSavingQuestionId] = useState(null);
@@ -270,6 +344,16 @@ const InterviewPage = () => {
   const [averageRatings, setAverageRatings] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
 
   // Fetch all questions
   const fetchQuestions = useCallback(async () => {
@@ -284,32 +368,29 @@ const InterviewPage = () => {
   }, []);
 
   // Fetch all applicants with their average ratings
-  // Fetch all applicants with their average ratings
-const fetchApplicants = useCallback(async () => {
-  try {
-    const response = await getApplicants({});
-    const applicantsData = response.data?.data || [];
-    setApplicants(applicantsData);
-    
-    // ✅ Fetch average ratings for all applicants
-    for (const applicant of applicantsData) {
-      try {
-        const ratingResponse = await interviewService.getAverageRatingByApplicant(applicant.id);
-        console.log(`Rating for ${applicant.id}:`, ratingResponse.data); // Debug log
-        setAverageRatings(prev => ({
-          ...prev,
-          [applicant.id]: ratingResponse.data?.average_rating || 0
-        }));
-      } catch (error) {
-        console.error(`Error fetching rating for applicant ${applicant.id}:`, error);
-        setAverageRatings(prev => ({ ...prev, [applicant.id]: 0 }));
+  const fetchApplicants = useCallback(async () => {
+    try {
+      const response = await getApplicants({});
+      const applicantsData = response.data?.data || [];
+      setApplicants(applicantsData);
+      
+      for (const applicant of applicantsData) {
+        try {
+          const ratingResponse = await interviewService.getAverageRatingByApplicant(applicant.id);
+          setAverageRatings(prev => ({
+            ...prev,
+            [applicant.id]: ratingResponse.data?.average_rating || 0
+          }));
+        } catch (error) {
+          console.error(`Error fetching rating for applicant ${applicant.id}:`, error);
+          setAverageRatings(prev => ({ ...prev, [applicant.id]: 0 }));
+        }
       }
+    } catch (error) {
+      console.error('Error fetching applicants:', error);
+      toast.error('Failed to load applicants');
     }
-  } catch (error) {
-    console.error('Error fetching applicants:', error);
-    toast.error('Failed to load applicants');
-  }
-}, []);
+  }, []);
 
   // Fetch answers for selected applicant
   const fetchAnswersForApplicant = useCallback(async (applicantId) => {
@@ -449,7 +530,7 @@ const fetchApplicants = useCallback(async () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center transition-colors duration-300" style={{ backgroundColor }}>
         <div className="text-center">
           <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading interview data...</p>
@@ -459,245 +540,273 @@ const fetchApplicants = useCallback(async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <ToastContainer position="top-right" autoClose={3000} />
-      
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/dashboard/recruitment/interviews')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FaArrowLeft className="text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Phone Screening Interviews</h1>
-                <p className="text-sm text-gray-500">Conduct and manage phone screening interviews for candidates</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                <FaPrint size={14} /> Print
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                <FaDownload size={14} /> Export
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* Color Palette Button - Same as Dashboard */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
+      >
+        <ColorPaletteIcon />
+      </button>
 
-      <div className="flex h-[calc(100vh-85px)]">
-        {/* LEFT PANEL - Applicants List */}
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-          {/* Search and Filter */}
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <div className="relative mb-3">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-            
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'new', 'scheduled', 'in_progress', 'completed'].map(status => (
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
+      />
+
+      <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor }}>
+        <ToastContainer position="top-right" autoClose={3000} />
+        
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
                 <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                    filterStatus === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
+                  onClick={() => navigate('/dashboard/recruitment/interviews')}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  <FaArrowLeft className="text-gray-600" />
                 </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Applicants List */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {filteredApplicants.map(applicant => (
-              <ApplicantCard
-                key={applicant.id}
-                applicant={applicant}
-                isSelected={selectedApplicant?.id === applicant.id}
-                onSelect={setSelectedApplicant}
-                averageRating={averageRatings[applicant.id] || 0}
-              />
-            ))}
-            
-            {filteredApplicants.length === 0 && (
-              <div className="text-center py-12">
-                <FaUsers className="text-5xl text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No applicants found</p>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">Phone Screening Interviews</h1>
+                  <p className="text-sm text-gray-500">Conduct and manage phone screening interviews for candidates</p>
+                </div>
               </div>
-            )}
-          </div>
-          
-          {/* Footer Stats */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Total Applicants</span>
-              <span className="font-semibold text-gray-800">{applicants.length}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-gray-600">Total Questions</span>
-              <span className="font-semibold text-gray-800">{questions.length}</span>
+              
+              <div className="flex items-center gap-2">
+                <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                  <FaPrint size={14} /> Print
+                </button>
+                <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                  <FaDownload size={14} /> Export
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL - Interview Details */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
-          {selectedApplicant ? (
-            <div className="p-6 max-w-5xl mx-auto">
-              {/* Applicant Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-6 text-white shadow-lg">
-                <div className="flex items-start justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-3xl font-bold backdrop-blur-sm">
-                      {getInitials(getDisplayName(selectedApplicant))}
+        <div className="flex h-[calc(100vh-85px)]">
+          {/* LEFT PANEL - Applicants List */}
+          <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+            {/* Search and Filter */}
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="relative mb-3">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
+              
+              <div className="flex gap-2 flex-wrap">
+                {['all', 'new', 'scheduled', 'in_progress', 'completed'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      filterStatus === status
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    }`}
+                  >
+                    {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Applicants List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {filteredApplicants.map(applicant => (
+                <ApplicantCard
+                  key={applicant.id}
+                  applicant={applicant}
+                  isSelected={selectedApplicant?.id === applicant.id}
+                  onSelect={setSelectedApplicant}
+                  averageRating={averageRatings[applicant.id] || 0}
+                />
+              ))}
+              
+              {filteredApplicants.length === 0 && (
+                <div className="text-center py-12">
+                  <FaUsers className="text-5xl text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No applicants found</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Footer Stats */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Total Applicants</span>
+                <span className="font-semibold text-gray-800">{applicants.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-1">
+                <span className="text-gray-600">Total Questions</span>
+                <span className="font-semibold text-gray-800">{questions.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT PANEL - Interview Details */}
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: '#f9fafb' }}>
+            {selectedApplicant ? (
+              <div className="p-6 max-w-5xl mx-auto">
+                {/* Applicant Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-6 text-white shadow-lg">
+                  <div className="flex items-start justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-3xl font-bold backdrop-blur-sm">
+                        {getInitials(getDisplayName(selectedApplicant))}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold mb-1">{getDisplayName(selectedApplicant)}</h2>
+                        <p className="text-blue-100">{selectedApplicant.position || 'Position not set'}</p>
+                        <div className="flex flex-wrap gap-3 mt-2 text-sm text-blue-100">
+                          <span className="flex items-center gap-1">
+                            <FaEnvelope size={12} /> {selectedApplicant.email || 'No email'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FaPhoneAlt size={12} /> {selectedApplicant.phone || 'No phone'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold mb-1">{getDisplayName(selectedApplicant)}</h2>
-                      <p className="text-blue-100">{selectedApplicant.position || 'Position not set'}</p>
-                      <div className="flex flex-wrap gap-3 mt-2 text-sm text-blue-100">
-                        <span className="flex items-center gap-1">
-                          <FaEnvelope size={12} /> {selectedApplicant.email || 'No email'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FaPhoneAlt size={12} /> {selectedApplicant.phone || 'No phone'}
-                        </span>
+                    
+                    <div className="text-right bg-white/10 rounded-xl px-4 py-2 backdrop-blur-sm">
+                      <div className="text-sm opacity-90">Overall Rating</div>
+                      <div className="flex items-center gap-2">
+                        <StarRating rating={currentAvgRating} readonly size="lg" />
+                        <span className="text-2xl font-bold">{currentAvgRating.toFixed(1)}</span>
+                      </div>
+                      <div className="text-xs mt-1 opacity-75">
+                        Based on {ratedQuestions} rated answers
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Answered</p>
+                        <p className="text-2xl font-bold text-gray-800">{answeredQuestions}/{questions.length}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <FaClipboardList className="text-blue-600 text-xl" />
                       </div>
                     </div>
                   </div>
                   
-                  <div className="text-right bg-white/10 rounded-xl px-4 py-2 backdrop-blur-sm">
-                    <div className="text-sm opacity-90">Overall Rating</div>
-                    <div className="flex items-center gap-2">
-                      <StarRating rating={currentAvgRating} readonly size="lg" />
-                      <span className="text-2xl font-bold">{currentAvgRating.toFixed(1)}</span>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Rated</p>
+                        <p className="text-2xl font-bold text-gray-800">{ratedQuestions}/{questions.length}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <FaStar className="text-yellow-600 text-xl" />
+                      </div>
                     </div>
-                    <div className="text-xs mt-1 opacity-75">
-                      Based on {ratedQuestions} rated answers
+                  </div>
+                  
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Completion</p>
+                        <p className="text-2xl font-bold text-gray-800">{Math.round(completionPercentage)}%</p>
+                      </div>
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <FaChartLine className="text-green-600 text-xl" />
+                      </div>
+                    </div>
+                    <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                      <div 
+                        className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Rating</p>
+                        <p className="text-2xl font-bold text-gray-800">{currentAvgRating.toFixed(1)}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <FaMedal className="text-purple-600 text-xl" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Answered</p>
-                      <p className="text-2xl font-bold text-gray-800">{answeredQuestions}/{questions.length}</p>
+                {/* Questions Section */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <FaMicrophone className="text-blue-600" />
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FaClipboardList className="text-blue-600 text-xl" />
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">Interview Questions</h3>
                   </div>
-                </div>
-                
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Rated</p>
-                      <p className="text-2xl font-bold text-gray-800">{ratedQuestions}/{questions.length}</p>
+                  
+                  {questions.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-xl">
+                      <p className="text-gray-500">No questions available. Please add questions first.</p>
                     </div>
-                    <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                      <FaStar className="text-yellow-600 text-xl" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Completion</p>
-                      <p className="text-2xl font-bold text-gray-800">{Math.round(completionPercentage)}%</p>
-                    </div>
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <FaChartLine className="text-green-600 text-xl" />
-                    </div>
-                  </div>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                    <div 
-                      className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${completionPercentage}%` }}
-                    />
-                  </div>
-                </div>
-                
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Rating</p>
-                      <p className="text-2xl font-bold text-gray-800">{currentAvgRating.toFixed(1)}</p>
-                    </div>
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <FaMedal className="text-purple-600 text-xl" />
-                    </div>
-                  </div>
+                  ) : (
+                    questions.map((question, idx) => (
+                      <QuestionCard
+                        key={question.id}
+                        question={question}
+                        answerData={answers[question.id]}
+                        onAnswerChange={handleAnswerChange}
+                        onRatingChange={handleRatingChange}
+                        onSave={handleSaveAnswer}
+                        index={idx + 1}
+                        saving={saving}
+                        savingId={savingQuestionId}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
-
-              {/* Questions Section */}
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FaMicrophone className="text-blue-600" />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaUserTie className="text-4xl text-blue-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800">Interview Questions</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Select an Applicant</h3>
+                  <p className="text-gray-500">
+                    Choose an applicant from the left panel to conduct the phone screening interview.
+                  </p>
                 </div>
-                
-                {questions.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl">
-                    <p className="text-gray-500">No questions available. Please add questions first.</p>
-                  </div>
-                ) : (
-                  questions.map((question, idx) => (
-                    <QuestionCard
-                      key={question.id}
-                      question={question}
-                      answerData={answers[question.id]}
-                      onAnswerChange={handleAnswerChange}
-                      onRatingChange={handleRatingChange}
-                      onSave={handleSaveAnswer}
-                      index={idx + 1}
-                      saving={saving}
-                      savingId={savingQuestionId}
-                    />
-                  ))
-                )}
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-md">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaUserTie className="text-4xl text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Select an Applicant</h3>
-                <p className="text-gray-500">
-                  Choose an applicant from the left panel to conduct the phone screening interview.
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

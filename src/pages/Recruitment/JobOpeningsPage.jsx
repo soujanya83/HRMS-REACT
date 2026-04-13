@@ -26,72 +26,100 @@ import {
   deleteJobOpening,
   getJobOpeningById,
   getDepartmentsByOrgId,
-  getDesignationsByOrgId,  // ✅ ADD THIS
+  getDesignationsByOrgId,
 } from "../../services/recruitmentService";
 
-// Pastel color options for background
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
-];
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
 
-// Color Palette Component
-const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
   if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
 
   return (
     <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
-        onClick={onClose}
-      />
-      
-      {/* Side panel */}
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
-                style={{ backgroundColor: color.value }}
-              >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
-              </button>
-            ))}
-          </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb'); // Default bg-gray-50
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-          >
-            Reset to Default
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
           </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       </div>
     </>
@@ -152,16 +180,62 @@ const FormTextarea = ({ label, name, error, ...props }) => (
 );
 
 function JobOpeningsPage() {
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f9fafb';
+  });
+  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
+
   return (
-    <Routes>
-      <Route index element={<Navigate to="jobs" replace />} />
-      <Route path="jobs" element={<JobOpeningListPage />} />
-      <Route path="jobs/:jobId" element={<JobOpeningDetailPage />} />
-    </Routes>
+    <>
+      {/* Color Palette Button - Same as Dashboard */}
+      <button
+        onClick={() => setIsColorPaletteOpen(true)}
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
+      >
+        <ColorPaletteIcon />
+      </button>
+
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
+        isOpen={isColorPaletteOpen}
+        onClose={() => setIsColorPaletteOpen(false)}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
+      />
+
+      <Routes>
+        <Route index element={<Navigate to="jobs" replace />} />
+        <Route path="jobs" element={<JobOpeningListPage backgroundColor={backgroundColor} />} />
+        <Route path="jobs/:jobId" element={<JobOpeningDetailPage backgroundColor={backgroundColor} />} />
+      </Routes>
+    </>
   );
 }
 
-function JobOpeningListPage() {
+function JobOpeningListPage({ backgroundColor }) {
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,8 +244,6 @@ function JobOpeningListPage() {
   const [jobToDelete, setJobToDelete] = useState(null);
   const { selectedOrganization } = useOrganizations();
   const [modalErrors, setModalErrors] = useState(null);
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb'); // Default bg-gray-50
-  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     if (!selectedOrganization) {
@@ -236,102 +308,78 @@ function JobOpeningListPage() {
   };
 
   return (
-    <>
-      {/* Color Palette Toggle Button */}
-      <button
-        onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
-        style={{ writingMode: 'vertical-rl' }}
-      >
-        <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-sm font-medium">Colors</span>
+    <div 
+      className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+      style={{ backgroundColor }}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Job Openings</h1>
+          <button
+            onClick={() => {
+              setEditingJob(null);
+              setModalErrors(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
+          >
+            <HiPlus /> Create Job Opening
+          </button>
         </div>
-      </button>
-
-      {/* Color Palette Component */}
-      <ColorPalette 
-        isOpen={isColorPaletteOpen}
-        onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
-      />
-
-      <div 
-        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
-        style={{ backgroundColor }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Job Openings</h1>
-            <button
-              onClick={() => {
-                setEditingJob(null);
-                setModalErrors(null);
-                setIsModalOpen(true);
-              }}
-              className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
-            >
-              <HiPlus /> Create Job Opening
-            </button>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
           </div>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
-            </div>
-          ) : jobs.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {jobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  onEdit={() => {
-                    setEditingJob(job);
-                    setModalErrors(null);
-                    setIsModalOpen(true);
-                  }}
-                  onDelete={() => {
-                    setJobToDelete(job);
-                    setIsConfirmOpen(true);
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 bg-white rounded-lg shadow-md">
-              <HiOutlineBriefcase className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No job openings found
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                There are no jobs for the selected organization:{" "}
-                <span className="font-bold">{selectedOrganization?.name}</span>.
-              </p>
-            </div>
-          )}
-        </div>
-        <JobOpeningModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          job={editingJob}
-          errors={modalErrors}
-        />
-        <ConfirmationModal
-          isOpen={isConfirmOpen}
-          onClose={() => setIsConfirmOpen(false)}
-          onConfirm={handleDelete}
-          title="Delete Job Opening"
-          message={`Are you sure you want to delete "${jobToDelete?.title}"?`}
-        />
+        ) : jobs.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onEdit={() => {
+                  setEditingJob(job);
+                  setModalErrors(null);
+                  setIsModalOpen(true);
+                }}
+                onDelete={() => {
+                  setJobToDelete(job);
+                  setIsConfirmOpen(true);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white rounded-lg shadow-md">
+            <HiOutlineBriefcase className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No job openings found
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              There are no jobs for the selected organization:{" "}
+              <span className="font-bold">{selectedOrganization?.name}</span>.
+            </p>
+          </div>
+        )}
       </div>
-    </>
+      <JobOpeningModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        job={editingJob}
+        errors={modalErrors}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Job Opening"
+        message={`Are you sure you want to delete "${jobToDelete?.title}"?`}
+      />
+    </div>
   );
 }
 
 function JobCard({ job, onEdit, onDelete }) {
-  // Fixed status handling - convert to lowercase for comparison but display with proper casing
   const getStatusConfig = (status) => {
     const statusLower = status?.toLowerCase() || '';
     switch (statusLower) {
@@ -352,7 +400,6 @@ function JobCard({ job, onEdit, onDelete }) {
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-lg group relative">
-      {/* Primary blue colored status bar on the LEFT side */}
       <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
       
       <div className="p-6 pl-8">
@@ -408,14 +455,12 @@ function JobCard({ job, onEdit, onDelete }) {
   );
 }
 
-function JobOpeningDetailPage() {
+function JobOpeningDetailPage({ backgroundColor }) {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
-  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -441,7 +486,6 @@ function JobOpeningDetailPage() {
     fetchJob();
   }, [jobId]);
 
-  // Fixed status handling for detail page
   const getStatusConfig = (status) => {
     const statusLower = status?.toLowerCase() || '';
     switch (statusLower) {
@@ -498,115 +542,91 @@ function JobOpeningDetailPage() {
   }
 
   return (
-    <>
-      {/* Color Palette Toggle Button */}
-      <button
-        onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
-        style={{ writingMode: 'vertical-rl' }}
-      >
-        <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-sm font-medium">Colors</span>
-        </div>
-      </button>
-
-      {/* Color Palette Component */}
-      <ColorPalette 
-        isOpen={isColorPaletteOpen}
-        onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
-      />
-
-      <div 
-        className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
-        style={{ backgroundColor }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
-          >
-            <HiArrowLeft /> Back to Job Openings
-          </button>
-          <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 relative">
-            {/* Status bar on the LEFT side */}
-            {statusConfig && (
-              <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
-            )}
-            
-            <div className="pl-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
-                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
-                    <span className="flex items-center gap-1.5">
-                      <HiOutlineOfficeBuilding />
-                      {job.organization?.name || 'No organization'}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <HiOutlineLocationMarker />
-                      {job.location || 'Remote'}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <HiOutlineClock />
-                      {job.employment_type || 'Full-time'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {statusConfig && (
-                    <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusConfig.color}`}>
-                      {statusConfig.text}
-                    </span>
-                  )}
-                  <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
-                    <HiPencil /> Edit
-                  </button>
+    <div 
+      className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
+      style={{ backgroundColor }}
+    >
+      <div className="max-w-4xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-brand-blue hover:underline mb-4 font-semibold"
+        >
+          <HiArrowLeft /> Back to Job Openings
+        </button>
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 relative">
+          {statusConfig && (
+            <div className={`absolute top-0 left-0 w-2 h-full ${statusConfig.badgeColor}`}></div>
+          )}
+          
+          <div className="pl-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
+                <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-2 text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineOfficeBuilding />
+                    {job.organization?.name || 'No organization'}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineLocationMarker />
+                    {job.location || 'Remote'}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HiOutlineClock />
+                    {job.employment_type || 'Full-time'}
+                  </span>
                 </div>
               </div>
-              <hr className="my-6" />
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Description
-                </h3>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {job.description || 'No description provided.'}
-                </p>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {statusConfig && (
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusConfig.color}`}>
+                    {statusConfig.text}
+                  </span>
+                )}
+                <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                  <HiPencil /> Edit
+                </button>
               </div>
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Requirements
-                </h3>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {job.requirements || 'No requirements provided.'}
-                </p>
+            </div>
+            <hr className="my-6" />
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Description
+              </h3>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {job.description || 'No description provided.'}
+              </p>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Requirements
+              </h3>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {job.requirements || 'No requirements provided.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div>
+                <span className="font-semibold">Posting Date:</span>{' '}
+                {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : 'Not specified'}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <span className="font-semibold">Posting Date:</span>{' '}
-                  {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : 'Not specified'}
-                </div>
-                <div>
-                  <span className="font-semibold">Closing Date:</span>{' '}
-                  {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
-                </div>
-                <div>
-                  <span className="font-semibold">Room:</span>{' '}
-                  {job.department?.name || 'Not specified'}
-                </div>
-                <div>
-                  <span className="font-semibold">Designation:</span>{' '}
-                  {job.designation?.title || 'Not specified'}
-                </div>
+              <div>
+                <span className="font-semibold">Closing Date:</span>{' '}
+                {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'Not specified'}
+              </div>
+              <div>
+                <span className="font-semibold">Room:</span>{' '}
+                {job.department?.name || 'Not specified'}
+              </div>
+              <div>
+                <span className="font-semibold">Designation:</span>{' '}
+                {job.designation?.title || 'Not specified'}
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -639,7 +659,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     } : {
       title: "",
       location: "",
-      employment_type: "full-time",  // ✅ Changed to lowercase
+      employment_type: "full-time",
       status: "open",
       description: "",
       requirements: "",
@@ -652,7 +672,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     setFormData(initialData);
 
     if (isOpen && selectedOrganization) {
-      // Get departments
       getDepartmentsByOrgId(selectedOrganization.id)
         .then((res) => {
           setDepartments(res.data.data || []);
@@ -662,7 +681,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
           setDepartments([]);
         });
 
-      // Get all designations for the organization
       getDesignationsByOrgId(selectedOrganization.id)
         .then((res) => {
           setDesignations(res.data.data || []);
@@ -688,7 +706,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
     
     console.log('📤 Submitting job opening:', formData);
     
-    // Validate required fields
     if (!formData.title) {
       alert('Job Title is required');
       return;
@@ -725,7 +742,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Job Title */}
               <div className="sm:col-span-2">
                 <FormInput
                   label="Job Title"
@@ -778,7 +794,6 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
                 required
               />
               
-              {/* ✅ FIXED: Employment Type with correct values */}
               <FormSelect
                 label="Employment Type"
                 name="employment_type"

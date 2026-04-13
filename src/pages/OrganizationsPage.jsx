@@ -27,6 +27,103 @@ import {
   deleteDesignation,
 } from "../services/organizationService";
 
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
+
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
+  if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
 // Timezone data with Australian timezones prioritized
 const TIMEZONES = [
   "Australia/Sydney",
@@ -312,8 +409,8 @@ const getColorWithOpacity = (colorValue, opacity = 0.1) => {
   return colorValue;
 };
 
-// Color Palette Component
-const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+// Color Palette Component (For Rooms - kept separate)
+const RoomColorPalette = ({ isOpen, onClose, onColorSelect }) => {
   if (!isOpen) return null;
 
   return (
@@ -478,6 +575,9 @@ function OrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [activeTab, setActiveTab] = useState("rooms");
   const [backgroundColor, setBackgroundColor] = useState("#f9fafb");
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -497,6 +597,13 @@ function OrganizationsPage() {
   const [isDesignationConfirmOpen, setIsDesignationConfirmOpen] =
     useState(false);
   const [designationToDelete, setDesignationToDelete] = useState(null);
+
+  // Save sidebar color to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    // Dispatch custom event to update sidebar
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
 
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
@@ -776,33 +883,30 @@ function OrganizationsPage() {
   return (
     <RoomModalContext.Provider value={roomModalContextValue}>
       <DesignationModalContext.Provider value={designationModalContextValue}>
+        {/* Color Palette Button - Same as Dashboard */}
         <button
           onClick={() => setIsColorPaletteOpen(true)}
-          className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
-          style={{ writingMode: "vertical-rl" }}
+          className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
         >
-          <div className="flex items-center space-x-2">
-            <svg
-              className="w-5 h-5 rotate-90"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-              />
-            </svg>
-            <span className="text-sm font-medium">Colors</span>
-          </div>
+          <ColorPaletteIcon />
         </button>
 
-        <ColorPalette
+        {/* Color Palette Modal - Same as Dashboard */}
+        <ColorPaletteModal
           isOpen={isColorPaletteOpen}
           onClose={() => setIsColorPaletteOpen(false)}
-          onColorSelect={setBackgroundColor}
+          onSidebarColorSelect={(color) => {
+            console.log('Setting sidebar color to:', color);
+            setSidebarColor(color);
+            localStorage.setItem('sidebarColor', color);
+          }}
+          onBackgroundColorSelect={(color) => {
+            console.log('Setting background color to:', color);
+            setBackgroundColor(color);
+            localStorage.setItem('backgroundColor', color);
+          }}
+          currentSidebarColor={sidebarColor}
+          currentBgColor={backgroundColor}
         />
 
         <div
@@ -905,7 +1009,7 @@ function OrganizationsPage() {
   );
 }
 
-// ============ Sub-Components ============
+// ============ Sub-Components (same as before) ============
 
 function OrganizationListView({
   isLoading,

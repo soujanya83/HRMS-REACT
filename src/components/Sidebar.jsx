@@ -1,4 +1,4 @@
-// Sidebar.jsx - Complete working version with rounded LEFT corners and Employee Dashboard
+// Sidebar.jsx - Rectangle type with 4-side spacing (margin on all sides)
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -145,7 +145,7 @@ const Sidebar = ({
     if (saved && saved !== 'undefined' && saved !== 'null') {
       return saved;
     }
-    return propSidebarColor || '#1a4d4d';
+    return propSidebarColor || '#0f2b2b';
   });
   const location = useLocation();
 
@@ -186,18 +186,18 @@ const Sidebar = ({
     if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
-  const getBorderColor = (color) => {
+  const getToggleButtonColor = (color) => {
     if (color === "#0B1A2E") return "#1a2d4e";
     if (color === "#2C2C2C") return "#4a4a4a";
     if (color === "#1F5F5B") return "#3a8a85";
     if (color === "#3B1E54") return "#5a2a7a";
     if (color === "#1B4332") return "#2d6a4f";
     if (color === "#334155") return "#4a5a6e";
-    if (color === "#1a4d4d") return "#2d6a6a";
-    return "#2d6a6a";
+    if (color === "#0f2b2b") return "#1a4d4d";
+    return color;
   };
 
-  const borderColor = getBorderColor(currentColor);
+  const toggleButtonColor = getToggleButtonColor(currentColor);
 
   return (
     <>
@@ -206,132 +206,151 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
+      {/* Sidebar with margin on ALL FOUR SIDES */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
-          ${isCollapsed ? "md:w-24" : "md:w-64"}
-          ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
+          ${isCollapsed ? "md:w-20" : "md:w-56"}
+          ${isSidebarOpen ? "translate-x-0 w-56" : "-translate-x-full w-56"} 
           md:translate-x-0`}
         style={{ 
-          backgroundColor: currentColor,
-          borderRadius: "24px 0 0 24px",
-          boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.1)"
+          backgroundColor: "transparent",
+          padding: "12px 0 12px 12px", // Top, Right, Bottom, Left spacing
         }}
       >
-        <div className="relative h-full flex flex-col">
-          <div className="absolute top-[104px] -right-4 -translate-y-1/2 hidden md:block z-10">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="text-white p-1.5 rounded-full shadow-lg transition-colors"
-              style={{ backgroundColor: borderColor }}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? <HiChevronDoubleRight size={18} /> : <HiChevronDoubleLeft size={18} />}
-            </button>
-          </div>
-
-          <div
-            className="border-b h-[104px] flex-shrink-0"
-            style={{ borderColor: borderColor }}
-          >
-            <div className="flex items-center p-6 h-full justify-center">
-              <Link to="/dashboard" className="flex items-center">
-                <img src={logoIcon} alt="CHRISPP Icon" className="h-10 w-auto flex-shrink-0" />
-                <img
-                  src={logoText}
-                  alt="CHRISPP Text"
-                  className={`h-7 w-auto ml-3 transition-all duration-200 ${isCollapsed ? "w-0 opacity-0" : "opacity-100"}`}
-                />
-              </Link>
+        {/* Inner Sidebar Box */}
+        <div
+          className="h-full w-full flex flex-col justify-between overflow-hidden"
+          style={{ 
+            backgroundColor: currentColor,
+            borderRadius: "16px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
+          }}
+        >
+          <div className="relative h-full flex flex-col">
+            {/* Collapse Toggle Button */}
+            <div className="absolute top-[72px] -right-3 -translate-y-1/2 hidden md:block z-10">
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-white p-1.5 rounded-full shadow-md transition-all duration-200 hover:scale-105"
+                style={{ backgroundColor: toggleButtonColor }}
+                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isCollapsed ? <HiChevronDoubleRight size={14} /> : <HiChevronDoubleLeft size={14} />}
+              </button>
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
-            <nav className="mt-4 px-4">
-              {navLinks.map((link) => (
-                <div key={link.name} className="my-2">
-                  {!link.children ? (
-                    <NavLink
-                      to={link.path}
-                      end
-                      className={({ isActive }) =>
-                        `flex items-center px-4 h-14 my-1 rounded-lg text-base transition-colors duration-200 ${
-                          isCollapsed ? "justify-center" : ""
-                        } ${
-                          isActive
-                            ? "text-white font-semibold bg-white bg-opacity-20 shadow-lg"
-                            : "text-gray-300 font-semibold hover:bg-white hover:bg-opacity-10 hover:text-white"
-                        }`
-                      }
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <link.icon size={22} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`} />
-                      <span className={isCollapsed ? "hidden" : "block"}>{link.name}</span>
-                    </NavLink>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleMenuClick(link.name)}
-                        className={`flex items-center w-full px-4 h-14 rounded-lg text-base text-gray-300 font-semibold transition-colors duration-200 text-left hover:bg-white hover:bg-opacity-10 hover:text-white ${
-                          isCollapsed ? "justify-center" : "justify-between"
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <link.icon size={22} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`} />
-                          <span className={isCollapsed ? "hidden" : "block"}>{link.name}</span>
-                        </div>
-                        <HiChevronDown
-                          className={`transition-transform duration-300 ${isCollapsed ? "hidden" : "block"} ${
-                            openMenu === link.name ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                      <div
-                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                          openMenu === link.name && !isCollapsed ? "max-h-screen" : "max-h-0"
-                        }`}
-                      >
-                        <div className="py-2 pl-4">
-                          {link.children.map((child) => (
-                            <NavLink
-                              key={child.name}
-                              to={child.path}
-                              className={({ isActive }) =>
-                                `flex items-center w-full px-4 py-2.5 my-1 rounded-lg text-sm transition-colors duration-200 ${
-                                  isActive
-                                    ? "text-white font-semibold bg-white bg-opacity-20"
-                                    : "text-gray-400 hover:bg-white hover:bg-opacity-10 hover:text-white"
-                                }`
-                              }
-                              onClick={() => setSidebarOpen(false)}
-                              end={child.exact || false}
-                            >
-                              <child.icon size={18} className="mr-3 flex-shrink-0" />
-                              {child.name}
-                            </NavLink>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
-
-          <div
-            className="p-4 border-t flex-shrink-0"
-            style={{ borderColor: borderColor }}
-          >
-            <button
-              onClick={onLogout}
-              className={`flex items-center w-full px-4 h-12 rounded-lg text-base font-semibold transition-colors duration-200 text-gray-300 hover:bg-white hover:bg-opacity-10 hover:text-white ${
-                isCollapsed ? "justify-center" : ""
-              }`}
+            {/* Logo Section */}
+            <div
+              className="border-b h-[72px] flex-shrink-0"
+              style={{ borderColor: `${currentColor}80` }}
             >
-              <HiOutlineLogout size={22} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-4"}`} />
-              <span className={isCollapsed ? "hidden" : "block"}>Logout</span>
-            </button>
+              <div className="flex items-center p-4 h-full justify-center">
+                <Link to="/dashboard" className="flex items-center">
+                  <img
+                    src={logoIcon}
+                    alt="CHRISPP Icon"
+                    className="h-7 w-auto flex-shrink-0"
+                  />
+                  <img
+                    src={logoText}
+                    alt="CHRISPP Text"
+                    className={`h-5 w-auto ml-2 transition-all duration-200 ${isCollapsed ? "w-0 opacity-0 hidden" : "opacity-100 block"}`}
+                  />
+                </Link>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex-1 overflow-y-auto scrollbar-hide pb-3">
+              <nav className="mt-3 px-3">
+                {navLinks.map((link) => (
+                  <div key={link.name} className="mb-0.5">
+                    {!link.children ? (
+                      <NavLink
+                        to={link.path}
+                        end
+                        className={({ isActive }) =>
+                          `flex items-center px-3 h-9 my-0.5 text-sm transition-all duration-200 ${
+                            isCollapsed ? "justify-center" : ""
+                          } ${
+                            isActive
+                              ? "text-white font-semibold bg-white/15"
+                              : "text-gray-300/80 font-medium hover:bg-white/10 hover:text-white"
+                          }`
+                        }
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <link.icon size={18} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
+                        <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                      </NavLink>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleMenuClick(link.name)}
+                          className={`flex items-center w-full px-3 h-9 text-sm text-gray-300/80 font-medium transition-all duration-200 text-left hover:bg-white/10 hover:text-white ${
+                            isCollapsed ? "justify-center" : "justify-between"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <link.icon size={18} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
+                            <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                          </div>
+                          <HiChevronDown
+                            size={14}
+                            className={`transition-transform duration-200 ${isCollapsed ? "hidden" : "block"} ${
+                              openMenu === link.name ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        <div
+                          className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                            openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
+                          }`}
+                        >
+                          <div className="py-1 pl-7">
+                            {link.children.map((child) => (
+                              <NavLink
+                                key={child.name}
+                                to={child.path}
+                                className={({ isActive }) =>
+                                  `flex items-center w-full px-3 py-1.5 my-0.5 text-xs transition-all duration-200 ${
+                                    isActive
+                                      ? "text-white font-medium bg-white/15"
+                                      : "text-gray-400/80 hover:bg-white/10 hover:text-white"
+                                  }`
+                                }
+                                onClick={() => setSidebarOpen(false)}
+                                end={child.exact || false}
+                              >
+                                <child.icon size={14} className="mr-2 flex-shrink-0" />
+                                <span className="text-xs">{child.name}</span>
+                              </NavLink>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </nav>
+            </div>
+
+            {/* Logout Button */}
+            <div
+              className="p-3 border-t flex-shrink-0"
+              style={{ borderColor: `${currentColor}80` }}
+            >
+              <button
+                onClick={onLogout}
+                className={`flex items-center w-full px-3 h-9 text-sm font-medium transition-all duration-200 text-gray-300/80 hover:bg-white/10 hover:text-white ${
+                  isCollapsed ? "justify-center" : ""
+                }`}
+              >
+                <HiOutlineLogout size={18} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
+                <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
