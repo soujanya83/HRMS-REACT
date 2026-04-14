@@ -1,18 +1,18 @@
-// import React from 'react';
-// import { useParams } from 'react-router-dom';
-// import EmployeeDocuments from './EmployeeDocuments';
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import EmployeeDocuments from './EmployeeDocuments';
 
-// const EmployeeDocumentsPage = () => {
-//   const { id } = useParams();
+const EmployeeDocumentsPage = () => {
+  const { id } = useParams();
   
-//   return (
-//     <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
-//       <div className="max-w-6xl mx-auto">
-//         <h1 className="text-2xl font-bold text-gray-800 mb-6">Employee Documents</h1>
-//         <EmployeeDocuments employeeId={id} />
-//       </div>
-//     </div>
-//   );
-// };
+  return (
+    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Employee Documents</h1>
+        <EmployeeDocuments employeeId={id} />
+      </div>
+    </div>
+  );
+};
 
-// export default EmployeeDocumentsPage;
+export default EmployeeDocumentsPage;
