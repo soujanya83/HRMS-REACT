@@ -1,4 +1,4 @@
-// Sidebar.jsx - Rectangle type with 4-side spacing (margin on all sides)
+// Sidebar.jsx - Rectangle type with 4-side spacing (margin on all sides) - NO ROUNDED CORNERS
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -206,7 +206,7 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar with margin on ALL FOUR SIDES */}
+      {/* Sidebar with margin on ALL FOUR SIDES - RECTANGLE TYPE (NO ROUNDED CORNERS) */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
@@ -218,12 +218,12 @@ const Sidebar = ({
           padding: "12px 0 12px 12px", // Top, Right, Bottom, Left spacing
         }}
       >
-        {/* Inner Sidebar Box */}
+        {/* Inner Sidebar Box - RECTANGLE with STRAIGHT CORNERS */}
         <div
           className="h-full w-full flex flex-col justify-between overflow-hidden"
           style={{ 
             backgroundColor: currentColor,
-            borderRadius: "16px",
+            borderRadius: "0px", // NO ROUNDED CORNERS - RECTANGLE TYPE
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
           }}
         >
