@@ -30,69 +30,97 @@ import { useOrganizations } from '../../contexts/OrganizationContext';
 import shiftSchedulingService from '../../services/shiftSchedulingService';
 import employeeService from '../../services/employeeService';
 
-// Pastel color options for background
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
-];
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
 
-// Color Palette Component
-const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
   if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
 
   return (
     <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
-        onClick={onClose}
-      />
-      
-      {/* Side panel */}
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-4 rounded-lg transition-transform hover:scale-105 flex items-center justify-between"
-                style={{ backgroundColor: color.value }}
-              >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300" style={{ backgroundColor: color.value }} />
-              </button>
-            ))}
-          </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb'); // Default bg-gray-50
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-          >
-            Reset to Default
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
           </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       </div>
     </>
@@ -110,13 +138,28 @@ const ShiftScheduling = () => {
   const [showDeleted, setShowDeleted] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f9fafb';
+  });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [hourlyRates, setHourlyRates] = useState({});
   const [loadingRates, setLoadingRates] = useState(false);
 
   const { selectedOrganization, organizations, isLoading: orgLoading } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
 
   const [newShift, setNewShift] = useState({
     organization_id: organizationId,
@@ -625,7 +668,10 @@ const ShiftScheduling = () => {
 
   if (orgLoading) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+      <div 
+        className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading organization data...</p>
@@ -636,7 +682,10 @@ const ShiftScheduling = () => {
 
   if (!organizationId && organizations.length === 0) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+      <div 
+        className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center max-w-md">
           <FaExclamationTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
           <h2 className="text-xl font-bold text-gray-800 mb-2">No Organization</h2>
@@ -648,29 +697,34 @@ const ShiftScheduling = () => {
 
   return (
     <>
-      {/* Color Palette Toggle Button */}
+      {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-30 group"
-        style={{ writingMode: 'vertical-rl' }}
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
       >
-        <div className="flex items-center space-x-1">
-          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-xs font-medium">Colors</span>
-        </div>
+        <ColorPaletteIcon />
       </button>
 
-      {/* Color Palette Component */}
-      <ColorPalette 
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
       />
 
       <div 
-        className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans transition-colors duration-300"
+        className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
@@ -1115,42 +1169,6 @@ const ShiftScheduling = () => {
                         </div>
                       </div>
                     </div>
-
-                    {/* Optional: Employee Assignment Section (you can uncomment this if you want to add employees to shifts) */}
-                    {/* 
-                    <div className="border-t pt-6 mb-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <FaUser className="text-blue-500" />
-                        Employee Assignment (Optional)
-                      </h3>
-                      
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Select Employee
-                        </label>
-                        <select
-                          name="employee_id"
-                          value={newShift.employee_id}
-                          onChange={handleInputChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select an employee (optional)</option>
-                          {employees.map(employee => (
-                            <option key={employee.id} value={employee.id}>
-                              {employee.first_name} {employee.last_name} - {employee.employee_code || 'No Code'}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {loadingRates && (
-                        <div className="text-center py-2">
-                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span className="ml-2 text-sm text-gray-500">Loading employees...</span>
-                        </div>
-                      )}
-                    </div>
-                    */}
 
                     {/* Shift Times Section */}
                     <div className="border-t pt-6 mb-6">

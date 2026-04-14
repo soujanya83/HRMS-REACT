@@ -30,77 +30,97 @@ import { HiX } from "react-icons/hi";
 import shiftSwapService from "../../services/shiftSwapService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
-// Pastel color options for background
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
-];
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
 
-// Color Palette Component
-const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
   if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
 
   return (
     <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      {/* Side panel */}
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
-              aria-label="Close color palette"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                style={{ backgroundColor: color.value }}
-                aria-label={`Select ${color.name} background`}
-              >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div 
-                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
-                  style={{ backgroundColor: color.value }} 
-                  aria-hidden="true"
-                />
-              </button>
-            ))}
-          </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb');
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
-            aria-label="Reset to default background"
-          >
-            Reset to Default
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
           </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       </div>
     </>
@@ -119,7 +139,12 @@ const ShiftSwapping = () => {
   const [rosters, setRosters] = useState([]);
   const [shifts, setShifts] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f9fafb';
+  });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
@@ -128,7 +153,17 @@ const ShiftSwapping = () => {
     employee: "all",
   });
 
-  // NEW: State for rate calculations
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
+
+  // State for rate calculations
   const [employeeRates, setEmployeeRates] = useState({});
   const [ratesLoading, setRatesLoading] = useState(false);
   const [swapAmountDifference, setSwapAmountDifference] = useState(0);
@@ -151,7 +186,7 @@ const ShiftSwapping = () => {
     }
   }, [selectedOrganization]);
 
-  // NEW: Calculate net working hours from shift
+  // Calculate net working hours from shift
   const calculateNetWorkingHours = (shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 8; // Default 8 hours
     
@@ -171,12 +206,12 @@ const ShiftSwapping = () => {
     return parseFloat(totalDuration.toFixed(2));
   };
 
-  // NEW: Get employee hourly rate
+  // Get employee hourly rate
   const getEmployeeRate = (employeeId) => {
     return employeeRates[employeeId] || 25; // Default fallback rate
   };
 
-  // NEW: Calculate shift amount
+  // Calculate shift amount
   const calculateShiftAmount = (rosterId) => {
     const roster = rosters.find(r => r.id == rosterId);
     if (!roster) return 0;
@@ -190,7 +225,7 @@ const ShiftSwapping = () => {
     return hours * rate;
   };
 
-  // NEW: Calculate difference between two shifts being swapped
+  // Calculate difference between two shifts being swapped
   const calculateSwapDifference = (requesterRosterId, requestedRosterId) => {
     const requesterAmount = calculateShiftAmount(requesterRosterId);
     const requestedAmount = calculateShiftAmount(requestedRosterId);
@@ -198,7 +233,7 @@ const ShiftSwapping = () => {
     return requestedAmount - requesterAmount;
   };
 
-  // NEW: Update swap difference when selected rosters change
+  // Update swap difference when selected rosters change
   useEffect(() => {
     if (newRequest.requester_roster_id && newRequest.requested_roster_id) {
       const difference = calculateSwapDifference(
@@ -268,7 +303,7 @@ const ShiftSwapping = () => {
         }));
         setEmployees(formattedEmployees);
         
-        // NEW: Extract and store employee rates
+        // Extract and store employee rates
         const rates = {};
         employeesData.forEach(emp => {
           rates[emp.id] = emp.hourly_wage || emp.pay_rate || emp.rate || 25;
@@ -718,7 +753,10 @@ const ShiftSwapping = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+      <div 
+        className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading shift swap data...</p>
@@ -729,30 +767,34 @@ const ShiftSwapping = () => {
 
   return (
     <>
-      {/* Color Palette Toggle Button */}
+      {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
-        style={{ writingMode: 'vertical-rl' }}
-        aria-label="Open color palette"
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
       >
-        <div className="flex items-center space-x-1">
-          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-xs font-medium">Colors</span>
-        </div>
+        <ColorPaletteIcon />
       </button>
 
-      {/* Color Palette Component */}
-      <ColorPalette 
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
       />
 
       <div 
-        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        className="p-6 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
@@ -1028,9 +1070,7 @@ const ShiftSwapping = () => {
                                 </div>
                               </div>
                             </div>
-                          </td>
-
-                          {/* Shift Dates & Times */}
+                           </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="space-y-2">
                               <div>
@@ -1056,9 +1096,7 @@ const ShiftSwapping = () => {
                                 </div>
                               </div>
                             </div>
-                          </td>
-
-                          {/* Rate & Amount */}
+                           </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="space-y-2">
                               <div>
@@ -1077,24 +1115,18 @@ const ShiftSwapping = () => {
                                 Diff: {formatCurrency(difference)}
                               </div>
                             </div>
-                          </td>
-
-                          {/* Reason */}
+                           </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="text-sm text-gray-900 max-w-xs">
                               {request.requester_reason || "No reason provided"}
                             </div>
-                          </td>
-
-                          {/* Status */}
+                           </td>
                           <td className="px-4 py-3 w-[12%] min-w-[100px]">
                             {getStatusBadge(request.status)}
                             <div className="text-xs text-gray-500 mt-1">
                               {request.created_at && formatDate(request.created_at)}
                             </div>
-                          </td>
-
-                          {/* Actions */}
+                           </td>
                           <td className="px-4 py-3 w-[16%] min-w-[150px] text-sm font-medium">
                             <div className="flex gap-2">
                               <button
@@ -1132,13 +1164,13 @@ const ShiftSwapping = () => {
                                 <FaTrash />
                               </button>
                             </div>
-                          </td>
-                        </tr>
+                           </td>
+                         </tr>
                       );
                     })
                   )}
                 </tbody>
-              </table>
+               </table>
             </div>
           </div>
 
@@ -1276,7 +1308,7 @@ const ShiftSwapping = () => {
                       </div>
                     )}
 
-                    {/* NEW: Swap Difference Summary */}
+                    {/* Swap Difference Summary */}
                     {newRequest.requester_roster_id && newRequest.requested_roster_id && (
                       <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
                         <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">

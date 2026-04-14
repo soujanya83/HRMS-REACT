@@ -26,79 +26,99 @@ import {
 import { HiX } from "react-icons/hi";
 import { useOrganizations } from '../../contexts/OrganizationContext';
 import { timesheetService } from '../../services/timesheetService';
-import employeeService from '../../services/employeeService'; // Import employee service
+import employeeService from '../../services/employeeService';
 
-// Pastel color options for background
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
-];
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
 
-// Color Palette Component
-const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
   if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
 
   return (
     <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      {/* Side panel */}
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
-              aria-label="Close color palette"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                style={{ backgroundColor: color.value }}
-                aria-label={`Select ${color.name} background`}
-              >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div 
-                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
-                  style={{ backgroundColor: color.value }} 
-                  aria-hidden="true"
-                />
-              </button>
-            ))}
-          </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb');
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
-            aria-label="Reset to default background"
-          >
-            Reset to Default
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
           </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       </div>
     </>
@@ -111,8 +131,16 @@ const TimesheetApprovals = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  
+  // Color palette state
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f9fafb';
+  });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  
   const [filters, setFilters] = useState({
     status: 'all',
     employee: 'all',
@@ -130,6 +158,16 @@ const TimesheetApprovals = () => {
   const [ratesLoading, setRatesLoading] = useState(false);
   const [timesheetAmounts, setTimesheetAmounts] = useState({});
   const [totalSelectedAmount, setTotalSelectedAmount] = useState(0);
+
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
 
   useEffect(() => {
     fetchTimesheets();
@@ -160,11 +198,9 @@ const TimesheetApprovals = () => {
     
     setRatesLoading(true);
     try {
-      // Use employeeService to get employees with their rates
       const response = await employeeService.getEmployees({ organization_id: selectedOrganization.id });
       console.log('👥 Employees API response:', response);
       
-      // Extract employees data from response
       let employeesData = [];
       if (response?.data) {
         if (Array.isArray(response.data)) {
@@ -174,10 +210,8 @@ const TimesheetApprovals = () => {
         }
       }
       
-      // Build rates object
       const rates = {};
       employeesData.forEach(emp => {
-        // Try different possible rate fields
         rates[emp.id] = emp.hourly_wage || emp.pay_rate || emp.rate || 25;
       });
       
@@ -185,7 +219,6 @@ const TimesheetApprovals = () => {
       console.log('💰 Employee rates loaded:', rates);
     } catch (error) {
       console.error('Error fetching employee rates:', error);
-      // Set default rates as fallback
       const defaultRates = {};
       timesheets.forEach(ts => {
         const empId = ts.employee_id || ts.employee?.id;
@@ -208,14 +241,9 @@ const TimesheetApprovals = () => {
       const regularHours = parseFloat(timesheet.regular_hours || 0);
       const overtimeHours = parseFloat(timesheet.overtime_hours || 0);
       
-      // Calculate regular amount
       const regularAmount = regularHours * rate;
-      
-      // Calculate overtime amount (assuming 1.5x rate - adjust as needed)
       const overtimeRate = rate * 1.5;
       const overtimeAmount = overtimeHours * overtimeRate;
-      
-      // Calculate total
       const totalAmount = regularAmount + overtimeAmount;
       
       amounts[timesheet.id] = {
@@ -247,7 +275,6 @@ const TimesheetApprovals = () => {
           console.log('✅ Filtered timesheets for approvals:', submittedTimesheets);
           setTimesheets(submittedTimesheets);
           
-          // Fetch employee rates after we have timesheets
           await fetchEmployeeRates();
         }
       }
@@ -270,7 +297,6 @@ const TimesheetApprovals = () => {
       return;
     }
 
-    // Get unique employee IDs from selected timesheets
     const selectedTimesheets = timesheets.filter(t => selectedTimesheetIds.includes(t.id));
     const employeeIds = [...new Set(selectedTimesheets.map(t => t.employee_id || t.employee?.id).filter(id => id))];
     
@@ -293,17 +319,14 @@ const TimesheetApprovals = () => {
           totalAmount: totalSelectedAmount
         });
         
-        // Push all employees
         const results = await timesheetService.pushEmployeesToXero(selectedOrganization.id, employeeIds);
         console.log('✅ Push results:', results);
         
         setPushResults(results);
         
-        // Count successes and failures
         const successCount = results.filter(r => r.success).length;
         const failureCount = results.filter(r => !r.success).length;
         
-        // Update UI for successful pushes
         const successfulEmployeeIds = results.filter(r => r.success).map(r => r.employeeId);
         setTimesheets(prev => prev.map(ts => {
           const employeeId = ts.employee_id || ts.employee?.id;
@@ -318,10 +341,8 @@ const TimesheetApprovals = () => {
           return ts;
         }));
         
-        // Clear selection
         setSelectedTimesheetIds([]);
         
-        // Show results
         if (failureCount === 0) {
           alert(`✅ Successfully pushed ${successCount} employee(s) to Xero! Total amount: ${formatCurrency(totalSelectedAmount)}`);
         } else {
@@ -329,7 +350,6 @@ const TimesheetApprovals = () => {
           alert(`⚠️ Push completed with ${successCount} successes and ${failureCount} failures. Total amount: ${formatCurrency(totalSelectedAmount)}`);
         }
         
-        // Refresh data
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1);
         }, 2000);
@@ -350,7 +370,6 @@ const TimesheetApprovals = () => {
       return;
     }
 
-    // Get ALL employee IDs with submitted timesheets
     const allEmployeeIds = [...new Set(
       timesheets
         .filter(t => 
@@ -358,7 +377,7 @@ const TimesheetApprovals = () => {
           (t.xero_status === null || t.xero_status !== 'pushed')
         )
         .map(t => t.employee_id || t.employee?.id)
-        .filter(id => id) // Remove undefined/null
+        .filter(id => id)
     )];
     
     if (allEmployeeIds.length === 0) {
@@ -366,7 +385,6 @@ const TimesheetApprovals = () => {
       return;
     }
 
-    // Calculate total amount for all ready timesheets
     const readyTimesheets = timesheets.filter(t => 
       t.status === 'submitted' && 
       (t.xero_status === null || t.xero_status !== 'pushed')
@@ -389,17 +407,14 @@ const TimesheetApprovals = () => {
           totalAmount: totalReadyAmount
         });
         
-        // Push all employees
         const results = await timesheetService.pushEmployeesToXero(selectedOrganization.id, allEmployeeIds);
         console.log('✅ Push ALL results:', results);
         
         setPushResults(results);
         
-        // Count successes and failures
         const successCount = results.filter(r => r.success).length;
         const failureCount = results.filter(r => !r.success).length;
         
-        // Update UI for successful pushes
         const successfulEmployeeIds = results.filter(r => r.success).map(r => r.employeeId);
         setTimesheets(prev => prev.map(ts => {
           const employeeId = ts.employee_id || ts.employee?.id;
@@ -414,10 +429,8 @@ const TimesheetApprovals = () => {
           return ts;
         }));
         
-        // Clear selection
         setSelectedTimesheetIds([]);
         
-        // Show results
         if (failureCount === 0) {
           alert(`✅ Successfully pushed ALL ${successCount} employee(s) to Xero! Total amount: ${formatCurrency(totalReadyAmount)}`);
         } else {
@@ -425,7 +438,6 @@ const TimesheetApprovals = () => {
           alert(`⚠️ Push completed with ${successCount} successes and ${failureCount} failures. Total amount: ${formatCurrency(totalReadyAmount)}`);
         }
         
-        // Refresh data
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1);
         }, 2000);
@@ -453,10 +465,8 @@ const TimesheetApprovals = () => {
       return;
     }
 
-    // Get amount for this timesheet
     const amount = timesheetAmounts[timesheetId]?.totalAmount || 0;
 
-    // Check if timesheet has hours
     const hasHours = parseFloat(timesheet.regular_hours || 0) > 0;
     if (!hasHours) {
       if (!window.confirm(`⚠️ Warning: This timesheet has 0.00 hours. Amount: ${formatCurrency(amount)}. Still push to Xero?`)) {
@@ -486,7 +496,6 @@ const TimesheetApprovals = () => {
         if (response.success || response.status === 'success') {
           alert(`✅ Successfully pushed ${timesheet.employee?.first_name}'s timesheet to Xero! Amount: ${formatCurrency(amount)}`);
           
-          // Update the specific timesheet
           setTimesheets(prev => prev.map(ts => 
             ts.id === timesheetId 
               ? { 
@@ -498,10 +507,8 @@ const TimesheetApprovals = () => {
               : ts
           ));
           
-          // Remove from selection if present
           setSelectedTimesheetIds(prev => prev.filter(id => id !== timesheetId));
           
-          // Refresh data
           setTimeout(() => {
             setRefreshTrigger(prev => prev + 1);
           }, 1000);
@@ -512,7 +519,6 @@ const TimesheetApprovals = () => {
         console.error('Error pushing single timesheet to Xero:', error);
         console.error('Error response data:', error.response?.data);
         
-        // Show specific error message
         let errorMessage = 'Failed to push timesheet to Xero.';
         if (error.response?.data?.message) {
           errorMessage += `\n\nError: ${error.response.data.message}`;
@@ -590,7 +596,6 @@ const TimesheetApprovals = () => {
       ts.status === 'submitted' && 
       (ts.xero_status === null || ts.xero_status !== 'pushed')
     ).length,
-    // NEW: Financial stats
     totalAmount: Object.values(timesheetAmounts).reduce((sum, a) => sum + a.totalAmount, 0),
     pendingAmount: timesheets
       .filter(ts => ts.status === 'submitted')
@@ -707,12 +712,32 @@ const TimesheetApprovals = () => {
     );
   };
 
+  // No organization selected
+  if (!selectedOrganization?.id) {
+    return (
+      <div 
+        className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
+        <div className="text-center">
+          <FaUserTie className="text-6xl text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">No Organization Selected</h2>
+          <p className="text-gray-600">Please select an organization to manage timesheet approvals</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+      <div 
+        className="min-h-screen p-6 flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading timesheets data...</p>
+          <p className="text-sm text-gray-500 mt-2">Organization: {selectedOrganization.name}</p>
         </div>
       </div>
     );
@@ -720,30 +745,34 @@ const TimesheetApprovals = () => {
 
   return (
     <>
-      {/* Color Palette Toggle Button */}
+      {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
-        style={{ writingMode: 'vertical-rl' }}
-        aria-label="Open color palette"
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
       >
-        <div className="flex items-center space-x-1">
-          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-xs font-medium">Colors</span>
-        </div>
+        <ColorPaletteIcon />
       </button>
 
-      {/* Color Palette Component */}
-      <ColorPalette 
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
       />
 
       <div 
-        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        className="min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">

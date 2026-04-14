@@ -30,84 +30,102 @@ import { rosterPeriodService } from "../../services/rosterPeriodService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import axios from "axios";
 
-// Pastel color options for background - Memoized to prevent recreation
-const PASTEL_COLORS = [
-  { name: 'Soft Pink', value: '#FFD1DC', textColor: 'text-gray-800' },
-  { name: 'Mint Green', value: '#C1E1C1', textColor: 'text-gray-800' },
-  { name: 'Peach', value: '#FFDAB9', textColor: 'text-gray-800' },
-  { name: 'Baby Blue', value: '#B5D8FF', textColor: 'text-gray-800' },
-  { name: 'Soft Yellow', value: '#FFFACD', textColor: 'text-gray-800' },
-  { name: 'Cultured White', value: '#FCFCFC', textColor: 'text-gray-800' },
-  { name: 'Soft White', value: '#FDFDFE', textColor: 'text-gray-800' },
-];
+// ============================================
+// COLOR PALETTE ICON (Same as Dashboard)
+// ============================================
+const ColorPaletteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+  </svg>
+);
 
-// Color Palette Component - Memoized
-const ColorPalette = React.memo(({ isOpen, onClose, onColorSelect }) => {
+// ============================================
+// COLOR PALETTE MODAL (Same as Dashboard)
+// ============================================
+const ColorPaletteModal = ({
+  isOpen,
+  onClose,
+  onSidebarColorSelect,
+  onBackgroundColorSelect,
+  currentSidebarColor,
+  currentBgColor
+}) => {
   if (!isOpen) return null;
+
+  const sidebarColors = [
+    { name: 'Dark Navy', value: '#0B1A2E' },
+    { name: 'Charcoal', value: '#2C2C2C' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Deep Purple', value: '#4B0082' },
+    { name: 'Forest Green', value: '#228B22' },
+    { name: 'Slate Blue', value: '#5B7B9A' },
+  ];
+
+  const backgroundColors = [
+    { name: 'Pure White', value: '#FFFFFF' },
+    { name: 'Snow', value: '#FFFAFA' },
+    { name: 'Ivory', value: '#FFFFF0' },
+    { name: 'Pearl', value: '#F8F6F0' },
+    { name: 'Whisper', value: '#F5F5F5' },
+    { name: 'Silver Mist', value: '#E5E7EB' },
+    { name: 'Ash', value: '#D1D5DB' },
+    { name: 'Pewter', value: '#9CA3AF' },
+    { name: 'Stone', value: '#6B7280' },
+    { name: 'Graphite', value: '#4B5563' },
+    { name: 'Slate', value: '#374151' },
+    { name: 'Charcoal', value: '#1F2937' },
+  ];
 
   return (
     <>
-      {/* Overlay with higher z-index */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-[60]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      {/* Side panel */}
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">Choose Pastel Color</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
-              aria-label="Close color palette"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {PASTEL_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-4 rounded-lg transition-all hover:scale-105 hover:shadow-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                style={{ backgroundColor: color.value }}
-                aria-label={`Select ${color.name} background`}
-              >
-                <span className={`font-medium ${color.textColor}`}>{color.name}</span>
-                <div 
-                  className="w-6 h-6 rounded-full border-2 border-gray-300 shadow-sm" 
-                  style={{ backgroundColor: color.value }} 
-                  aria-hidden="true"
-                />
-              </button>
-            ))}
-          </div>
-          
-          {/* Reset to default button */}
-          <button
-            onClick={() => {
-              onColorSelect('#f9fafb');
-              onClose();
-            }}
-            className="w-full mt-6 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
-            aria-label="Reset to default background"
-          >
-            Reset to Default
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
           </button>
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {sidebarColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onSidebarColorSelect(c.value)}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {backgroundColors.map((c) => (
+            <button
+              key={c.name}
+              onClick={() => onBackgroundColorSelect(c.value)}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.value }}
+            >
+              {c.name}
+            </button>
+          ))}
         </div>
       </div>
     </>
   );
-});
-
-ColorPalette.displayName = 'ColorPalette';
+};
 
 const RosterPeriods = () => {
   // State declarations
@@ -138,14 +156,29 @@ const RosterPeriods = () => {
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   
-  // NEW: State for rate calculations
+  // State for rate calculations
   const [selectedShift, setSelectedShift] = useState(null);
   const [estimatedAmount, setEstimatedAmount] = useState(0);
   const [selectedEmployeesData, setSelectedEmployeesData] = useState([]);
   
   // Color palette state
-  const [backgroundColor, setBackgroundColor] = useState('#f9fafb');
+  const [sidebarColor, setSidebarColor] = useState(() => {
+    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+  });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return localStorage.getItem('backgroundColor') || '#f9fafb';
+  });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+
+  // Save sidebar color to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem('sidebarColor', sidebarColor);
+    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+  }, [sidebarColor]);
+
+  useEffect(() => {
+    localStorage.setItem('backgroundColor', backgroundColor);
+  }, [backgroundColor]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -410,21 +443,18 @@ const RosterPeriods = () => {
     }
   }, []);
 
-  // NEW: Calculate estimated amount when shift or employees change
+  // Calculate estimated amount when shift or employees change
   useEffect(() => {
     if (bulkAssignForm.shift_id && bulkAssignForm.employee_ids.length > 0 && selectedPeriod) {
-      // Find selected shift details
       const shift = availableShifts.find(s => s.id.toString() === bulkAssignForm.shift_id.toString());
       setSelectedShift(shift);
       
-      // Find selected employees data
       const selectedEmps = availableEmployees.filter(emp => 
         bulkAssignForm.employee_ids.includes(emp.id.toString())
       );
       setSelectedEmployeesData(selectedEmps);
       
-      // Calculate shift duration in hours
-      let shiftHours = 8; // Default
+      let shiftHours = 8;
       if (shift) {
         if (shift.start_time && shift.end_time) {
           const start = new Date(`2000-01-01T${shift.start_time}`);
@@ -434,20 +464,16 @@ const RosterPeriods = () => {
         }
       }
       
-      // Calculate average rate from selected employees
       let totalRate = 0;
       let rateCount = 0;
       
       selectedEmps.forEach(emp => {
-        // Try to get rate from employee data
-        const rate = emp.hourly_rate || emp.pay_rate || emp.rate || 25; // Default fallback
+        const rate = emp.hourly_rate || emp.pay_rate || emp.rate || 25;
         totalRate += parseFloat(rate);
         rateCount++;
       });
       
       const avgRate = rateCount > 0 ? totalRate / rateCount : 25;
-      
-      // Calculate total estimated amount: shift hours × 14 days × number of employees × avg rate
       const totalHours = shiftHours * 14 * bulkAssignForm.employee_ids.length;
       const totalAmount = totalHours * avgRate;
       
@@ -459,9 +485,7 @@ const RosterPeriods = () => {
     }
   }, [bulkAssignForm.shift_id, bulkAssignForm.employee_ids, selectedPeriod, availableShifts, availableEmployees]);
 
-  // Get employee hourly rate
   const getEmployeeRate = useCallback((employee) => {
-    // Try different possible rate fields
     return employee.hourly_rate || employee.pay_rate || employee.rate || 25;
   }, []);
 
@@ -807,7 +831,10 @@ const RosterPeriods = () => {
 
   if (loading && rosterPeriods.length === 0) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+      <div 
+        className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor }}
+      >
         <div className="text-center" role="status" aria-label="Loading">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading fortnightly roster periods...</p>
@@ -818,30 +845,34 @@ const RosterPeriods = () => {
 
   return (
     <>
-      {/* Color Palette Toggle Button - Fixed position */}
+      {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-400 to-pink-400 text-white p-2 rounded-l-lg shadow-lg hover:shadow-xl transition-all z-50 group"
-        style={{ writingMode: 'vertical-rl' }}
-        aria-label="Open color palette"
+        className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
       >
-        <div className="flex items-center space-x-1">
-          <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-          <span className="text-xs font-medium">Colors</span>
-        </div>
+        <ColorPaletteIcon />
       </button>
 
-      {/* Color Palette Component */}
-      <ColorPalette 
+      {/* Color Palette Modal */}
+      <ColorPaletteModal
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
-        onColorSelect={setBackgroundColor}
+        onSidebarColorSelect={(color) => {
+          console.log('Setting sidebar color to:', color);
+          setSidebarColor(color);
+          localStorage.setItem('sidebarColor', color);
+        }}
+        onBackgroundColorSelect={(color) => {
+          console.log('Setting background color to:', color);
+          setBackgroundColor(color);
+          localStorage.setItem('backgroundColor', color);
+        }}
+        currentSidebarColor={sidebarColor}
+        currentBgColor={backgroundColor}
       />
 
       <div 
-        className="p-6 bg-gray-50 min-h-screen font-sans transition-colors duration-300"
+        className="p-6 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
@@ -860,7 +891,6 @@ const RosterPeriods = () => {
               </div>
             </div>
             
-            {/* Action Buttons */}
             <div className="flex gap-2">
               <button
                 onClick={openCreateModal}
@@ -1416,7 +1446,7 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* Bulk Assign Modal - Updated with Rate Information */}
+      {/* Bulk Assign Modal */}
       {showBulkAssignModal && selectedPeriod && (
         <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="bulk-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1683,7 +1713,7 @@ const RosterPeriods = () => {
                       )}
                     </div>
 
-                    {/* NEW: Rate and Amount Summary */}
+                    {/* Rate and Amount Summary */}
                     {(bulkAssignForm.shift_id || bulkAssignForm.employee_ids.length > 0) && (
                       <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
                         <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
@@ -1863,7 +1893,7 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* View Rosters Modal - Updated with Rate and Amount */}
+      {/* View Rosters Modal */}
       {showRostersModal && selectedPeriod && (
         <div className="fixed inset-0 z-[80] overflow-y-auto" aria-labelledby="rosters-modal-title" role="dialog" aria-modal="true">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
