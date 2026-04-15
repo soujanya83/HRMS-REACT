@@ -1,4 +1,4 @@
-// Sidebar.jsx - Collapse button matches sidebar color, at top edge
+// Sidebar.jsx - Collapse button matches sidebar color, at top edge, with left margin
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -206,13 +206,14 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar wrapper */}
+      {/* Sidebar wrapper - with left margin */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
           ${isCollapsed ? "md:w-20" : "md:w-64"}
           ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
+        style={{ left: "12px" }} // Added left margin - adjust value as needed (12px = 3 spacing)
       >
         {/* Sidebar inner - LEFT side rounded corners ONLY */}
         <div
