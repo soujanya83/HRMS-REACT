@@ -1,4 +1,4 @@
-// Sidebar.jsx - LEFT side rounded corners (outer edge), right side straight
+// Sidebar.jsx - LEFT side rounded corners, collapse button fully visible
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -206,7 +206,7 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar wrapper - positioned at left edge */}
+      {/* Sidebar wrapper */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
@@ -214,16 +214,16 @@ const Sidebar = ({
           ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
       >
-        {/* Sidebar inner - LEFT side rounded corners ONLY (top-left and bottom-left) */}
+        {/* Sidebar inner - LEFT side rounded corners ONLY */}
         <div
           className="h-full w-full flex flex-col relative overflow-hidden"
           style={{ 
             backgroundColor: currentColor,
-            borderRadius: "16px 0 0 16px", // Rounded on LEFT side only
+            borderRadius: "20px 0 0 20px", // Rounded on LEFT side only (top-left and bottom-left)
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Collapse Toggle Button - INSIDE the sidebar, at the right edge */}
+          {/* Collapse Toggle Button - INSIDE the sidebar, fully visible */}
           <div className="absolute -right-3 top-20 z-20 hidden md:block">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
