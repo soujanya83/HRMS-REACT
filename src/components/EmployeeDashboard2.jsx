@@ -287,10 +287,10 @@ const EmployeeDashboard2 = () => {
       {/* Main Content */}
       <div className="p-6 min-h-screen transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
         
-        {/* Welcome Header
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Welcome, {user?.name || "Employee"}!</h1>
-          <p className="text-gray-500 mt-1">{dateStr} • Shift: 9:00 AM – 6:00 PM</p>
+       
+        {/* <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-800"> {user?.name || ""}</h1>
+          <p className="text-gray-500 mt-1">{dateStr} </p>
         </div> */}
 
         {/* Stats Cards */}
