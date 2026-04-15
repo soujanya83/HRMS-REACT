@@ -1,4 +1,4 @@
-// Sidebar.jsx - Collapse button at TOP, fully inside sidebar, left side rounded corners
+// Sidebar.jsx - Collapse button at TOP edge, hanging outside like the image
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -186,6 +186,18 @@ const Sidebar = ({
     if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
+  // Get contrasting color for the collapse button (light for dark sidebar)
+  const getButtonColor = (sidebarColor) => {
+    // For dark sidebars, use white button
+    if (sidebarColor === "#1a2d4e" || sidebarColor === "#0A1628" || sidebarColor === "#0D0D0D" || 
+        sidebarColor === "#001F1F" || sidebarColor === "#1A0033" || sidebarColor === "#1a2d4e") {
+      return "#FFFFFF";
+    }
+    return "#FFFFFF";
+  };
+
+  const buttonColor = getButtonColor(currentColor);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -204,17 +216,36 @@ const Sidebar = ({
       >
         {/* Sidebar inner - LEFT side rounded corners ONLY */}
         <div
-          className="h-full w-full flex flex-col relative overflow-hidden"
+          className="h-full w-full flex flex-col relative overflow-visible"
           style={{ 
             backgroundColor: currentColor,
-            borderRadius: "16px 0 0 16px", // Rounded on LEFT side only (top-left and bottom-left)
+            borderRadius: "16px 0 0 16px",
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Logo Section with Collapse Button */}
+          {/* Collapse Toggle Button - at the top edge, hanging outside like the image */}
+          <div className="absolute -right-3 top-16 z-20 hidden md:block">
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="flex items-center justify-center w-7 h-7 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+              style={{ 
+                backgroundColor: buttonColor,
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+              }}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <HiChevronDoubleRight size={14} className="text-gray-700" />
+              ) : (
+                <HiChevronDoubleLeft size={14} className="text-gray-700" />
+              )}
+            </button>
+          </div>
+
+          {/* Logo Section */}
           <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
-            <div className="flex items-center justify-between p-4 h-full">
-              <Link to="/dashboard" className="flex items-center flex-1">
+            <div className="flex items-center p-4 h-full">
+              <Link to="/dashboard" className="flex items-center">
                 <img
                   src={logoIcon}
                   alt="CHRISPP Icon"
@@ -226,41 +257,11 @@ const Sidebar = ({
                   className={`h-5 w-auto ml-2 transition-all duration-200 ${isCollapsed ? "w-0 opacity-0 hidden" : "opacity-100 block"}`}
                 />
               </Link>
-              
-              {/* Collapse Toggle Button - INSIDE the logo area, fully visible */}
-              {!isCollapsed && (
-                <button
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 hover:bg-white/10"
-                  style={{ 
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  }}
-                  aria-label="Collapse sidebar"
-                >
-                  <HiChevronDoubleLeft size={16} className="text-gray-300" />
-                </button>
-              )}
             </div>
           </div>
 
-          {/* When collapsed, show a centered collapse/expand button */}
-          {isCollapsed && (
-            <div className="flex justify-center py-3">
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 hover:bg-white/10"
-                style={{ 
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                }}
-                aria-label="Expand sidebar"
-              >
-                <HiChevronDoubleRight size={16} className="text-gray-300" />
-              </button>
-            </div>
-          )}
-
           {/* Navigation */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide pb-3 mt-2">
+          <div className="flex-1 overflow-y-auto scrollbar-hide pb-3 mt-4">
             <nav className={`${isCollapsed ? "px-2" : "px-3"} space-y-1`}>
               {navLinks.map((link) => (
                 <div key={link.name}>
