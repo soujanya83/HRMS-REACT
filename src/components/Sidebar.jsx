@@ -1,4 +1,4 @@
-// Sidebar.jsx - LEFT side rounded corners, collapse button fully visible
+// Sidebar.jsx - Collapse button at TOP, fully inside sidebar, left side rounded corners
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -186,18 +186,6 @@ const Sidebar = ({
     if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
-  // Get a slightly lighter color for the collapse button
-  const getButtonBgColor = (color) => {
-    if (color === "#1a2d4e") return "#2a4570";
-    if (color === "#0A1628") return "#1a3050";
-    if (color === "#0D0D0D") return "#2a2a2a";
-    if (color === "#001F1F") return "#004444";
-    if (color === "#1A0033") return "#3d0077";
-    return "#2a4570";
-  };
-
-  const buttonBgColor = getButtonBgColor(currentColor);
-
   return (
     <>
       {/* Mobile overlay */}
@@ -219,33 +207,14 @@ const Sidebar = ({
           className="h-full w-full flex flex-col relative overflow-hidden"
           style={{ 
             backgroundColor: currentColor,
-            borderRadius: "20px 0 0 20px", // Rounded on LEFT side only (top-left and bottom-left)
+            borderRadius: "16px 0 0 16px", // Rounded on LEFT side only (top-left and bottom-left)
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Collapse Toggle Button - INSIDE the sidebar, fully visible */}
-          <div className="absolute -right-3 top-20 z-20 hidden md:block">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="flex items-center justify-center w-6 h-6 rounded-full shadow-md transition-all duration-200 hover:scale-105"
-              style={{ 
-                backgroundColor: buttonBgColor,
-                border: `1px solid ${currentColor}`
-              }}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? (
-                <HiChevronDoubleRight size={12} className="text-white" />
-              ) : (
-                <HiChevronDoubleLeft size={12} className="text-white" />
-              )}
-            </button>
-          </div>
-
-          {/* Logo Section */}
+          {/* Logo Section with Collapse Button */}
           <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
-            <div className="flex items-center p-4 h-full">
-              <Link to="/dashboard" className="flex items-center">
+            <div className="flex items-center justify-between p-4 h-full">
+              <Link to="/dashboard" className="flex items-center flex-1">
                 <img
                   src={logoIcon}
                   alt="CHRISPP Icon"
@@ -257,12 +226,42 @@ const Sidebar = ({
                   className={`h-5 w-auto ml-2 transition-all duration-200 ${isCollapsed ? "w-0 opacity-0 hidden" : "opacity-100 block"}`}
                 />
               </Link>
+              
+              {/* Collapse Toggle Button - INSIDE the logo area, fully visible */}
+              {!isCollapsed && (
+                <button
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 hover:bg-white/10"
+                  style={{ 
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  }}
+                  aria-label="Collapse sidebar"
+                >
+                  <HiChevronDoubleLeft size={16} className="text-gray-300" />
+                </button>
+              )}
             </div>
           </div>
 
+          {/* When collapsed, show a centered collapse/expand button */}
+          {isCollapsed && (
+            <div className="flex justify-center py-3">
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 hover:bg-white/10"
+                style={{ 
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                }}
+                aria-label="Expand sidebar"
+              >
+                <HiChevronDoubleRight size={16} className="text-gray-300" />
+              </button>
+            </div>
+          )}
+
           {/* Navigation */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide pb-3 mt-4">
-            <nav className="px-3 space-y-1">
+          <div className="flex-1 overflow-y-auto scrollbar-hide pb-3 mt-2">
+            <nav className={`${isCollapsed ? "px-2" : "px-3"} space-y-1`}>
               {navLinks.map((link) => (
                 <div key={link.name}>
                   {!link.children ? (
@@ -270,30 +269,28 @@ const Sidebar = ({
                       to={link.path}
                       end
                       className={({ isActive }) =>
-                        `flex items-center px-3 py-2 text-sm transition-all duration-200 rounded-lg ${
-                          isCollapsed ? "justify-center" : ""
-                        } ${
+                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 text-sm transition-all duration-200 rounded-lg ${
                           isActive
                             ? "text-white font-semibold bg-white/15"
                             : "text-gray-300 font-medium hover:bg-white/10 hover:text-white"
                         }`
                       }
                       onClick={() => setSidebarOpen(false)}
+                      title={isCollapsed ? link.name : ""}
                     >
-                      <link.icon size={20} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                      <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                      <link.icon size={20} className="flex-shrink-0" />
+                      <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
                     </NavLink>
                   ) : (
                     <>
                       <button
                         onClick={() => handleMenuClick(link.name)}
-                        className={`flex items-center w-full px-3 py-2 text-sm text-gray-300 font-medium transition-all duration-200 rounded-lg hover:bg-white/10 hover:text-white ${
-                          isCollapsed ? "justify-center" : "justify-between"
-                        }`}
+                        className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2 text-sm text-gray-300 font-medium transition-all duration-200 rounded-lg hover:bg-white/10 hover:text-white`}
+                        title={isCollapsed ? link.name : ""}
                       >
                         <div className="flex items-center">
-                          <link.icon size={20} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                          <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                          <link.icon size={20} className="flex-shrink-0" />
+                          <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
                         </div>
                         {!isCollapsed && (
                           <HiChevronDown
@@ -341,12 +338,11 @@ const Sidebar = ({
           <div className="p-3 border-t flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <button
               onClick={onLogout}
-              className={`flex items-center w-full px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white ${
-                isCollapsed ? "justify-center" : ""
-              }`}
+              className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 text-sm font-medium transition-all duration-200 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white`}
+              title={isCollapsed ? "Logout" : ""}
             >
-              <HiOutlineLogout size={20} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-              <span className={`text-sm ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
+              <HiOutlineLogout size={20} className="flex-shrink-0" />
+              <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
             </button>
           </div>
         </div>
