@@ -1,4 +1,4 @@
-// Sidebar.jsx - Rectangle type with 4-side spacing (margin on all sides) - NO ROUNDED CORNERS
+// Sidebar.jsx - Rectangle type with rounded LEFT corners only (right side straight) - Darker colors for better visibility
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -44,6 +44,19 @@ import {
   HiOutlineKey,
   HiOutlineUserCircle,
 } from "react-icons/hi";
+
+// Darker sidebar color options for better visibility
+const DARK_SIDEBAR_COLORS = {
+  'Dark Navy': '#0B1A2E',
+  'Charcoal': '#1A1A1A',
+  'Teal Dark': '#003333',
+  'Deep Purple': '#2D004F',
+  'Forest Dark': '#0D3B0D',
+  'Slate Dark': '#1E293B',
+  'Midnight Blue': '#0F172A',
+  'Dark Grey': '#1F2937',
+  'Obsidian': '#0F0F0F'
+};
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
@@ -145,7 +158,7 @@ const Sidebar = ({
     if (saved && saved !== 'undefined' && saved !== 'null') {
       return saved;
     }
-    return propSidebarColor || '#0f2b2b';
+    return propSidebarColor || '#0B1A2E'; // Dark Navy default for better visibility
   });
   const location = useLocation();
 
@@ -188,16 +201,34 @@ const Sidebar = ({
 
   const getToggleButtonColor = (color) => {
     if (color === "#0B1A2E") return "#1a2d4e";
-    if (color === "#2C2C2C") return "#4a4a4a";
-    if (color === "#1F5F5B") return "#3a8a85";
-    if (color === "#3B1E54") return "#5a2a7a";
-    if (color === "#1B4332") return "#2d6a4f";
-    if (color === "#334155") return "#4a5a6e";
-    if (color === "#0f2b2b") return "#1a4d4d";
+    if (color === "#1A1A1A") return "#3a3a3a";
+    if (color === "#003333") return "#005555";
+    if (color === "#2D004F") return "#4a0070";
+    if (color === "#0D3B0D") return "#1a5c1a";
+    if (color === "#1E293B") return "#334155";
+    if (color === "#0F172A") return "#1e2a4a";
+    if (color === "#1F2937") return "#374151";
+    if (color === "#0F0F0F") return "#2a2a2a";
     return color;
   };
 
   const toggleButtonColor = getToggleButtonColor(currentColor);
+
+  // Function to get hover background color (lighter version of current color)
+  const getHoverBgColor = (color) => {
+    if (color === "#0B1A2E") return "rgba(26, 45, 78, 0.7)";
+    if (color === "#1A1A1A") return "rgba(58, 58, 58, 0.7)";
+    if (color === "#003333") return "rgba(0, 85, 85, 0.7)";
+    if (color === "#2D004F") return "rgba(74, 0, 112, 0.7)";
+    if (color === "#0D3B0D") return "rgba(26, 92, 26, 0.7)";
+    if (color === "#1E293B") return "rgba(51, 65, 85, 0.7)";
+    if (color === "#0F172A") return "rgba(30, 42, 74, 0.7)";
+    if (color === "#1F2937") return "rgba(55, 65, 81, 0.7)";
+    if (color === "#0F0F0F") return "rgba(42, 42, 42, 0.7)";
+    return "rgba(255, 255, 255, 0.1)";
+  };
+
+  const hoverBgColor = getHoverBgColor(currentColor);
 
   return (
     <>
@@ -206,7 +237,7 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar with margin on ALL FOUR SIDES - RECTANGLE TYPE (NO ROUNDED CORNERS) */}
+      {/* Sidebar with rounded LEFT corners only - NO margin on sides, full height */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col justify-between z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
@@ -215,16 +246,15 @@ const Sidebar = ({
           md:translate-x-0`}
         style={{ 
           backgroundColor: "transparent",
-          padding: "12px 0 12px 12px", // Top, Right, Bottom, Left spacing
         }}
       >
-        {/* Inner Sidebar Box - RECTANGLE with STRAIGHT CORNERS */}
+        {/* Inner Sidebar Box - ROUNDED LEFT CORNERS ONLY, RIGHT SIDE STRAIGHT */}
         <div
           className="h-full w-full flex flex-col justify-between overflow-hidden"
           style={{ 
             backgroundColor: currentColor,
-            borderRadius: "0px", // NO ROUNDED CORNERS - RECTANGLE TYPE
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
+            borderRadius: "16px 0 0 16px", // Rounded only on left side (top-left and bottom-left)
+            boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
           <div className="relative h-full flex flex-col">
@@ -261,7 +291,7 @@ const Sidebar = ({
               </div>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Improved with better hover states */}
             <div className="flex-1 overflow-y-auto scrollbar-hide pb-3">
               <nav className="mt-3 px-3">
                 {navLinks.map((link) => (
@@ -271,14 +301,17 @@ const Sidebar = ({
                         to={link.path}
                         end
                         className={({ isActive }) =>
-                          `flex items-center px-3 h-9 my-0.5 text-sm transition-all duration-200 ${
+                          `flex items-center px-3 h-9 my-0.5 text-sm transition-all duration-200 rounded-l-md ${
                             isCollapsed ? "justify-center" : ""
                           } ${
                             isActive
-                              ? "text-white font-semibold bg-white/15"
-                              : "text-gray-300/80 font-medium hover:bg-white/10 hover:text-white"
+                              ? "text-white font-semibold bg-white/20 shadow-sm"
+                              : "text-gray-300/90 font-medium hover:text-white hover:bg-white/15"
                           }`
                         }
+                        style={({ isActive }) => ({
+                          backgroundColor: isActive ? hoverBgColor : undefined
+                        })}
                         onClick={() => setSidebarOpen(false)}
                       >
                         <link.icon size={18} className={`flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
@@ -288,7 +321,7 @@ const Sidebar = ({
                       <>
                         <button
                           onClick={() => handleMenuClick(link.name)}
-                          className={`flex items-center w-full px-3 h-9 text-sm text-gray-300/80 font-medium transition-all duration-200 text-left hover:bg-white/10 hover:text-white ${
+                          className={`flex items-center w-full px-3 h-9 text-sm text-gray-300/90 font-medium transition-all duration-200 text-left rounded-l-md hover:bg-white/15 hover:text-white ${
                             isCollapsed ? "justify-center" : "justify-between"
                           }`}
                         >
@@ -308,18 +341,21 @@ const Sidebar = ({
                             openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
                           }`}
                         >
-                          <div className="py-1 pl-7">
+                          <div className="py-1 pl-7 space-y-0.5">
                             {link.children.map((child) => (
                               <NavLink
                                 key={child.name}
                                 to={child.path}
                                 className={({ isActive }) =>
-                                  `flex items-center w-full px-3 py-1.5 my-0.5 text-xs transition-all duration-200 ${
+                                  `flex items-center w-full px-3 py-1.5 my-0.5 text-xs transition-all duration-200 rounded-l-md ${
                                     isActive
-                                      ? "text-white font-medium bg-white/15"
-                                      : "text-gray-400/80 hover:bg-white/10 hover:text-white"
+                                      ? "text-white font-medium bg-white/20 shadow-sm"
+                                      : "text-gray-400/90 hover:bg-white/15 hover:text-white"
                                   }`
                                 }
+                                style={({ isActive }) => ({
+                                  backgroundColor: isActive ? hoverBgColor : undefined
+                                })}
                                 onClick={() => setSidebarOpen(false)}
                                 end={child.exact || false}
                               >
@@ -336,14 +372,14 @@ const Sidebar = ({
               </nav>
             </div>
 
-            {/* Logout Button */}
+            {/* Logout Button - Improved hover state */}
             <div
               className="p-3 border-t flex-shrink-0"
               style={{ borderColor: `${currentColor}80` }}
             >
               <button
                 onClick={onLogout}
-                className={`flex items-center w-full px-3 h-9 text-sm font-medium transition-all duration-200 text-gray-300/80 hover:bg-white/10 hover:text-white ${
+                className={`flex items-center w-full px-3 h-9 text-sm font-medium transition-all duration-200 rounded-l-md text-gray-300/90 hover:bg-white/15 hover:text-white ${
                   isCollapsed ? "justify-center" : ""
                 }`}
               >
