@@ -1,4 +1,4 @@
-// Sidebar.jsx - Collapse button at TOP edge, hanging outside like the image
+// Sidebar.jsx - Collapse button matches sidebar color, at top edge
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -186,17 +186,17 @@ const Sidebar = ({
     if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
-  // Get contrasting color for the collapse button (light for dark sidebar)
-  const getButtonColor = (sidebarColor) => {
-    // For dark sidebars, use white button
-    if (sidebarColor === "#1a2d4e" || sidebarColor === "#0A1628" || sidebarColor === "#0D0D0D" || 
-        sidebarColor === "#001F1F" || sidebarColor === "#1A0033" || sidebarColor === "#1a2d4e") {
-      return "#FFFFFF";
-    }
-    return "#FFFFFF";
+  // Get a slightly lighter/darker color for the collapse button border/hover effect
+  const getButtonBorderColor = (color) => {
+    if (color === "#1a2d4e") return "rgba(255, 255, 255, 0.2)";
+    if (color === "#0A1628") return "rgba(255, 255, 255, 0.2)";
+    if (color === "#0D0D0D") return "rgba(255, 255, 255, 0.2)";
+    if (color === "#001F1F") return "rgba(255, 255, 255, 0.2)";
+    if (color === "#1A0033") return "rgba(255, 255, 255, 0.2)";
+    return "rgba(255, 255, 255, 0.2)";
   };
 
-  const buttonColor = getButtonColor(currentColor);
+  const buttonBorderColor = getButtonBorderColor(currentColor);
 
   return (
     <>
@@ -223,21 +223,22 @@ const Sidebar = ({
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Collapse Toggle Button - at the top edge, hanging outside like the image */}
+          {/* Collapse Toggle Button - at the top edge, matching sidebar color */}
           <div className="absolute -right-3 top-16 z-20 hidden md:block">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="flex items-center justify-center w-7 h-7 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+              className="flex items-center justify-center w-7 h-7 rounded-full shadow-md transition-all duration-200 hover:scale-105 hover:brightness-110"
               style={{ 
-                backgroundColor: buttonColor,
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+                backgroundColor: currentColor,
+                border: `1px solid ${buttonBorderColor}`,
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
               }}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
-                <HiChevronDoubleRight size={14} className="text-gray-700" />
+                <HiChevronDoubleRight size={14} className="text-gray-300" />
               ) : (
-                <HiChevronDoubleLeft size={14} className="text-gray-700" />
+                <HiChevronDoubleLeft size={14} className="text-gray-300" />
               )}
             </button>
           </div>
