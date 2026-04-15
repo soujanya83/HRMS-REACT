@@ -1,10 +1,11 @@
 // src/pages/Dashboard/EmployeeDashboard2.jsx
-import React, { useState, useEffect } from "react";  // ← ADD THIS IMPORT
+import React, { useState, useEffect } from "react";
 import {
   CalendarDays, Briefcase, Clock, CalendarOff, Clock3, ListTodo, TrendingUp, Timer,
   Fingerprint, CheckCircle2, XCircle, LogIn, LogOut, FileText, CheckCircle, Circle,
   ArrowRight, IndianRupee, Download, Bell, Info, AlertTriangle, PartyPopper, Calendar,
-  Users, ChevronLeft, ChevronRight, Building2
+  Users, ChevronLeft, ChevronRight, Building2, LayoutDashboard, UserPlus,
+  Home, Wallet, Mail, Video, ChartBar
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useTheme } from '../contexts/ThemeContext';
@@ -107,91 +108,213 @@ const ColorPaletteModal = ({
 };
 
 // ============================================
-// WELCOME SECTION - Pastel Colors
+// CARD WRAPPER COMPONENT
 // ============================================
-const WelcomeSection = ({ user }) => {
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pastel-blue to-pastel-purple p-8 md:p-10">
-      <style>{`
-        .bg-pastel-blue { background-color: #A8D8EA; }
-        .bg-pastel-purple { background-color: #C5A3FF; }
-        .bg-pastel-pink { background-color: #FFB7B2; }
-        .bg-pastel-green { background-color: #B5EAD7; }
-        .bg-pastel-yellow { background-color: #FFEAA7; }
-        .bg-pastel-orange { background-color: #FFD6A5; }
-        .bg-pastel-peach { background-color: #FDD0B5; }
-        .bg-pastel-mint { background-color: #C7E9D0; }
-        .bg-pastel-lavender { background-color: #E8D5F5; }
-        .from-pastel-blue { --tw-gradient-from: #A8D8EA; --tw-gradient-to: rgba(168, 216, 234, 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-        .to-pastel-purple { --tw-gradient-to: #C5A3FF; }
-      `}</style>
-      <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-white/20 rounded-full blur-2xl" />
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <p className="text-white/80 text-sm font-medium tracking-wide uppercase mb-1">
-            Dashboard Overview
-          </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Welcome, {user?.name || "Employee"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-4 text-white/85 text-sm">
-            <span className="flex items-center gap-1.5"><CalendarDays size={15} />{dateStr}</span>
-            <span className="flex items-center gap-1.5"><Briefcase size={15} />{user?.designation || "Team Member"}</span>
-            <span className="flex items-center gap-1.5"><Clock size={15} />Shift: 9:00 AM – 6:00 PM</span>
-          </div>
-        </div>
-        <div className="flex-shrink-0">
-          <div className="w-16 h-16 rounded-2xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold border border-white/30">
-            {user?.name?.charAt(0) || "E"}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// QUICK STATS CARD - Pastel Colors
-// ============================================
-const StatCard = ({ icon, value, label, iconBgColor }) => (
-  <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
-    <div className={`w-10 h-10 rounded-xl ${iconBgColor} flex items-center justify-center mb-3`}>
-      <div className="text-gray-700">{icon}</div>
-    </div>
-    <p className="text-2xl font-bold text-gray-800">{value}</p>
-    <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+const DashCard = ({ children, accentColor = '#B5D8FF', className = '' }) => (
+  <div className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden ${className}`}>
+    <div className="h-1 w-full" style={{ backgroundColor: accentColor }} />
+    <div className="p-5">{children}</div>
   </div>
 );
 
-const QuickStats = () => {
-  const stats = [
-    { icon: <CalendarOff size={18} />, value: "12", label: "Leave Balance", iconBgColor: "bg-pastel-blue" },
-    { icon: <Clock3 size={18} />, value: "2", label: "Pending Leaves", iconBgColor: "bg-pastel-yellow" },
-    { icon: <ListTodo size={18} />, value: "5", label: "Tasks Pending", iconBgColor: "bg-pastel-lavender" },
-    { icon: <TrendingUp size={18} />, value: "96%", label: "Attendance", iconBgColor: "bg-pastel-green" },
-    { icon: <Timer size={18} />, value: "8h", label: "Overtime", iconBgColor: "bg-pastel-peach" },
-  ];
+const CardTitle = ({ icon, children }) => (
+  <div className="flex items-center gap-2 mb-4">
+    {icon && <span className="text-gray-500">{icon}</span>}
+    <h3 className="font-bold text-gray-700 text-sm tracking-wide uppercase">{children}</h3>
+  </div>
+);
 
+const Badge = ({ color = 'bg-green-100 text-green-700', children }) => (
+  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{children}</span>
+);
+
+// ============================================
+// CALENDAR COMPONENT
+// ============================================
+const CalendarWidget = () => {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(currentMonth);
+  
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  
+  // Example holidays and events (you can replace with actual data)
+  const holidays = [10, 25]; // Dates that are holidays
+  const events = [5, 15, 20]; // Dates that have events
+  
+  const getDaysInMonth = (year, month) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+  
+  const getFirstDayOfMonth = (year, month) => {
+    return new Date(year, month, 1).getDay();
+  };
+  
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDay = getFirstDayOfMonth(year, month);
+  
+  const calendarDays = [];
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarDays.push(d);
+  }
+  
+  const prevMonth = () => {
+    if (month === 0) {
+      setMonth(11);
+      setYear(year - 1);
+    } else {
+      setMonth(month - 1);
+    }
+  };
+  
+  const nextMonth = () => {
+    if (month === 11) {
+      setMonth(0);
+      setYear(year + 1);
+    } else {
+      setMonth(month + 1);
+    }
+  };
+  
+  const goToToday = () => {
+    setYear(currentYear);
+    setMonth(currentMonth);
+  };
+  
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-      {stats.map((s, i) => (
-        <StatCard key={s.label} {...s} />
-      ))}
-    </div>
+    <DashCard accentColor="#4ECDC4">
+      <div className="flex items-center justify-between mb-4">
+        <CardTitle icon={<Calendar size={16} />}>
+          {monthNames[month]} {year}
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={prevMonth}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            Today
+          </button>
+          <button
+            onClick={nextMonth}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1 text-center mb-2">
+        {weekDays.map(day => (
+          <div key={day} className="text-xs font-semibold text-gray-500 py-2">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {calendarDays.map((day, index) => {
+          if (day === null) {
+            return <div key={`empty-${index}`} className="py-2" />;
+          }
+          
+          const isToday = day === today.getDate() && year === currentYear && month === currentMonth;
+          const isHoliday = holidays.includes(day);
+          const isEvent = events.includes(day);
+          
+          return (
+            <div
+              key={day}
+              className={`
+                relative py-2 text-sm font-medium rounded-lg transition-all
+                ${isToday ? 'bg-blue-500 text-white shadow-md' : ''}
+                ${isHoliday && !isToday ? 'bg-red-50 text-red-600' : ''}
+                ${isEvent && !isToday && !isHoliday ? 'bg-blue-50 text-blue-600' : ''}
+                ${!isToday && !isHoliday && !isEvent ? 'text-gray-700 hover:bg-gray-100' : ''}
+              `}
+            >
+              {day}
+              {isHoliday && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                  <div className="w-1 h-1 rounded-full bg-red-500" />
+                </div>
+              )}
+              {isEvent && !isHoliday && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                  <div className="w-1 h-1 rounded-full bg-blue-500" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <span className="text-[10px] text-gray-500">Holiday</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+          <span className="text-[10px] text-gray-500">Event</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500 -ml-1" />
+          <span className="text-[10px] text-gray-500">Today</span>
+        </div>
+      </div>
+    </DashCard>
   );
 };
 
 // ============================================
-// ATTENDANCE CARD - Pastel Colors
+// STAT CARDS
+// ============================================
+const statCards = [
+  { label: 'Leave Balance', value: '12', icon: <CalendarOff size={18} />, accent: '#FF6B6B' },
+  { label: 'Pending Leaves', value: '2', icon: <Clock3 size={18} />, accent: '#FFE66D' },
+  { label: 'Tasks Pending', value: '5', icon: <ListTodo size={18} />, accent: '#A8E6CF' },
+  { label: 'Attendance Rate', value: '96%', icon: <TrendingUp size={18} />, accent: '#4ECDC4' },
+  { label: 'Overtime Hours', value: '8h', icon: <Timer size={18} />, accent: '#FFB347' },
+];
+
+const StatCard = ({ icon, value, label, accent }) => (
+  <DashCard accentColor={accent}>
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
+        <p className="text-2xl font-extrabold text-gray-800">{value}</p>
+      </div>
+      <div className="p-2 rounded-xl" style={{ backgroundColor: accent + '30' }}>
+        <span style={{ color: '#555' }}>{icon}</span>
+      </div>
+    </div>
+  </DashCard>
+);
+
+const QuickStats = () => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+    {statCards.map((s) => (
+      <StatCard key={s.label} {...s} />
+    ))}
+  </div>
+);
+
+// ============================================
+// ATTENDANCE CARD
 // ============================================
 const formatMinutes = (m) => {
   const h = Math.floor(m / 60);
@@ -208,9 +331,9 @@ const dummyAttendanceData = {
 
 const StatusBadge = ({ status }) => {
   const config = {
-    not_punched: { label: "Not Punched In", icon: XCircle, cls: "bg-pastel-pink/30 text-red-600" },
-    punched_in: { label: "Working", icon: CheckCircle2, cls: "bg-pastel-green/30 text-emerald-600" },
-    punched_out: { label: "Completed", icon: LogOut, cls: "bg-pastel-blue/30 text-blue-600" },
+    not_punched: { label: "Not Punched In", icon: XCircle, cls: "bg-red-100 text-red-600" },
+    punched_in: { label: "Working", icon: CheckCircle2, cls: "bg-green-100 text-green-700" },
+    punched_out: { label: "Completed", icon: LogOut, cls: "bg-blue-100 text-blue-700" },
   }[status];
 
   return (
@@ -223,7 +346,7 @@ const StatusBadge = ({ status }) => {
 
 const NotPunchedView = () => (
   <div className="flex flex-col items-center gap-4 py-4">
-    <div className="w-20 h-20 rounded-full bg-pastel-lavender/50 flex items-center justify-center border-2 border-dashed border-gray-300">
+    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
       <Fingerprint size={36} className="text-gray-400" />
     </div>
     <div className="text-center space-y-1">
@@ -235,18 +358,18 @@ const NotPunchedView = () => (
 
 const PunchedInView = ({ data, progress }) => (
   <div className="flex flex-col gap-4">
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-pastel-green/20 border border-pastel-green/30">
-      <div className="w-10 h-10 rounded-full bg-pastel-green flex items-center justify-center shadow-lg">
-        <LogIn size={18} className="text-gray-700" />
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-100">
+      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+        <LogIn size={18} className="text-green-600" />
       </div>
       <div>
         <p className="text-sm font-semibold text-gray-800">Punched In</p>
         <p className="text-xs text-gray-500">at {data.punchInTime}</p>
       </div>
-      <div className="ml-auto flex items-center gap-1 text-emerald-600">
+      <div className="ml-auto flex items-center gap-1 text-green-600">
         <span className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
         </span>
         <span className="text-xs font-medium">Live</span>
       </div>
@@ -260,18 +383,18 @@ const PunchedInView = ({ data, progress }) => (
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2">
         <div 
-          className="bg-pastel-green h-2 rounded-full transition-all duration-1000"
+          className="bg-green-500 h-2 rounded-full transition-all duration-1000"
           style={{ width: `${progress}%` }}
         />
       </div>
     </div>
     <div className="grid grid-cols-2 gap-3">
-      <div className="text-center p-3 rounded-xl bg-pastel-blue/20 border border-pastel-blue/30">
+      <div className="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
         <Clock size={15} className="mx-auto mb-1 text-blue-500" />
         <p className="text-[10px] text-gray-500 uppercase tracking-wider">Check In</p>
         <p className="text-sm font-bold text-gray-800">{data.punchInTime}</p>
       </div>
-      <div className="text-center p-3 rounded-xl bg-pastel-lavender/20 border border-pastel-lavender/30">
+      <div className="text-center p-3 rounded-xl bg-purple-50 border border-purple-100">
         <Timer size={15} className="mx-auto mb-1 text-purple-500" />
         <p className="text-[10px] text-gray-500 uppercase tracking-wider">Worked</p>
         <p className="text-sm font-bold text-gray-800">{formatMinutes(data.workedMinutes || 0)}</p>
@@ -282,9 +405,9 @@ const PunchedInView = ({ data, progress }) => (
 
 const PunchedOutView = ({ data, progress }) => (
   <div className="flex flex-col gap-4">
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-pastel-blue/20 border border-pastel-blue/30">
-      <div className="w-10 h-10 rounded-full bg-pastel-blue flex items-center justify-center shadow-lg">
-        <LogOut size={18} className="text-gray-700" />
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100">
+      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+        <LogOut size={18} className="text-blue-600" />
       </div>
       <div>
         <p className="text-sm font-semibold text-gray-800">Punched Out</p>
@@ -300,24 +423,24 @@ const PunchedOutView = ({ data, progress }) => (
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2">
         <div 
-          className="bg-pastel-blue h-2 rounded-full transition-all duration-1000"
+          className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
           style={{ width: `${progress}%` }}
         />
       </div>
     </div>
     <div className="grid grid-cols-3 gap-2">
-      <div className="text-center p-2.5 rounded-xl bg-pastel-green/20 border border-pastel-green/30">
-        <LogIn size={14} className="mx-auto mb-1 text-emerald-500" />
+      <div className="text-center p-2.5 rounded-xl bg-green-50 border border-green-100">
+        <LogIn size={14} className="mx-auto mb-1 text-green-600" />
         <p className="text-[10px] text-gray-500">In</p>
         <p className="text-xs font-bold text-gray-800">{data.punchInTime}</p>
       </div>
-      <div className="text-center p-2.5 rounded-xl bg-pastel-pink/20 border border-pastel-pink/30">
-        <LogOut size={14} className="mx-auto mb-1 text-red-500" />
+      <div className="text-center p-2.5 rounded-xl bg-red-50 border border-red-100">
+        <LogOut size={14} className="mx-auto mb-1 text-red-600" />
         <p className="text-[10px] text-gray-500">Out</p>
         <p className="text-xs font-bold text-gray-800">{data.punchOutTime || "—"}</p>
       </div>
-      <div className="text-center p-2.5 rounded-xl bg-pastel-lavender/20 border border-pastel-lavender/30">
-        <Timer size={14} className="mx-auto mb-1 text-purple-500" />
+      <div className="text-center p-2.5 rounded-xl bg-purple-50 border border-purple-100">
+        <Timer size={14} className="mx-auto mb-1 text-purple-600" />
         <p className="text-[10px] text-gray-500">Total</p>
         <p className="text-xs font-bold text-gray-800">{formatMinutes(data.workedMinutes || 0)}</p>
       </div>
@@ -339,23 +462,23 @@ const AttendanceCard = () => {
   }, [progress]);
 
   return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+    <DashCard accentColor="#4ECDC4">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">Attendance</h2>
-          <p className="text-sm text-gray-500">Today's Status</p>
+          <CardTitle icon={<ChartBar size={16} />}>Attendance</CardTitle>
+          <p className="text-xs text-gray-500 -mt-2">Today's Status</p>
         </div>
         <StatusBadge status={data.status} />
       </div>
       {data.status === "not_punched" && <NotPunchedView />}
       {data.status === "punched_in" && <PunchedInView data={data} progress={animatedProgress} />}
       {data.status === "punched_out" && <PunchedOutView data={data} progress={animatedProgress} />}
-    </div>
+    </DashCard>
   );
 };
 
 // ============================================
-// TODAY'S SCHEDULE - Pastel Colors
+// TODAY'S SCHEDULE
 // ============================================
 const scheduleItems = [
   { time: "9:00 AM", title: "Morning Stand-up", type: "Meeting" },
@@ -365,8 +488,8 @@ const scheduleItems = [
 ];
 
 const TodaySchedule = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 className="text-lg font-semibold text-gray-800 mb-1">Today's Schedule</h2>
+  <DashCard accentColor="#FFE66D">
+    <CardTitle icon={<Calendar size={16} />}>Today's Schedule</CardTitle>
     <p className="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
       <Clock size={13} /> Shift: 9:00 AM – 6:00 PM
     </p>
@@ -374,7 +497,7 @@ const TodaySchedule = () => (
       {scheduleItems.map((item, i) => (
         <div key={i} className="flex items-start gap-3 group">
           <div className="flex flex-col items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-pastel-blue group-hover:scale-125 transition-transform" />
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-400 group-hover:scale-125 transition-transform" />
             {i < scheduleItems.length - 1 && <div className="w-px h-8 bg-gray-200" />}
           </div>
           <div className="-mt-1">
@@ -386,11 +509,11 @@ const TodaySchedule = () => (
         </div>
       ))}
     </div>
-  </div>
+  </DashCard>
 );
 
 // ============================================
-// TASKS SECTION - Pastel Colors
+// TASKS SECTION
 // ============================================
 const tasks = [
   { title: "Update API documentation", status: "completed" },
@@ -401,10 +524,10 @@ const tasks = [
 ];
 
 const TasksSection = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+  <DashCard accentColor="#A8E6CF">
     <div className="flex items-center justify-between mb-5">
-      <h2 className="text-lg font-semibold text-gray-800">Tasks</h2>
-      <button className="text-xs text-pastel-blue font-medium flex items-center gap-1 hover:gap-2 transition-all">
+      <CardTitle icon={<ListTodo size={16} />}>Tasks</CardTitle>
+      <button className="text-xs text-blue-500 font-medium flex items-center gap-1 hover:gap-2 transition-all">
         View All <ArrowRight size={13} />
       </button>
     </div>
@@ -412,26 +535,26 @@ const TasksSection = () => (
       {tasks.map((t, i) => (
         <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
           {t.status === "completed" ? (
-            <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
+            <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
           ) : (
-            <Circle size={18} className="text-gray-400 group-hover:text-pastel-blue flex-shrink-0 transition-colors" />
+            <Circle size={18} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
           )}
           <span className={`text-sm ${t.status === "completed" ? "line-through text-gray-400" : "text-gray-700"}`}>
             {t.title}
           </span>
           <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-            t.status === "completed" ? "bg-pastel-green/30 text-emerald-600" : "bg-pastel-yellow/30 text-amber-600"
+            t.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
           }`}>
             {t.status === "completed" ? "Done" : "Pending"}
           </span>
         </div>
       ))}
     </div>
-  </div>
+  </DashCard>
 );
 
 // ============================================
-// ROSTER SECTION - Pastel Colors
+// ROSTER SECTION
 // ============================================
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const weekDates = ["7 Apr", "8 Apr", "9 Apr", "10 Apr", "11 Apr", "12 Apr", "13 Apr"];
@@ -439,7 +562,7 @@ const weekDates = ["7 Apr", "8 Apr", "9 Apr", "10 Apr", "11 Apr", "12 Apr", "13 
 const departments = [
   {
     name: "Engineering Team",
-    gradientClass: "bg-pastel-blue",
+    gradientClass: "bg-blue-100",
     employees: [
       {
         name: "Liam Chen", position: "Team Lead", avatar: "LC",
@@ -469,7 +592,7 @@ const departments = [
   },
   {
     name: "Design Studio",
-    gradientClass: "bg-pastel-lavender",
+    gradientClass: "bg-purple-100",
     employees: [
       {
         name: "Olivia Park", position: "Lead Designer", avatar: "OP",
@@ -491,7 +614,7 @@ const departments = [
   },
   {
     name: "Operations Hub",
-    gradientClass: "bg-pastel-peach",
+    gradientClass: "bg-orange-100",
     employees: [
       {
         name: "James Taylor", position: "Ops Manager", avatar: "JT",
@@ -525,10 +648,10 @@ const departments = [
 ];
 
 const shiftStatusStyles = {
-  normal: "bg-pastel-blue/20 text-gray-700",
-  leave: "bg-pastel-pink/30 text-red-600 border border-pastel-pink/40",
-  holiday: "bg-pastel-lavender/30 text-purple-600 border border-pastel-lavender/40",
-  modified: "bg-pastel-yellow/30 text-amber-600 border border-pastel-yellow/40",
+  normal: "bg-blue-50 text-gray-700",
+  leave: "bg-red-50 text-red-600 border border-red-100",
+  holiday: "bg-purple-50 text-purple-600 border border-purple-100",
+  modified: "bg-yellow-50 text-amber-600 border border-yellow-100",
 };
 
 const RosterSection = () => {
@@ -540,11 +663,9 @@ const RosterSection = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <DashCard accentColor="#FF6B6B">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Calendar size={18} className="text-pastel-blue" /> Weekly Roster
-        </h2>
+        <CardTitle icon={<Users size={16} />}>Weekly Roster</CardTitle>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500 font-medium px-3 py-1.5 rounded-lg bg-gray-100">
             {weekDates[0]} – {weekDates[6]}
@@ -567,7 +688,7 @@ const RosterSection = () => {
               {weekDays.map((day, i) => (
                 <th key={day} className="text-center pb-3 min-w-[100px]">
                   <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl transition-all ${
-                    isToday(i) ? "bg-pastel-blue text-white shadow-lg" : "text-gray-500"
+                    isToday(i) ? "bg-blue-500 text-white shadow-lg" : "text-gray-500"
                   }`}>
                     <span className="text-[10px] font-medium">{day}</span>
                     <span className={`text-sm font-bold ${isToday(i) ? "text-white" : "text-gray-700"}`}>
@@ -584,7 +705,7 @@ const RosterSection = () => {
                 <tr>
                   <td colSpan={8} className="pt-4 pb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-1 h-5 rounded-full ${dept.gradientClass}`} />
+                      <div className={`w-1 h-5 rounded-full ${dept.gradientClass.replace('bg-', 'bg-').replace('-100', '-500')}`} />
                       <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wide">
                         <Building2 size={12} className="text-gray-500" />
                         {dept.name}
@@ -615,7 +736,7 @@ const RosterSection = () => {
                           <div
                             className={`text-center rounded-xl px-2 py-2 text-[11px] font-medium transition-all ${
                               isDayOff ? "text-gray-300" : shiftStatusStyles[status]
-                            } ${isToday(dayIdx) && !isDayOff ? "ring-1 ring-pastel-blue shadow-sm" : ""}`}
+                            } ${isToday(dayIdx) && !isDayOff ? "ring-1 ring-blue-400 shadow-sm" : ""}`}
                             title={shift?.note || ""}
                           >
                             {isDayOff ? (
@@ -643,10 +764,10 @@ const RosterSection = () => {
       <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-gray-100">
         <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Legend:</span>
         {[
-          { label: "Regular", class: "bg-pastel-blue/20" },
-          { label: "Leave", class: "bg-pastel-pink/30 border border-pastel-pink/40" },
-          { label: "Public Holiday", class: "bg-pastel-lavender/30 border border-pastel-lavender/40" },
-          { label: "Modified", class: "bg-pastel-yellow/30 border border-pastel-yellow/40" },
+          { label: "Regular", class: "bg-blue-50" },
+          { label: "Leave", class: "bg-red-50 border border-red-100" },
+          { label: "Public Holiday", class: "bg-purple-50 border border-purple-100" },
+          { label: "Modified", class: "bg-yellow-50 border border-yellow-100" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded ${item.class}`} />
@@ -654,12 +775,12 @@ const RosterSection = () => {
           </div>
         ))}
       </div>
-    </div>
+    </DashCard>
   );
 };
 
 // ============================================
-// ATTENDANCE GRAPH - Pastel Colors
+// ATTENDANCE GRAPH
 // ============================================
 const graphData = [
   { day: "Mon", hours: 8.5 },
@@ -672,15 +793,15 @@ const graphData = [
 ];
 
 const AttendanceGraph = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 className="text-lg font-semibold text-gray-800 mb-1">Attendance Overview</h2>
+  <DashCard accentColor="#4ECDC4">
+    <CardTitle icon={<ChartBar size={16} />}>Attendance Overview</CardTitle>
     <p className="text-xs text-gray-500 mb-5">This week's working hours</p>
     <div className="h-64">
       <div className="flex items-end justify-between h-full gap-2">
         {graphData.map((item, index) => (
           <div key={index} className="flex flex-col items-center flex-1">
             <div 
-              className="w-full bg-gradient-to-t from-pastel-blue to-pastel-lavender rounded-lg transition-all duration-500 hover:from-pastel-blue/80 hover:to-pastel-lavender/80"
+              className="w-full bg-gradient-to-t from-blue-400 to-blue-300 rounded-lg transition-all duration-500 hover:from-blue-500 hover:to-blue-400"
               style={{ height: `${(item.hours / 10) * 200}px`, maxHeight: "200px" }}
             />
             <p className="text-xs text-gray-500 mt-2">{item.day}</p>
@@ -689,11 +810,11 @@ const AttendanceGraph = () => (
         ))}
       </div>
     </div>
-  </div>
+  </DashCard>
 );
 
 // ============================================
-// HOLIDAYS & EVENTS - Pastel Colors
+// HOLIDAYS & EVENTS
 // ============================================
 const holidays = [
   { date: "Apr 25", name: "ANZAC Day", day: "Friday" },
@@ -702,14 +823,12 @@ const holidays = [
 ];
 
 const HolidaysEvents = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
-      <PartyPopper size={18} className="text-pastel-blue" /> Upcoming Holidays
-    </h2>
+  <DashCard accentColor="#FFB347">
+    <CardTitle icon={<PartyPopper size={16} />}>Upcoming Holidays</CardTitle>
     <div className="space-y-3">
       {holidays.map((h, i) => (
         <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-pastel-blue to-pastel-lavender flex flex-col items-center justify-center text-gray-700 leading-tight">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-400 to-blue-300 flex flex-col items-center justify-center text-white leading-tight">
             <span className="text-[10px] font-medium">{h.date.split(" ")[0]}</span>
             <span className="text-lg font-bold -mt-0.5">{h.date.split(" ")[1]}</span>
           </div>
@@ -722,33 +841,33 @@ const HolidaysEvents = () => (
         </div>
       ))}
     </div>
-  </div>
+  </DashCard>
 );
 
 // ============================================
-// PAYROLL SNAPSHOT - Pastel Colors
+// PAYROLL SNAPSHOT
 // ============================================
 const PayrollSnapshot = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 className="text-lg font-semibold text-gray-800 mb-5">Payroll</h2>
+  <DashCard accentColor="#A8E6CF">
+    <CardTitle icon={<Wallet size={16} />}>Payroll</CardTitle>
     <div className="flex items-center gap-4 mb-5">
-      <div className="w-12 h-12 rounded-2xl bg-pastel-green flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
         <IndianRupee size={22} className="text-gray-700" />
       </div>
       <div>
         <p className="text-xs text-gray-500">Last Salary Credited</p>
         <p className="text-2xl font-bold text-gray-800">₹85,400</p>
       </div>
-      <span className="ml-auto flex items-center gap-0.5 text-emerald-600 text-xs font-medium bg-pastel-green/30 px-2 py-1 rounded-full">
+      <span className="ml-auto flex items-center gap-0.5 text-green-600 text-xs font-medium bg-green-100 px-2 py-1 rounded-full">
         <TrendingUp size={12} /> +5%
       </span>
     </div>
     <div className="grid grid-cols-2 gap-3 mb-5">
-      <div className="p-3 rounded-xl bg-pastel-blue/20 text-center">
+      <div className="p-3 rounded-xl bg-blue-50 text-center">
         <p className="text-xs text-gray-500">Basic</p>
         <p className="text-sm font-semibold text-gray-800">₹50,000</p>
       </div>
-      <div className="p-3 rounded-xl bg-pastel-pink/20 text-center">
+      <div className="p-3 rounded-xl bg-red-50 text-center">
         <p className="text-xs text-gray-500">Deductions</p>
         <p className="text-sm font-semibold text-gray-800">₹14,600</p>
       </div>
@@ -756,21 +875,21 @@ const PayrollSnapshot = () => (
     <button className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
       <Download size={15} /> Download Payslip
     </button>
-  </div>
+  </DashCard>
 );
 
 // ============================================
-// NOTIFICATIONS - Pastel Colors
+// NOTIFICATIONS
 // ============================================
 const notifications = [
-  { icon: <Info size={15} className="text-pastel-blue" />, title: "Team outing scheduled for April 18", time: "2 hours ago" },
-  { icon: <AlertTriangle size={15} className="text-pastel-yellow" />, title: "Timesheet submission due by Friday", time: "5 hours ago" },
-  { icon: <Bell size={15} className="text-pastel-lavender" />, title: "New company policy update available", time: "1 day ago" },
+  { icon: <Info size={15} className="text-blue-500" />, title: "Team outing scheduled for April 18", time: "2 hours ago" },
+  { icon: <AlertTriangle size={15} className="text-yellow-500" />, title: "Timesheet submission due by Friday", time: "5 hours ago" },
+  { icon: <Bell size={15} className="text-purple-500" />, title: "New company policy update available", time: "1 day ago" },
 ];
 
 const Notifications = () => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 className="text-lg font-semibold text-gray-800 mb-5">Notifications</h2>
+  <DashCard accentColor="#FFE66D">
+    <CardTitle icon={<Bell size={16} />}>Notifications</CardTitle>
     <div className="space-y-3">
       {notifications.map((n, i) => (
         <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
@@ -784,7 +903,7 @@ const Notifications = () => (
         </div>
       ))}
     </div>
-  </div>
+  </DashCard>
 );
 
 // ============================================
@@ -796,39 +915,6 @@ const EmployeeDashboard2 = () => {
   
   // Use the theme context
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
-
-  // Add pastel color CSS variables
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .bg-pastel-blue { background-color: #A8D8EA; }
-      .bg-pastel-purple { background-color: #C5A3FF; }
-      .bg-pastel-pink { background-color: #FFB7B2; }
-      .bg-pastel-green { background-color: #B5EAD7; }
-      .bg-pastel-yellow { background-color: #FFEAA7; }
-      .bg-pastel-orange { background-color: #FFD6A5; }
-      .bg-pastel-peach { background-color: #FDD0B5; }
-      .bg-pastel-mint { background-color: #C7E9D0; }
-      .bg-pastel-lavender { background-color: #E8D5F5; }
-      .from-pastel-blue { --tw-gradient-from: #A8D8EA; --tw-gradient-to: rgba(168, 216, 234, 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-      .to-pastel-purple { --tw-gradient-to: #C5A3FF; }
-      .text-pastel-blue { color: #A8D8EA; }
-      .text-pastel-purple { color: #C5A3FF; }
-      .text-pastel-pink { color: #FFB7B2; }
-      .text-pastel-green { color: #B5EAD7; }
-      .text-pastel-yellow { color: #FFEAA7; }
-      .text-pastel-lavender { color: #E8D5F5; }
-      .border-pastel-blue { border-color: #A8D8EA; }
-      .border-pastel-pink { border-color: #FFB7B2; }
-      .border-pastel-green { border-color: #B5EAD7; }
-      .border-pastel-yellow { border-color: #FFEAA7; }
-      .border-pastel-lavender { border-color: #E8D5F5; }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   return (
     <>
@@ -858,27 +944,35 @@ const EmployeeDashboard2 = () => {
         currentBgColor={backgroundColor}
       />
 
-      {/* Main Content */}
-      <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6" style={{ backgroundColor: backgroundColor }}>
-        <WelcomeSection user={user} />
-        <QuickStats />
+      {/* Main Content - Full Screen Layout */}
+      <div className="min-h-screen p-4 md:p-8 transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Calendar Widget - Replaces the old Welcome Section */}
+          <CalendarWidget />
+          
+          <QuickStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <AttendanceCard />
-          <TodaySchedule />
-          <TasksSection />
-        </div>
+          {/* First Row - 3 columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <AttendanceCard />
+            <TodaySchedule />
+            <TasksSection />
+          </div>
 
-        <RosterSection />
+          {/* Second Row - Full Width Roster */}
+          <RosterSection />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AttendanceGraph />
-          <HolidaysEvents />
-        </div>
+          {/* Third Row - 2 columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AttendanceGraph />
+            <HolidaysEvents />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PayrollSnapshot />
-          <Notifications />
+          {/* Fourth Row - 2 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PayrollSnapshot />
+            <Notifications />
+          </div>
         </div>
       </div>
     </>
