@@ -89,6 +89,17 @@ const EmployeeSidebar = ({
 
   const buttonBorderColor = getButtonBorderColor(currentColor);
 
+  // Get the current user role to determine dashboard link
+  const currentUserRole = localStorage.getItem('CURRENT_USER_ROLE');
+  const isAdmin = currentUserRole === 'superadmin' || 
+                  currentUserRole === 'organization_admin' || 
+                  currentUserRole === 'hr_manager' ||
+                  currentUserRole === 'payroll_manager' ||
+                  currentUserRole === 'recruiter';
+  
+  // Set dashboard link based on role
+  const dashboardLink = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+
   return (
     <>
       {/* Mobile overlay */}
@@ -138,10 +149,10 @@ const EmployeeSidebar = ({
             </button>
           </div>
 
-          {/* Logo Section */}
+          {/* Logo Section - Fixed to use role-based dashboard link */}
           <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <div className="flex items-center p-4 h-full">
-              <Link to="/dashboard" className="flex items-center">
+              <Link to={dashboardLink} className="flex items-center">
                 <img
                   src={logoIcon}
                   alt="CHRISPP Icon"
