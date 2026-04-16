@@ -1,4 +1,4 @@
-// src/pages/Dashboard/EmployeeDashboard2.jsx
+// src/components/EmployeeDashboard2.jsx
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useTheme } from '../contexts/ThemeContext';
@@ -172,7 +172,7 @@ const Badge = ({ color = 'bg-green-100 text-green-700', children }) => (
 );
 
 // ============================================
-// CALENDAR WIDGET - Same as Dashboard 1
+// CALENDAR WIDGET
 // ============================================
 const CalendarWidget = () => {
   const today = new Date();
@@ -185,7 +185,6 @@ const CalendarWidget = () => {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   
-  // Example holidays and events (replace with your actual data)
   const holidays = [10, 25];
   const events = [5, 15, 20];
   
@@ -238,22 +237,13 @@ const CalendarWidget = () => {
           {monthNames[month]} {year}
         </CardTitle>
         <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <ChevronLeft size={14} />
           </button>
-          <button
-            onClick={goToToday}
-            className="px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
+          <button onClick={goToToday} className="px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
             Today
           </button>
-          <button
-            onClick={nextMonth}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <ChevronRight size={14} />
           </button>
         </div>
@@ -292,18 +282,9 @@ const CalendarWidget = () => {
       </div>
       
       <div className="flex justify-center gap-4 text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-200" />
-          Holiday
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-200" />
-          Event
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-          Today
-        </span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-200" />Holiday</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-200" />Event</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" />Today</span>
       </div>
     </DashCard>
   );
@@ -378,10 +359,7 @@ const PunchedInView = ({ data, progress }) => (
         </span>
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2">
-        <div 
-          className="bg-green-500 h-2 rounded-full transition-all duration-1000"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="bg-green-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
       </div>
     </div>
     <div className="grid grid-cols-2 gap-3">
@@ -418,10 +396,7 @@ const PunchedOutView = ({ data, progress }) => (
         </span>
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2">
-        <div 
-          className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="bg-blue-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
       </div>
     </div>
     <div className="grid grid-cols-3 gap-2">
@@ -448,9 +423,7 @@ const AttendanceCard = () => {
   const [data] = useState(dummyAttendanceData);
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
-  const progress = data.workedMinutes
-    ? Math.min((data.workedMinutes / data.totalShiftMinutes) * 100, 100)
-    : 0;
+  const progress = data.workedMinutes ? Math.min((data.workedMinutes / data.totalShiftMinutes) * 100, 100) : 0;
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimatedProgress(progress), 400);
@@ -913,7 +886,7 @@ const statCards = [
   { label: 'Overtime Hours', value: '8h', change: 2, up: true, accent: '#FFB347', icon: <Icons.Chart /> },
 ];
 
-const StatCard = ({ icon, value, label, accent , up, change}) => (
+const StatCard = ({ icon, value, label, accent, up, change }) => (
   <DashCard accentColor={accent}>
     <div className="flex items-start justify-between">
       <div>
@@ -946,7 +919,10 @@ const QuickStats = () => (
 // MAIN EMPLOYEE DASHBOARD
 // ============================================
 const EmployeeDashboard2 = () => {
-  const { user } = useOutletContext();
+  // Safe way to get context - provide default values
+  const context = useOutletContext();
+  const user = context?.user || null;
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
 

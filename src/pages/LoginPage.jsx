@@ -26,6 +26,127 @@ const LoginPage = ({ onLogin }) => {
   
   const navigate = useNavigate();
 
+  // Function to determine dashboard based on user role
+  const getDashboardPath = (roles, selectedOrganizationId) => {
+    // Find the role for the selected organization
+    const userRoleForOrg = roles.find(
+      role => role.organization_id === selectedOrganizationId
+    );
+    
+    if (!userRoleForOrg) {
+      return "/dashboard"; // Default to admin dashboard
+    }
+    
+    const roleName = userRoleForOrg.role_name?.toLowerCase();
+    
+    // Check if user is admin (superadmin, organization_admin, hr_manager)
+    const isAdminRole = roleName === 'superadmin' || 
+                        roleName === 'organization_admin' || 
+                        roleName === 'hr_manager' ||
+                        roleName === 'payroll_manager' ||
+                        roleName === 'recruiter';
+    
+    if (isAdminRole) {
+      return "/dashboard"; // Admin Dashboard (DashboardContent)
+    } else {
+      return "/dashboard/employee-dashboard"; // Employee Dashboard (EmployeeDashboard2)
+    }
+  };
+
+  // Handle login submit
+  // In LoginPage.jsx, update the handleSubmit function:
+
+// src/pages/LoginPage.jsx - Updated handleSubmit function
+// In LoginPage.jsx, update the handleSubmit function:
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setErrors({});
+  if (validateForm()) {
+    setIsSubmitting(true);
+    try {
+      const response = await login(email, password);
+      console.log("API Response:", response.data);
+
+      // Clear existing data first
+      localStorage.clear();
+      
+      const token = response.data.data.token;
+      const userData = response.data.data.user;
+      const userRoles = response.data.data.roles || [];
+      
+      console.log("User Roles from API:", userRoles);
+      
+      // Store new data
+      localStorage.setItem('ACCESS_TOKEN', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('USER_ROLES', JSON.stringify(userRoles));
+      
+      // Find the organization with superadmin role first
+      let selectedOrg = null;
+      let selectedRole = null;
+      
+      // Priority: superadmin first
+      const superAdminOrg = userRoles.find(r => r.role_name?.toLowerCase() === 'superadmin');
+      if (superAdminOrg) {
+        selectedOrg = superAdminOrg;
+        selectedRole = superAdminOrg.role_name;
+        console.log("Found superadmin organization:", superAdminOrg.organization_name);
+      } else {
+        // Then check other admin roles
+        const adminRoles = ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+        for (const role of adminRoles) {
+          const adminOrg = userRoles.find(r => r.role_name?.toLowerCase() === role);
+          if (adminOrg) {
+            selectedOrg = adminOrg;
+            selectedRole = role;
+            break;
+          }
+        }
+      }
+      
+      // If no admin role found, use the first organization
+      if (!selectedOrg && userRoles.length > 0) {
+        selectedOrg = userRoles[0];
+        selectedRole = selectedOrg.role_name;
+      }
+      
+      if (selectedOrg) {
+        localStorage.setItem('selectedOrgId', selectedOrg.organization_id);
+        localStorage.setItem('CURRENT_USER_ROLE', selectedRole);
+        console.log(`✅ Selected Organization: ${selectedOrg.organization_name} (ID: ${selectedOrg.organization_id}) with role: ${selectedRole}`);
+      }
+      
+      // Pass both user data and roles to onLogin
+      onLogin(userData, userRoles);
+      
+      // Determine which dashboard to navigate to
+      const isAdmin = selectedRole?.toLowerCase() === 'superadmin' || 
+                      ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'].includes(selectedRole?.toLowerCase());
+      
+      if (isAdmin) {
+        console.log("🚀 Redirecting to Admin Dashboard");
+        navigate("/dashboard/admin-dashboard");
+      } else {
+        console.log("🚀 Redirecting to Employee Dashboard");
+        navigate("/dashboard/employee-dashboard");
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      const newErrors = {};
+      if (error.response?.data?.message) {
+          newErrors.api = error.response.data.message;
+      } else {
+          newErrors.api = "Login failed. Please check your credentials.";
+      }
+      setErrors(newErrors);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+};
+
   // Validate login form
   const validateForm = () => {
     const newErrors = {};
@@ -63,36 +184,6 @@ const LoginPage = ({ onLogin }) => {
     else if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle login submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    if (validateForm()) {
-      setIsSubmitting(true);
-      try {
-        const response = await login(email, password);
-        console.log("API Response:", response.data);
-
-        localStorage.setItem('ACCESS_TOKEN', response.data.data.token);
-        const userData = response.data.data.user;
-        
-        onLogin(userData);  
-        navigate("/dashboard");
-
-      } catch (error) {
-        const newErrors = {};
-        if (error.response?.data?.message) {
-            newErrors.api = error.response.data.message;
-        } else {
-            newErrors.api = "Login failed. Please check your credentials.";
-        }
-        setErrors(newErrors);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
   };
 
   // Handle forgot password

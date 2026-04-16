@@ -1,24 +1,25 @@
-// src/pages/DashboardLayout.jsx
+// src/components/EmployeeDashboardLayout.jsx
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+import EmployeeSidebar from './EmployeeSidebar';
+import Header from './Header';
 import { useTheme } from '../contexts/ThemeContext';
 
-const DashboardLayout = ({ onLogout, user }) => {
+const EmployeeDashboardLayout = ({ onLogout, user }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { sidebarColor } = useTheme();
 
   return (
     <div className="flex h-screen">
-      <Sidebar 
+      <EmployeeSidebar 
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setIsSidebarOpen}
         onLogout={onLogout}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
         sidebarColor={sidebarColor}
+        user={user}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
@@ -34,4 +35,4 @@ const DashboardLayout = ({ onLogout, user }) => {
   );
 };
 
-export default DashboardLayout;
+export default EmployeeDashboardLayout;

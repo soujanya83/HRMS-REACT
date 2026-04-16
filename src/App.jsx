@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState } from "react";
 import {
   createBrowserRouter,
@@ -13,9 +14,10 @@ import ApplicationSuccess from './pages/public/ApplicationSuccess';
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
+import EmployeeDashboardLayout from "./components/EmployeeDashboardLayout";
 import ErrorPage from "./pages/ErrorPage";
 import DashboardContent from "./components/DashboardContent";
-import EmployeeDashboard2 from "./components/EmployeeDashboard2"; // ADD THIS IMPORT
+import EmployeeDashboard2 from "./components/EmployeeDashboard2";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import JobOpeningsPage from "./pages/Recruitment/JobOpeningsPage";
 import ApplicantsPage from "./pages/Recruitment/ApplicantsPage";
@@ -61,7 +63,7 @@ import FeedbackAppraisals from "./pages/Performance/FeedbackAppraisals";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
-import { OrganizationProvider } from "./contexts/OrganizationContext";
+import { OrganizationProvider, useOrganizations } from "./contexts/OrganizationContext";
 import XeroIntegrationPage from "./pages/setting /XeroIntegrationPage";
 import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
@@ -69,6 +71,13 @@ import AssignRolePage from "./pages/setting /AssignRolePage";
 
 // --- Import Theme Context ---
 import { ThemeProvider } from "./contexts/ThemeContext";
+
+// --- Helper function to check if user is admin based on role ---
+const isAdminUser = (roleName) => {
+  if (!roleName) return false;
+  const adminRoles = ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+  return adminRoles.includes(roleName?.toLowerCase());
+};
 
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -81,13 +90,55 @@ const PublicRoute = ({ isLoggedIn, children }) => {
   return children;
 };
 
+// --- Dashboard Router Component - Uses context from parent provider ---
+const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
+  // This hook is now safe because it's inside OrganizationProvider
+  const { selectedOrganization, currentUserRole, isLoading, isAdmin } = useOrganizations();
+  
+  console.log("🔍 DashboardRouter Debug:", {
+    isLoading,
+    isAdmin,
+    currentUserRole,
+    selectedOrganizationName: selectedOrganization?.name,
+    selectedOrganizationId: selectedOrganization?.id
+  });
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Force admin layout for superadmin role
+  const shouldUseAdminLayout = currentUserRole?.toLowerCase() === 'superadmin' || isAdmin;
+  
+  console.log("🎯 Using Layout:", shouldUseAdminLayout ? "AdminLayout" : "EmployeeLayout");
+  
+  const Layout = shouldUseAdminLayout ? DashboardLayout : EmployeeDashboardLayout;
+  
+  return (
+    <Layout onLogout={onLogout} user={user} />
+  );
+};
+
 // --- Main App Component ---
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("ACCESS_TOKEN"));
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
+  const [user, setUser] = useState(() => {
+    const userData = localStorage.getItem("user");
+    return userData ? JSON.parse(userData) : null;
+  });
 
-  const handleLogin = (userData) => {
+  const handleLogin = (userData, roles) => {
     localStorage.setItem("user", JSON.stringify(userData));
+    if (roles) {
+      localStorage.setItem("USER_ROLES", JSON.stringify(roles));
+    }
     setUser(userData);
     setIsLoggedIn(true);
   };
@@ -105,7 +156,7 @@ function App() {
   };
 
   const router = createBrowserRouter([
-    // ✅ COMPLETELY PUBLIC ROUTES - No authentication check at all
+    // Public routes
     {
       path: "/apply/:organizationId",
       element: <PublicEmployeeForm />,
@@ -118,20 +169,25 @@ function App() {
       path: "/login",
       element: <PublicRoute isLoggedIn={isLoggedIn}><LoginPage onLogin={handleLogin} /></PublicRoute>,
     },
-    // ✅ PROTECTED ROUTES - Authentication required
+    // Protected routes - Dashboard wrapped with OrganizationProvider at the top level
     {
       path: "/dashboard",
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn}>
           <OrganizationProvider>
-            <DashboardLayout onLogout={handleLogout} user={user} />
+            <DashboardRouter isLoggedIn={isLoggedIn} user={user} onLogout={handleLogout} />
           </OrganizationProvider>
         </ProtectedRoute>
       ),
       errorElement: <ErrorPage />,
       children: [
-        { index: true, element: <DashboardContent /> },
-        { path: "employee-dashboard", element: <EmployeeDashboard2 /> }, // ADD THIS ROUTE
+        // Root redirect
+        { index: true, element: <Navigate to="admin-dashboard" replace /> },
+        // Admin Dashboard
+        { path: "admin-dashboard", element: <DashboardContent /> },
+        // Employee Dashboard
+        { path: "employee-dashboard", element: <EmployeeDashboard2 /> },
+        // All routes (sidebar will control visibility)
         { path: "organizations/*", element: <OrganizationsPage /> },
         { 
           path: "recruitment", 
@@ -157,6 +213,16 @@ function App() {
             { path: "history", element: <EmployeeHistoryPage /> },
             { path: ":id/documents", element: <EmployeeDocumentsPage /> },
             { path: ":id", element: <EmployeeProfile /> },
+          ]
+        },
+        {
+          path: "settings/*", 
+          children: [
+            { path: "roles", element: <RoleManagementPage /> },
+            { path: "assign-role", element: <AssignRolePage /> },
+            { path: "permissions", element: <PermissionManagementPage /> },
+            { path: "xero", element: <XeroIntegrationPage /> },
+            { index: true, element: <Navigate to="roles" replace /> }
           ]
         },
         { 
@@ -207,19 +273,10 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-        {
-          path: "settings/*", 
-          children: [
-            { path: "roles", element: <RoleManagementPage /> },
-            { path: "assign-role", element: <AssignRolePage /> },
-            { path: "permissions", element: <PermissionManagementPage /> },
-            { path: "xero", element: <XeroIntegrationPage /> },
-            { index: true, element: <Navigate to="roles" replace /> }
-          ]
-        }
+        { path: "profile", element: <div>Profile Settings Page</div> },
       ],
     },
-    // ✅ Default redirects
+    // Default redirects
     { path: "/", element: <Navigate to="/login" /> },
     { path: "/apply", element: <Navigate to="/login" /> },
     { path: "*", element: <Navigate to="/login" /> },
