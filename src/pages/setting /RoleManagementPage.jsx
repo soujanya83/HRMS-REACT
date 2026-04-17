@@ -801,26 +801,57 @@ export default function RoleManagementPage() {
     }
   }, [selectedOrganization]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [rolesData, permissionsData] = await Promise.all([
-        roleService.getRoles(),
-        roleService.getAllPermissions()
-      ]);
-      
-      setRoles(rolesData);
-      setPermissions(permissionsData);
-      
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-      setError('Failed to load data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Update the fetchData function in RoleManagementPage.jsx
 
+const fetchData = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const [rolesData, permissionsData] = await Promise.all([
+      roleService.getRoles(),
+      roleService.getAllPermissions()
+    ]);
+    
+    // Check if rolesData is valid
+    let rolesArray = [];
+    if (rolesData && rolesData.data && Array.isArray(rolesData.data)) {
+      rolesArray = rolesData.data;
+    } else if (rolesData && Array.isArray(rolesData)) {
+      rolesArray = rolesData;
+    } else if (rolesData && rolesData.success && rolesData.data && Array.isArray(rolesData.data)) {
+      rolesArray = rolesData.data;
+    }
+    
+    // Check if permissionsData is valid
+    let permissionsArray = [];
+    if (permissionsData && permissionsData.data && Array.isArray(permissionsData.data)) {
+      permissionsArray = permissionsData.data;
+    } else if (permissionsData && Array.isArray(permissionsData)) {
+      permissionsArray = permissionsData;
+    } else if (permissionsData && permissionsData.success && permissionsData.data && Array.isArray(permissionsData.data)) {
+      permissionsArray = permissionsData.data;
+    }
+    
+    setRoles(rolesArray);
+    setPermissions(permissionsArray);
+    
+  } catch (err) {
+    console.error('Failed to fetch data:', err);
+    
+    // Check if it's a 500 error
+    if (err.response?.status === 500) {
+      setError('Server error (500). The API endpoint may be temporarily unavailable. Please try again later or contact support.');
+    } else {
+      setError(err.response?.data?.message || 'Failed to load data. Please try again.');
+    }
+    
+    // Set empty arrays to prevent further errors
+    setRoles([]);
+    setPermissions([]);
+  } finally {
+    setLoading(false);
+  }
+};
   // Filter roles based on search - EXCLUDE superadmin
   const filteredRoles = roles.filter(role => {
     // Exclude superadmin role
