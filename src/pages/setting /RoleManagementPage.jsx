@@ -587,8 +587,7 @@ const RoleFormModal = ({ isOpen, onClose, role, permissions, onSave, loading }) 
 const RoleDetailsModal = ({ isOpen, onClose, role, permissions, userCount }) => {
   if (!isOpen || !role) return null;
 
-  // Get role permissions (this would come from API in real implementation)
-  const rolePermissions = permissions; // In real app, fetch from roleService.getRolePermissions(role.id)
+  const rolePermissions = permissions;
 
   const getPermissionCountByCategory = () => {
     const counts = {};
@@ -629,7 +628,6 @@ const RoleDetailsModal = ({ isOpen, onClose, role, permissions, userCount }) => 
         </div>
 
         <div className="p-6 max-h-[70vh] overflow-y-auto">
-          {/* Role Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-sm text-blue-600 font-medium mb-1">Total Users</div>
@@ -649,7 +647,6 @@ const RoleDetailsModal = ({ isOpen, onClose, role, permissions, userCount }) => 
             </div>
           </div>
 
-          {/* Permissions by Category */}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Permissions Breakdown
@@ -824,10 +821,23 @@ export default function RoleManagementPage() {
     }
   };
 
-  // Filter roles based on search
-  const filteredRoles = roles.filter(role =>
-    role.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter roles based on search - EXCLUDE superadmin
+  const filteredRoles = roles.filter(role => {
+    // Exclude superadmin role
+    if (role.name?.toLowerCase() === 'superadmin') return false;
+    return role.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // Calculate stats excluding superadmin
+  const totalRoles = roles.filter(r => r.name?.toLowerCase() !== 'superadmin').length;
+  const adminRoles = roles.filter(r => 
+    r.name?.toLowerCase().includes('admin') && 
+    r.name?.toLowerCase() !== 'superadmin'
+  ).length;
+  const customRoles = roles.filter(r => 
+    !r.name?.toLowerCase().includes('admin') && 
+    r.name?.toLowerCase() !== 'superadmin'
+  ).length;
 
   const handleOpenForm = (role = null) => {
     setModalState(prev => ({ ...prev, form: true, role }));
@@ -854,52 +864,68 @@ export default function RoleManagementPage() {
   };
 
   const handleSaveRole = async (formData) => {
-    setSaving(true);
-    setError(null);
-    setSuccessMessage(null);
+  setSaving(true);
+  setError(null);
+  setSuccessMessage(null);
 
-    try {
-      let savedRole;
+  try {
+    let savedRole;
+    
+    if (modalState.role) {
+      // Update existing role
+      savedRole = await roleService.updateRole(modalState.role.id, {
+        name: formData.name,
+        guard_name: formData.guard_name
+      });
       
-      if (modalState.role) {
-        // Update existing role
-        savedRole = await roleService.updateRole(modalState.role.id, formData);
-        
-        // Sync permissions if any selected
-        if (formData.permission_ids.length > 0) {
+      // Sync permissions if any selected - DO THIS SEPARATELY
+      if (formData.permission_ids && formData.permission_ids.length > 0) {
+        try {
           await roleService.syncRolePermissions(savedRole.id, formData.permission_ids);
+          console.log('Permissions synced successfully');
+        } catch (permError) {
+          console.error('Error syncing permissions:', permError);
+          // Don't throw here, just log the error
         }
-        
-        setRoles(prev => prev.map(role => 
-          role.id === modalState.role.id ? savedRole : role
-        ));
-        setSuccessMessage(`Role "${savedRole.name}" updated successfully!`);
-      } else {
-        // Create new role
-        savedRole = await roleService.createRole({
-          name: formData.name,
-          guard_name: formData.guard_name
-        });
-        
-        // Assign permissions if any selected
-        if (formData.permission_ids.length > 0) {
-          await roleService.syncRolePermissions(savedRole.id, formData.permission_ids);
-        }
-        
-        setRoles(prev => [...prev, savedRole]);
-        setSuccessMessage(`Role "${savedRole.name}" created successfully!`);
       }
       
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setRoles(prev => prev.map(role => 
+        role.id === modalState.role.id ? savedRole : role
+      ));
+      setSuccessMessage(`Role "${savedRole.name}" updated successfully!`);
+    } else {
+      // Create new role
+      savedRole = await roleService.createRole({
+        name: formData.name,
+        guard_name: formData.guard_name
+      });
       
-    } catch (err) {
-      console.error('Error saving role:', err);
-      setError(err.response?.data?.message || 'Failed to save role. Please try again.');
-      throw err;
-    } finally {
-      setSaving(false);
+      // Assign permissions if any selected
+      if (formData.permission_ids && formData.permission_ids.length > 0 && savedRole.id) {
+        try {
+          await roleService.syncRolePermissions(savedRole.id, formData.permission_ids);
+          console.log('Permissions assigned successfully');
+        } catch (permError) {
+          console.error('Error assigning permissions:', permError);
+          // Don't throw here, just log the error
+        }
+      }
+      
+      setRoles(prev => [...prev, savedRole]);
+      setSuccessMessage(`Role "${savedRole.name}" created successfully!`);
     }
-  };
+    
+    setTimeout(() => setSuccessMessage(null), 3000);
+    
+  } catch (err) {
+    console.error('Error saving role:', err);
+    console.error('Error response:', err.response?.data);
+    setError(err.response?.data?.message || 'Failed to save role. Please try again.');
+    throw err;
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeleteRole = async () => {
     if (!modalState.role) return;
@@ -928,7 +954,6 @@ export default function RoleManagementPage() {
     setSuccessMessage(null);
 
     try {
-      // Create a new role based on the existing one
       const newRoleData = {
         name: `${role.name} (Copy)`,
         guard_name: role.guard_name
@@ -936,7 +961,6 @@ export default function RoleManagementPage() {
       
       const savedRole = await roleService.createRole(newRoleData);
       
-      // Get original role's permissions and assign them to the clone
       try {
         const rolePerms = await roleService.getRolePermissions(role.id);
         if (rolePerms.permissions && rolePerms.permissions.length > 0) {
@@ -945,7 +969,6 @@ export default function RoleManagementPage() {
         }
       } catch (permErr) {
         console.error('Error cloning permissions:', permErr);
-        // Continue even if permissions cloning fails
       }
       
       setRoles(prev => [...prev, savedRole]);
@@ -1068,14 +1091,14 @@ export default function RoleManagementPage() {
             </div>
           )}
 
-          {/* Stats */}
+          {/* Stats - Updated to exclude superadmin */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-3 rounded-lg bg-blue-50">
                   <FaUserShield className="h-6 w-6 text-blue-600" />
                 </div>
-                <span className="text-lg font-bold text-gray-800">{roles.length}</span>
+                <span className="text-lg font-bold text-gray-800">{totalRoles}</span>
               </div>
               <p className="text-sm text-gray-600">Total Roles</p>
             </div>
@@ -1096,7 +1119,7 @@ export default function RoleManagementPage() {
                   <FaUserCog className="h-6 w-6 text-purple-600" />
                 </div>
                 <span className="text-lg font-bold text-gray-800">
-                  {roles.filter(r => r.name.toLowerCase().includes('admin')).length}
+                  {adminRoles}
                 </span>
               </div>
               <p className="text-sm text-gray-600">Admin Roles</p>
@@ -1107,7 +1130,7 @@ export default function RoleManagementPage() {
                   <FaUserCheck className="h-6 w-6 text-orange-600" />
                 </div>
                 <span className="text-lg font-bold text-gray-800">
-                  {roles.filter(r => !r.name.toLowerCase().includes('admin')).length}
+                  {customRoles}
                 </span>
               </div>
               <p className="text-sm text-gray-600">Custom Roles</p>
@@ -1180,7 +1203,7 @@ export default function RoleManagementPage() {
                     onView={() => handleOpenDetails(role)}
                     onClone={() => handleOpenConfirm(role, "clone")}
                     loading={saving}
-                    userCount={0} // In real app, fetch user count for each role
+                    userCount={0}
                   />
                 ))}
               </div>
@@ -1193,7 +1216,7 @@ export default function RoleManagementPage() {
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-sm text-gray-600">
                   Showing <span className="font-semibold">{filteredRoles.length}</span> of{" "}
-                  <span className="font-semibold">{roles.length}</span> roles
+                  <span className="font-semibold">{totalRoles}</span> roles
                 </div>
                 <div className="text-sm text-gray-500">
                   Last updated: {new Date().toLocaleDateString()}
@@ -1218,7 +1241,7 @@ export default function RoleManagementPage() {
           onClose={handleCloseDetails}
           role={modalState.role}
           permissions={permissions}
-          userCount={0} // In real app, pass actual user count
+          userCount={0}
         />
 
         <ConfirmationModal

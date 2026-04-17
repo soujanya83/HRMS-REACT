@@ -1,4 +1,4 @@
-// Sidebar.jsx - Collapse button matches sidebar color, at top edge
+// Sidebar.jsx - COMPLETELY INDEPENDENT - No props, no context for color
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
@@ -45,26 +45,55 @@ import {
   HiOutlineUserCircle,
 } from "react-icons/hi";
 
+// DEFAULT COLOR - Dark Navy
+const DEFAULT_COLOR = '#0B1A2E';
+
 const Sidebar = ({
   isSidebarOpen,
   setSidebarOpen,
   onLogout,
   isCollapsed,
   setIsCollapsed,
-  sidebarColor: propSidebarColor,
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  // Initialize color from localStorage only once
-  const [currentColor, setCurrentColor] = useState(() => {
-    const saved = localStorage.getItem('sidebarColor');
-    if (saved && saved !== 'undefined' && saved !== 'null' && saved !== '#1a2d4e') {
-      return saved;
-    }
-    return propSidebarColor || '#1a2d4e';
-  });
+  // COMPLETELY INDEPENDENT color state - NO PROPS, NO CONTEXT
+  const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
   const location = useLocation();
 
-  // Get the current user role
+  // Load color from localStorage ONCE on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebarColor');
+      if (saved && saved !== 'undefined' && saved !== 'null' && saved !== DEFAULT_COLOR) {
+        setCurrentColor(saved);
+      } else if (!saved) {
+        // Set default color in localStorage if not exists
+        localStorage.setItem('sidebarColor', DEFAULT_COLOR);
+      }
+    } catch (error) {
+      console.error('Error loading sidebar color:', error);
+    }
+  }, []); // Empty dependency array - runs ONLY ONCE
+
+  // Listen for color update events from color palette
+  useEffect(() => {
+    const handleColorUpdate = (event) => {
+      try {
+        if (event.detail && event.detail.color && event.detail.color !== 'undefined' && event.detail.color !== 'null') {
+          console.log('🎨 Sidebar received color update:', event.detail.color);
+          setCurrentColor(event.detail.color);
+          localStorage.setItem('sidebarColor', event.detail.color);
+        }
+      } catch (error) {
+        console.error('Error updating sidebar color:', error);
+      }
+    };
+    
+    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
+    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
+  }, []);
+
+  // Get the current user role from localStorage
   const currentUserRole = localStorage.getItem('CURRENT_USER_ROLE');
   const isAdmin = currentUserRole === 'superadmin' || 
                   currentUserRole === 'organization_admin' || 
@@ -75,7 +104,7 @@ const Sidebar = ({
   // Set dashboard link based on role
   const dashboardLink = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
 
-  // Define base links as a constant outside component to prevent re-renders
+  // Define base links
   const baseLinks = useMemo(() => [
     {
       name: "Centers",
@@ -160,14 +189,14 @@ const Sidebar = ({
     },
   ], []);
 
-  // Dashboard links based on role - ONLY ONE DASHBOARD LINK
+  // Dashboard links
   const dashboardLinks = useMemo(() => [
     { name: "Dashboard", path: dashboardLink, icon: LuLayoutDashboard }
   ], [dashboardLink]);
 
   const navLinks = useMemo(() => [...dashboardLinks, ...baseLinks], [dashboardLinks, baseLinks]);
 
-  // Function to find which parent menu should be open based on current path
+  // Find active parent menu
   const findActiveParent = useCallback(() => {
     for (const link of navLinks) {
       if (link.children) {
@@ -187,34 +216,11 @@ const Sidebar = ({
     return null;
   }, [location.pathname, navLinks]);
 
-  // Handle open/close of submenus based on current route
+  // Handle submenu open/close
   useEffect(() => {
     const activeParent = findActiveParent();
     setOpenMenu(activeParent);
   }, [location.pathname, findActiveParent]);
-
-  // Only update color when propSidebarColor changes AND it's different from current
-  useEffect(() => {
-    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== 'null') {
-      if (propSidebarColor !== currentColor) {
-        setCurrentColor(propSidebarColor);
-        localStorage.setItem('sidebarColor', propSidebarColor);
-      }
-    }
-  }, [propSidebarColor]); // Only depend on propSidebarColor, not on currentColor
-
-  // Listen for color update events from color palette
-  useEffect(() => {
-    const handleColorUpdate = (event) => {
-      if (event.detail.color && event.detail.color !== 'undefined' && event.detail.color !== 'null') {
-        setCurrentColor(event.detail.color);
-        localStorage.setItem('sidebarColor', event.detail.color);
-      }
-    };
-    
-    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
-    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
-  }, []);
 
   const handleMenuClick = (menuName) => {
     if (!isCollapsed) {
@@ -222,17 +228,14 @@ const Sidebar = ({
     }
   };
 
-  // Get a slightly lighter/darker color for the collapse button border/hover effect
-  const getButtonBorderColor = (color) => {
-    if (color === "#1a2d4e") return "rgba(255, 255, 255, 0.2)";
-    if (color === "#0A1628") return "rgba(255, 255, 255, 0.2)";
-    if (color === "#0D0D0D") return "rgba(255, 255, 255, 0.2)";
-    if (color === "#001F1F") return "rgba(255, 255, 255, 0.2)";
-    if (color === "#1A0033") return "rgba(255, 255, 255, 0.2)";
+  // Get button border color based on sidebar color
+  const getButtonBorderColor = () => {
     return "rgba(255, 255, 255, 0.2)";
   };
 
-  const buttonBorderColor = getButtonBorderColor(currentColor);
+  const buttonBorderColor = getButtonBorderColor();
+
+  console.log('🎨 Sidebar rendering with color:', currentColor);
 
   return (
     <>
@@ -242,15 +245,21 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar wrapper */}
-      <div
-        className={`fixed inset-y-0 left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
-          md:sticky md:top-0 md:h-screen
-          ${isCollapsed ? "md:w-20" : "md:w-64"}
-          ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
-          md:translate-x-0`}
-      >
-        {/* Sidebar inner - LEFT side rounded corners ONLY */}
+      {/* Sidebar wrapper - WITH TOP AND BOTTOM SPACING like EmployeeSidebar */}
+     <div
+  className={`fixed left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
+-   md:sticky md:top-0 md:h-screen
++   
+    ${isCollapsed ? "md:w-20" : "md:w-64"}
+    ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
+    md:translate-x-0`}
+  style={{ 
+    top: "8px",
+    bottom: "8px",
+    height: "calc(100vh - 16px)"
+  }}
+>
+        {/* Sidebar inner */}
         <div
           className="h-full w-full flex flex-col relative overflow-visible"
           style={{ 
@@ -259,8 +268,8 @@ const Sidebar = ({
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Collapse Toggle Button - at the top edge, matching sidebar color */}
-          <div className="absolute -right-3 top-16 z-20 hidden md:block">
+          {/* Collapse Toggle Button - adjusted top position */}
+          <div className="absolute -right-3 top-20 z-20 hidden md:block">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="flex items-center justify-center w-7 h-7 rounded-full shadow-md transition-all duration-200 hover:scale-105 hover:brightness-110"

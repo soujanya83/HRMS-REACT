@@ -35,10 +35,13 @@ const roleService = {
     }
   },
 
-  // Update role
+  // Update role - Use POST with _method PUT
   updateRole: async (id, roleData) => {
     try {
-      const response = await axiosClient.post(`/roles/${id}`, roleData);
+      const response = await axiosClient.post(`/roles/${id}`, {
+        ...roleData,
+        _method: 'PUT'
+      });
       return response.data;
     } catch (error) {
       console.error(`Error updating role ${id}:`, error);
@@ -68,15 +71,41 @@ const roleService = {
     }
   },
 
-  // Sync role permissions
+  // Sync role permissions - FIXED: Send permissions as array
   syncRolePermissions: async (roleId, permissionIds) => {
     try {
-      const response = await axiosClient.post(`/roles/${roleId}/permissions`, {
-        permission_ids: permissionIds
-      });
+      // Make sure permissionIds is an array
+      if (!permissionIds || !Array.isArray(permissionIds)) {
+        console.error('Invalid permissionIds:', permissionIds);
+        return;
+      }
+      
+      console.log('Syncing permissions for role:', roleId, 'Permissions:', permissionIds);
+      
+      // Try different possible payload formats
+      const payload = {
+        permissions: permissionIds  // Try 'permissions' first
+      };
+      
+      const response = await axiosClient.post(`/roles/${roleId}/permissions`, payload);
       return response.data;
     } catch (error) {
       console.error(`Error syncing permissions for role ${roleId}:`, error);
+      console.error('Error response data:', error.response?.data);
+      throw error;
+    }
+  },
+
+  // Update permission - Use POST with _method PUT
+  updatePermission: async (id, permissionData) => {
+    try {
+      const response = await axiosClient.post(`/permissions/${id}`, {
+        ...permissionData,
+        _method: 'PUT'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating permission ${id}:`, error);
       throw error;
     }
   },

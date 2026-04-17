@@ -1,5 +1,5 @@
 // src/components/EmployeeSidebar.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
@@ -25,7 +25,6 @@ const EmployeeSidebar = ({
   setIsCollapsed,
   sidebarColor: propSidebarColor 
 }) => {
-  const [openMenu, setOpenMenu] = useState(null);
   const [currentColor, setCurrentColor] = useState(() => {
     const saved = localStorage.getItem('sidebarColor');
     if (saved && saved !== 'undefined' && saved !== 'null') {
@@ -35,7 +34,7 @@ const EmployeeSidebar = ({
   });
   const location = useLocation();
 
-  // Employee navigation links (no children/submenus in employee sidebar)
+  // Employee navigation links
   const navLinks = useMemo(() => [
     { name: "Dashboard", path: "/dashboard/employee-dashboard", icon: HiOutlineHome },
     { name: "Rostering", path: "/dashboard/rostering/rosters", icon: HiOutlineCalendar },
@@ -45,25 +44,6 @@ const EmployeeSidebar = ({
     { name: "Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCreditCard },
     { name: "Profile Settings", path: "/dashboard/profile", icon: HiOutlineUser },
   ], []);
-
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getEmployeeName = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    if (user?.name) return user.name;
-    return "Employee";
-  };
-
-  const getEmployeeEmail = () => {
-    if (user?.email) return user.email;
-    if (user?.personal_email) return user.personal_email;
-    return "employee@example.com";
-  };
 
   const getButtonBorderColor = (color) => {
     return "rgba(255, 255, 255, 0.2)";
@@ -101,12 +81,12 @@ const EmployeeSidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar wrapper */}
+      {/* Sidebar wrapper - width reduced from w-72 to w-64 to match admin sidebar */}
       <div
         className={`fixed inset-y-0 left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
-          ${isCollapsed ? "md:w-20" : "md:w-72"}
-          ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full w-72"} 
+          ${isCollapsed ? "md:w-20" : "md:w-64"}
+          ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
         style={{ 
           top: "8px",
@@ -160,26 +140,8 @@ const EmployeeSidebar = ({
             </div>
           </div>
 
-          {/* User Profile Section */}
-          <div className="flex flex-col items-center pt-6 pb-4 border-b" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
-            {/* Avatar */}
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg mb-2">
-              {getInitials(getEmployeeName())}
-            </div>
-            
-            {/* User Name */}
-            <h3 className="text-white font-semibold text-md text-center">
-              {getEmployeeName()}
-            </h3>
-            
-            {/* User Email */}
-            <p className="text-gray-300 text-xs text-center mt-0.5">
-              {getEmployeeEmail()}
-            </p>
-          </div>
-
-          {/* Navigation */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide py-4">
+          {/* Navigation - No user profile section */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide py-4 mt-2">
             <nav className="px-3 space-y-1">
               {navLinks.map((link) => (
                 <NavLink

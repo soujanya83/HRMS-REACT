@@ -6,7 +6,7 @@ import {
   CalendarDays, Briefcase, Clock, CalendarOff, Clock3, ListTodo, TrendingUp, Timer,
   Fingerprint, CheckCircle2, XCircle, LogIn, LogOut, FileText, CheckCircle, Circle,
   ArrowRight, IndianRupee, Download, Bell, Info, AlertTriangle, PartyPopper, Calendar,
-  Users, ChevronLeft, ChevronRight, Building2, Wallet
+  Users, ChevronLeft, ChevronRight, Building2, Wallet, Eye, FileText as FileIcon
 } from "lucide-react";
 
 // Icons for color palette
@@ -523,7 +523,7 @@ const TasksSection = () => (
 );
 
 // ============================================
-// ROSTER SECTION
+// ROSTER SECTION (MOVED TO FIRST POSITION)
 // ============================================
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const weekDates = ["7 Apr", "8 Apr", "9 Apr", "10 Apr", "11 Apr", "12 Apr", "13 Apr"];
@@ -749,34 +749,66 @@ const RosterSection = () => {
 };
 
 // ============================================
-// ATTENDANCE GRAPH
+// ATTENDANCE OVERVIEW FOR 2 WEEKS
 // ============================================
-const graphData = [
-  { day: "Mon", hours: 8.5 },
-  { day: "Tue", hours: 9 },
-  { day: "Wed", hours: 7.5 },
-  { day: "Thu", hours: 8 },
-  { day: "Fri", hours: 9.5 },
-  { day: "Sat", hours: 4 },
-  { day: "Sun", hours: 0 },
+const twoWeekGraphData = [
+  { week: "Week 1", day: "Mon", hours: 8.5 },
+  { week: "Week 1", day: "Tue", hours: 9 },
+  { week: "Week 1", day: "Wed", hours: 7.5 },
+  { week: "Week 1", day: "Thu", hours: 8 },
+  { week: "Week 1", day: "Fri", hours: 9.5 },
+  { week: "Week 1", day: "Sat", hours: 4 },
+  { week: "Week 2", day: "Mon", hours: 8 },
+  { week: "Week 2", day: "Tue", hours: 8.5 },
+  { week: "Week 2", day: "Wed", hours: 9 },
+  { week: "Week 2", day: "Thu", hours: 7 },
+  { week: "Week 2", day: "Fri", hours: 8.5 },
+  { week: "Week 2", day: "Sat", hours: 3.5 },
 ];
 
-const AttendanceGraph = () => (
+const week1Data = twoWeekGraphData.filter(d => d.week === "Week 1");
+const week2Data = twoWeekGraphData.filter(d => d.week === "Week 2");
+
+const AttendanceOverview = () => (
   <DashCard accentColor="#4ECDC4">
-    <CardTitle icon={<Icons.Chart />}>Attendance Overview</CardTitle>
-    <p className="text-xs text-gray-500 mb-5">This week's working hours</p>
-    <div className="h-64">
-      <div className="flex items-end justify-between h-full gap-2">
-        {graphData.map((item, index) => (
-          <div key={index} className="flex flex-col items-center flex-1">
-            <div 
-              className="w-full bg-gradient-to-t from-blue-400 to-blue-300 rounded-lg transition-all duration-500 hover:from-blue-500 hover:to-blue-400"
-              style={{ height: `${(item.hours / 10) * 200}px`, maxHeight: "200px" }}
-            />
-            <p className="text-xs text-gray-500 mt-2">{item.day}</p>
-            <p className="text-xs font-semibold text-gray-700">{item.hours}h</p>
-          </div>
-        ))}
+    <CardTitle icon={<Icons.Chart />}>Attendance Overview (2 Weeks)</CardTitle>
+    <p className="text-xs text-gray-500 mb-5">Last 2 weeks working hours comparison</p>
+    
+    {/* Week 1 */}
+    <div className="mb-6">
+      <h4 className="text-sm font-semibold text-gray-700 mb-3">Week 1 (Apr 7 - Apr 13)</h4>
+      <div className="h-40">
+        <div className="flex items-end justify-between h-full gap-2">
+          {week1Data.map((item, index) => (
+            <div key={index} className="flex flex-col items-center flex-1">
+              <div 
+                className="w-full bg-gradient-to-t from-blue-400 to-blue-300 rounded-lg transition-all duration-500 hover:from-blue-500 hover:to-blue-400"
+                style={{ height: `${(item.hours / 10) * 120}px`, maxHeight: "120px" }}
+              />
+              <p className="text-xs text-gray-500 mt-2">{item.day}</p>
+              <p className="text-xs font-semibold text-gray-700">{item.hours}h</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    
+    {/* Week 2 */}
+    <div>
+      <h4 className="text-sm font-semibold text-gray-700 mb-3">Week 2 (Apr 14 - Apr 20)</h4>
+      <div className="h-40">
+        <div className="flex items-end justify-between h-full gap-2">
+          {week2Data.map((item, index) => (
+            <div key={index} className="flex flex-col items-center flex-1">
+              <div 
+                className="w-full bg-gradient-to-t from-purple-400 to-purple-300 rounded-lg transition-all duration-500 hover:from-purple-500 hover:to-purple-400"
+                style={{ height: `${(item.hours / 10) * 120}px`, maxHeight: "120px" }}
+              />
+              <p className="text-xs text-gray-500 mt-2">{item.day}</p>
+              <p className="text-xs font-semibold text-gray-700">{item.hours}h</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </DashCard>
@@ -814,36 +846,36 @@ const HolidaysEvents = () => (
 );
 
 // ============================================
-// PAYROLL SNAPSHOT
+// PAYSLIP SECTION (Replaces Payroll)
 // ============================================
-const PayrollSnapshot = () => (
+const payslips = [
+  { month: "March 2024", amount: "₹85,400", downloadUrl: "#", viewUrl: "#" },
+  { month: "February 2024", amount: "₹82,500", downloadUrl: "#", viewUrl: "#" },
+  { month: "January 2024", amount: "₹82,500", downloadUrl: "#", viewUrl: "#" },
+  { month: "December 2023", amount: "₹80,000", downloadUrl: "#", viewUrl: "#" },
+];
+
+const PayslipSection = () => (
   <DashCard accentColor="#A8E6CF">
-    <CardTitle icon={<Icons.Wallet />}>Payroll</CardTitle>
-    <div className="flex items-center gap-4 mb-5">
-      <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-        <IndianRupee size={22} className="text-gray-700" />
-      </div>
-      <div>
-        <p className="text-xs text-gray-500">Last Salary Credited</p>
-        <p className="text-2xl font-bold text-gray-800">₹85,400</p>
-      </div>
-      <span className="ml-auto flex items-center gap-0.5 text-green-600 text-xs font-medium bg-green-100 px-2 py-1 rounded-full">
-        <TrendingUp size={12} /> +5%
-      </span>
+    <CardTitle icon={<FileIcon size={16} />}>Payslips</CardTitle>
+    <div className="space-y-3">
+      {payslips.map((payslip, i) => (
+        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+          <div>
+            <p className="text-sm font-semibold text-gray-800">{payslip.month}</p>
+            <p className="text-lg font-bold text-green-600">{payslip.amount}</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Payslip">
+              <Eye size={18} />
+            </button>
+            <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Download Payslip">
+              <Download size={18} />
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
-    <div className="grid grid-cols-2 gap-3 mb-5">
-      <div className="p-3 rounded-xl bg-blue-50 text-center">
-        <p className="text-xs text-gray-500">Basic</p>
-        <p className="text-sm font-semibold text-gray-800">₹50,000</p>
-      </div>
-      <div className="p-3 rounded-xl bg-red-50 text-center">
-        <p className="text-xs text-gray-500">Deductions</p>
-        <p className="text-sm font-semibold text-gray-800">₹14,600</p>
-      </div>
-    </div>
-    <button className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-      <Download size={15} /> Download Payslip
-    </button>
   </DashCard>
 );
 
@@ -964,21 +996,21 @@ const EmployeeDashboard2 = () => {
             <TodaySchedule />
           </div>
 
-          {/* Row 2: Tasks & Roster */}
-          <div className="grid grid-cols-1 gap-6">
-            <TasksSection />
-            <RosterSection />
-          </div>
+          {/* Row 2: Roster Section (Moved to top of second row) */}
+          <RosterSection />
 
-          {/* Row 3: Attendance Graph & Holidays */}
+          {/* Row 3: Tasks */}
+          <TasksSection />
+
+          {/* Row 4: Attendance Overview (2 weeks) & Holidays */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AttendanceGraph />
+            <AttendanceOverview />
             <HolidaysEvents />
           </div>
 
-          {/* Row 4: Payroll & Notifications */}
+          {/* Row 5: Payslip & Notifications */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <PayrollSnapshot />
+            <PayslipSection />
             <Notifications />
           </div>
         </div>

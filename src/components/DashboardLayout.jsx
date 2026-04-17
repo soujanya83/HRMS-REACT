@@ -3,12 +3,10 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { useTheme } from '../contexts/ThemeContext';
 
 const DashboardLayout = ({ onLogout, user }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { sidebarColor } = useTheme();
 
   return (
     <div className="flex h-screen">
@@ -18,7 +16,6 @@ const DashboardLayout = ({ onLogout, user }) => {
         onLogout={onLogout}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        sidebarColor={sidebarColor}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 

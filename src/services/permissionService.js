@@ -1,6 +1,5 @@
 // services/permissionService.js
 import axiosClient from '../axiosClient';
-// We don't need separate axios instance anymore since all endpoints are under /api/v1/
 
 const permissionService = {
   // Get all permissions (uses /api/v1/permissions)

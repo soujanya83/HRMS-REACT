@@ -144,6 +144,53 @@ const ColorPaletteModal = ({
 };
 
 // ============================================
+// DELETE CONFIRMATION MODAL
+// ============================================
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, permissionName, loading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90] p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-red-100 rounded-full">
+              <FaTrash className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Delete Permission</h2>
+              <p className="text-sm text-gray-500">This action cannot be undone</p>
+            </div>
+          </div>
+          
+          <p className="text-gray-700 mb-6">
+            Are you sure you want to delete the permission <strong className="font-mono">{permissionName}</strong>?
+          </p>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50"
+            >
+              {loading && <FaSpinner className="animate-spin" />}
+              Delete Permission
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -363,7 +410,7 @@ const PermissionTypeBadge = ({ action }) => {
 };
 
 // ============================================
-// PAGE 1: MODULES PAGE (ONE PER LINE - PROPER ALIGNMENT)
+// PAGE 1: MODULES PAGE
 // ============================================
 const ModulesPage = ({ modules, onViewPages, loading }) => {
   return (
@@ -441,7 +488,7 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
 };
 
 // ============================================
-// PAGE 2: MODULE PAGES PAGE (ONE PER LINE - PROPER ALIGNMENT)
+// PAGE 2: MODULE PAGES PAGE
 // ============================================
 const ModulePagesPage = ({
   module,
@@ -455,7 +502,6 @@ const ModulePagesPage = ({
 
   return (
     <div className="p-6">
-      {/* Header with back button */}
       <div className="mb-8">
         <button
           onClick={onBack}
@@ -550,7 +596,6 @@ const ModulePagesPage = ({
         </div>
       )}
 
-      {/* Module Info */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
           <FaInfoCircle className="h-5 w-5" />
@@ -570,7 +615,7 @@ const ModulePagesPage = ({
 };
 
 // ============================================
-// PAGE 3: PAGE PERMISSIONS PAGE (ONE PER LINE - PROPER ALIGNMENT)
+// PAGE 3: PAGE PERMISSIONS PAGE (WITH DELETE BUTTON)
 // ============================================
 const PagePermissionsPage = ({
   module,
@@ -578,7 +623,9 @@ const PagePermissionsPage = ({
   permissions,
   onBack,
   onOpenForm,
+  onDeletePermission,
   loading,
+  deletingPermission,
 }) => {
   const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || "");
 
@@ -607,7 +654,6 @@ const PagePermissionsPage = ({
 
   return (
     <div className="p-6">
-      {/* Header with back button */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 flex-wrap">
           <button
@@ -761,7 +807,7 @@ const PagePermissionsPage = ({
             </div>
           )}
 
-          {/* Permissions List - One per line */}
+          {/* Permissions List - One per line with Delete button */}
           <div className="space-y-4">
             {pagePermissions.map((permission) => {
               const parsed = parsePermissionName(permission.name);
@@ -820,6 +866,23 @@ const PagePermissionsPage = ({
                           </span>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Delete Button */}
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={() => onDeletePermission(permission)}
+                        disabled={deletingPermission}
+                        className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
+                        title="Delete Permission"
+                      >
+                        {deletingPermission ? (
+                          <FaSpinner className="animate-spin h-4 w-4" />
+                        ) : (
+                          <FaTrash className="h-4 w-4" />
+                        )}
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1099,8 +1162,7 @@ const PermissionFormModal = ({
 // ============================================
 export default function PermissionManagementPage() {
   const { selectedOrganization } = useOrganizations();
-  // State for 3-step flow
-  const [currentPage, setCurrentPage] = useState("modules"); // 'modules', 'pages', or 'permissions'
+  const [currentPage, setCurrentPage] = useState("modules");
   const [modules, setModules] = useState([]);
   const [pages, setPages] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -1110,9 +1172,12 @@ export default function PermissionManagementPage() {
   const [pagesLoading, setPagesLoading] = useState(false);
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showPermissionForm, setShowPermissionForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState(null);
   
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
@@ -1123,7 +1188,6 @@ export default function PermissionManagementPage() {
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
-  // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
     localStorage.setItem('sidebarColor', sidebarColor);
     window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
@@ -1133,7 +1197,6 @@ export default function PermissionManagementPage() {
     localStorage.setItem('backgroundColor', backgroundColor);
   }, [backgroundColor]);
 
-  // Fetch modules on mount
   useEffect(() => {
     if (selectedOrganization?.id) {
       fetchData();
@@ -1158,7 +1221,6 @@ export default function PermissionManagementPage() {
     }
   };
 
-  // Fetch pages for a module
   const fetchModulePages = async (module) => {
     setPagesLoading(true);
     setError(null);
@@ -1175,7 +1237,6 @@ export default function PermissionManagementPage() {
     }
   };
 
-  // Fetch permissions for a specific page
   const fetchPagePermissions = async (module, page) => {
     setPermissionsLoading(true);
     setError(null);
@@ -1191,7 +1252,6 @@ export default function PermissionManagementPage() {
     }
   };
 
-  // Handle back navigation
   const handleBack = (targetPage) => {
     if (targetPage === "modules") {
       setCurrentPage("modules");
@@ -1204,72 +1264,87 @@ export default function PermissionManagementPage() {
     }
   };
 
-  // Open permission form for a specific page
   const handleOpenPermissionForm = (module, page) => {
     setSelectedModule(module);
     setSelectedPage(page);
     setShowPermissionForm(true);
   };
 
-  // Close permission form
   const handleClosePermissionForm = () => {
     setShowPermissionForm(false);
   };
 
-  // Save permission
   const handleSavePermission = async (formData) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      const savedPermission =
-        await permissionService.createPermission(formData);
-
-      // Update permissions list
+      const savedPermission = await permissionService.createPermission(formData);
       setPermissions((prev) => [...prev, savedPermission]);
-
-      setSuccessMessage(
-        `Permission "${savedPermission.name}" created successfully!`,
-      );
+      setSuccessMessage(`Permission "${savedPermission.name}" created successfully!`);
 
       setTimeout(() => {
         setSuccessMessage(null);
         handleClosePermissionForm();
-
-        // Refresh permissions if we're on permissions page
         if (currentPage === "permissions") {
           fetchData();
         }
       }, 3000);
     } catch (err) {
       console.error("Error saving permission:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to save permission. Please try again.",
-      );
+      setError(err.response?.data?.message || "Failed to save permission. Please try again.");
       throw err;
     } finally {
       setSaving(false);
     }
   };
 
-  // Refresh data
+  // Handle delete permission
+  const handleDeleteClick = (permission) => {
+    setPermissionToDelete(permission);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!permissionToDelete) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await permissionService.deletePermission(permissionToDelete.id);
+      setPermissions((prev) => prev.filter(p => p.id !== permissionToDelete.id));
+      setSuccessMessage(`Permission "${permissionToDelete.name}" deleted successfully!`);
+      
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setShowDeleteModal(false);
+        setPermissionToDelete(null);
+      }, 3000);
+    } catch (err) {
+      console.error("Error deleting permission:", err);
+      setError(err.response?.data?.message || "Failed to delete permission. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPermissionToDelete(null);
+  };
+
   const handleRefresh = () => {
     if (currentPage === "modules") {
       fetchData();
     } else if (currentPage === "pages" && selectedModule) {
       fetchModulePages(selectedModule);
-    } else if (
-      currentPage === "permissions" &&
-      selectedModule &&
-      selectedPage
-    ) {
+    } else if (currentPage === "permissions" && selectedModule && selectedPage) {
       fetchData();
     }
   };
 
-  // Get current page title
   const getPageTitle = () => {
     if (currentPage === "modules") return "Modules";
     if (currentPage === "pages")
@@ -1279,7 +1354,6 @@ export default function PermissionManagementPage() {
     return "Permission Management";
   };
 
-  // Get current page description
   const getPageDescription = () => {
     if (currentPage === "modules") return "Select a module to view its pages";
     if (currentPage === "pages")
@@ -1289,7 +1363,6 @@ export default function PermissionManagementPage() {
     return "Manage system permissions";
   };
 
-  // No organization selected
   if (!selectedOrganization?.id) {
     return (
       <div 
@@ -1307,7 +1380,6 @@ export default function PermissionManagementPage() {
 
   return (
     <>
-      {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
         className="fixed right-6 bottom-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl transition-all z-50"
@@ -1315,17 +1387,14 @@ export default function PermissionManagementPage() {
         <ColorPaletteIcon />
       </button>
 
-      {/* Color Palette Modal */}
       <ColorPaletteModal
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1337,7 +1406,6 @@ export default function PermissionManagementPage() {
         className="min-h-screen bg-gradient-to-br from-gray-50 to-white transition-colors duration-300"
         style={{ backgroundColor }}
       >
-        {/* Success Message */}
         {successMessage && (
           <div className="fixed top-4 right-4 z-50 animate-slide-in">
             <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4 shadow-lg">
@@ -1351,7 +1419,6 @@ export default function PermissionManagementPage() {
           </div>
         )}
 
-        {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="min-w-0">
@@ -1394,7 +1461,6 @@ export default function PermissionManagementPage() {
             </div>
           </div>
 
-          {/* Error Display */}
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-3">
@@ -1404,7 +1470,6 @@ export default function PermissionManagementPage() {
             </div>
           )}
 
-          {/* Stats */}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
@@ -1461,7 +1526,6 @@ export default function PermissionManagementPage() {
             </div>
           </div>
 
-          {/* Breadcrumb */}
           {(currentPage === "pages" || currentPage === "permissions") && (
             <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 flex-wrap">
               <button
@@ -1502,7 +1566,6 @@ export default function PermissionManagementPage() {
           )}
         </div>
 
-        {/* Main Content */}
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
             {currentPage === "modules" ? (
@@ -1527,13 +1590,14 @@ export default function PermissionManagementPage() {
                 permissions={permissions}
                 onBack={handleBack}
                 onOpenForm={handleOpenPermissionForm}
+                onDeletePermission={handleDeleteClick}
                 loading={permissionsLoading}
+                deletingPermission={deleting}
               />
             )}
           </div>
         </div>
 
-        {/* Permission Form Modal */}
         <PermissionFormModal
           isOpen={showPermissionForm}
           onClose={handleClosePermissionForm}
@@ -1541,6 +1605,14 @@ export default function PermissionManagementPage() {
           contextPage={selectedPage}
           onSave={handleSavePermission}
           loading={saving}
+        />
+
+        <DeleteConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          permissionName={permissionToDelete?.name}
+          loading={deleting}
         />
       </div>
     </>
