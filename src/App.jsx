@@ -93,11 +93,10 @@ const PublicRoute = ({ isLoggedIn, children }) => {
 // --- Dashboard Router Component - Uses context from parent provider ---
 const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // This hook is now safe because it's inside OrganizationProvider
-  const { selectedOrganization, currentUserRole, isLoading, isAdmin } = useOrganizations();
+  const { selectedOrganization, currentUserRole, isLoading } = useOrganizations();
   
   console.log("🔍 DashboardRouter Debug:", {
     isLoading,
-    isAdmin,
     currentUserRole,
     selectedOrganizationName: selectedOrganization?.name,
     selectedOrganizationId: selectedOrganization?.id
@@ -114,16 +113,41 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
     );
   }
   
-  // Force admin layout for superadmin role
-  const shouldUseAdminLayout = currentUserRole?.toLowerCase() === 'superadmin' || isAdmin;
+  // Check if user is admin
+  const isAdmin = isAdminUser(currentUserRole);
   
-  console.log("🎯 Using Layout:", shouldUseAdminLayout ? "AdminLayout" : "EmployeeLayout");
+  console.log("🎯 isAdmin:", isAdmin, "currentUserRole:", currentUserRole);
+  console.log("🎯 Using Layout:", isAdmin ? "AdminLayout (DashboardLayout)" : "EmployeeLayout (EmployeeDashboardLayout)");
   
-  const Layout = shouldUseAdminLayout ? DashboardLayout : EmployeeDashboardLayout;
+  // Choose layout based on role
+  const Layout = isAdmin ? DashboardLayout : EmployeeDashboardLayout;
   
   return (
     <Layout onLogout={onLogout} user={user} />
   );
+};
+
+// --- Root Redirect Component ---
+const RootRedirect = () => {
+  const { currentUserRole, isLoading } = useOrganizations();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const isAdmin = isAdminUser(currentUserRole);
+  const redirectPath = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+  
+  console.log("🎯 RootRedirect - isAdmin:", isAdmin, "redirecting to:", redirectPath);
+  
+  return <Navigate to={redirectPath} replace />;
 };
 
 // --- Main App Component ---
@@ -181,13 +205,13 @@ function App() {
       ),
       errorElement: <ErrorPage />,
       children: [
-        // Root redirect
-        { index: true, element: <Navigate to="admin-dashboard" replace /> },
+        // Root redirect based on role
+        { index: true, element: <RootRedirect /> },
         // Admin Dashboard
         { path: "admin-dashboard", element: <DashboardContent /> },
         // Employee Dashboard
         { path: "employee-dashboard", element: <EmployeeDashboard2 /> },
-        // All routes (sidebar will control visibility)
+        // All routes
         { path: "organizations/*", element: <OrganizationsPage /> },
         { 
           path: "recruitment", 

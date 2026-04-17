@@ -1,5 +1,5 @@
 // Sidebar.jsx - Collapse button matches sidebar color, at top edge
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
@@ -45,92 +45,6 @@ import {
   HiOutlineUserCircle,
 } from "react-icons/hi";
 
-const navLinks = [
-  { name: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
-  { name: "Employee Dashboard", path: "/dashboard/employee-dashboard", icon: HiOutlineUserCircle },
-  {
-    name: "Centers",
-    path: "/dashboard/organizations",
-    icon: HiOutlineOfficeBuilding,
-  },
-  {
-    name: "Recruitment",
-    icon: HiOutlineDocumentSearch,
-    children: [
-      { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase },
-      { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification },
-      { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar },
-      { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone },
-      { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText },
-      { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd },
-    ],
-  },
-  {
-    name: "Employee",
-    icon: HiOutlineUsers,
-    children: [
-      { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
-      { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
-      { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
-      { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
-    ],
-  },
-  {
-    name: "Rostering",
-    icon: HiOutlineCalendar,
-    children: [
-      { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
-      { name: "Roster Periods", path: "/dashboard/rostering/periods", icon: HiOutlineCalendar },
-      { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid },
-      { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
-    ],
-  },
-  {
-    name: "Attendance",
-    icon: HiOutlineClipboardList,
-    children: [
-      { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint },
-      { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt },
-      { name: "Leave Requests", path: "/dashboard/attendance/requests", icon: HiOutlineDocumentReport },
-      { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator },
-      { name: "Holidays & Calendars", path: "/dashboard/attendance/holidays", icon: HiOutlineCalendar },
-    ],
-  },
-  {
-    name: "Timesheet",
-    icon: HiOutlineClock,
-    children: [
-      { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock },
-      { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp },
-    ],
-  },
-  {
-    name: "Payroll",
-    icon: HiOutlineCreditCard,
-    children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash }],
-  },
-  {
-    name: "Performance",
-    icon: HiOutlineChartBar,
-    children: [
-      { name: "Goal Setting", path: "/dashboard/performance/goals", icon: HiOutlineFlag },
-      { name: "KPI / OKR Tracking", path: "/dashboard/performance/tracking", icon: HiOutlineChartPie },
-      { name: "Performance Reviews", path: "/dashboard/performance/reviews", icon: HiOutlineAnnotation },
-      { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
-    ],
-  },
-  {
-    name: "Settings",
-    icon: HiOutlineCog,
-    children: [
-      { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
-      { name: "Assign Role to User", path: "/dashboard/settings/assign-role", icon: HiOutlineUserAdd },
-      { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey },
-      { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal },
-    ],
-  },
-];
-
 const Sidebar = ({
   isSidebarOpen,
   setSidebarOpen,
@@ -140,25 +54,159 @@ const Sidebar = ({
   sidebarColor: propSidebarColor,
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
+  // Initialize color from localStorage only once
   const [currentColor, setCurrentColor] = useState(() => {
     const saved = localStorage.getItem('sidebarColor');
-    if (saved && saved !== 'undefined' && saved !== 'null') {
+    if (saved && saved !== 'undefined' && saved !== 'null' && saved !== '#1a2d4e') {
       return saved;
     }
     return propSidebarColor || '#1a2d4e';
   });
   const location = useLocation();
 
-  useEffect(() => {
-    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== currentColor) {
-      setCurrentColor(propSidebarColor);
-      localStorage.setItem('sidebarColor', propSidebarColor);
-    }
-  }, [propSidebarColor]);
+  // Get the current user role
+  const currentUserRole = localStorage.getItem('CURRENT_USER_ROLE');
+  const isAdmin = currentUserRole === 'superadmin' || 
+                  currentUserRole === 'organization_admin' || 
+                  currentUserRole === 'hr_manager' ||
+                  currentUserRole === 'payroll_manager' ||
+                  currentUserRole === 'recruiter';
 
+  // Set dashboard link based on role
+  const dashboardLink = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+
+  // Define base links as a constant outside component to prevent re-renders
+  const baseLinks = useMemo(() => [
+    {
+      name: "Centers",
+      path: "/dashboard/organizations",
+      icon: HiOutlineOfficeBuilding,
+    },
+    {
+      name: "Recruitment",
+      icon: HiOutlineDocumentSearch,
+      children: [
+        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase },
+        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification },
+        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar },
+        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone },
+        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText },
+        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd },
+      ],
+    },
+    {
+      name: "Employee",
+      icon: HiOutlineUsers,
+      children: [
+        { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
+        { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
+        { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
+        { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
+      ],
+    },
+    {
+      name: "Rostering",
+      icon: HiOutlineCalendar,
+      children: [
+        { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
+        { name: "Roster Periods", path: "/dashboard/rostering/periods", icon: HiOutlineCalendar },
+        { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid },
+        { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
+      ],
+    },
+    {
+      name: "Attendance",
+      icon: HiOutlineClipboardList,
+      children: [
+        { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint },
+        { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt },
+        { name: "Leave Requests", path: "/dashboard/attendance/requests", icon: HiOutlineDocumentReport },
+        { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator },
+        { name: "Holidays & Calendars", path: "/dashboard/attendance/holidays", icon: HiOutlineCalendar },
+      ],
+    },
+    {
+      name: "Timesheet",
+      icon: HiOutlineClock,
+      children: [
+        { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock },
+        { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp },
+      ],
+    },
+    {
+      name: "Payroll",
+      icon: HiOutlineCreditCard,
+      children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash }],
+    },
+    {
+      name: "Performance",
+      icon: HiOutlineChartBar,
+      children: [
+        { name: "Goal Setting", path: "/dashboard/performance/goals", icon: HiOutlineFlag },
+        { name: "KPI / OKR Tracking", path: "/dashboard/performance/tracking", icon: HiOutlineChartPie },
+        { name: "Performance Reviews", path: "/dashboard/performance/reviews", icon: HiOutlineAnnotation },
+        { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
+      ],
+    },
+    {
+      name: "Settings",
+      icon: HiOutlineCog,
+      children: [
+        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
+        { name: "Assign Role to User", path: "/dashboard/settings/assign-role", icon: HiOutlineUserAdd },
+        { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey },
+        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal },
+      ],
+    },
+  ], []);
+
+  // Dashboard links based on role - ONLY ONE DASHBOARD LINK
+  const dashboardLinks = useMemo(() => [
+    { name: "Dashboard", path: dashboardLink, icon: LuLayoutDashboard }
+  ], [dashboardLink]);
+
+  const navLinks = useMemo(() => [...dashboardLinks, ...baseLinks], [dashboardLinks, baseLinks]);
+
+  // Function to find which parent menu should be open based on current path
+  const findActiveParent = useCallback(() => {
+    for (const link of navLinks) {
+      if (link.children) {
+        const isChildActive = link.children.some((child) => {
+          if (child.exact) return location.pathname === child.path;
+          if (child.path === "/dashboard/employees/manage") {
+            return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
+          }
+          return location.pathname.startsWith(child.path);
+        });
+        
+        if (isChildActive) {
+          return link.name;
+        }
+      }
+    }
+    return null;
+  }, [location.pathname, navLinks]);
+
+  // Handle open/close of submenus based on current route
+  useEffect(() => {
+    const activeParent = findActiveParent();
+    setOpenMenu(activeParent);
+  }, [location.pathname, findActiveParent]);
+
+  // Only update color when propSidebarColor changes AND it's different from current
+  useEffect(() => {
+    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== 'null') {
+      if (propSidebarColor !== currentColor) {
+        setCurrentColor(propSidebarColor);
+        localStorage.setItem('sidebarColor', propSidebarColor);
+      }
+    }
+  }, [propSidebarColor]); // Only depend on propSidebarColor, not on currentColor
+
+  // Listen for color update events from color palette
   useEffect(() => {
     const handleColorUpdate = (event) => {
-      if (event.detail.color && event.detail.color !== 'undefined') {
+      if (event.detail.color && event.detail.color !== 'undefined' && event.detail.color !== 'null') {
         setCurrentColor(event.detail.color);
         localStorage.setItem('sidebarColor', event.detail.color);
       }
@@ -168,22 +216,10 @@ const Sidebar = ({
     return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
   }, []);
 
-  useEffect(() => {
-    const currentParent = navLinks.find((link) => {
-      if (!link.children) return false;
-      return link.children.some((child) => {
-        if (child.exact) return location.pathname === child.path;
-        if (child.path === "/dashboard/employees/manage") {
-          return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
-        }
-        return location.pathname.startsWith(child.path);
-      });
-    });
-    setOpenMenu(currentParent ? currentParent.name : null);
-  }, [location.pathname]);
-
   const handleMenuClick = (menuName) => {
-    if (!isCollapsed) setOpenMenu(openMenu === menuName ? null : menuName);
+    if (!isCollapsed) {
+      setOpenMenu(openMenu === menuName ? null : menuName);
+    }
   };
 
   // Get a slightly lighter/darker color for the collapse button border/hover effect
@@ -246,7 +282,7 @@ const Sidebar = ({
           {/* Logo Section */}
           <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <div className="flex items-center p-4 h-full">
-              <Link to="/dashboard" className="flex items-center">
+              <Link to={dashboardLink} className="flex items-center">
                 <img
                   src={logoIcon}
                   alt="CHRISPP Icon"

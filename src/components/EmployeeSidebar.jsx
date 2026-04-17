@@ -1,5 +1,5 @@
 // src/components/EmployeeSidebar.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import logoIcon from "../assets/logo1.png";
 import logoText from "../assets/logotext.png";
@@ -25,6 +25,7 @@ const EmployeeSidebar = ({
   setIsCollapsed,
   sidebarColor: propSidebarColor 
 }) => {
+  const [openMenu, setOpenMenu] = useState(null);
   const [currentColor, setCurrentColor] = useState(() => {
     const saved = localStorage.getItem('sidebarColor');
     if (saved && saved !== 'undefined' && saved !== 'null') {
@@ -34,27 +35,8 @@ const EmployeeSidebar = ({
   });
   const location = useLocation();
 
-  useEffect(() => {
-    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== currentColor) {
-      setCurrentColor(propSidebarColor);
-      localStorage.setItem('sidebarColor', propSidebarColor);
-    }
-  }, [propSidebarColor]);
-
-  useEffect(() => {
-    const handleColorUpdate = (event) => {
-      if (event.detail.color && event.detail.color !== 'undefined') {
-        setCurrentColor(event.detail.color);
-        localStorage.setItem('sidebarColor', event.detail.color);
-      }
-    };
-    
-    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
-    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
-  }, []);
-
-  // Employee navigation links
-  const navLinks = [
+  // Employee navigation links (no children/submenus in employee sidebar)
+  const navLinks = useMemo(() => [
     { name: "Dashboard", path: "/dashboard/employee-dashboard", icon: HiOutlineHome },
     { name: "Rostering", path: "/dashboard/rostering/rosters", icon: HiOutlineCalendar },
     { name: "Attendance", path: "/dashboard/attendance/tracking", icon: HiOutlineClipboardList },
@@ -62,7 +44,7 @@ const EmployeeSidebar = ({
     { name: "Holidays & Calendar", path: "/dashboard/attendance/holidays", icon: HiOutlineSun },
     { name: "Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCreditCard },
     { name: "Profile Settings", path: "/dashboard/profile", icon: HiOutlineUser },
-  ];
+  ], []);
 
   const getInitials = (name) => {
     if (!name) return "U";
@@ -89,16 +71,27 @@ const EmployeeSidebar = ({
 
   const buttonBorderColor = getButtonBorderColor(currentColor);
 
-  // Get the current user role to determine dashboard link
-  const currentUserRole = localStorage.getItem('CURRENT_USER_ROLE');
-  const isAdmin = currentUserRole === 'superadmin' || 
-                  currentUserRole === 'organization_admin' || 
-                  currentUserRole === 'hr_manager' ||
-                  currentUserRole === 'payroll_manager' ||
-                  currentUserRole === 'recruiter';
-  
-  // Set dashboard link based on role
-  const dashboardLink = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+  // Set dashboard link (always employee dashboard for this sidebar)
+  const dashboardLink = "/dashboard/employee-dashboard";
+
+  useEffect(() => {
+    if (propSidebarColor && propSidebarColor !== 'undefined' && propSidebarColor !== currentColor) {
+      setCurrentColor(propSidebarColor);
+      localStorage.setItem('sidebarColor', propSidebarColor);
+    }
+  }, [propSidebarColor, currentColor]);
+
+  useEffect(() => {
+    const handleColorUpdate = (event) => {
+      if (event.detail.color && event.detail.color !== 'undefined') {
+        setCurrentColor(event.detail.color);
+        localStorage.setItem('sidebarColor', event.detail.color);
+      }
+    };
+    
+    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
+    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
+  }, []);
 
   return (
     <>
@@ -149,7 +142,7 @@ const EmployeeSidebar = ({
             </button>
           </div>
 
-          {/* Logo Section - Fixed to use role-based dashboard link */}
+          {/* Logo Section */}
           <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <div className="flex items-center p-4 h-full">
               <Link to={dashboardLink} className="flex items-center">
