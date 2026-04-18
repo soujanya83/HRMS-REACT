@@ -246,20 +246,19 @@ const Sidebar = ({
       />
 
       {/* Sidebar wrapper - WITH TOP AND BOTTOM SPACING like EmployeeSidebar */}
-     <div
-  className={`fixed left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
--   md:sticky md:top-0 md:h-screen
-+   
-    ${isCollapsed ? "md:w-20" : "md:w-64"}
-    ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
-    md:translate-x-0`}
-  style={{ 
-    top: "8px",
-    left: "2px",
-    bottom: "8px",
-    height: "calc(100vh - 16px)"
-  }}
->
+      <div
+        className={`fixed left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
+          md:sticky md:top-0 md:h-screen
+          ${isCollapsed ? "md:w-20" : "md:w-64"}
+          ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
+          md:translate-x-0`}
+        style={{ 
+          top: "8px",
+          left: "2px",
+          bottom: "8px",
+          height: "calc(100vh - 16px)"
+        }}
+      >
         {/* Sidebar inner */}
         <div
           className="h-full w-full flex flex-col relative overflow-visible"
@@ -317,7 +316,7 @@ const Sidebar = ({
                       to={link.path}
                       end
                       className={({ isActive }) =>
-                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 text-sm transition-all duration-200 rounded-lg ${
+                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${
                           isActive
                             ? "text-white font-semibold bg-white/15"
                             : "text-gray-300 font-medium hover:bg-white/10 hover:text-white"
@@ -327,22 +326,22 @@ const Sidebar = ({
                       title={isCollapsed ? link.name : ""}
                     >
                       <link.icon size={20} className="flex-shrink-0" />
-                      <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                      <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
                     </NavLink>
                   ) : (
                     <>
                       <button
                         onClick={() => handleMenuClick(link.name)}
-                        className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2 text-sm text-gray-300 font-medium transition-all duration-200 rounded-lg hover:bg-white/10 hover:text-white`}
+                        className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2.5 text-base text-gray-300 font-medium transition-all duration-200 rounded-lg hover:bg-white/10 hover:text-white`}
                         title={isCollapsed ? link.name : ""}
                       >
                         <div className="flex items-center">
                           <link.icon size={20} className="flex-shrink-0" />
-                          <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                          <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
                         </div>
                         {!isCollapsed && (
                           <HiChevronDown
-                            size={14}
+                            size={16}
                             className={`transition-transform duration-200 ${
                               openMenu === link.name ? "rotate-180" : ""
                             }`}
@@ -354,13 +353,13 @@ const Sidebar = ({
                           openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
                         }`}
                       >
-                        <div className="py-1 pl-10 space-y-0.5">
+                        <div className="py-1.5 pl-10 space-y-0.5">
                           {link.children.map((child) => (
                             <NavLink
                               key={child.name}
                               to={child.path}
                               className={({ isActive }) =>
-                                `flex items-center px-3 py-1.5 text-xs transition-all duration-200 rounded-lg ${
+                                `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${
                                   isActive
                                     ? "text-white font-medium bg-white/15"
                                     : "text-gray-400 hover:bg-white/10 hover:text-white"
@@ -369,8 +368,8 @@ const Sidebar = ({
                               onClick={() => setSidebarOpen(false)}
                               end={child.exact || false}
                             >
-                              <child.icon size={14} className="mr-2 flex-shrink-0" />
-                              <span className="text-xs">{child.name}</span>
+                              <child.icon size={16} className="mr-2 flex-shrink-0" />
+                              <span className="text-sm">{child.name}</span>
                             </NavLink>
                           ))}
                         </div>
@@ -386,11 +385,11 @@ const Sidebar = ({
           <div className="p-3 border-t flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <button
               onClick={onLogout}
-              className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 text-sm font-medium transition-all duration-200 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white`}
+              className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 text-base font-medium transition-all duration-200 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white`}
               title={isCollapsed ? "Logout" : ""}
             >
               <HiOutlineLogout size={20} className="flex-shrink-0" />
-              <span className={`text-sm ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
+              <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
             </button>
           </div>
         </div>
