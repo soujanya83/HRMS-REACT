@@ -1,5 +1,5 @@
-// RoleManagementPage.jsx - With API-based permissions
-import React, { useState, useEffect } from "react";
+// RoleManagementPage.jsx - Fixed hooks order
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FaUsers,
   FaUserShield,
@@ -230,10 +230,9 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
   const [errors, setErrors] = useState({});
   const [expandedModules, setExpandedModules] = useState({});
 
-  // Build module-page structure from permissions
-  const buildModulePageStructure = () => {
+  // Build module-page structure from permissions - use useMemo to prevent recalculation
+  const modulePageStructure = useMemo(() => {
     const structure = {};
-    
     allPermissions.forEach(permission => {
       const parsed = parsePermission(permission.name);
       if (parsed && parsed.module && parsed.page && parsed.action) {
@@ -248,13 +247,12 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
         }
       }
     });
-    
     return structure;
-  };
+  }, [allPermissions]);
 
-  const modulePageStructure = buildModulePageStructure();
-  const modules = Object.keys(modulePageStructure).sort();
+  const modules = useMemo(() => Object.keys(modulePageStructure).sort(), [modulePageStructure]);
 
+  // Reset form when modal opens - MOVED BEFORE ANY CONDITIONAL RETURN
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -269,93 +267,10 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
       });
       setExpandedModules(expanded);
     }
-  }, [role, isOpen, modules]);
+  }, [isOpen, role, modules]);
 
-  const toggleModule = (moduleName) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleName]: !prev[moduleName]
-    }));
-  };
-
-  const handlePermissionToggle = (permissionId) => {
-    setFormData(prev => ({
-      ...prev,
-      permission_ids: prev.permission_ids.includes(permissionId)
-        ? prev.permission_ids.filter(id => id !== permissionId)
-        : [...prev.permission_ids, permissionId],
-    }));
-  };
-
-  const handlePageToggle = (moduleName, pageSlug) => {
-    const pagePermissions = allPermissions.filter(p => {
-      const parsed = parsePermission(p.name);
-      return parsed && parsed.module === moduleName && parsed.page === pageSlug;
-    });
-    const pagePermissionIds = pagePermissions.map(p => p.id);
-    const allSelected = pagePermissionIds.every(id => formData.permission_ids.includes(id));
-    
-    setFormData(prev => ({
-      ...prev,
-      permission_ids: allSelected
-        ? prev.permission_ids.filter(id => !pagePermissionIds.includes(id))
-        : [...prev.permission_ids, ...pagePermissionIds.filter(id => !prev.permission_ids.includes(id))],
-    }));
-  };
-
-  const handleModuleToggle = (moduleName) => {
-    const modulePermissions = allPermissions.filter(p => {
-      const parsed = parsePermission(p.name);
-      return parsed && parsed.module === moduleName;
-    });
-    const modulePermissionIds = modulePermissions.map(p => p.id);
-    const allSelected = modulePermissionIds.every(id => formData.permission_ids.includes(id));
-    
-    setFormData(prev => ({
-      ...prev,
-      permission_ids: allSelected
-        ? prev.permission_ids.filter(id => !modulePermissionIds.includes(id))
-        : [...prev.permission_ids, ...modulePermissionIds.filter(id => !prev.permission_ids.includes(id))],
-    }));
-  };
-
-  const handleSelectAll = () => {
-    setFormData(prev => ({
-      ...prev,
-      permission_ids: allPermissions.map(p => p.id),
-    }));
-  };
-
-  const handleDeselectAll = () => {
-    setFormData(prev => ({
-      ...prev,
-      permission_ids: [],
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      setErrors({ name: "Role name is required" });
-      return;
-    }
-
-    try {
-      await onSave(formData);
-      onClose();
-    } catch (error) {
-      setErrors({ general: error.response?.data?.message || "Failed to save role" });
-    }
-  };
-
-  if (!isOpen) return null;
-
-  const getTotalSelected = () => formData.permission_ids.length;
-  const getTotalPermissions = () => allPermissions.length;
-
-  // Group permissions by module and page for display
-  const getPermissionsByModuleAndPage = () => {
+  // Group permissions by module and page for display - MOVED BEFORE CONDITIONAL RETURN
+  const groupedPermissions = useMemo(() => {
     const grouped = {};
     allPermissions.forEach(permission => {
       const parsed = parsePermission(permission.name);
@@ -370,9 +285,95 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
       }
     });
     return grouped;
-  };
+  }, [allPermissions]);
 
-  const groupedPermissions = getPermissionsByModuleAndPage();
+  const getTotalSelected = useCallback(() => formData.permission_ids.length, [formData.permission_ids.length]);
+  const getTotalPermissions = useCallback(() => allPermissions.length, [allPermissions.length]);
+
+  const toggleModule = useCallback((moduleName) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleName]: !prev[moduleName]
+    }));
+  }, []);
+
+  const handlePermissionToggle = useCallback((permissionId) => {
+    setFormData(prev => ({
+      ...prev,
+      permission_ids: prev.permission_ids.includes(permissionId)
+        ? prev.permission_ids.filter(id => id !== permissionId)
+        : [...prev.permission_ids, permissionId],
+    }));
+  }, []);
+
+  const handlePageToggle = useCallback((moduleName, pageSlug) => {
+    const pagePermissions = allPermissions.filter(p => {
+      const parsed = parsePermission(p.name);
+      return parsed && parsed.module === moduleName && parsed.page === pageSlug;
+    });
+    const pagePermissionIds = pagePermissions.map(p => p.id);
+    
+    setFormData(prev => {
+      const allSelected = pagePermissionIds.every(id => prev.permission_ids.includes(id));
+      return {
+        ...prev,
+        permission_ids: allSelected
+          ? prev.permission_ids.filter(id => !pagePermissionIds.includes(id))
+          : [...prev.permission_ids, ...pagePermissionIds.filter(id => !prev.permission_ids.includes(id))],
+      };
+    });
+  }, [allPermissions]);
+
+  const handleModuleToggle = useCallback((moduleName) => {
+    const modulePermissions = allPermissions.filter(p => {
+      const parsed = parsePermission(p.name);
+      return parsed && parsed.module === moduleName;
+    });
+    const modulePermissionIds = modulePermissions.map(p => p.id);
+    
+    setFormData(prev => {
+      const allSelected = modulePermissionIds.every(id => prev.permission_ids.includes(id));
+      return {
+        ...prev,
+        permission_ids: allSelected
+          ? prev.permission_ids.filter(id => !modulePermissionIds.includes(id))
+          : [...prev.permission_ids, ...modulePermissionIds.filter(id => !prev.permission_ids.includes(id))],
+      };
+    });
+  }, [allPermissions]);
+
+  const handleSelectAll = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      permission_ids: allPermissions.map(p => p.id),
+    }));
+  }, [allPermissions]);
+
+  const handleDeselectAll = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      permission_ids: [],
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      setErrors({ name: "Role name is required" });
+      return;
+    }
+
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error) {
+      setErrors({ general: error.response?.data?.message || "Failed to save role" });
+    }
+  }, [formData, onSave, onClose]);
+
+  // CONDITIONAL RETURN AT THE END - AFTER ALL HOOKS
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4">
@@ -680,9 +681,8 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 
 // Role Details Modal
 const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
-  if (!isOpen || !role) return null;
-
-  const rolePermissions = allPermissions.filter(p => role.permission_ids?.includes(p.id)) || [];
+  // All hooks must be called before any conditional return
+  const rolePermissions = allPermissions.filter(p => role?.permission_ids?.includes(p.id)) || [];
   const groupedPermissions = rolePermissions.reduce((acc, perm) => {
     const parsed = parsePermission(perm.name);
     if (parsed) {
@@ -691,6 +691,9 @@ const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
     }
     return acc;
   }, {});
+
+  // Conditional return at the end
+  if (!isOpen || !role) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4">
@@ -835,7 +838,7 @@ export default function RoleManagementPage() {
     }
   }, [selectedOrganization]);
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = useCallback(async () => {
     try {
       const response = await axiosClient.get('/permissions');
       let permissionsArray = [];
@@ -854,9 +857,9 @@ export default function RoleManagementPage() {
       console.error('Error fetching permissions:', error);
       return [];
     }
-  };
+  }, [selectedOrganization]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -884,9 +887,9 @@ export default function RoleManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchPermissions]);
 
-  const handleSaveRole = async (formData) => {
+  const handleSaveRole = useCallback(async (formData) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -920,9 +923,9 @@ export default function RoleManagementPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [modalState.role, selectedOrganization, fetchData]);
 
-  const handleDeleteRole = async () => {
+  const handleDeleteRole = useCallback(async () => {
     if (!modalState.role) return;
     
     setSaving(true);
@@ -941,9 +944,9 @@ export default function RoleManagementPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [modalState.role]);
 
-  const handleCloneRole = async (role) => {
+  const handleCloneRole = useCallback(async (role) => {
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -967,31 +970,31 @@ export default function RoleManagementPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [selectedOrganization, fetchData]);
 
-  const handleOpenForm = (role = null) => {
+  const handleOpenForm = useCallback((role = null) => {
     setModalState(prev => ({ ...prev, form: true, role }));
-  };
+  }, []);
 
-  const handleCloseForm = () => {
+  const handleCloseForm = useCallback(() => {
     setModalState(prev => ({ ...prev, form: false, role: null }));
-  };
+  }, []);
 
-  const handleOpenDetails = (role) => {
+  const handleOpenDetails = useCallback((role) => {
     setModalState(prev => ({ ...prev, details: true, role }));
-  };
+  }, []);
 
-  const handleCloseDetails = () => {
+  const handleCloseDetails = useCallback(() => {
     setModalState(prev => ({ ...prev, details: false, role: null }));
-  };
+  }, []);
 
-  const handleOpenConfirm = (role, type = "delete") => {
+  const handleOpenConfirm = useCallback((role, type = "delete") => {
     setModalState(prev => ({ ...prev, confirm: true, role, type }));
-  };
+  }, []);
 
-  const handleCloseConfirm = () => {
+  const handleCloseConfirm = useCallback(() => {
     setModalState(prev => ({ ...prev, confirm: false, role: null, type: "delete" }));
-  };
+  }, []);
 
   const filteredRoles = roles.filter(role => {
     if (role.name?.toLowerCase() === 'superadmin') return false;

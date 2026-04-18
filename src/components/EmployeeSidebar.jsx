@@ -90,7 +90,7 @@ const EmployeeSidebar = ({
           md:translate-x-0`}
         style={{ 
           top: "8px",
-          left: "2px",
+          left: "6px",
           bottom: "8px",
           height: "calc(100% - 16px)",
         }}
