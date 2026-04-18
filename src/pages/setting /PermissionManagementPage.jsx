@@ -286,21 +286,21 @@ const PermissionFormModal = ({
   const moduleDetails = getModuleDetails(contextModule.name.toLowerCase());
   const standardActions = [
     { id: "view", name: "View" },
-    { id: "create", name: "Create" },
+    // { id: "create", name: "Create" },
     { id: "add", name: "Add" },
     { id: "edit", name: "Edit" },
     { id: "delete", name: "Delete" },
-    { id: "manage", name: "Manage" },
-    { id: "run", name: "Run" },
-    { id: "approve", name: "Approve" },
-    { id: "reject", name: "Reject" },
-    { id: "export", name: "Export" },
-    { id: "import", name: "Import" },
-    { id: "assign", name: "Assign" },
-    { id: "review", name: "Review" },
-    { id: "generate", name: "Generate" },
-    { id: "schedule", name: "Schedule" },
-    { id: "track", name: "Track" },
+    // { id: "manage", name: "Manage" },
+    // { id: "run", name: "Run" },
+    // { id: "approve", name: "Approve" },
+    // { id: "reject", name: "Reject" },
+    // { id: "export", name: "Export" },
+    // { id: "import", name: "Import" },  
+    // { id: "assign", name: "Assign" },
+    // { id: "review", name: "Review" },
+    // { id: "generate", name: "Generate" },
+    // { id: "schedule", name: "Schedule" },
+    // { id: "track", name: "Track" },
   ];
 
   return (

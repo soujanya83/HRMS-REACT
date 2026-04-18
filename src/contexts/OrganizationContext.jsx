@@ -43,6 +43,13 @@ export const OrganizationProvider = ({ children }) => {
         return roleForOrg?.role_name || null;
     };
 
+    // Check if user is admin for a specific role
+    const isAdminRole = (role) => {
+        if (!role) return false;
+        const adminRoles = ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+        return adminRoles.includes(role?.toLowerCase());
+    };
+
     const fetchOrgs = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -111,7 +118,7 @@ export const OrganizationProvider = ({ children }) => {
                                 localStorage.setItem('CURRENT_USER_ROLE', role);
                             }
                         }
-                        console.log(`🎯 Using saved org: ${selectedOrg.name} (ID: ${selectedOrg.id}, Role: ${role})`);
+                        console.log(`🎯 Using saved org: ${selectedOrg.name} (ID: ${selectedOrg.id}, Role: ${role}, isAdmin: ${isAdminRole(role)})`);
                     } else {
                         console.log(`⚠️ Saved org ID ${savedOrgId} not found in organizations list`);
                     }
@@ -159,6 +166,15 @@ export const OrganizationProvider = ({ children }) => {
                 if (selectedOrg) {
                     setSelectedOrganization(selectedOrg);
                     setCurrentUserRole(role);
+                    
+                    // Dispatch event for sidebar to listen
+                    window.dispatchEvent(new CustomEvent('organizationChanged', { 
+                        detail: { 
+                            organizationId: selectedOrg.id, 
+                            organizationName: selectedOrg.name,
+                            role: role 
+                        } 
+                    }));
                 } else if (orgs.length > 0) {
                     setSelectedOrganization(orgs[0]);
                     const defaultRole = getRoleForOrganization(orgs[0].id);
@@ -168,6 +184,15 @@ export const OrganizationProvider = ({ children }) => {
                         localStorage.setItem('CURRENT_USER_ROLE', defaultRole);
                     }
                     console.log(`✨ Using first org: ${orgs[0].name} (Role: ${defaultRole})`);
+                    
+                    // Dispatch event for sidebar to listen
+                    window.dispatchEvent(new CustomEvent('organizationChanged', { 
+                        detail: { 
+                            organizationId: orgs[0].id, 
+                            organizationName: orgs[0].name,
+                            role: defaultRole 
+                        } 
+                    }));
                 }
             }
         } catch (error) {
@@ -187,23 +212,38 @@ export const OrganizationProvider = ({ children }) => {
         console.log('🎯 Selecting organization:', orgId);
         const org = organizations.find(o => o.id === parseInt(orgId));
         if (org) {
-            setSelectedOrganization(org);
             const role = getRoleForOrganization(org.id);
+            console.log(`📋 Role for ${org.name}: ${role}`);
+            console.log(`📋 Is Admin: ${isAdminRole(role)}`);
+            
+            setSelectedOrganization(org);
             setCurrentUserRole(role);
             localStorage.setItem('selectedOrgId', org.id);
             if (role) {
                 localStorage.setItem('CURRENT_USER_ROLE', role);
+            } else {
+                localStorage.removeItem('CURRENT_USER_ROLE');
             }
+            
             console.log('✅ Organization selected:', org.name, 'Role:', role);
             
-            // Reload the page to apply role-based changes
+            // Dispatch event for sidebar to listen
+            window.dispatchEvent(new CustomEvent('organizationChanged', { 
+                detail: { 
+                    organizationId: org.id, 
+                    organizationName: org.name,
+                    role: role 
+                } 
+            }));
+            
+            // Reload to apply role-based changes
             window.location.reload();
+        } else {
+            console.error('❌ Organization not found:', orgId);
         }
     };
 
-    const isAdmin = currentUserRole ? 
-        ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'].includes(currentUserRole?.toLowerCase()) : 
-        false;
+    const isAdmin = isAdminRole(currentUserRole);
 
     console.log("📊 OrganizationProvider State:", { 
         selectedOrganization: selectedOrganization?.name, 

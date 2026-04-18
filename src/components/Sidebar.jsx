@@ -56,8 +56,8 @@ const Sidebar = ({
   setIsCollapsed,
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  // COMPLETELY INDEPENDENT color state - NO PROPS, NO CONTEXT
   const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const location = useLocation();
 
   // Load color from localStorage ONCE on mount
@@ -67,13 +67,12 @@ const Sidebar = ({
       if (saved && saved !== 'undefined' && saved !== 'null' && saved !== DEFAULT_COLOR) {
         setCurrentColor(saved);
       } else if (!saved) {
-        // Set default color in localStorage if not exists
         localStorage.setItem('sidebarColor', DEFAULT_COLOR);
       }
     } catch (error) {
       console.error('Error loading sidebar color:', error);
     }
-  }, []); // Empty dependency array - runs ONLY ONCE
+  }, []);
 
   // Listen for color update events from color palette
   useEffect(() => {
@@ -93,16 +92,54 @@ const Sidebar = ({
     return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
   }, []);
 
-  // Get the current user role from localStorage
-  const currentUserRole = localStorage.getItem('CURRENT_USER_ROLE');
-  const isAdmin = currentUserRole === 'superadmin' || 
-                  currentUserRole === 'organization_admin' || 
-                  currentUserRole === 'hr_manager' ||
-                  currentUserRole === 'payroll_manager' ||
-                  currentUserRole === 'recruiter';
+  // Listen for organization change events
+  useEffect(() => {
+    const handleOrganizationChange = (event) => {
+      console.log('🏢 Organization changed event received:', event.detail);
+      if (event.detail && event.detail.role) {
+        setCurrentUserRole(event.detail.role);
+        localStorage.setItem('CURRENT_USER_ROLE', event.detail.role);
+      } else {
+        // Fallback: read from localStorage
+        const role = localStorage.getItem('CURRENT_USER_ROLE');
+        setCurrentUserRole(role);
+      }
+    };
+
+    // Also listen for storage events (when localStorage changes from another tab)
+    const handleStorageChange = (event) => {
+      if (event.key === 'CURRENT_USER_ROLE') {
+        console.log('🔄 Storage event - CURRENT_USER_ROLE changed to:', event.newValue);
+        setCurrentUserRole(event.newValue);
+      }
+    };
+
+    window.addEventListener('organizationChanged', handleOrganizationChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Initial load
+    const role = localStorage.getItem('CURRENT_USER_ROLE');
+    setCurrentUserRole(role);
+    
+    return () => {
+      window.removeEventListener('organizationChanged', handleOrganizationChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Determine if user is admin based on role
+  const isAdmin = useMemo(() => {
+    return currentUserRole === 'superadmin' || 
+           currentUserRole === 'organization_admin' || 
+           currentUserRole === 'hr_manager' ||
+           currentUserRole === 'payroll_manager' ||
+           currentUserRole === 'recruiter';
+  }, [currentUserRole]);
 
   // Set dashboard link based on role
-  const dashboardLink = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+  const dashboardLink = useMemo(() => {
+    return isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+  }, [isAdmin]);
 
   // Define base links
   const baseLinks = useMemo(() => [
@@ -228,14 +265,13 @@ const Sidebar = ({
     }
   };
 
-  // Get button border color based on sidebar color
   const getButtonBorderColor = () => {
     return "rgba(255, 255, 255, 0.2)";
   };
 
   const buttonBorderColor = getButtonBorderColor();
 
-  console.log('🎨 Sidebar rendering with color:', currentColor);
+  console.log('🎨 Sidebar rendering - isAdmin:', isAdmin, 'role:', currentUserRole, 'dashboardLink:', dashboardLink);
 
   return (
     <>
@@ -245,7 +281,7 @@ const Sidebar = ({
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar wrapper - WITH TOP AND BOTTOM SPACING like EmployeeSidebar */}
+      {/* Sidebar wrapper */}
       <div
         className={`fixed left-0 flex flex-col z-30 transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
@@ -268,7 +304,7 @@ const Sidebar = ({
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
         >
-          {/* Collapse Toggle Button - adjusted top position */}
+          {/* Collapse Toggle Button */}
           <div className="absolute -right-3 top-20 z-20 hidden md:block">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
