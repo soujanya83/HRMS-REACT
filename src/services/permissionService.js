@@ -5,7 +5,27 @@ const permissionService = {
   // Get all permissions (uses /api/v1/permissions)
   getPermissions: async () => {
     try {
-      const response = await axiosClient.get('/permissions');
+      // Try to get organization ID from localStorage
+      let organizationId = localStorage.getItem('selectedOrgId');
+      if (!organizationId) {
+        organizationId = localStorage.getItem('CURRENT_ORG_ID');
+      }
+      if (!organizationId) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            organizationId = user?.organization_id;
+          } catch (e) {
+            console.error('Error parsing user data:', e);
+          }
+        }
+      }
+      
+      const params = organizationId ? { organization_id: parseInt(organizationId) } : {};
+      console.log('📥 Fetching permissions with params:', params);
+      
+      const response = await axiosClient.get('/permissions', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching permissions:', error);
@@ -24,13 +44,44 @@ const permissionService = {
     }
   },
 
-  // Create new permission
+  // Create new permission - FIXED to include organization_id
   createPermission: async (permissionData) => {
     try {
-      const response = await axiosClient.post('/permissions', permissionData);
+      // Try multiple ways to get organization ID
+      let organizationId = localStorage.getItem('selectedOrgId');
+      if (!organizationId) {
+        organizationId = localStorage.getItem('CURRENT_ORG_ID');
+      }
+      if (!organizationId) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            organizationId = user?.organization_id;
+          } catch (e) {
+            console.error('Error parsing user data:', e);
+          }
+        }
+      }
+      
+      // Also check if organization_id was passed in the data
+      const finalOrgId = organizationId || permissionData.organization_id || null;
+      
+      const payload = {
+        name: permissionData.name,
+        guard_name: permissionData.guard_name || 'web',
+        organization_id: finalOrgId ? parseInt(finalOrgId) : null
+      };
+      
+      console.log('📤 Creating permission with payload:', payload);
+      console.log('📤 Organization ID source:', organizationId ? 'localStorage' : (permissionData.organization_id ? 'formData' : 'null'));
+      
+      const response = await axiosClient.post('/permissions', payload);
+      console.log('✅ Permission created successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error creating permission:', error);
+      console.error('❌ Error creating permission:', error);
+      console.error('❌ Error response:', error.response?.data);
       throw error;
     }
   },
@@ -38,7 +89,20 @@ const permissionService = {
   // Update permission
   updatePermission: async (id, permissionData) => {
     try {
-      const response = await axiosClient.post(`/permissions/${id}`, permissionData);
+      // Get organization ID for the update request
+      let organizationId = localStorage.getItem('selectedOrgId');
+      if (!organizationId) {
+        organizationId = localStorage.getItem('CURRENT_ORG_ID');
+      }
+      
+      const payload = {
+        name: permissionData.name,
+        guard_name: permissionData.guard_name || 'web',
+        organization_id: organizationId ? parseInt(organizationId) : null,
+        _method: 'PUT'
+      };
+      
+      const response = await axiosClient.post(`/permissions/${id}`, payload);
       return response.data;
     } catch (error) {
       console.error(`Error updating permission ${id}:`, error);
@@ -60,9 +124,18 @@ const permissionService = {
   // Bulk create permissions
   bulkCreatePermissions: async (permissionsData) => {
     try {
-      const response = await axiosClient.post('/permissions/bulk', {
-        permissions: permissionsData
-      });
+      // Get organization ID for bulk creation
+      let organizationId = localStorage.getItem('selectedOrgId');
+      if (!organizationId) {
+        organizationId = localStorage.getItem('CURRENT_ORG_ID');
+      }
+      
+      const payload = {
+        permissions: permissionsData,
+        organization_id: organizationId ? parseInt(organizationId) : null
+      };
+      
+      const response = await axiosClient.post('/permissions/bulk', payload);
       return response.data;
     } catch (error) {
       console.error('Error bulk creating permissions:', error);
@@ -150,6 +223,7 @@ const permissionService = {
     return [
       { id: 'view', name: 'View', icon: 'eye', color: 'blue' },
       { id: 'create', name: 'Create', icon: 'plus', color: 'green' },
+      { id: 'add', name: 'Add', icon: 'plus', color: 'green' },
       { id: 'edit', name: 'Edit', icon: 'edit', color: 'yellow' },
       { id: 'delete', name: 'Delete', icon: 'trash', color: 'red' },
       { id: 'manage', name: 'Manage', icon: 'cog', color: 'purple' },

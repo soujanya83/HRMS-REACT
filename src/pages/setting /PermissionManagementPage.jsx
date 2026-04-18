@@ -225,7 +225,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, permissionName, l
 };
 
 // ============================================
-// PERMISSION FORM MODAL
+// PERMISSION FORM MODAL - UPDATED to include organization
 // ============================================
 const PermissionFormModal = ({
   isOpen,
@@ -356,7 +356,7 @@ const PermissionFormModal = ({
                 <div className="p-2 rounded-lg bg-purple-100 text-purple-600 border border-purple-200 flex-shrink-0"><FaBuilding className="h-4 w-4" /></div>
                 <div className="min-w-0">
                   <div className="text-sm text-purple-700 truncate">Organization: <span className="font-semibold">{selectedOrganization?.name || "N/A"}</span></div>
-                  <div className="text-xs text-purple-600 mt-1">ID: {selectedOrganization?.id || "N/A"} - Auto-assigned</div>
+                  <div className="text-xs text-purple-600 mt-1">ID: {selectedOrganization?.id || "N/A"} - Will be auto-assigned</div>
                 </div>
               </div>
             </div>
@@ -672,7 +672,7 @@ export default function PermissionManagementPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState(null);
   
-  // Background color state
+  // Background color state - REMOVED COLOR PALETTE
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
@@ -680,6 +680,14 @@ export default function PermissionManagementPage() {
   useEffect(() => {
     localStorage.setItem('backgroundColor', backgroundColor);
   }, [backgroundColor]);
+
+  // Save organization ID to localStorage when it changes
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      localStorage.setItem('selectedOrgId', selectedOrganization.id);
+      console.log('✅ Saved organization ID to localStorage:', selectedOrganization.id);
+    }
+  }, [selectedOrganization]);
 
   useEffect(() => {
     if (selectedOrganization?.id) {
@@ -764,9 +772,14 @@ export default function PermissionManagementPage() {
     setSuccessMessage(null);
 
     try {
+      // Ensure organization ID is in localStorage before creating
+      if (selectedOrganization?.id) {
+        localStorage.setItem('selectedOrgId', selectedOrganization.id);
+      }
+      
       const savedPermission = await permissionService.createPermission(formData);
       setPermissions((prev) => [...prev, savedPermission]);
-      setSuccessMessage(`Permission "${savedPermission.name}" created successfully!`);
+      setSuccessMessage(`Permission "${savedPermission.name}" created successfully! Organization ID: ${savedPermission.organization_id || selectedOrganization?.id}`);
 
       setTimeout(() => {
         setSuccessMessage(null);
