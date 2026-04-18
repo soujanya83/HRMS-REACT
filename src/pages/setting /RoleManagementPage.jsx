@@ -1,4 +1,4 @@
-// RoleManagementPage.jsx - Fixed hooks order
+// RoleManagementPage.jsx - Fixed permission assignment
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FaUsers,
@@ -252,7 +252,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 
   const modules = useMemo(() => Object.keys(modulePageStructure).sort(), [modulePageStructure]);
 
-  // Reset form when modal opens - MOVED BEFORE ANY CONDITIONAL RETURN
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -269,7 +269,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
     }
   }, [isOpen, role, modules]);
 
-  // Group permissions by module and page for display - MOVED BEFORE CONDITIONAL RETURN
+  // Group permissions by module and page for display
   const groupedPermissions = useMemo(() => {
     const grouped = {};
     allPermissions.forEach(permission => {
@@ -372,7 +372,6 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
     }
   }, [formData, onSave, onClose]);
 
-  // CONDITIONAL RETURN AT THE END - AFTER ALL HOOKS
   if (!isOpen) return null;
 
   return (
@@ -681,7 +680,6 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 
 // Role Details Modal
 const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
-  // All hooks must be called before any conditional return
   const rolePermissions = allPermissions.filter(p => role?.permission_ids?.includes(p.id)) || [];
   const groupedPermissions = rolePermissions.reduce((acc, perm) => {
     const parsed = parsePermission(perm.name);
@@ -692,7 +690,6 @@ const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
     return acc;
   }, {});
 
-  // Conditional return at the end
   if (!isOpen || !role) return null;
 
   return (
@@ -889,6 +886,30 @@ export default function RoleManagementPage() {
     }
   }, [fetchPermissions]);
 
+  // Function to sync permissions to a role using POST /roles/{roleId}/permissions
+  const syncRolePermissions = useCallback(async (roleId, permissionIds) => {
+    try {
+      // First get the permission names from the IDs
+      const selectedPermissions = permissions.filter(p => permissionIds.includes(p.id));
+      const permissionNames = selectedPermissions.map(p => p.name);
+      
+      console.log('🔄 Syncing permissions for role:', roleId);
+      console.log('📋 Permission IDs:', permissionIds);
+      console.log('📋 Permission Names:', permissionNames);
+      
+      // Call the sync permissions API
+      const response = await axiosClient.post(`/roles/${roleId}/permissions`, {
+        permissions: permissionNames
+      });
+      
+      console.log('✅ Permissions synced successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error syncing permissions:', error);
+      throw error;
+    }
+  }, [permissions]);
+
   const handleSaveRole = useCallback(async (formData) => {
     setSaving(true);
     setError(null);
@@ -898,24 +919,41 @@ export default function RoleManagementPage() {
       let savedRole;
       
       if (modalState.role) {
+        // Update existing role
         savedRole = await roleService.updateRole(modalState.role.id, {
           name: formData.name,
-          permission_ids: formData.permission_ids,
+          guard_name: 'web',
         });
+        
+        // Sync permissions after update
+        if (formData.permission_ids && formData.permission_ids.length > 0) {
+          await syncRolePermissions(savedRole.id, formData.permission_ids);
+        }
+        
         setRoles(prev => prev.map(role => role.id === modalState.role.id ? savedRole : role));
-        setSuccessMessage(`Role "${savedRole.name}" updated successfully!`);
+        setSuccessMessage(`Role "${savedRole.name}" updated successfully with ${formData.permission_ids.length} permissions!`);
       } else {
-        savedRole = await roleService.createRole({
+        // Create new role first
+        const newRole = await roleService.createRole({
           name: formData.name,
-          permission_ids: formData.permission_ids,
+          guard_name: 'web',
           organization_id: selectedOrganization?.id,
         });
+        
+        savedRole = newRole;
+        
+        // Then sync permissions to the newly created role
+        if (formData.permission_ids && formData.permission_ids.length > 0) {
+          await syncRolePermissions(savedRole.id, formData.permission_ids);
+        }
+        
         setRoles(prev => [...prev, savedRole]);
-        setSuccessMessage(`Role "${savedRole.name}" created successfully!`);
+        setSuccessMessage(`Role "${savedRole.name}" created successfully with ${formData.permission_ids.length} permissions!`);
       }
       
       setTimeout(() => setSuccessMessage(null), 3000);
-      fetchData();
+      fetchData(); // Refresh the data
+      handleCloseForm();
     } catch (err) {
       console.error('Error saving role:', err);
       setError(err.response?.data?.message || 'Failed to save role. Please try again.');
@@ -923,7 +961,7 @@ export default function RoleManagementPage() {
     } finally {
       setSaving(false);
     }
-  }, [modalState.role, selectedOrganization, fetchData]);
+  }, [modalState.role, selectedOrganization, syncRolePermissions, fetchData]);
 
   const handleDeleteRole = useCallback(async () => {
     if (!modalState.role) return;
@@ -952,15 +990,20 @@ export default function RoleManagementPage() {
     setSuccessMessage(null);
 
     try {
-      const newRoleData = {
+      // Create a new role with copy name
+      const newRole = await roleService.createRole({
         name: `${role.name} (Copy)`,
-        permission_ids: role.permission_ids || [],
+        guard_name: 'web',
         organization_id: selectedOrganization?.id,
-      };
+      });
       
-      const savedRole = await roleService.createRole(newRoleData);
-      setRoles(prev => [...prev, savedRole]);
-      setSuccessMessage(`Role "${savedRole.name}" cloned successfully!`);
+      // Copy permissions from original role
+      if (role.permission_ids && role.permission_ids.length > 0) {
+        await syncRolePermissions(newRole.id, role.permission_ids);
+      }
+      
+      setRoles(prev => [...prev, newRole]);
+      setSuccessMessage(`Role "${newRole.name}" cloned successfully with ${role.permission_ids?.length || 0} permissions!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
       fetchData();
@@ -970,7 +1013,7 @@ export default function RoleManagementPage() {
     } finally {
       setSaving(false);
     }
-  }, [selectedOrganization, fetchData]);
+  }, [selectedOrganization, syncRolePermissions, fetchData]);
 
   const handleOpenForm = useCallback((role = null) => {
     setModalState(prev => ({ ...prev, form: true, role }));
