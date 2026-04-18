@@ -1,4 +1,4 @@
-// RoleManagementPage.jsx - Complete with all imports
+// RoleManagementPage.jsx - With API-based permissions
 import React, { useState, useEffect } from "react";
 import {
   FaUsers,
@@ -54,101 +54,88 @@ import {
 import { HiX } from "react-icons/hi";
 import roleService from "../../services/roleService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
-
-// Page definitions with their permissions
-const PAGE_ACTIONS = ['view', 'add', 'edit', 'delete'];
-
-// Define all pages/modules with their permissions
-const MODULES_AND_PAGES = [
-  {
-    module: "Recruitment",
-    pages: [
-      { name: "Job Openings", slug: "job_openings" },
-      { name: "Applicants", slug: "applicants" },
-      { name: "Interview Scheduling", slug: "interview_scheduling" },
-      { name: "Interview", slug: "interview" },
-      { name: "Selection & Offers", slug: "selection_offers" },
-      { name: "Onboarding", slug: "onboarding" },
-    ]
-  },
-  {
-    module: "Employee",
-    pages: [
-      { name: "Manage Profiles", slug: "manage_profiles" },
-      { name: "Employment History", slug: "employment_history" },
-      { name: "Probation", slug: "probation" },
-      { name: "Offboarding", slug: "offboarding" },
-    ]
-  },
-  {
-    module: "Rostering",
-    pages: [
-      { name: "Shift Scheduling", slug: "shift_scheduling" },
-      { name: "Roster Periods", slug: "roster_periods" },
-      { name: "Weekly / Monthly Rosters", slug: "weekly_monthly_rosters" },
-      { name: "Shift Swapping Requests", slug: "shift_swapping" },
-    ]
-  },
-  {
-    module: "Attendance",
-    pages: [
-      { name: "Attendance Tracking", slug: "attendance_tracking" },
-      { name: "Manual Adjustments", slug: "manual_adjustments" },
-      { name: "Leave Requests", slug: "leave_requests" },
-      { name: "Leave Balance", slug: "leave_balance" },
-      { name: "Holidays & Calendars", slug: "holidays_calendars" },
-    ]
-  },
-  {
-    module: "Timesheet",
-    pages: [
-      { name: "Timesheet Entry", slug: "timesheet_entry" },
-      { name: "Approvals", slug: "approvals" },
-    ]
-  },
-  {
-    module: "Payroll",
-    pages: [
-      { name: "Run Payroll", slug: "run_payroll" },
-    ]
-  },
-  {
-    module: "Performance",
-    pages: [
-      { name: "Goal Setting", slug: "goal_setting" },
-      { name: "KPI / OKR Tracking", slug: "kpi_okr_tracking" },
-      { name: "Performance Reviews", slug: "performance_reviews" },
-      { name: "Feedback & Appraisals", slug: "feedback_appraisals" },
-    ]
-  },
-  {
-    module: "Settings",
-    pages: [
-      { name: "Role Management", slug: "role_management" },
-      { name: "Assign Role to User", slug: "assign_role" },
-      { name: "Permission Management", slug: "permission_management" },
-      { name: "Connect to Xero", slug: "connect_xero" },
-    ]
-  },
-  {
-    module: "Centers",
-    pages: [
-      { name: "Organizations", slug: "organizations" },
-    ]
-  }
-];
+import axiosClient from "../../axiosClient";
 
 // Module Icons
 const moduleIcons = {
-  'Recruitment': <FaUserTie className="h-5 w-5" />,
-  'Employee': <FaUsers className="h-5 w-5" />,
-  'Rostering': <FaClipboardList className="h-5 w-5" />,
-  'Attendance': <FaCalendar className="h-5 w-5" />,
-  'Timesheet': <FaClock className="h-5 w-5" />,
-  'Payroll': <FaMoneyBill className="h-5 w-5" />,
-  'Performance': <FaChartBar className="h-5 w-5" />,
-  'Settings': <FaCog className="h-5 w-5" />,
-  'Centers': <FaBuilding className="h-5 w-5" />,
+  'recruitment': <FaUserTie className="h-5 w-5" />,
+  'employee': <FaUsers className="h-5 w-5" />,
+  'rostering': <FaClipboardList className="h-5 w-5" />,
+  'attendance': <FaCalendar className="h-5 w-5" />,
+  'timesheet': <FaClock className="h-5 w-5" />,
+  'payroll': <FaMoneyBill className="h-5 w-5" />,
+  'performance': <FaChartBar className="h-5 w-5" />,
+  'settings': <FaCog className="h-5 w-5" />,
+  'organization': <FaBuilding className="h-5 w-5" />,
+  'centers': <FaBuilding className="h-5 w-5" />,
+};
+
+// Get module display name
+const getModuleDisplayName = (module) => {
+  const displayNames = {
+    'recruitment': 'Recruitment',
+    'employee': 'Employee',
+    'rostering': 'Rostering',
+    'attendance': 'Attendance',
+    'timesheet': 'Timesheet',
+    'payroll': 'Payroll',
+    'performance': 'Performance',
+    'settings': 'Settings',
+    'organization': 'Organization',
+    'centers': 'Centers',
+  };
+  return displayNames[module] || module.charAt(0).toUpperCase() + module.slice(1);
+};
+
+// Get page display name from slug
+const getPageDisplayName = (slug) => {
+  const pageNames = {
+    'job_openings': 'Job Openings',
+    'applicants': 'Applicants',
+    'interview_scheduling': 'Interview Scheduling',
+    'interview': 'Interview',
+    'selection_offers': 'Selection & Offers',
+    'onboarding': 'Onboarding',
+    'manage_profiles': 'Manage Profiles',
+    'employment_history': 'Employment History',
+    'probation': 'Probation',
+    'exit_offboarding': 'Offboarding',
+    'shift_scheduling': 'Shift Scheduling',
+    'roster_periods': 'Roster Periods',
+    'weekly_monthly_rosters': 'Weekly / Monthly Rosters',
+    'shift_swapping_requests': 'Shift Swapping Requests',
+    'attendance_tracking': 'Attendance Tracking',
+    'manual_adjustments': 'Manual Adjustments',
+    'leave_requests': 'Leave Requests',
+    'leave_balance': 'Leave Balance',
+    'holidays_calendars': 'Holidays & Calendars',
+    'timesheet_entry': 'Timesheet Entry',
+    'timesheet_approvals': 'Approvals',
+    'run_payroll': 'Run Payroll',
+    'goal_setting': 'Goal Setting',
+    'kpi_okr_tracking': 'KPI / OKR Tracking',
+    'performance_reviews': 'Performance Reviews',
+    'feedback_appraisals': 'Feedback & Appraisals',
+    'role_management': 'Role Management',
+    'assign_role': 'Assign Role to User',
+    'permission_management': 'Permission Management',
+    'connect_xero': 'Connect to Xero',
+    'organizations': 'Organizations',
+  };
+  return pageNames[slug] || slug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// Parse permission name
+const parsePermission = (permissionName) => {
+  const parts = permissionName.split('.');
+  if (parts.length === 3) {
+    return {
+      module: parts[0],
+      page: parts[1],
+      action: parts[2],
+    };
+  }
+  return null;
 };
 
 // Role Card Component
@@ -234,56 +221,55 @@ const RoleCard = ({ role, onEdit, onDelete, onView, onClone, loading, userCount 
   );
 };
 
-// Role Form Modal with Page-based Permissions
-const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganization }) => {
+// Role Form Modal with API-based Permissions
+const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganization, allPermissions }) => {
   const [formData, setFormData] = useState({
     name: "",
-    permissions: {},
+    permission_ids: [],
   });
   const [errors, setErrors] = useState({});
   const [expandedModules, setExpandedModules] = useState({});
 
+  // Build module-page structure from permissions
+  const buildModulePageStructure = () => {
+    const structure = {};
+    
+    allPermissions.forEach(permission => {
+      const parsed = parsePermission(permission.name);
+      if (parsed && parsed.module && parsed.page && parsed.action) {
+        if (!structure[parsed.module]) {
+          structure[parsed.module] = {};
+        }
+        if (!structure[parsed.module][parsed.page]) {
+          structure[parsed.module][parsed.page] = [];
+        }
+        if (!structure[parsed.module][parsed.page].includes(parsed.action)) {
+          structure[parsed.module][parsed.page].push(parsed.action);
+        }
+      }
+    });
+    
+    return structure;
+  };
+
+  const modulePageStructure = buildModulePageStructure();
+  const modules = Object.keys(modulePageStructure).sort();
+
   useEffect(() => {
     if (isOpen) {
-      const initialPermissions = {};
-      MODULES_AND_PAGES.forEach(module => {
-        initialPermissions[module.module] = {};
-        module.pages.forEach(page => {
-          initialPermissions[module.module][page.slug] = {
-            view: false,
-            add: false,
-            edit: false,
-            delete: false
-          };
-        });
-      });
-      
-      if (role && role.permissions) {
-        Object.keys(initialPermissions).forEach(moduleName => {
-          Object.keys(initialPermissions[moduleName]).forEach(pageSlug => {
-            PAGE_ACTIONS.forEach(action => {
-              const permissionName = `${moduleName.toLowerCase()}.${pageSlug}.${action}`;
-              if (role.permissions[permissionName]) {
-                initialPermissions[moduleName][pageSlug][action] = true;
-              }
-            });
-          });
-        });
-      }
-      
       setFormData({
         name: role?.name || "",
-        permissions: initialPermissions,
+        permission_ids: role?.permission_ids || [],
       });
       setErrors({});
       
       const expanded = {};
-      MODULES_AND_PAGES.forEach(module => {
-        expanded[module.module] = true;
+      modules.forEach(module => {
+        expanded[module] = true;
       });
       setExpandedModules(expanded);
     }
-  }, [role, isOpen]);
+  }, [role, isOpen, modules]);
 
   const toggleModule = (moduleName) => {
     setExpandedModules(prev => ({
@@ -292,106 +278,58 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
     }));
   };
 
-  const handlePagePermissionChange = (moduleName, pageSlug, action, isChecked) => {
+  const handlePermissionToggle = (permissionId) => {
     setFormData(prev => ({
       ...prev,
-      permissions: {
-        ...prev.permissions,
-        [moduleName]: {
-          ...prev.permissions[moduleName],
-          [pageSlug]: {
-            ...prev.permissions[moduleName][pageSlug],
-            [action]: isChecked
-          }
-        }
-      }
+      permission_ids: prev.permission_ids.includes(permissionId)
+        ? prev.permission_ids.filter(id => id !== permissionId)
+        : [...prev.permission_ids, permissionId],
     }));
   };
 
-  const handleSelectAllPagePermissions = (moduleName, pageSlug) => {
-    const currentPagePerms = formData.permissions[moduleName]?.[pageSlug] || {};
-    const allSelected = PAGE_ACTIONS.every(action => currentPagePerms[action] === true);
-    
-    const newPagePerms = {};
-    PAGE_ACTIONS.forEach(action => {
-      newPagePerms[action] = !allSelected;
+  const handlePageToggle = (moduleName, pageSlug) => {
+    const pagePermissions = allPermissions.filter(p => {
+      const parsed = parsePermission(p.name);
+      return parsed && parsed.module === moduleName && parsed.page === pageSlug;
     });
+    const pagePermissionIds = pagePermissions.map(p => p.id);
+    const allSelected = pagePermissionIds.every(id => formData.permission_ids.includes(id));
     
     setFormData(prev => ({
       ...prev,
-      permissions: {
-        ...prev.permissions,
-        [moduleName]: {
-          ...prev.permissions[moduleName],
-          [pageSlug]: newPagePerms
-        }
-      }
+      permission_ids: allSelected
+        ? prev.permission_ids.filter(id => !pagePermissionIds.includes(id))
+        : [...prev.permission_ids, ...pagePermissionIds.filter(id => !prev.permission_ids.includes(id))],
     }));
   };
 
-  const handleSelectAllModulePermissions = (moduleName) => {
-    const module = MODULES_AND_PAGES.find(m => m.module === moduleName);
-    if (!module) return;
-    
-    let allSelected = true;
-    module.pages.forEach(page => {
-      PAGE_ACTIONS.forEach(action => {
-        if (!formData.permissions[moduleName]?.[page.slug]?.[action]) {
-          allSelected = false;
-        }
-      });
+  const handleModuleToggle = (moduleName) => {
+    const modulePermissions = allPermissions.filter(p => {
+      const parsed = parsePermission(p.name);
+      return parsed && parsed.module === moduleName;
     });
-    
-    const newPermissions = { ...formData.permissions };
-    module.pages.forEach(page => {
-      if (!newPermissions[moduleName][page.slug]) {
-        newPermissions[moduleName][page.slug] = {};
-      }
-      PAGE_ACTIONS.forEach(action => {
-        newPermissions[moduleName][page.slug][action] = !allSelected;
-      });
-    });
+    const modulePermissionIds = modulePermissions.map(p => p.id);
+    const allSelected = modulePermissionIds.every(id => formData.permission_ids.includes(id));
     
     setFormData(prev => ({
       ...prev,
-      permissions: newPermissions
+      permission_ids: allSelected
+        ? prev.permission_ids.filter(id => !modulePermissionIds.includes(id))
+        : [...prev.permission_ids, ...modulePermissionIds.filter(id => !prev.permission_ids.includes(id))],
     }));
   };
 
   const handleSelectAll = () => {
-    const newPermissions = { ...formData.permissions };
-    MODULES_AND_PAGES.forEach(module => {
-      module.pages.forEach(page => {
-        if (!newPermissions[module.module][page.slug]) {
-          newPermissions[module.module][page.slug] = {};
-        }
-        PAGE_ACTIONS.forEach(action => {
-          newPermissions[module.module][page.slug][action] = true;
-        });
-      });
-    });
-    
     setFormData(prev => ({
       ...prev,
-      permissions: newPermissions
+      permission_ids: allPermissions.map(p => p.id),
     }));
   };
 
   const handleDeselectAll = () => {
-    const newPermissions = { ...formData.permissions };
-    MODULES_AND_PAGES.forEach(module => {
-      module.pages.forEach(page => {
-        if (newPermissions[module.module][page.slug]) {
-          PAGE_ACTIONS.forEach(action => {
-            newPermissions[module.module][page.slug][action] = false;
-          });
-        }
-      });
-    });
-    
     setFormData(prev => ({
       ...prev,
-      permissions: newPermissions
+      permission_ids: [],
     }));
   };
 
@@ -403,13 +341,8 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
       return;
     }
 
-    const submitData = {
-      name: formData.name,
-      permissions: formData.permissions,
-    };
-
     try {
-      await onSave(submitData);
+      await onSave(formData);
       onClose();
     } catch (error) {
       setErrors({ general: error.response?.data?.message || "Failed to save role" });
@@ -418,27 +351,28 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 
   if (!isOpen) return null;
 
-  const getTotalSelected = () => {
-    let total = 0;
-    MODULES_AND_PAGES.forEach(module => {
-      module.pages.forEach(page => {
-        PAGE_ACTIONS.forEach(action => {
-          if (formData.permissions[module.module]?.[page.slug]?.[action]) {
-            total++;
-          }
-        });
-      });
+  const getTotalSelected = () => formData.permission_ids.length;
+  const getTotalPermissions = () => allPermissions.length;
+
+  // Group permissions by module and page for display
+  const getPermissionsByModuleAndPage = () => {
+    const grouped = {};
+    allPermissions.forEach(permission => {
+      const parsed = parsePermission(permission.name);
+      if (parsed) {
+        if (!grouped[parsed.module]) {
+          grouped[parsed.module] = {};
+        }
+        if (!grouped[parsed.module][parsed.page]) {
+          grouped[parsed.module][parsed.page] = [];
+        }
+        grouped[parsed.module][parsed.page].push(permission);
+      }
     });
-    return total;
+    return grouped;
   };
 
-  const getTotalPermissions = () => {
-    let total = 0;
-    MODULES_AND_PAGES.forEach(module => {
-      total += module.pages.length * PAGE_ACTIONS.length;
-    });
-    return total;
-  };
+  const groupedPermissions = getPermissionsByModuleAndPage();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4">
@@ -502,202 +436,220 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
               </div>
 
               {/* Permissions Section */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Module & Page Permissions</h3>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSelectAll}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      <FaCheck className="h-3 w-3" />
-                      Select All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDeselectAll}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
-                    >
-                      <HiX className="h-3 w-3" />
-                      Deselect All
-                    </button>
+              {allPermissions.length > 0 && (
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Module & Page Permissions</h3>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        <FaCheck className="h-3 w-3" />
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeselectAll}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
+                      >
+                        <HiX className="h-3 w-3" />
+                        Deselect All
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Modules and Pages Structure */}
-                <div className="space-y-4">
-                  {MODULES_AND_PAGES.map(module => {
-                    const moduleName = module.module;
-                    const pages = module.pages;
-                    
-                    let totalSelectedInModule = 0;
-                    let totalPermissionsInModule = pages.length * PAGE_ACTIONS.length;
-                    pages.forEach(page => {
-                      PAGE_ACTIONS.forEach(action => {
-                        if (formData.permissions[moduleName]?.[page.slug]?.[action]) {
-                          totalSelectedInModule++;
-                        }
+                  {/* Modules and Pages Structure */}
+                  <div className="space-y-4">
+                    {modules.map(module => {
+                      const pages = Object.keys(groupedPermissions[module] || {}).sort();
+                      let totalSelectedInModule = 0;
+                      let totalPermissionsInModule = 0;
+                      
+                      pages.forEach(page => {
+                        const pagePerms = groupedPermissions[module][page];
+                        totalPermissionsInModule += pagePerms.length;
+                        pagePerms.forEach(perm => {
+                          if (formData.permission_ids.includes(perm.id)) {
+                            totalSelectedInModule++;
+                          }
+                        });
                       });
-                    });
-                    
-                    const isModuleFullySelected = totalSelectedInModule === totalPermissionsInModule && totalPermissionsInModule > 0;
-                    const isModulePartiallySelected = totalSelectedInModule > 0 && totalSelectedInModule < totalPermissionsInModule;
+                      
+                      const isModuleFullySelected = totalSelectedInModule === totalPermissionsInModule && totalPermissionsInModule > 0;
+                      const isModulePartiallySelected = totalSelectedInModule > 0 && totalSelectedInModule < totalPermissionsInModule;
+                      const moduleDisplayName = getModuleDisplayName(module);
 
-                    return (
-                      <div key={moduleName} className="border border-gray-200 rounded-lg overflow-hidden">
-                        {/* Module Header */}
-                        <div 
-                          className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                            isModuleFullySelected 
-                              ? 'bg-green-50 border-b border-green-200' 
-                              : isModulePartiallySelected 
-                              ? 'bg-yellow-50 border-b border-yellow-200'
-                              : 'bg-gray-50 border-b border-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3" onClick={() => toggleModule(moduleName)}>
-                            <div className="p-2 rounded-lg bg-white shadow-sm">
-                              {moduleIcons[moduleName] || <FaList className="h-5 w-5 text-blue-600" />}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-gray-800 text-lg">{moduleName}</h3>
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  isModuleFullySelected 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : isModulePartiallySelected 
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {totalSelectedInModule}/{totalPermissionsInModule}
-                                </span>
+                      return (
+                        <div key={module} className="border border-gray-200 rounded-lg overflow-hidden">
+                          {/* Module Header */}
+                          <div 
+                            className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
+                              isModuleFullySelected 
+                                ? 'bg-green-50 border-b border-green-200' 
+                                : isModulePartiallySelected 
+                                ? 'bg-yellow-50 border-b border-yellow-200'
+                                : 'bg-gray-50 border-b border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3" onClick={() => toggleModule(module)}>
+                              <div className="p-2 rounded-lg bg-white shadow-sm">
+                                {moduleIcons[module] || <FaList className="h-5 w-5 text-blue-600" />}
                               </div>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                {pages.length} pages • {PAGE_ACTIONS.length} actions each
-                              </p>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold text-gray-800 text-lg">{moduleDisplayName}</h3>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    isModuleFullySelected 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : isModulePartiallySelected 
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {totalSelectedInModule}/{totalPermissionsInModule}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {pages.length} pages
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isModuleFullySelected}
+                                onChange={() => handleModuleToggle(module)}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleModule(module)}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                {expandedModules[module] ? <FaChevronUp /> : <FaChevronDown />}
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={isModuleFullySelected}
-                              onChange={() => handleSelectAllModulePermissions(moduleName)}
-                              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => toggleModule(moduleName)}
-                              className="text-gray-500 hover:text-gray-700"
-                            >
-                              {expandedModules[moduleName] ? <FaChevronUp /> : <FaChevronDown />}
-                            </button>
-                          </div>
+
+                          {/* Module Pages */}
+                          {expandedModules[module] && (
+                            <div className="p-4 bg-white">
+                              <div className="space-y-4">
+                                {pages.map(page => {
+                                  const pagePermissions = groupedPermissions[module][page];
+                                  const selectedCount = pagePermissions.filter(p => formData.permission_ids.includes(p.id)).length;
+                                  const allSelected = selectedCount === pagePermissions.length;
+                                  const someSelected = selectedCount > 0 && selectedCount < pagePermissions.length;
+                                  const pageDisplayName = getPageDisplayName(page);
+
+                                  return (
+                                    <div key={page} className="border border-gray-200 rounded-lg overflow-hidden">
+                                      {/* Page Header */}
+                                      <div className={`px-4 py-2 flex items-center justify-between ${
+                                        allSelected ? 'bg-green-50' : someSelected ? 'bg-blue-50' : 'bg-gray-50'
+                                      }`}>
+                                        <div className="flex items-center gap-3">
+                                          <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onChange={() => handlePageToggle(module, page)}
+                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                                          />
+                                          <span className="font-medium text-gray-800">{pageDisplayName}</span>
+                                          <span className="text-xs text-gray-400">({page})</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {selectedCount}/{pagePermissions.length} selected
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Page Actions */}
+                                      <div className="p-3 bg-white">
+                                        <div className="flex flex-wrap gap-3">
+                                          {pagePermissions.map(permission => {
+                                            const parsed = parsePermission(permission.name);
+                                            const action = parsed?.action || 'unknown';
+                                            const isChecked = formData.permission_ids.includes(permission.id);
+                                            
+                                            const actionLabels = {
+                                              view: { label: "View", color: "blue", icon: <FaEye className="h-3 w-3" /> },
+                                              add: { label: "Add", color: "green", icon: <FaPlus className="h-3 w-3" /> },
+                                              create: { label: "Create", color: "green", icon: <FaPlus className="h-3 w-3" /> },
+                                              edit: { label: "Edit", color: "yellow", icon: <FaEdit className="h-3 w-3" /> },
+                                              update: { label: "Update", color: "yellow", icon: <FaEdit className="h-3 w-3" /> },
+                                              delete: { label: "Delete", color: "red", icon: <FaTrash className="h-3 w-3" /> },
+                                              manage: { label: "Manage", color: "purple", icon: <FaCog className="h-3 w-3" /> },
+                                              approve: { label: "Approve", color: "green", icon: <FaCheck className="h-3 w-3" /> },
+                                              reject: { label: "Reject", color: "red", icon: <HiX className="h-3 w-3" /> },
+                                            };
+                                            
+                                            const actionInfo = actionLabels[action] || { 
+                                              label: action.charAt(0).toUpperCase() + action.slice(1), 
+                                              color: "gray", 
+                                              icon: <FaLock className="h-3 w-3" /> 
+                                            };
+                                            
+                                            return (
+                                              <label
+                                                key={permission.id}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                                                  isChecked
+                                                    ? `bg-${actionInfo.color}-50 border-${actionInfo.color}-300 shadow-sm`
+                                                    : "bg-white border-gray-200 hover:bg-gray-50"
+                                                }`}
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={() => handlePermissionToggle(permission.id)}
+                                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                                                />
+                                                <span className={`text-sm font-medium text-gray-700 capitalize flex items-center gap-1`}>
+                                                  {actionInfo.icon}
+                                                  {actionInfo.label}
+                                                </span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        {/* Module Pages */}
-                        {expandedModules[moduleName] && (
-                          <div className="p-4 bg-white">
-                            <div className="space-y-4">
-                              {pages.map(page => {
-                                const pageSlug = page.slug;
-                                const pagePermissions = formData.permissions[moduleName]?.[pageSlug] || {};
-                                const allPageActionsSelected = PAGE_ACTIONS.every(action => pagePermissions[action] === true);
-                                const somePageActionsSelected = PAGE_ACTIONS.some(action => pagePermissions[action] === true);
-                                
-                                return (
-                                  <div key={pageSlug} className="border border-gray-200 rounded-lg overflow-hidden">
-                                    {/* Page Header */}
-                                    <div className={`px-4 py-2 flex items-center justify-between ${
-                                      allPageActionsSelected ? 'bg-green-50' : somePageActionsSelected ? 'bg-blue-50' : 'bg-gray-50'
-                                    }`}>
-                                      <div className="flex items-center gap-3">
-                                        <input
-                                          type="checkbox"
-                                          checked={allPageActionsSelected}
-                                          onChange={() => handleSelectAllPagePermissions(moduleName, pageSlug)}
-                                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <span className="font-medium text-gray-800">{page.name}</span>
-                                        <span className="text-xs text-gray-400">({pageSlug})</span>
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {PAGE_ACTIONS.filter(a => pagePermissions[a]).length}/{PAGE_ACTIONS.length} selected
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Page Actions */}
-                                    <div className="p-3 bg-white">
-                                      <div className="flex flex-wrap gap-3">
-                                        {PAGE_ACTIONS.map(action => {
-                                          const isChecked = pagePermissions[action] === true;
-                                          const actionLabels = {
-                                            view: { label: "View", color: "blue", icon: <FaEye className="h-3 w-3" /> },
-                                            add: { label: "Add", color: "green", icon: <FaPlus className="h-3 w-3" /> },
-                                            edit: { label: "Edit", color: "yellow", icon: <FaEdit className="h-3 w-3" /> },
-                                            delete: { label: "Delete", color: "red", icon: <FaTrash className="h-3 w-3" /> }
-                                          };
-                                          const actionInfo = actionLabels[action];
-                                          
-                                          return (
-                                            <label
-                                              key={action}
-                                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
-                                                isChecked
-                                                  ? `bg-${actionInfo.color}-50 border-${actionInfo.color}-300 shadow-sm`
-                                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                                              }`}
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                onChange={() => handlePagePermissionChange(moduleName, pageSlug, action, !isChecked)}
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                                              />
-                                              <span className={`text-sm font-medium text-gray-700 capitalize flex items-center gap-1`}>
-                                                {actionInfo.icon}
-                                                {actionInfo.label}
-                                              </span>
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
+                  {/* Permissions Summary */}
+                  <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-full">
+                          <FaUserShield className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800">Permissions Summary</h4>
+                          <p className="text-sm text-gray-600">
+                            {getTotalSelected()} of {getTotalPermissions()} permissions selected
+                          </p>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-
-                {/* Permissions Summary */}
-                <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-full">
-                        <FaUserShield className="h-4 w-4 text-blue-600" />
+                      <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${(getTotalSelected() / getTotalPermissions()) * 100}%` }}
+                        />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">Permissions Summary</h4>
-                        <p className="text-sm text-gray-600">
-                          {getTotalSelected()} of {getTotalPermissions()} permissions selected
-                        </p>
-                      </div>
-                    </div>
-                    <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                        style={{ width: `${(getTotalSelected() / getTotalPermissions()) * 100}%` }}
-                      />
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -727,29 +679,16 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 };
 
 // Role Details Modal
-const RoleDetailsModal = ({ isOpen, onClose, role }) => {
+const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
   if (!isOpen || !role) return null;
 
-  const getSelectedPermissions = () => {
-    const selected = [];
-    if (role.permissions) {
-      Object.keys(role.permissions).forEach(moduleName => {
-        Object.keys(role.permissions[moduleName]).forEach(pageSlug => {
-          PAGE_ACTIONS.forEach(action => {
-            if (role.permissions[moduleName][pageSlug]?.[action]) {
-              selected.push({ module: moduleName, page: pageSlug, action });
-            }
-          });
-        });
-      });
+  const rolePermissions = allPermissions.filter(p => role.permission_ids?.includes(p.id)) || [];
+  const groupedPermissions = rolePermissions.reduce((acc, perm) => {
+    const parsed = parsePermission(perm.name);
+    if (parsed) {
+      if (!acc[parsed.module]) acc[parsed.module] = [];
+      acc[parsed.module].push({ page: parsed.page, action: parsed.action, name: perm.name });
     }
-    return selected;
-  };
-
-  const selectedPermissions = getSelectedPermissions();
-  const groupedByModule = selectedPermissions.reduce((acc, perm) => {
-    if (!acc[perm.module]) acc[perm.module] = [];
-    acc[perm.module].push(perm);
     return acc;
   }, {});
 
@@ -784,46 +723,47 @@ const RoleDetailsModal = ({ isOpen, onClose, role }) => {
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-sm text-green-600 font-medium mb-1">Permissions</div>
               <div className="text-gray-800">
-                {selectedPermissions.length} permissions
+                {rolePermissions.length} permissions
               </div>
             </div>
           </div>
 
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Permissions by Module</h3>
           <div className="space-y-4">
-            {Object.keys(groupedByModule).length === 0 ? (
+            {Object.keys(groupedPermissions).length === 0 ? (
               <p className="text-gray-500 text-center py-4">No permissions assigned</p>
             ) : (
-              Object.keys(groupedByModule).sort().map(module => (
-                <div key={module} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                    <div className="flex items-center gap-2">
-                      {moduleIcons[module] || <FaList className="h-4 w-4 text-blue-600" />}
-                      <h4 className="font-semibold text-gray-800">{module}</h4>
-                      <span className="text-xs text-gray-500">({groupedByModule[module].length})</span>
+              Object.keys(groupedPermissions).sort().map(module => {
+                const moduleDisplayName = getModuleDisplayName(module);
+                return (
+                  <div key={module} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                      <div className="flex items-center gap-2">
+                        {moduleIcons[module] || <FaList className="h-4 w-4 text-blue-600" />}
+                        <h4 className="font-semibold text-gray-800">{moduleDisplayName}</h4>
+                        <span className="text-xs text-gray-500">({groupedPermissions[module].length})</span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="space-y-2">
+                        {groupedPermissions[module].map((perm, idx) => {
+                          const pageDisplayName = getPageDisplayName(perm.page);
+                          const actionLabels = { view: "View", add: "Add", create: "Create", edit: "Edit", update: "Update", delete: "Delete", manage: "Manage" };
+                          const actionDisplay = actionLabels[perm.action] || perm.action;
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <FaCheck className="h-3 w-3 text-green-500" />
+                              <span className="text-sm text-gray-700">
+                                {pageDisplayName} - {actionDisplay}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                  <div className="p-3">
-                    <div className="space-y-2">
-                      {groupedByModule[module].map((perm, idx) => {
-                        const pageInfo = MODULES_AND_PAGES
-                          .find(m => m.module === module)
-                          ?.pages.find(p => p.slug === perm.page);
-                        const actionLabels = { view: "View", add: "Add", edit: "Edit", delete: "Delete" };
-                        
-                        return (
-                          <div key={idx} className="flex items-center gap-2">
-                            <FaCheck className="h-3 w-3 text-green-500" />
-                            <span className="text-sm text-gray-700">
-                              {pageInfo?.name || perm.page} - {actionLabels[perm.action] || perm.action}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -874,6 +814,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
 export default function RoleManagementPage() {
   const { selectedOrganization } = useOrganizations();
   const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -890,15 +831,39 @@ export default function RoleManagementPage() {
 
   useEffect(() => {
     if (selectedOrganization?.id) {
-      fetchRoles();
+      fetchData();
     }
   }, [selectedOrganization]);
 
-  const fetchRoles = async () => {
+  const fetchPermissions = async () => {
+    try {
+      const response = await axiosClient.get('/permissions');
+      let permissionsArray = [];
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        permissionsArray = response.data.data;
+      } else if (response.data && Array.isArray(response.data)) {
+        permissionsArray = response.data;
+      } else if (Array.isArray(response)) {
+        permissionsArray = response;
+      }
+      
+      // Filter permissions for current organization
+      const filteredPermissions = permissionsArray.filter(p => p.organization_id === selectedOrganization?.id);
+      return filteredPermissions;
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      return [];
+    }
+  };
+
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const rolesData = await roleService.getRoles();
+      const [rolesData, permissionsData] = await Promise.all([
+        roleService.getRoles(),
+        fetchPermissions(),
+      ]);
       
       let rolesArray = [];
       if (rolesData && rolesData.data && Array.isArray(rolesData.data)) {
@@ -910,10 +875,12 @@ export default function RoleManagementPage() {
       }
       
       setRoles(rolesArray);
+      setPermissions(permissionsData);
     } catch (err) {
-      console.error('Failed to fetch roles:', err);
-      setError(err.response?.data?.message || 'Failed to load roles. Please try again.');
+      console.error('Failed to fetch data:', err);
+      setError(err.response?.data?.message || 'Failed to load data. Please try again.');
       setRoles([]);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -930,14 +897,14 @@ export default function RoleManagementPage() {
       if (modalState.role) {
         savedRole = await roleService.updateRole(modalState.role.id, {
           name: formData.name,
-          permissions: formData.permissions,
+          permission_ids: formData.permission_ids,
         });
         setRoles(prev => prev.map(role => role.id === modalState.role.id ? savedRole : role));
         setSuccessMessage(`Role "${savedRole.name}" updated successfully!`);
       } else {
         savedRole = await roleService.createRole({
           name: formData.name,
-          permissions: formData.permissions,
+          permission_ids: formData.permission_ids,
           organization_id: selectedOrganization?.id,
         });
         setRoles(prev => [...prev, savedRole]);
@@ -945,7 +912,7 @@ export default function RoleManagementPage() {
       }
       
       setTimeout(() => setSuccessMessage(null), 3000);
-      fetchRoles();
+      fetchData();
     } catch (err) {
       console.error('Error saving role:', err);
       setError(err.response?.data?.message || 'Failed to save role. Please try again.');
@@ -984,7 +951,7 @@ export default function RoleManagementPage() {
     try {
       const newRoleData = {
         name: `${role.name} (Copy)`,
-        permissions: role.permissions || {},
+        permission_ids: role.permission_ids || [],
         organization_id: selectedOrganization?.id,
       };
       
@@ -993,7 +960,7 @@ export default function RoleManagementPage() {
       setSuccessMessage(`Role "${savedRole.name}" cloned successfully!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
-      fetchRoles();
+      fetchData();
     } catch (err) {
       console.error('Error cloning role:', err);
       setError('Failed to clone role. Please try again.');
@@ -1050,7 +1017,7 @@ export default function RoleManagementPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <FaSpinner className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading roles...</p>
+          <p className="text-gray-600">Loading roles and permissions...</p>
           <p className="text-sm text-gray-500 mt-2">Organization: {selectedOrganization.name}</p>
         </div>
       </div>
@@ -1111,7 +1078,7 @@ export default function RoleManagementPage() {
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-lg bg-green-50"><FaList className="h-6 w-6 text-green-600" /></div>
-              <span className="text-lg font-bold text-gray-800">{MODULES_AND_PAGES.reduce((total, m) => total + (m.pages.length * PAGE_ACTIONS.length), 0)}</span>
+              <span className="text-lg font-bold text-gray-800">{permissions.length}</span>
             </div>
             <p className="text-sm text-gray-600">Total Permissions</p>
           </div>
@@ -1140,7 +1107,7 @@ export default function RoleManagementPage() {
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input type="text" placeholder="Search roles by name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
             </div>
-            <button onClick={fetchRoles} className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors">
+            <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors">
               <FaSync className="h-4 w-4" /> Refresh
             </button>
           </div>
@@ -1194,12 +1161,14 @@ export default function RoleManagementPage() {
         onSave={handleSaveRole}
         loading={saving}
         selectedOrganization={selectedOrganization}
+        allPermissions={permissions}
       />
 
       <RoleDetailsModal
         isOpen={modalState.details}
         onClose={handleCloseDetails}
         role={modalState.role}
+        allPermissions={permissions}
       />
 
       <ConfirmationModal
