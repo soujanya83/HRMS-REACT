@@ -115,7 +115,6 @@ const AssignRolePage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [assigning, setAssigning] = useState(false);
-  const [removing, setRemoving] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -345,38 +344,6 @@ const AssignRolePage = () => {
     }
   };
 
-  const handleRemoveRole = async (roleName) => {
-    if (!selectedEmployee || !roleName || !currentOrganization) return;
-
-    if (!window.confirm(`Are you sure you want to remove the ${roleName} role from ${selectedEmployee.name}?`)) {
-      return;
-    }
-
-    try {
-      setRemoving(true);
-      await assignRoleService.removeRoleFromUser(
-        currentOrganization.id,
-        selectedEmployee.user_id,
-        roleName
-      );
-
-      setMessage({ type: 'success', text: 'Role removed successfully' });
-
-      // Refresh user roles
-      fetchUserRoles(selectedEmployee.user_id);
-
-      // Refresh employee list
-      setTimeout(() => fetchAllEmployees(), 500);
-    } catch (error) {
-      console.error('Error removing role:', error);
-      setMessage({
-        type: 'error',
-        text: error.response?.data?.message || 'Failed to remove role'
-      });
-    } finally {
-      setRemoving(false);
-    }
-  };
 
   const getRoleDisplayName = (roleValue) => {
     if (!roleValue) return 'N/A';
@@ -822,19 +789,9 @@ const AssignRolePage = () => {
                         <div className="flex flex-wrap gap-2">
                           {userRoles.length > 0 ? (
                             userRoles.map((role, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColorClass(role)}`}>
-                                  {getRoleDisplayName(role)}
-                                </span>
-                                <button
-                                  onClick={() => handleRemoveRole(role)}
-                                  disabled={removing}
-                                  className="text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
-                                  title="Remove role"
-                                >
-                                  <HiOutlineX size={18} />
-                                </button>
-                              </div>
+                              <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColorClass(role)}`}>
+                                {getRoleDisplayName(role)}
+                              </span>
                             ))
                           ) : (
                             <span className="text-gray-400 text-sm">No roles assigned yet</span>
