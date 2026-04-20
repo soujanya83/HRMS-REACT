@@ -44,6 +44,7 @@ import {
   HiOutlineKey,
   HiOutlineUserCircle,
 } from "react-icons/hi";
+import { useOrganizations } from "../contexts/OrganizationContext";
 
 // DEFAULT COLOR - Dark Navy
 const DEFAULT_COLOR = '#0B1A2E';
@@ -58,6 +59,7 @@ const Sidebar = ({
   const [openMenu, setOpenMenu] = useState(null);
   const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
   const [currentUserRole, setCurrentUserRole] = useState(null);
+  const { userPermissions } = useOrganizations();
   const location = useLocation();
 
   // Load color from localStorage ONCE on mount
@@ -152,57 +154,57 @@ const Sidebar = ({
       name: "Recruitment",
       icon: HiOutlineDocumentSearch,
       children: [
-        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase },
-        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification },
-        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar },
-        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone },
-        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText },
-        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd },
+        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase, permission: "recruitment.job_openings.view" },
+        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification, permission: "recruitment.applicants.view" },
+        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar, permission: "recruitment.interview_scheduling.view" },
+        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone, permission: "recruitment.interview.view" },
+        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText, permission: "recruitment.selection_offers.view" },
+        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd, permission: "recruitment.onboarding.view" },
       ],
     },
     {
       name: "Employee",
       icon: HiOutlineUsers,
       children: [
-        { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true },
-        { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive },
-        { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle },
-        { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove },
+        { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true, permission: "employee.add_manage_profiles.view" },
+        { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive, permission: "employee.employment_history.view" },
+        { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle, permission: "employee.probation_confirmation.view" },
+        { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove, permission: "employee.exit_offboarding.view" },
       ],
     },
     {
       name: "Rostering",
       icon: HiOutlineCalendar,
       children: [
-        { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable },
-        { name: "Roster Periods", path: "/dashboard/rostering/periods", icon: HiOutlineCalendar },
-        { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid },
-        { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal },
+        { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable, permission: "rostering.shift_scheduling.view" },
+        { name: "Roster Periods", path: "/dashboard/rostering/periods", icon: HiOutlineCalendar, permission: "rostering.roster_periods.view" },
+        { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid, permission: "rostering.weekly_monthly_rosters.view" },
+        { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal, permission: "rostering.shift_swapping_requests.view" },
       ],
     },
     {
       name: "Attendance",
       icon: HiOutlineClipboardList,
       children: [
-        { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint },
-        { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt },
-        { name: "Leave Requests", path: "/dashboard/attendance/requests", icon: HiOutlineDocumentReport },
-        { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator },
-        { name: "Holidays & Calendars", path: "/dashboard/attendance/holidays", icon: HiOutlineCalendar },
+        { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint, permission: "attendance.attendance_tracking.view" },
+        { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt, permission: "attendance.manual_adjustments.view" },
+        { name: "Leave Requests", path: "/dashboard/attendance/requests", icon: HiOutlineDocumentReport, permission: "attendance.leave_requests.view" },
+        { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator, permission: "attendance.leave_balance.view" },
+        { name: "Holidays & Calendars", path: "/dashboard/attendance/holidays", icon: HiOutlineCalendar, permission: "attendance.holidays_calendars.view" },
       ],
     },
     {
       name: "Timesheet",
       icon: HiOutlineClock,
       children: [
-        { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock },
-        { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp },
+        { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock, permission: "timesheet.timesheet_entry.view" },
+        { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp, permission: "timesheet.timesheet_approvals.view" },
       ],
     },
     {
       name: "Payroll",
       icon: HiOutlineCreditCard,
-      children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash }],
+      children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash, permission: "payroll.payroll.view" }],
     },
     {
       name: "Performance",
@@ -218,9 +220,9 @@ const Sidebar = ({
       name: "Settings",
       icon: HiOutlineCog,
       children: [
-        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck },
-        { name: "Assign Role to User", path: "/dashboard/settings/assign-role", icon: HiOutlineUserAdd },
-        { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey },
+        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck, permission: "settings.role_management.view" },
+        { name: "Assign Role to User", path: "/dashboard/settings/assign-role", icon: HiOutlineUserAdd, permission: "settings.assign_roles_to_users.view" },
+        { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey, permission: "settings.permission_management.view" },
         { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal },
       ],
     },
@@ -232,6 +234,31 @@ const Sidebar = ({
   ], [dashboardLink]);
 
   const navLinks = useMemo(() => [...dashboardLinks, ...baseLinks], [dashboardLinks, baseLinks]);
+
+  // Helper to check permission
+  const hasPermission = useCallback((permission) => {
+    if (!permission) return true; // Visible by default if no permission mapping
+    if (userPermissions.includes('*')) return true; // Superadmin bypass
+    return userPermissions.includes(permission);
+  }, [userPermissions]);
+
+  // Filter links based on permissions
+  const filteredNavLinks = useMemo(() => {
+    return navLinks.filter(link => {
+      // Check top-level permission if it exists
+      if (link.permission && !hasPermission(link.permission)) {
+        return false;
+      }
+
+      // If it has children, check if at least one child is visible
+      if (link.children) {
+        link.visibleChildren = link.children.filter(child => hasPermission(child.permission));
+        return link.visibleChildren.length > 0;
+      }
+
+      return true;
+    });
+  }, [navLinks, hasPermission]);
 
   // Find active parent menu
   const findActiveParent = useCallback(() => {
@@ -345,7 +372,7 @@ const Sidebar = ({
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto scrollbar-hide pb-3 mt-4">
             <nav className={`${isCollapsed ? "px-2" : "px-3"} space-y-1`}>
-              {navLinks.map((link) => (
+              {filteredNavLinks.map((link) => (
                 <div key={link.name}>
                   {!link.children ? (
                     <NavLink
@@ -390,7 +417,7 @@ const Sidebar = ({
                         }`}
                       >
                         <div className="py-1.5 pl-10 space-y-0.5">
-                          {link.children.map((child) => (
+                          {(link.visibleChildren || []).map((child) => (
                             <NavLink
                               key={child.name}
                               to={child.path}

@@ -1,6 +1,7 @@
 // src/contexts/OrganizationContext.jsx
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { getOrganizations } from '../services/organizationService';
+import roleService from '../services/roleService';
 
 const OrganizationContext = createContext();
 
@@ -17,6 +18,7 @@ export const useOrganizations = () => {
             refetchOrganizations: () => {},
             currentUserRole: null,
             isAdmin: false,
+            userPermissions: [],
         };
     }
     return context;
@@ -26,6 +28,10 @@ export const OrganizationProvider = ({ children }) => {
     const [organizations, setOrganizations] = useState([]);
     const [selectedOrganization, setSelectedOrganization] = useState(null);
     const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [userPermissions, setUserPermissions] = useState(() => {
+        const saved = localStorage.getItem('USER_PERMISSIONS');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -49,6 +55,38 @@ export const OrganizationProvider = ({ children }) => {
         const adminRoles = ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
         return adminRoles.includes(role?.toLowerCase());
     };
+
+    // Fetch permissions for the specific role
+    const fetchPermissions = useCallback(async (roleId, roleName) => {
+        // Superadmin bypass - move to top
+        if (roleName?.toLowerCase() === 'superadmin') {
+            console.log('👑 Superadmin detected in fetchPermissions, granting all permissions');
+            return ['*'];
+        }
+
+        if (!roleId) {
+            console.warn('⚠️ No roleId provided to fetchPermissions');
+            return [];
+        }
+
+        try {
+            console.log(`🔐 Fetching permissions for role ID: ${roleId} (${roleName})`);
+            const response = await roleService.getRolePermissions(roleId);
+            
+            let perms = [];
+            if (response && response.permissions && Array.isArray(response.permissions)) {
+                perms = response.permissions.map(p => p.name);
+            } else if (response && Array.isArray(response.data?.permissions)) {
+                perms = response.data.permissions.map(p => p.name);
+            }
+            
+            console.log(`✅ Loaded ${perms.length} permissions for role ${roleName}`);
+            return perms;
+        } catch (err) {
+            console.error('❌ Error fetching permissions:', err);
+            return [];
+        }
+    }, []);
 
     const fetchOrgs = useCallback(async () => {
         setIsLoading(true);
@@ -167,6 +205,19 @@ export const OrganizationProvider = ({ children }) => {
                     setSelectedOrganization(selectedOrg);
                     setCurrentUserRole(role);
                     
+                    // NEW: Fetch permissions for this organization/role
+                    const currentRoleObj = userRoles.find(r => parseInt(r.organization_id) === parseInt(selectedOrg.id));
+                    console.log('🔍 Current Role Object:', currentRoleObj);
+                    
+                    const roleIdToUse = currentRoleObj?.role_id || currentRoleObj?.id;
+                    if (roleIdToUse || role?.toLowerCase() === 'superadmin') {
+                        const perms = await fetchPermissions(roleIdToUse, role);
+                        setUserPermissions(perms);
+                        localStorage.setItem('USER_PERMISSIONS', JSON.stringify(perms));
+                    } else {
+                        console.warn('⚠️ Could not find role_id or id for permission fetching', { currentRoleObj, role });
+                    }
+                    
                     // Dispatch event for sidebar to listen
                     window.dispatchEvent(new CustomEvent('organizationChanged', { 
                         detail: { 
@@ -179,6 +230,17 @@ export const OrganizationProvider = ({ children }) => {
                     setSelectedOrganization(orgs[0]);
                     const defaultRole = getRoleForOrganization(orgs[0].id);
                     setCurrentUserRole(defaultRole);
+                    
+                    // NEW: Fetch permissions for default organization/role
+                    const defaultRoleObj = userRoles.find(r => parseInt(r.organization_id) === parseInt(orgs[0].id));
+                    console.log('🔍 Default Role Object:', defaultRoleObj);
+                    
+                    const roleIdToUse = defaultRoleObj?.role_id || defaultRoleObj?.id;
+                    if (roleIdToUse || defaultRole?.toLowerCase() === 'superadmin') {
+                        const perms = await fetchPermissions(roleIdToUse, defaultRole);
+                        setUserPermissions(perms);
+                        localStorage.setItem('USER_PERMISSIONS', JSON.stringify(perms));
+                    }
                     localStorage.setItem('selectedOrgId', orgs[0].id);
                     if (defaultRole) {
                         localStorage.setItem('CURRENT_USER_ROLE', defaultRole);
@@ -260,6 +322,7 @@ export const OrganizationProvider = ({ children }) => {
         error,
         refetchOrganizations: fetchOrgs,
         currentUserRole,
+        userPermissions,
         isAdmin,
     };
 
