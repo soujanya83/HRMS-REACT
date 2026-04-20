@@ -24,7 +24,7 @@ export const createEmployeeBasic = (employeeData) => {
     headers: {
       'Content-Type': 'application/json',
     },
-  });   
+  });
 };
 
 // Update basic employee info
@@ -93,7 +93,7 @@ export const syncEmployeeToXero = (organizationId, employeeId) => {
   if (!employeeId) {
     return Promise.reject(new Error("Employee ID is required for sync"));
   }
-  
+
   console.log(`Syncing employee ${employeeId} to Xero...`);
   return axiosClient.post('/xero/sync-employee', {
     organization_id: organizationId.toString(),
@@ -161,13 +161,13 @@ export const getEmployeeProfile = (id) => {
  */
 export const uploadEmployeeDocument = (documentData) => {
   console.log('Uploading document to /employee/document/store-flexible');
-  
+
   if (documentData instanceof FormData) {
     for (let pair of documentData.entries()) {
       console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
     }
   }
-  
+
   return axiosClient.post('/employee/document/store-flexible', documentData, {
     headers: {
       'Accept': 'application/json',
@@ -237,7 +237,7 @@ export const getDesignationsByDeptId = async (organizationId) => {
     console.error('Organization ID is required to fetch designations');
     return { data: [] };
   }
-  
+
   console.log(`Fetching designations for organization: ${organizationId}`);
   try {
     const response = await axiosClient.get(`/organizations/${organizationId}/designations`);
@@ -261,18 +261,18 @@ export const searchSuperFunds = async (query) => {
   if (!query || query.trim().length < 1) {
     return [];
   }
-  
+
   try {
     console.log(`Searching super funds with query: "${query}"`);
     const response = await axiosClient.get('/fund-suggestions', {
       params: { q: query.trim() }
     });
-    
+
     if (Array.isArray(response.data)) {
       console.log(`Found ${response.data.length} super funds`);
       return response.data;
     }
-    
+
     return [];
   } catch (error) {
     console.error('Error searching super funds:', error);
@@ -287,7 +287,8 @@ export const searchSuperFunds = async (query) => {
 // Get all employees with async/await
 export const getAllEmployees = async (params = {}) => {
   try {
-    const response = await axiosClient.get('/employees', { params });
+    console.log("params : ", params)
+    const response = await axiosClient.get('/employees-data', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -322,14 +323,14 @@ export const getManagers = async (params = {}) => {
 // Add this to employeeService.js
 export const updateEmployeeDocument = async (documentId, documentData) => {
   console.log(`Updating document ID: ${documentId}`);
-  
+
   // If it's a FormData with dates
   if (documentData instanceof FormData) {
     return axiosClient.post(`/employee-documents/${documentId}`, documentData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   }
-  
+
   // For date updates, use the update-dates endpoint
   return axiosClient.post('/employee/document/update-dates', {
     document_id: documentId,
@@ -373,41 +374,41 @@ export const employeeService = {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  
+
   // Soft Deletes
   getTrashedEmployees,
   restoreEmployee,
   forceDeleteEmployee,
-  
+
   // Xero Integration
   syncEmployeeToXero,
-  
+
   // Filtering
   getEmployeesByDepartment,
   getEmployeesByDesignation,
   getEmployeesByManager,
   getEmployeesByOrganization,
   searchEmployees,
-  
+
   // Status Management
   updateEmployeeStatus,
   updateEmployeeManager,
   getEmployeeProfile,
-  
+
   // Document Management - UPDATED
   getEmployeeDocuments,
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   getDocumentDetails,
   updateDocumentDates,
-  
+
   // Departments
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
-  
+
   // Super Fund Search
   searchSuperFunds,
-  
+
   // Performance Reviews
   getAllEmployees,
   getEmployeeById,

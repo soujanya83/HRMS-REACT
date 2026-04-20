@@ -15,6 +15,7 @@ const assignRoleService = {
 
   // Assign role to user in organization
   assignRoleToUser: async (organizationId, userId, roleName) => {
+    console.log("Assign role data : ", [organizationId, userId, roleName])
     try {
       const response = await axiosClient.post(`/organizations/${organizationId}/users/${userId}/roles`, {
         roles: [roleName]
@@ -22,13 +23,13 @@ const assignRoleService = {
       return response.data;
     } catch (error) {
       console.error(`Error assigning role ${roleName} to user ${userId}:`, error);
-      
+
       // Log the detailed error for debugging
       if (error.response) {
         console.error('Response data:', error.response.data);
         console.error('Response status:', error.response.status);
       }
-      
+
       throw error;
     }
   },
@@ -46,8 +47,18 @@ const assignRoleService = {
 
   // Get available roles for organization
   getAvailableRoles: async () => {
+
+    //Roles will be as per organization but for now render the dynamic data i am not sure about the api for this i have /roles
+    try {
+      const response = await axiosClient.get(`/roles`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching roles:`, error);
+      throw error;
+    }
+
     // Return the fixed list from your API documentation
-    return ['superadmin', 'organization_admin', 'hr_manager', 'recruiter', 'payroll_manager', 'team_manager', 'employee'];
+    // return ['superadmin', 'organization_admin', 'hr_manager', 'recruiter', 'payroll_manager', 'team_manager', 'employee'];
   }
 };
 

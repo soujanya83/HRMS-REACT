@@ -1,8 +1,8 @@
-// pages/setting/AssignRolePage.jsx
 import React, { useState, useEffect } from 'react';
 import { HiOutlineUsers, HiOutlineShieldCheck, HiOutlineCheck, HiOutlineX, HiOutlineSearch, HiOutlineRefresh } from 'react-icons/hi';
 import { FaSpinner } from 'react-icons/fa';
 import assignRoleService from '../../services/assignRoleService';
+import roleService from '../../services/roleService';
 import { employeeService } from '../../services/employeeService';
 import { useOrganizations } from '../../contexts/OrganizationContext';
 
@@ -11,7 +11,7 @@ import { useOrganizations } from '../../contexts/OrganizationContext';
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -73,9 +73,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -89,9 +88,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -113,11 +111,18 @@ const AssignRolePage = () => {
   const [availableRoles, setAvailableRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [assigning, setAssigning] = useState(false);
   const [removing, setRemoving] = useState(false);
-  
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [perPage, setPerPage] = useState(10);
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -128,13 +133,13 @@ const AssignRolePage = () => {
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const roleOptions = [
-    { value: 'superadmin', label: 'Super Admin', color: 'bg-red-100 text-red-800' },
-    { value: 'organization_admin', label: 'Organization Admin', color: 'bg-purple-100 text-purple-800' },
-    { value: 'hr_manager', label: 'HR Manager', color: 'bg-blue-100 text-blue-800' },
-    { value: 'recruiter', label: 'Recruiter', color: 'bg-green-100 text-green-800' },
-    { value: 'payroll_manager', label: 'Payroll Manager', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'team_manager', label: 'Team Manager', color: 'bg-indigo-100 text-indigo-800' },
-    { value: 'employee', label: 'Employee', color: 'bg-gray-100 text-gray-800' },
+    { value: 'superadmin', label: 'Super Admin', color: 'bg-red-100 text-red-800', keywords: ['super', 'admin'] },
+    { value: 'organization_admin', label: 'Organization Admin', color: 'bg-purple-100 text-purple-800', keywords: ['org', 'admin'] },
+    { value: 'hr_manager', label: 'HR Manager', color: 'bg-blue-100 text-blue-800', keywords: ['hr', 'manager'] },
+    { value: 'recruiter', label: 'Recruiter', color: 'bg-green-100 text-green-800', keywords: ['recruiter', 'hire'] },
+    { value: 'payroll_manager', label: 'Payroll Manager', color: 'bg-yellow-100 text-yellow-800', keywords: ['payroll', 'salary'] },
+    { value: 'team_manager', label: 'Team Manager', color: 'bg-indigo-100 text-indigo-800', keywords: ['team', 'lead'] },
+    { value: 'employee', label: 'Employee', color: 'bg-gray-100 text-gray-800', keywords: ['employee', 'staff', 'user'] },
   ];
 
   // Save sidebar color to localStorage and dispatch event
@@ -147,49 +152,94 @@ const AssignRolePage = () => {
     localStorage.setItem('backgroundColor', backgroundColor);
   }, [backgroundColor]);
 
+  // Debounce logic for search (still useful for local filtering to avoid lag)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Handle local filtering when data, search, or status changes
+  useEffect(() => {
+    let filtered = [...employees];
+
+    // Apply search filter
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
+      filtered = filtered.filter(emp =>
+        (emp.name && emp.name.toLowerCase().includes(term)) ||
+        (emp.email && emp.email.toLowerCase().includes(term)) ||
+        (emp.employee_id && emp.employee_id.toString().includes(term))
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(emp => 
+        emp.status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    setFilteredEmployees(filtered);
+    setTotalItems(filtered.length);
+    setLastPage(Math.ceil(filtered.length / perPage) || 1);
+    setCurrentPage(1); // Reset to page 1 on filter change
+  }, [employees, debouncedSearchTerm, statusFilter, perPage]);
+
+  // Main data fetch - load all organization data initially
   useEffect(() => {
     if (currentOrganization && currentOrganization.id) {
-      fetchEmployees();
+      fetchAllEmployees();
       fetchAvailableRoles();
     }
   }, [currentOrganization]);
 
-  useEffect(() => {
-    filterEmployees();
-  }, [employees, searchTerm, statusFilter]);
-
-  const fetchEmployees = async () => {
+  const fetchAllEmployees = async () => {
     if (!currentOrganization || !currentOrganization.id) {
       setMessage({ type: 'error', text: 'No organization selected' });
       return;
     }
-    
+
     try {
       setLoading(true);
-      const response = await employeeService.getAllEmployees({ 
-        organization_id: currentOrganization.id 
+      // Fetch without page/per_page to get full list for local filtering
+      const response = await employeeService.getAllEmployees({
+        organization_id: currentOrganization.id,
+        per_page: 1000 // High limit to ensure we get all data for local filtering
       });
-      
-      // Extract employees from the response structure
+
       let employeesData = [];
-      if (response.data && Array.isArray(response.data.data)) {
+      if (response && response.data && Array.isArray(response.data.data)) {
         employeesData = response.data.data;
-      } else if (Array.isArray(response.data)) {
+      } else if (response && Array.isArray(response.data)) {
         employeesData = response.data;
       } else if (Array.isArray(response)) {
         employeesData = response;
       }
-      
-      // Map the employee name from first_name and last_name
-      const employeesWithNames = employeesData.map(emp => ({
-        ...emp,
-        name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
-        email: emp.personal_email || emp.user?.email || '',
-        user_id: emp.user_id,
-        roles: emp.roles || []
-      }));
-      
-      setEmployees(employeesWithNames);
+
+      const mappedEmployees = employeesData.map(emp => {
+        let roles = [];
+        if (Array.isArray(emp.roles)) {
+          roles = emp.roles;
+        } else if (emp.role_name) {
+          roles = typeof emp.role_name === 'string'
+            ? emp.role_name.split(',').map(r => r.trim())
+            : [emp.role_name];
+        }
+
+        return {
+          ...emp,
+          id: emp.employee_id || emp.user_id,
+          name: emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unnamed',
+          email: emp.email || '',
+          user_id: emp.user_id,
+          roles: roles,
+          department_name: emp.department_name || 'N/A'
+        };
+      });
+
+      setEmployees(mappedEmployees);
     } catch (error) {
       console.error('Error fetching employees:', error);
       setMessage({ type: 'error', text: 'Failed to load employees' });
@@ -198,20 +248,40 @@ const AssignRolePage = () => {
     }
   };
 
+  // Helper for pagination
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * perPage,
+    currentPage * perPage
+  );
+
   const fetchAvailableRoles = async () => {
     try {
-      const roles = await assignRoleService.getAvailableRoles();
-      setAvailableRoles(roles);
+      const response = await roleService.getRoles();
+      if (response && response.status && Array.isArray(response.data)) {
+        // Map dynamic roles
+        const roles = response.data.map(role => ({
+          id: role.id,
+          name: role.name,
+          // Use name as value for assignment, matching backend expectations
+          value: role.name
+        }));
+        setAvailableRoles(roles);
+      } else {
+        // Fallback to assignRoleService if roleService fails or returns unexpected format
+        const roles = await assignRoleService.getAvailableRoles();
+        setAvailableRoles(Array.isArray(roles) ? roles.map(r => ({ name: r, value: r })) : []);
+      }
     } catch (error) {
       console.error('Error fetching available roles:', error);
       // Use default roles if API fails
-      setAvailableRoles(['superadmin', 'organization_admin', 'hr_manager', 'recruiter', 'payroll_manager', 'team_manager', 'employee']);
+      const defaults = ['superadmin', 'organization_admin', 'hr_manager', 'recruiter', 'payroll_manager', 'team_manager', 'employee'];
+      setAvailableRoles(defaults.map(r => ({ name: r, value: r })));
     }
   };
 
   const fetchUserRoles = async (userId) => {
     if (!currentOrganization || !currentOrganization.id || !userId) return;
-    
+
     try {
       const roles = await assignRoleService.getUserRoles(currentOrganization.id, userId);
       setUserRoles(Array.isArray(roles) ? roles : []);
@@ -221,26 +291,7 @@ const AssignRolePage = () => {
     }
   };
 
-  const filterEmployees = () => {
-    let filtered = [...employees];
-    
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(emp => 
-        (emp.name && emp.name.toLowerCase().includes(term)) ||
-        (emp.email && emp.email.toLowerCase().includes(term)) ||
-        (emp.employee_code && emp.employee_code.toLowerCase().includes(term))
-      );
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(emp => emp.status === statusFilter);
-    }
-    
-    setFilteredEmployees(filtered);
-  };
+  // filterEmployees is handled in a reactive useEffect above
 
   const handleEmployeeSelect = (employee) => {
     setSelectedEmployee(employee);
@@ -258,36 +309,36 @@ const AssignRolePage = () => {
 
     try {
       setAssigning(true);
-      
+
       // Use user_id instead of employee id
       const userId = selectedEmployee.user_id;
-      
+
       if (!userId) {
         setMessage({ type: 'error', text: 'User ID not found for this employee' });
         return;
       }
-      
+
       await assignRoleService.assignRoleToUser(
         currentOrganization.id,
         userId,
         selectedRole
       );
-      
+
       setMessage({ type: 'success', text: 'Role assigned successfully' });
-      
+
       // Refresh user roles
       fetchUserRoles(userId);
-      
+
       // Clear selection
       setSelectedRole('');
-      
-      // Refresh employee list to show updated roles
-      setTimeout(() => fetchEmployees(), 500);
+
+      // Refresh employee list
+      setTimeout(() => fetchAllEmployees(), 500);
     } catch (error) {
       console.error('Error assigning role:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to assign role' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to assign role'
       });
     } finally {
       setAssigning(false);
@@ -308,19 +359,19 @@ const AssignRolePage = () => {
         selectedEmployee.user_id,
         roleName
       );
-      
+
       setMessage({ type: 'success', text: 'Role removed successfully' });
-      
+
       // Refresh user roles
       fetchUserRoles(selectedEmployee.user_id);
-      
+
       // Refresh employee list
-      setTimeout(() => fetchEmployees(), 500);
+      setTimeout(() => fetchAllEmployees(), 500);
     } catch (error) {
       console.error('Error removing role:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to remove role' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to remove role'
       });
     } finally {
       setRemoving(false);
@@ -328,19 +379,43 @@ const AssignRolePage = () => {
   };
 
   const getRoleDisplayName = (roleValue) => {
-    const role = roleOptions.find(r => r.value === roleValue);
-    return role ? role.label : roleValue;
+    if (!roleValue) return 'N/A';
+
+    // Check if the value is in our predefined options
+    const roleOpt = roleOptions.find(r =>
+      r.value.toLowerCase() === roleValue.toLowerCase() ||
+      r.label.toLowerCase() === roleValue.toLowerCase()
+    );
+    if (roleOpt) return roleOpt.label;
+
+    // Return the role name as is if it's dynamic
+    return roleValue;
   };
 
   const getRoleColorClass = (roleValue) => {
-    const role = roleOptions.find(r => r.value === roleValue);
-    return role ? role.color : 'bg-gray-100 text-gray-800';
+    if (!roleValue) return 'bg-gray-100 text-gray-800';
+
+    // Check predefined options
+    const roleOpt = roleOptions.find(r =>
+      r.value.toLowerCase() === roleValue.toLowerCase() ||
+      r.label.toLowerCase() === roleValue.toLowerCase()
+    );
+    if (roleOpt) return roleOpt.color;
+
+    // Try to find a color by keyword for dynamic roles
+    const keywordMatch = roleOptions.find(r =>
+      r.keywords.some(kw => roleValue.toLowerCase().includes(kw))
+    );
+    if (keywordMatch) return keywordMatch.color;
+
+    // Default color for unknown dynamic roles
+    return 'bg-slate-100 text-slate-800';
   };
 
   // No organization selected
   if (!currentOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -355,7 +430,7 @@ const AssignRolePage = () => {
 
   if (loading && employees.length === 0) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -396,7 +471,7 @@ const AssignRolePage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -418,9 +493,9 @@ const AssignRolePage = () => {
                 </div>
               )}
             </div>
-            
+
             <button
-              onClick={fetchEmployees}
+              onClick={fetchAllEmployees}
               className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <HiOutlineRefresh className="mr-2" />
@@ -432,7 +507,7 @@ const AssignRolePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
               <div className="text-sm text-gray-600">Total Employees</div>
-              <div className="text-2xl font-bold text-gray-900">{employees.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{totalItems || employees.length}</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
               <div className="text-sm text-gray-600">With Roles Assigned</div>
@@ -453,11 +528,10 @@ const AssignRolePage = () => {
 
         {/* Message Alert */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center justify-between ${
-            message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg flex items-center justify-between ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
             <span>{message.text}</span>
-            <button 
+            <button
               onClick={() => setMessage({ type: '', text: '' })}
               className="p-1 hover:bg-black/5 rounded-full transition-colors"
             >
@@ -476,7 +550,7 @@ const AssignRolePage = () => {
                     <HiOutlineUsers className="mr-2 text-blue-600" />
                     Employees
                   </h2>
-                  
+
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                       <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -488,7 +562,7 @@ const AssignRolePage = () => {
                         className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    
+
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
@@ -511,7 +585,7 @@ const AssignRolePage = () => {
                         Employee
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Department
+                        Room
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Current Roles
@@ -525,17 +599,17 @@ const AssignRolePage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredEmployees.length === 0 ? (
+                    {paginatedEmployees.length === 0 ? (
                       <tr>
                         <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                          No employees found. {searchTerm && 'Try a different search term.'}
+                          {loading ? 'Searching...' : 'No employees found match your search criteria.'}
                         </td>
                       </tr>
                     ) : (
-                      filteredEmployees.map((employee) => (
-                        <tr 
-                          key={employee.id}
-                          className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedEmployee?.id === employee.id ? 'bg-blue-50' : ''}`}
+                      paginatedEmployees.map((employee) => (
+                        <tr
+                          key={employee.user_id || employee.id}
+                          className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedEmployee?.user_id === employee.user_id ? 'bg-blue-50' : ''}`}
                           onClick={() => handleEmployeeSelect(employee)}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -570,7 +644,7 @@ const AssignRolePage = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {employee.department?.name || 'N/A'}
+                              {employee.department_name || 'N/A'}
                             </div>
                             <div className="text-sm text-gray-500">
                               {employee.designation?.title || 'N/A'}
@@ -593,13 +667,12 @@ const AssignRolePage = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              employee.status === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : employee.status === 'inactive'
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : employee.status === 'inactive'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-yellow-100 text-yellow-800'
-                            }`}>
+                              }`}>
                               {employee.status || 'unknown'}
                             </span>
                           </td>
@@ -609,13 +682,12 @@ const AssignRolePage = () => {
                                 e.stopPropagation();
                                 handleEmployeeSelect(employee);
                               }}
-                              className={`px-3 py-1 rounded-lg transition-colors ${
-                                selectedEmployee?.id === employee.id
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
+                              className={`px-3 py-1 rounded-lg transition-colors ${selectedEmployee?.user_id === employee.user_id
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
                             >
-                              {selectedEmployee?.id === employee.id ? 'Selected' : 'Select'}
+                              {selectedEmployee?.user_id === employee.user_id ? 'Selected' : 'Select'}
                             </button>
                           </td>
                         </tr>
@@ -624,10 +696,75 @@ const AssignRolePage = () => {
                   </tbody>
                 </table>
               </div>
-              
+
               {filteredEmployees.length > 0 && (
-                <div className="p-4 border-t border-gray-200 text-sm text-gray-500">
-                  Showing {filteredEmployees.length} of {employees.length} employees
+                <div className="p-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-500">
+                    Showing <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(currentPage * perPage, totalItems)}</span> of{' '}
+                    <span className="font-medium">{totalItems}</span> entries
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1 || loading}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex items-center space-x-1">
+                      {/* Simple logic for page numbers: show max 5 buttons */}
+                      {Array.from({ length: Math.min(5, lastPage) }, (_, i) => {
+                        let pageNum;
+                        if (lastPage <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= lastPage - 2) {
+                          pageNum = lastPage - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${currentPage === pageNum
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, lastPage))}
+                      disabled={currentPage === lastPage || loading}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+
+                    <select
+                      value={perPage}
+                      onChange={(e) => {
+                        setPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-4 px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="5">5 / page</option>
+                      <option value="10">10 / page</option>
+                      <option value="25">25 / page</option>
+                      <option value="50">50 / page</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>
@@ -675,11 +812,11 @@ const AssignRolePage = () => {
                           <h3 className="font-medium text-gray-900">{selectedEmployee.name}</h3>
                           <p className="text-sm text-gray-600">{selectedEmployee.email}</p>
                           <p className="text-xs text-gray-500">
-                            User ID: {selectedEmployee.user_id} • {selectedEmployee.department?.name}
+                            User ID: {selectedEmployee.user_id} • {selectedEmployee.department_name || 'No Dept'}
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4">
                         <div className="text-sm font-medium text-gray-700 mb-2">Current Roles:</div>
                         <div className="flex flex-wrap gap-2">
@@ -711,7 +848,7 @@ const AssignRolePage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Select Role to Assign
                       </label>
-                      <select
+                      {/* <select
                         value={selectedRole}
                         onChange={(e) => setSelectedRole(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -726,23 +863,23 @@ const AssignRolePage = () => {
                             </option>
                           );
                         })}
-                      </select>
-                      
+                      </select> */}
+
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         {availableRoles.map((role) => {
-                          const roleOption = roleOptions.find(r => r.value === role);
+                          const roleName = role.name || role;
+                          const roleValue = role.value || role;
                           return (
                             <button
-                              key={role}
+                              key={role.id || roleValue}
                               type="button"
-                              onClick={() => setSelectedRole(role)}
-                              className={`p-3 rounded-lg text-center text-sm font-medium transition-colors ${
-                                selectedRole === role
-                                  ? 'ring-2 ring-blue-500'
-                                  : 'hover:bg-gray-50'
-                              } ${getRoleColorClass(role)}`}
+                              onClick={() => setSelectedRole(roleValue)}
+                              className={`p-3 rounded-lg text-center text-sm font-medium transition-colors ${selectedRole === roleValue
+                                ? 'ring-2 ring-blue-500 shadow-md'
+                                : 'hover:bg-gray-50'
+                                } ${getRoleColorClass(roleName)}`}
                             >
-                              {roleOption ? roleOption.label : role}
+                              {roleName}
                             </button>
                           );
                         })}
@@ -771,7 +908,7 @@ const AssignRolePage = () => {
                     {/* Note */}
                     <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
                       <p className="text-sm text-yellow-800">
-                        <strong>Note:</strong> Each user can have only one role per organization. 
+                        <strong>Note:</strong> Each user can have only one role per organization.
                         Assigning a new role will replace any existing role.
                       </p>
                     </div>
@@ -795,9 +932,15 @@ const AssignRolePage = () => {
               <h3 className="font-medium text-gray-900 mb-3">Role Distribution</h3>
               <div className="space-y-3">
                 {roleOptions.map((role) => {
-                  const count = employees.filter(emp => 
-                    emp.roles && emp.roles.includes(role.value)
-                  ).length;
+                  const count = employees.filter(emp => {
+                    if (!emp.roles) return false;
+                    return emp.roles.some(empRole => {
+                      const lowerEmpRole = empRole.toLowerCase();
+                      return lowerEmpRole === role.value.toLowerCase() ||
+                        lowerEmpRole === role.label.toLowerCase() ||
+                        role.keywords.some(kw => lowerEmpRole.includes(kw));
+                    });
+                  }).length;
                   return (
                     <div key={role.value} className="flex items-center justify-between">
                       <span className="text-sm text-gray-700">{role.label}</span>
