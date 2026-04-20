@@ -694,7 +694,7 @@ const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -712,7 +712,7 @@ const RoleDetailsModal = ({ isOpen, onClose, role, allPermissions }) => {
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-sm text-blue-600 font-medium mb-1">Created</div>
@@ -990,6 +990,10 @@ export default function RoleManagementPage() {
     setSuccessMessage(null);
 
     try {
+      // First fetch the permissions of the original role to ensure we have them all
+      const permResponse = await roleService.getRolePermissions(role.id);
+      const permissionIds = (permResponse.permissions || []).map(p => p.id);
+      
       // Create a new role with copy name
       const newRole = await roleService.createRole({
         name: `${role.name} (Copy)`,
@@ -998,12 +1002,12 @@ export default function RoleManagementPage() {
       });
       
       // Copy permissions from original role
-      if (role.permission_ids && role.permission_ids.length > 0) {
-        await syncRolePermissions(newRole.id, role.permission_ids);
+      if (permissionIds.length > 0) {
+        await syncRolePermissions(newRole.id, permissionIds);
       }
       
       setRoles(prev => [...prev, newRole]);
-      setSuccessMessage(`Role "${newRole.name}" cloned successfully with ${role.permission_ids?.length || 0} permissions!`);
+      setSuccessMessage(`Role "${newRole.name}" cloned successfully with ${permissionIds.length} permissions!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       handleCloseConfirm();
       fetchData();
@@ -1015,16 +1019,44 @@ export default function RoleManagementPage() {
     }
   }, [selectedOrganization, syncRolePermissions, fetchData]);
 
-  const handleOpenForm = useCallback((role = null) => {
-    setModalState(prev => ({ ...prev, form: true, role }));
+  const handleOpenForm = useCallback(async (role = null) => {
+    if (role) {
+      setLoading(true);
+      try {
+        const response = await roleService.getRolePermissions(role.id);
+        const permissionIds = (response.permissions || []).map(p => p.id);
+        const enrichedRole = { ...role, permission_ids: permissionIds };
+        setModalState(prev => ({ ...prev, form: true, role: enrichedRole }));
+      } catch (err) {
+        console.error('Failed to fetch role permissions:', err);
+        setError('Failed to load role permissions. Opening with current state.');
+        setModalState(prev => ({ ...prev, form: true, role }));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setModalState(prev => ({ ...prev, form: true, role: null }));
+    }
   }, []);
 
   const handleCloseForm = useCallback(() => {
     setModalState(prev => ({ ...prev, form: false, role: null }));
   }, []);
 
-  const handleOpenDetails = useCallback((role) => {
-    setModalState(prev => ({ ...prev, details: true, role }));
+  const handleOpenDetails = useCallback(async (role) => {
+    setLoading(true);
+    try {
+      const response = await roleService.getRolePermissions(role.id);
+      const permissionIds = (response.permissions || []).map(p => p.id);
+      const enrichedRole = { ...role, permission_ids: permissionIds };
+      setModalState(prev => ({ ...prev, details: true, role: enrichedRole }));
+    } catch (err) {
+      console.error('Failed to fetch role permissions:', err);
+      setError('Failed to load role permissions.');
+      setModalState(prev => ({ ...prev, details: true, role }));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const handleCloseDetails = useCallback(() => {
