@@ -34,16 +34,6 @@ const assignRoleService = {
     }
   },
 
-  // Remove role from user in organization
-  removeRoleFromUser: async (organizationId, userId, roleName) => {
-    try {
-      const response = await axiosClient.delete(`/organizations/${organizationId}/users/${userId}/roles/${roleName}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error removing role ${roleName} from user ${userId}:`, error);
-      throw error;
-    }
-  },
 
   // Get available roles for organization
   getAvailableRoles: async () => {
