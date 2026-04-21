@@ -6,12 +6,12 @@ const roleService = {
   getRoles: async () => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       if (!organizationId) {
         console.error('No organization ID found');
         return { success: false, data: [], message: 'No organization selected' };
       }
-      
+
       const response = await axiosClient.get('/roles', {
         params: {
           organization_id: parseInt(organizationId)
@@ -46,13 +46,13 @@ const roleService = {
   createRole: async (roleData) => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       const payload = {
         name: roleData.name,
         guard_name: roleData.guard_name || 'web',
         organization_id: organizationId ? parseInt(organizationId) : 15
       };
-      
+
       console.log('Creating role with payload:', payload);
       const response = await axiosClient.post('/roles', payload);
       return response.data;
@@ -66,14 +66,14 @@ const roleService = {
   updateRole: async (id, roleData) => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       const payload = {
         name: roleData.name,
         guard_name: roleData.guard_name || 'web',
         organization_id: organizationId ? parseInt(organizationId) : 15,
         _method: 'PUT'
       };
-      
+
       console.log('Updating role with payload:', payload);
       const response = await axiosClient.post(`/roles/${id}`, payload);
       return response.data;
@@ -122,16 +122,16 @@ const roleService = {
         console.error('Invalid permissionIds:', permissionIds);
         return { success: false };
       }
-      
+
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       console.log('Syncing permissions for role:', roleId, 'Permissions:', permissionIds);
-      
+
       const payload = {
         permissions: permissionIds,
         organization_id: organizationId ? parseInt(organizationId) : 15
       };
-      
+
       const response = await axiosClient.post(`/roles/${roleId}/permissions`, payload);
       return response.data;
     } catch (error) {
@@ -145,14 +145,14 @@ const roleService = {
   updatePermission: async (id, permissionData) => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       const payload = {
         name: permissionData.name,
         guard_name: permissionData.guard_name || 'web',
         organization_id: organizationId ? parseInt(organizationId) : 15,
         _method: 'PUT'
       };
-      
+
       const response = await axiosClient.post(`/permissions/${id}`, payload);
       return response.data;
     } catch (error) {
@@ -165,13 +165,13 @@ const roleService = {
   createPermission: async (permissionData) => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       const payload = {
         name: permissionData.name,
         guard_name: permissionData.guard_name || 'web',
         organization_id: organizationId ? parseInt(organizationId) : 15
       };
-      
+
       const response = await axiosClient.post('/permissions', payload);
       return response.data;
     } catch (error) {
@@ -187,6 +187,20 @@ const roleService = {
       return response.data;
     } catch (error) {
       console.error(`Error deleting permission ${id}:`, error);
+      throw error;
+    }
+  },
+
+  //Get user permissions
+  getUserPermissions: async () => {
+    try {
+      const organizationId = JSON.parse(localStorage.getItem('selectedOrgId'));
+
+      const response = await axiosClient.get(`/me/permissions/${organizationId}`);
+      console.log("permissions", response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
       throw error;
     }
   },
@@ -241,7 +255,7 @@ const roleService = {
   getAllPermissions: async () => {
     try {
       const organizationId = localStorage.getItem('selectedOrgId');
-      
+
       const response = await axiosClient.get('/permissions', {
         params: {
           organization_id: organizationId ? parseInt(organizationId) : 15

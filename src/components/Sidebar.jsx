@@ -59,8 +59,29 @@ const Sidebar = ({
   const [openMenu, setOpenMenu] = useState(null);
   const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
   const [currentUserRole, setCurrentUserRole] = useState(null);
-  const { userPermissions } = useOrganizations();
+  const { userPermissions: contextPermissions } = useOrganizations();
   const location = useLocation();
+
+  // GET PERMISSIONS: Use context if available, otherwise fallback to localStorage
+  const permissions = useMemo(() => {
+    if (Array.isArray(contextPermissions) && contextPermissions.length > 0) {
+      return contextPermissions;
+    }
+    // Fallback: read directly from localStorage
+    try {
+      const saved = localStorage.getItem('USER_PERMISSIONS');
+
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log("USER PERMISSIONS ", parsed);
+
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { /* ignore */ }
+    return [];
+  }, [contextPermissions]);
+
 
   // Load color from localStorage ONCE on mount
   useEffect(() => {
@@ -89,7 +110,7 @@ const Sidebar = ({
         console.error('Error updating sidebar color:', error);
       }
     };
-    
+
     window.addEventListener('sidebarColorUpdate', handleColorUpdate);
     return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
   }, []);
@@ -118,11 +139,11 @@ const Sidebar = ({
 
     window.addEventListener('organizationChanged', handleOrganizationChange);
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Initial load
     const role = localStorage.getItem('CURRENT_USER_ROLE');
     setCurrentUserRole(role);
-    
+
     return () => {
       window.removeEventListener('organizationChanged', handleOrganizationChange);
       window.removeEventListener('storage', handleStorageChange);
@@ -131,11 +152,11 @@ const Sidebar = ({
 
   // Determine if user is admin based on role
   const isAdmin = useMemo(() => {
-    return currentUserRole === 'superadmin' || 
-           currentUserRole === 'organization_admin' || 
-           currentUserRole === 'hr_manager' ||
-           currentUserRole === 'payroll_manager' ||
-           currentUserRole === 'recruiter';
+    return currentUserRole === 'superadmin' ||
+      currentUserRole === 'organization_admin' ||
+      currentUserRole === 'hr_manager' ||
+      currentUserRole === 'payroll_manager' ||
+      currentUserRole === 'recruiter';
   }, [currentUserRole]);
 
   // Set dashboard link based on role
@@ -149,6 +170,7 @@ const Sidebar = ({
       name: "Centers",
       path: "/dashboard/organizations",
       icon: HiOutlineOfficeBuilding,
+      adminOnly: true,
     },
     {
       name: "Recruitment",
@@ -237,28 +259,43 @@ const Sidebar = ({
 
   // Helper to check permission
   const hasPermission = useCallback((permission) => {
-    if (!permission) return true; // Visible by default if no permission mapping
-    if (userPermissions.includes('*')) return true; // Superadmin bypass
-    return userPermissions.includes(permission);
-  }, [userPermissions]);
+    if (!permission) return true;
+    if (permissions.includes('*')) return true;
+    return permissions.includes(permission);
+  }, [permissions]);
 
   // Filter links based on permissions
+  // Rule: items with children → filter children, show as dropdown if ≥1 visible, hide if 0
+  //       items without children (Dashboard, Centers) → always show
   const filteredNavLinks = useMemo(() => {
-    return navLinks.filter(link => {
-      // Check top-level permission if it exists
-      if (link.permission && !hasPermission(link.permission)) {
-        return false;
-      }
+    const isSuperadmin = permissions.includes('*');
+    const result = [];
 
-      // If it has children, check if at least one child is visible
+    for (const link of navLinks) {
       if (link.children) {
-        link.visibleChildren = link.children.filter(child => hasPermission(child.permission));
-        return link.visibleChildren.length > 0;
-      }
+        // Filter children by permission
+        const allowed = link.children.filter(child => {
+          if (isSuperadmin) return true;             // superadmin sees all
+          if (!child.permission) return false;       // no permission key = superadmin only
+          return permissions.includes(child.permission);
+        });
 
-      return true;
-    });
-  }, [navLinks, hasPermission]);
+        if (allowed.length > 0) {
+          // ALWAYS a dropdown - even for just 1 child
+          result.push({ ...link, visibleChildren: allowed, isDropdown: true });
+        }
+        // 0 allowed children → skip entirely (invisible)
+      } else {
+        // Simple link - check adminOnly flag
+        if (link.adminOnly && !isSuperadmin && !isAdmin) continue;
+        result.push({ ...link, isDropdown: false });
+      }
+    }
+
+    return result;
+  }, [navLinks, permissions, isAdmin]);
+
+  console.log("🧭 SIDEBAR:", { permCount: permissions.length, links: filteredNavLinks.map(l => l.name) });
 
   // Find active parent menu
   const findActiveParent = useCallback(() => {
@@ -271,7 +308,7 @@ const Sidebar = ({
           }
           return location.pathname.startsWith(child.path);
         });
-        
+
         if (isChildActive) {
           return link.name;
         }
@@ -315,7 +352,7 @@ const Sidebar = ({
           ${isCollapsed ? "md:w-20" : "md:w-64"}
           ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
           md:translate-x-0`}
-        style={{ 
+        style={{
           top: "8px",
           left: "6px",
           bottom: "8px",
@@ -325,7 +362,7 @@ const Sidebar = ({
         {/* Sidebar inner */}
         <div
           className="h-full w-full flex flex-col relative overflow-visible"
-          style={{ 
+          style={{
             backgroundColor: currentColor,
             borderRadius: "16px 0 0 16px",
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
@@ -336,7 +373,7 @@ const Sidebar = ({
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="flex items-center justify-center w-7 h-7 rounded-full shadow-md transition-all duration-200 hover:scale-105 hover:brightness-110"
-              style={{ 
+              style={{
                 backgroundColor: currentColor,
                 border: `1px solid ${buttonBorderColor}`,
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
@@ -374,15 +411,14 @@ const Sidebar = ({
             <nav className={`${isCollapsed ? "px-2" : "px-3"} space-y-1`}>
               {filteredNavLinks.map((link) => (
                 <div key={link.name}>
-                  {!link.children ? (
+                  {!link.isDropdown ? (
                     <NavLink
                       to={link.path}
                       end
                       className={({ isActive }) =>
-                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${
-                          isActive
-                            ? "text-white font-semibold bg-white/15"
-                            : "text-gray-300 font-medium hover:bg-white/10 hover:text-white"
+                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${isActive
+                          ? "text-white font-semibold bg-white/15"
+                          : "text-gray-300 font-medium hover:bg-white/10 hover:text-white"
                         }`
                       }
                       onClick={() => setSidebarOpen(false)}
@@ -405,16 +441,14 @@ const Sidebar = ({
                         {!isCollapsed && (
                           <HiChevronDown
                             size={16}
-                            className={`transition-transform duration-200 ${
-                              openMenu === link.name ? "rotate-180" : ""
-                            }`}
+                            className={`transition-transform duration-200 ${openMenu === link.name ? "rotate-180" : ""
+                              }`}
                           />
                         )}
                       </button>
                       <div
-                        className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                          openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
-                        }`}
+                        className={`transition-all duration-200 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
+                          }`}
                       >
                         <div className="py-1.5 pl-10 space-y-0.5">
                           {(link.visibleChildren || []).map((child) => (
@@ -422,10 +456,9 @@ const Sidebar = ({
                               key={child.name}
                               to={child.path}
                               className={({ isActive }) =>
-                                `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${
-                                  isActive
-                                    ? "text-white font-medium bg-white/15"
-                                    : "text-gray-400 hover:bg-white/10 hover:text-white"
+                                `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${isActive
+                                  ? "text-white font-medium bg-white/15"
+                                  : "text-gray-400 hover:bg-white/10 hover:text-white"
                                 }`
                               }
                               onClick={() => setSidebarOpen(false)}
