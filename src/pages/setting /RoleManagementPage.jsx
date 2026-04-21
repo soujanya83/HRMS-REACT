@@ -1,5 +1,6 @@
 // RoleManagementPage.jsx - Fixed permission assignment
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaUsers,
   FaUserShield,
@@ -139,7 +140,7 @@ const parsePermission = (permissionName) => {
 };
 
 // Role Card Component
-const RoleCard = ({ role, onEdit, onDelete, onView, onClone, loading, userCount }) => {
+const RoleCard = ({ role, onEdit, onDelete, onView, onClone, loading, userCount, canEdit, canDelete }) => {
   const isSystemRole = role.name?.toLowerCase().includes('admin') || role.name?.toLowerCase().includes('super');
 
   return (
@@ -183,7 +184,7 @@ const RoleCard = ({ role, onEdit, onDelete, onView, onClone, loading, userCount 
           >
             <FaEye className="h-4 w-4" />
           </button>
-          {!isSystemRole && (
+          {!isSystemRole && canEdit && (
             <button
               onClick={() => onEdit(role)}
               disabled={loading}
@@ -204,14 +205,16 @@ const RoleCard = ({ role, onEdit, onDelete, onView, onClone, loading, userCount 
         </div>
         <div>
           {!isSystemRole ? (
-            <button
-              onClick={() => onDelete(role)}
-              disabled={loading}
-              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 transition-colors"
-              title="Delete Role"
-            >
-              <FaTrash className="h-4 w-4" />
-            </button>
+            canDelete ? (
+              <button
+                onClick={() => onDelete(role)}
+                disabled={loading}
+                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 transition-colors"
+                title="Delete Role"
+              >
+                <FaTrash className="h-4 w-4" />
+              </button>
+            ) : null
           ) : (
             <span className="text-xs text-gray-400 px-2">System Role</span>
           )}
@@ -812,6 +815,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
 
 // Main Role Management Component
 export default function RoleManagementPage() {
+  const { canAdd, canEdit, canDelete } = usePermissions('settings.role_management');
   const { selectedOrganization } = useOrganizations();
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -1130,9 +1134,11 @@ export default function RoleManagementPage() {
               </div>
             )}
           </div>
-          <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            <FaPlus className="h-4 w-4" /> Create New Role
-          </button>
+          {canAdd && (
+            <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              <FaPlus className="h-4 w-4" /> Create New Role
+            </button>
+          )}
         </div>
 
         {error && (
@@ -1215,6 +1221,8 @@ export default function RoleManagementPage() {
                   onClone={() => handleOpenConfirm(role, "clone")}
                   loading={saving}
                   userCount={0}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
                 />
               ))}
             </div>

@@ -1,5 +1,6 @@
 // EmployeeList.jsx
 import React, { useState, useEffect, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -404,6 +405,7 @@ const QuickActionButton = ({
 export default function EmployeeList() {
   const navigate = useNavigate();
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.add_manage_profiles');
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -920,28 +922,32 @@ export default function EmployeeList() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleSyncAllToXero}
-                disabled={syncingAll}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
-              >
-                {syncingAll ? (
-                  <>
-                    <FaSpinner className="animate-spin h-3.5 w-3.5" /> 
-                    Syncing...
-                  </>
-                ) : (
-                  <>
-                    <FaSync className="h-3.5 w-3.5" /> Sync All
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => navigate("/dashboard/employees/new")}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <FaPlus className="h-3.5 w-3.5" /> Add Employee
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handleSyncAllToXero}
+                  disabled={syncingAll}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+                >
+                  {syncingAll ? (
+                    <>
+                      <FaSpinner className="animate-spin h-3.5 w-3.5" /> 
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <FaSync className="h-3.5 w-3.5" /> Sync All
+                    </>
+                  )}
+                </button>
+              )}
+              {canAdd && (
+                <button
+                  onClick={() => navigate("/dashboard/employees/new")}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <FaPlus className="h-3.5 w-3.5" /> Add Employee
+                </button>
+              )}
             </div>
           </div>
 
@@ -975,15 +981,22 @@ export default function EmployeeList() {
 
           {/* Quick Actions - NOW INCLUDES SEND INVITE BUTTON */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
-            {quickActions.map((action, index) => (
-              <QuickActionButton
-                key={index}
-                icon={action.icon}
-                label={action.label}
-                onClick={action.action}
-                color={action.color}
-              />
-            ))}
+            {quickActions
+              .filter(action => {
+                if (["Add Employee", "Send Invite", "Import"].includes(action.label)) {
+                  return canAdd;
+                }
+                return true;
+              })
+              .map((action, index) => (
+                <QuickActionButton
+                  key={index}
+                  icon={action.icon}
+                  label={action.label}
+                  onClick={action.action}
+                  color={action.color}
+                />
+              ))}
           </div>
         </div>
 
@@ -1119,7 +1132,7 @@ export default function EmployeeList() {
                           ? "Trash is empty"
                           : "Add your first employee"}
                       </p>
-                      {view === "active" && !searchTerm && (
+                      {view === "active" && !searchTerm && canAdd && (
                         <button
                           onClick={() => navigate("/dashboard/employees/new")}
                           className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
@@ -1173,29 +1186,30 @@ export default function EmployeeList() {
                           {employee.department?.name || "No dept"}
                         </div>
                        </td>
-                      <td className="px-3 py-2">
-                        <XeroStatusBadge 
-                          employee={employee}
-                          onClick={() => handleSyncToXero(employee)}
-                          syncing={syncingEmployees[employee.id]}
-                        />
+                       <td className="px-3 py-2">
+                        {canEdit && (
+                          <XeroStatusBadge 
+                            employee={employee}
+                            onClick={() => handleSyncToXero(employee)}
+                            syncing={syncingEmployees[employee.id]}
+                          />
+                        )}
                        </td>
                       <td className="px-3 py-2">
                         <div className="flex flex-col gap-1">
                           <StatusBadge status={employee.status} />
                           {view === "active" &&
-                            employee.status !== "Terminated" && (
+                            employee.status !== "Terminated" && canEdit && (
                               <select
                                 value={employee.status}
                                 onChange={(e) =>
                                   handleStatusChange(employee.id, e.target.value)
                                 }
-                                className="text-[10px] border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white w-full"
+                                className="text-[10px] bg-white border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
                               >
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                                <option value="On Leave">On Leave</option>
-                                <option value="On Probation">Probation</option>
+                                {["Active", "Inactive", "On Leave", "Terminated", "On Probation"].map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
                               </select>
                             )}
                         </div>
@@ -1226,14 +1240,15 @@ export default function EmployeeList() {
                                 title="View Profile"
                               >
                                 <FaEye className="h-3.5 w-3.5" />
-                              </Link>
-                              <Link
-                                to={`/dashboard/employees/edit/${employee.id}`}
-                                className="p-1.5 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <FaEdit className="h-3.5 w-3.5" />
-                              </Link>
+                              </Link>                               {canEdit && (
+                                <Link
+                                  to={`/dashboard/employees/edit/${employee.id}`}
+                                  className="p-1.5 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <FaEdit className="h-3.5 w-3.5" />
+                                </Link>
+                              )}
                               <Link
                                 to={`/dashboard/employees/${employee.id}/documents`}
                                 className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
@@ -1242,30 +1257,36 @@ export default function EmployeeList() {
                                 <FaFileAlt className="h-3.5 w-3.5" />
                               </Link>
                               
-                              <button
-                                onClick={() => handleDelete(employee)}
-                                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Move to Trash"
-                              >
-                                <FaTrash className="h-3.5 w-3.5" />
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(employee)}
+                                  className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Move to Trash"
+                                >
+                                  <FaTrash className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => handleRestore(employee)}
-                                className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
-                                title="Restore"
-                              >
-                                <FaUndo className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleForceDelete(employee)}
-                                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete Permanently"
-                              >
-                                <FaTrashAlt className="h-3.5 w-3.5" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleRestore(employee)}
+                                  className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                                  title="Restore"
+                                >
+                                  <FaUndo className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleForceDelete(employee)}
+                                  className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Permanently Delete"
+                                >
+                                  <FaTrashAlt className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </>
                           )}
                         </div>

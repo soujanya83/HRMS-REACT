@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   getEmployees,
   updateEmployeeStatus,
@@ -19,7 +20,7 @@ import {
   FaSearch,
 } from "react-icons/fa";
 
-const StatusBadge = ({ status, onChange }) => {
+const StatusBadge = ({ status, onChange, canEdit }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
 
@@ -97,17 +98,19 @@ const StatusBadge = ({ status, onChange }) => {
       >
         {statusConfig.label}
       </span>
-      <button
-        onClick={() => setIsEditing(true)}
-        className="text-gray-400 hover:text-blue-600 transition-colors"
-      >
-        <FaEdit size={12} />
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => setIsEditing(true)}
+          className="text-gray-400 hover:text-blue-600 transition-colors"
+        >
+          <FaEdit size={12} />
+        </button>
+      )}
     </div>
   );
 };
 
-const ManagerSelect = ({ employeeId, currentManager, managers, onChange }) => {
+const ManagerSelect = ({ employeeId, currentManager, managers, onChange, canEdit }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedManager, setSelectedManager] = useState(currentManager);
 
@@ -159,12 +162,14 @@ const ManagerSelect = ({ employeeId, currentManager, managers, onChange }) => {
           ? managers.find((m) => m.value === currentManager)?.label
           : "No Manager"}
       </span>
-      <button
-        onClick={() => setIsEditing(true)}
-        className="text-gray-400 hover:text-blue-600 transition-colors"
-      >
-        <FaEdit size={12} />
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => setIsEditing(true)}
+          className="text-gray-400 hover:text-blue-600 transition-colors"
+        >
+          <FaEdit size={12} />
+        </button>
+      )}
     </div>
   );
 };
@@ -183,6 +188,7 @@ export default function ManageProfiles() {
   });
 
   const { selectedOrganization } = useOrganizations();
+  const { canEdit } = usePermissions("employee.add_manage_profiles");
 
   const fetchData = useCallback(async () => {
     if (!selectedOrganization) {
@@ -409,6 +415,7 @@ export default function ManageProfiles() {
                       onChange={(newStatus) =>
                         handleStatusChange(emp.id, newStatus)
                       }
+                      canEdit={canEdit}
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -419,6 +426,7 @@ export default function ManageProfiles() {
                       onChange={(newManagerId) =>
                         handleManagerChange(emp.id, newManagerId)
                       }
+                      canEdit={canEdit}
                     />
                   </td>
                 </tr>

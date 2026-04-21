@@ -1,5 +1,6 @@
 // components/RunPayroll.jsx - COMPLETE VERSION WITH COLOR PALETTE
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaFileInvoice,
   FaSearch,
@@ -140,6 +141,7 @@ const ColorPaletteModal = ({
 
 const RunPayroll = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('payroll.payroll');
   const organizationId = selectedOrganization?.id || "15";
 
   const [loading, setLoading] = useState({
@@ -212,6 +214,8 @@ const RunPayroll = () => {
   const [previewPayslip, setPreviewPayslip] = useState(null);
   const [showPayRunDetails, setShowPayRunDetails] = useState(false);
   const [selectedPayRunDetails, setSelectedPayRunDetails] = useState(null);
+  const [isSyncingEmployees, setIsSyncingEmployees] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -534,6 +538,31 @@ const RunPayroll = () => {
     }
   };
 
+  // ============ SYNC EMPLOYEES ============
+  const handleSyncEmployees = async () => {
+    if (!organizationId) {
+      setError("No organization selected");
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, syncing: true }));
+      setError(null);
+      setSuccessMessage(null);
+      
+      console.log('📡 Syncing employees for organization:', organizationId);
+      await payrollService.syncEmployees(organizationId);
+      
+      setSuccessMessage("Employees synchronized successfully from Xero");
+      fetchPayPeriods();
+    } catch (err) {
+      console.error('❌ Error syncing employees:', err);
+      setError(err.response?.data?.message || err.message || "Failed to sync employees");
+    } finally {
+      setLoading(prev => ({ ...prev, syncing: false }));
+    }
+  };
+
   // ============ HANDLERS ============
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
@@ -798,18 +827,45 @@ const RunPayroll = () => {
                   Fortnightly Pay Periods Only
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  fetchPayPeriods();
-                  fetchAllPayRunsForOrganization();
-                  fetchAllPayslipsForOrganization();
-                }}
-                disabled={loading.payPeriods || loading.allPayRuns || loading.allPayslips}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                <FaSync className={loading.payPeriods || loading.allPayRuns || loading.allPayslips ? "animate-spin" : ""} />
-                Refresh All Data
-              </button>
+              <div className="flex flex-col items-end gap-4">
+                <div className="flex flex-wrap gap-3">
+                  {canEdit && (
+                    <button
+                      onClick={handleSyncEmployees}
+                      disabled={loading.syncing}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {loading.syncing ? <FaSpinner className="animate-spin" /> : <FaSync />}
+                      Sync Employees
+                    </button>
+                  )}
+
+                  {canAdd && (
+                    <button
+                      onClick={() => {
+                        setActiveTab("payPeriods");
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+                    >
+                      <FaPlay />
+                      Run New Payroll
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    fetchPayPeriods();
+                    fetchAllPayRunsForOrganization();
+                    fetchAllPayslipsForOrganization();
+                  }}
+                  disabled={loading.payPeriods || loading.allPayRuns || loading.allPayslips}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <FaSync className={loading.payPeriods || loading.allPayRuns || loading.allPayslips ? "animate-spin" : ""} />
+                  Refresh All Data
+                </button>
+              </div>
             </div>
           </div>
 
@@ -990,15 +1046,17 @@ const RunPayroll = () => {
                     </div>
 
                     <div className="flex justify-end">
-                      <button
-                        onClick={createPayRun}
-                        disabled={loading.creatingPayRun || !selectedPeriod || payRuns.length > 0}
-                        className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        title={payRuns.length > 0 ? "Pay run already exists for this period" : ""}
-                      >
-                        {loading.creatingPayRun ? <FaSpinner className="animate-spin" /> : <FaPlay />}
-                        Create Fortnightly Pay Run
-                      </button>
+                      {canAdd && (
+                        <button
+                          onClick={createPayRun}
+                          disabled={loading.creatingPayRun || !selectedPeriod || payRuns.length > 0}
+                          className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
+                          title={payRuns.length > 0 ? "Pay run already exists for this period" : ""}
+                        >
+                          {loading.creatingPayRun ? <FaSpinner className="animate-spin" /> : <FaPlay />}
+                          Create Fortnightly Pay Run
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1251,15 +1309,17 @@ const RunPayroll = () => {
                                 >
                                   <FaPayslipIcon /> Payslips
                                 </button>
-                                <button
-                                  onClick={() => syncPayslips(payRun.xero_pay_run_id)}
-                                  disabled={loading.syncing}
-                                  className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center justify-center gap-1 disabled:opacity-50"
-                                >
-                                  {loading.syncing ? <FaSpinner className="animate-spin" /> : <FaSync />}
-                                  Sync
-                                </button>
-                                {payRun.status === 'DRAFT' && (
+                                {canEdit && (
+                                  <button
+                                    onClick={() => syncPayslips(payRun.xero_pay_run_id)}
+                                    disabled={loading.syncing}
+                                    className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center justify-center gap-1 disabled:opacity-50"
+                                  >
+                                    {loading.syncing ? <FaSpinner className="animate-spin" /> : <FaSync />}
+                                    Sync
+                                  </button>
+                                )}
+                                {canEdit && payRun.status === 'DRAFT' && (
                                   <button
                                     onClick={() => approvePayRun(payRun.xero_pay_run_id)}
                                     disabled={loading.approving}
@@ -1563,7 +1623,7 @@ const RunPayroll = () => {
                     >
                       <FaPayslipIcon /> View Payslips
                     </button>
-                    {selectedPayRunDetails.status === 'DRAFT' && (
+                    {canEdit && selectedPayRunDetails.status === 'DRAFT' && (
                       <button
                         onClick={() => {
                           approvePayRun(selectedPayRunDetails.xero_pay_run_id);

@@ -1,5 +1,6 @@
 // src/pages/Recruitment/InterviewPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import {
   FaStar,
   FaStarHalfAlt,
@@ -199,7 +200,7 @@ const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) =
 };
 
 // Question Card Component
-const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, onSave, index, saving, savingId }) => {
+const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, onSave, index, saving, savingId, canSave = true }) => {
   const isSavingThis = saving && savingId === question.id;
   
   return (
@@ -243,7 +244,7 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, on
           <button
             type="button"
             onClick={() => onSave(question.id)}
-            disabled={isSavingThis || (!answerData?.answer?.trim() && !answerData?.rating)}
+            disabled={isSavingThis || (!answerData?.answer?.trim() && !answerData?.rating) || !canSave}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
           >
             {isSavingThis ? (
@@ -325,6 +326,7 @@ const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
 const InterviewPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { canAdd, canEdit } = usePermissions('recruitment.interview');
   
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -785,6 +787,7 @@ const InterviewPage = () => {
                         index={idx + 1}
                         saving={saving}
                         savingId={savingQuestionId}
+                        canSave={canEdit || canAdd}
                       />
                     ))
                   )}

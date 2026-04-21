@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   HiPlus,
   HiTrash,
@@ -277,6 +278,7 @@ const OffboardingDashboard = () => {
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.exit_offboarding');
 
   const fetchEmployees = useCallback(async () => {
     if (!organizationId) {
@@ -309,6 +311,98 @@ const OffboardingDashboard = () => {
       setIsLoading(false);
     }
   }, [organizationId, searchTerm]);
+
+const ExitReports = () => {
+  const { canView } = usePermissions('employee.exit_offboarding');
+  const [stats, setStats] = useState({
+    totalExits: 0,
+    voluntary: 0,
+    involuntary: 0,
+    completionRate: 0,
+    avgProcessingDays: 0,
+  });
+  const [exits, setExits] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { selectedOrganization } = useOrganizations();
+  const organizationId = selectedOrganization?.id;
+
+  const fetchExitStats = useCallback(async () => {
+    if (!organizationId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const exitsRes = await getEmployeeExits({
+        organization_id: organizationId,
+      });
+      const exitsData = exitsRes.data?.data || [];
+      setExits(exitsData);
+
+      // Simple stats calculation
+      const total = exitsData.length;
+      const voluntary = exitsData.filter(
+        (e) => e.reason_for_leaving?.toLowerCase().includes("voluntary")
+      ).length;
+      const involuntary = total - voluntary;
+
+      setStats({
+        totalExits: total,
+        voluntary,
+        involuntary,
+        completionRate: 85, // Mock data or calculate if tasks available
+        avgProcessingDays: 14,
+      });
+    } catch (err) {
+      console.error("Error fetching exit stats:", err);
+      setError("Failed to load exit reports.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [organizationId]);
+
+  useEffect(() => {
+    fetchExitStats();
+  }, [fetchExitStats]);
+
+  if (!canView) {
+    return (
+      <div className="bg-white rounded-xl shadow-md p-8 text-center">
+        <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-800">Access Denied</h3>
+        <p className="text-gray-500">You do not have permission to view exit reports.</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-md p-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">Exit Reports</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Total Exits</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.totalExits}</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Voluntary</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.voluntary}</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Involuntary</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.involuntary}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
   const fetchExits = useCallback(async () => {
     if (!organizationId) return;
@@ -744,12 +838,14 @@ const OffboardingDashboard = () => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleInitiateExit(employee)}
-                    className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center"
-                  >
-                    <HiUserRemove className="mr-1" /> Initiate Exit
-                  </button>
+                  {canAdd && (
+                    <button
+                      onClick={() => handleInitiateExit(employee)}
+                      className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                    >
+                      <HiUserRemove className="mr-1" /> Initiate Exit
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -841,18 +937,33 @@ const OffboardingDashboard = () => {
                       >
                         <HiOutlineEye className="mr-1" /> View Tasks
                       </button>
-                      <button
-                        onClick={() => handleAddTask(exit)}
-                        className="flex-1 py-2 px-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                      >
-                        <HiPlus className="mr-1" /> Add Task
-                      </button>
-                      <button
-                        onClick={() => handleApplyTemplate(exit)}
-                        className="flex-1 py-2 px-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
-                      >
-                        <HiTemplate className="mr-1" /> Template
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        {canAdd && (
+                          <button
+                            onClick={() => handleAddTask(exit)}
+                            className="p-1 px-2 text-xs bg-blue-50 text-blue-600 rounded flex items-center hover:bg-blue-100 transition-colors"
+                          >
+                            <HiPlus className="mr-1" /> Add Task
+                          </button>
+                        )}
+                        {canAdd && (
+                          <button
+                            onClick={() => handleApplyTemplate(exit)}
+                            className="p-1 px-2 text-xs bg-purple-50 text-purple-600 rounded flex items-center hover:bg-purple-100 transition-colors"
+                          >
+                            <HiTemplate className="mr-1" /> Template
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteExit(exit)}
+                            className="p-1 text-red-600 rounded hover:bg-red-50 transition-colors"
+                            title="Delete Exit Record"
+                          >
+                            <HiTrash />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -936,6 +1047,8 @@ const ExitDetailModal = ({
   const [tasks, setTasks] = useState(exit.tasks);
   const [isLoading, setIsLoading] = useState(false);
   const [isCompletingTask, setIsCompletingTask] = useState(null);
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.exit_offboarding');
+
 console.log(setIsLoading)
   useEffect(() => {
     setTasks(exit.tasks);
@@ -1145,18 +1258,22 @@ console.log(setIsLoading)
                 Offboarding Tasks ({tasks.length})
               </h3>
               <div className="flex gap-2">
-                <button
-                  onClick={onAddTask}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
-                >
-                  <HiPlus className="h-4 w-4" /> Add Task
-                </button>
-                <button
-                  onClick={onApplyTemplate}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
-                >
-                  <HiTemplate className="h-4 w-4" /> Apply Template
-                </button>
+                {canAdd && (
+                  <button
+                    onClick={onAddTask}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                  >
+                    <HiPlus className="h-4 w-4" /> Add Task
+                  </button>
+                )}
+                {canAdd && (
+                  <button
+                    onClick={onApplyTemplate}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
+                  >
+                    <HiTemplate className="h-4 w-4" /> Apply Template
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1175,8 +1292,8 @@ console.log(setIsLoading)
                     {/* Radio button for task completion */}
                     <button
                       onClick={() => handleToggleTask(task.id, task.status)}
-                      disabled={isCompletingTask === task.id}
-                      className="mt-1 flex-shrink-0 focus:outline-none"
+                      disabled={isCompletingTask === task.id || !canEdit}
+                      className={`mt-1 flex-shrink-0 focus:outline-none ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
                       aria-label={
                         task.status === "completed"
                           ? "Mark task as pending"
@@ -1212,6 +1329,15 @@ console.log(setIsLoading)
                           )}
                         </span>
                         <div className="flex items-center gap-2">
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Delete Task"
+                            >
+                              <HiTrash className="h-4 w-4" />
+                            </button>
+                          )}
                           {task.status === "completed" ? (
                             <div className="flex items-center">
                               <HiCheck className="h-4 w-4 text-green-500 mr-1" />
@@ -1234,13 +1360,6 @@ console.log(setIsLoading)
                                 : `${task.days_left}d left`}
                             </span>
                           ) : null}
-                          <button
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label="Delete task"
-                          >
-                            <HiTrash className="h-4 w-4" />
-                          </button>
                         </div>
                       </div>
 
@@ -1333,6 +1452,7 @@ const OffboardingTemplateManager = () => {
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd: canAddTemplate, canDelete: canDeleteTemplate } = usePermissions('employee.exit_offboarding');
 
   const fetchTemplates = useCallback(async () => {
     if (!organizationId) {
@@ -1520,12 +1640,14 @@ const OffboardingTemplateManager = () => {
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Offboarding Templates</h2>
-          <button
-            onClick={() => setTemplateModalOpen(true)}
-            className="flex items-center gap-2 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"
-          >
-            <HiPlus /> Create Template
-          </button>
+          {canAddTemplate && (
+            <button
+              onClick={() => setTemplateModalOpen(true)}
+              className="flex items-center gap-2 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"
+            >
+              <HiPlus /> Create Template
+            </button>
+          )}
         </div>
 
         {templates.length > 0 ? (
@@ -1556,26 +1678,28 @@ const OffboardingTemplateManager = () => {
                       <HiOutlineEye />
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setSelectedTemplate(template);
-                        setTaskModalOpen(true);
-                      }}
-                      className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors"
-                      title="Add Task"
-                      aria-label="Add task to template"
-                    >
-                      <HiPlus />
-                    </button>
+                    {canAddTemplate && (
+                      <button
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setTaskModalOpen(true);
+                        }}
+                        className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors"
+                        title="Add Task"
+                      >
+                        <HiPlus />
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
-                      title="Delete Template"
-                      aria-label="Delete template"
-                    >
-                      <HiTrash />
-                    </button>
+                    {canDeleteTemplate && (
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
+                        title="Delete Template"
+                      >
+                        <HiTrash />
+                      </button>
+                    )}
                   </div>
                 </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import { 
   HiPlus, 
   HiPencil, 
@@ -253,6 +254,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit, canDelete } = usePermissions('recruitment.onboarding');
 
  const fetchNewHires = useCallback(async () => {
   if (!organizationId) {
@@ -537,6 +539,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
             onSelect={() => setSelectedHire(hire)}
             onAddTask={() => handleAddTask(hire)}
             onApplyTemplate={() => handleApplyTemplate(hire)}
+            canAdd={canAdd}
           />
         ))}
       </div>
@@ -593,7 +596,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
   );
 };
 
-const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
+const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate, canAdd = true }) => {
   const progress = useMemo(() => {
     const totalTasks = hire.tasks.length;
     if (totalTasks === 0) return 0;
@@ -650,18 +653,22 @@ const NewHireCard = ({ hire, onSelect, onAddTask, onApplyTemplate }) => {
           )}
         </button>
         <div className="flex gap-2">
-          <button
-            onClick={onAddTask}
-            className="flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-          >
-            <HiPlus className="mr-1" /> Add Task
-          </button>
-          <button
-            onClick={onApplyTemplate}
-            className="flex-1 py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
-          >
-            <HiTemplate className="mr-1" /> Add Template
-          </button>
+          {canAdd && (
+            <button
+              onClick={onAddTask}
+              className="flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+            >
+              <HiPlus className="mr-1" /> Add Task
+            </button>
+          )}
+          {canAdd && (
+            <button
+              onClick={onApplyTemplate}
+              className="flex-1 py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
+            >
+              <HiTemplate className="mr-1" /> Add Template
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -681,6 +688,7 @@ const TemplateManager = ({ backgroundColor }) => {
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd: canAddTemplate, canDelete: canDeleteTemplate } = usePermissions('recruitment.onboarding');
 
   const fetchTemplates = useCallback(async () => {
     if (!organizationId) {
@@ -845,12 +853,14 @@ const TemplateManager = ({ backgroundColor }) => {
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Onboarding Templates</h2>
-          <button
-            onClick={() => setTemplateModalOpen(true)}
-            className="flex items-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
-          >
-            <HiPlus /> Create Template
-          </button>
+          {canAddTemplate && (
+            <button
+              onClick={() => setTemplateModalOpen(true)}
+              className="flex items-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+            >
+              <HiPlus /> Create Template
+            </button>
+          )}
         </div>
 
         {templates.length > 0 ? (
@@ -881,26 +891,30 @@ const TemplateManager = ({ backgroundColor }) => {
                       <HiOutlineEye />
                     </button>
                     
-                    <button
-                      onClick={() => {
-                        setSelectedTemplate(template);
-                        setTaskModalOpen(true);
-                      }}
-                      className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors"
-                      title="Add Task"
-                      aria-label="Add task to template"
-                    >
-                      <HiPlus />
-                    </button>
+                    {canAddTemplate && (
+                      <button
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setTaskModalOpen(true);
+                        }}
+                        className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors"
+                        title="Add Task"
+                        aria-label="Add task to template"
+                      >
+                        <HiPlus />
+                      </button>
+                    )}
                     
-                    <button
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
-                      title="Delete Template"
-                      aria-label="Delete template"
-                    >
-                      <HiTrash />
-                    </button>
+                    {canDeleteTemplate && (
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
+                        title="Delete Template"
+                        aria-label="Delete template"
+                      >
+                        <HiTrash />
+                      </button>
+                    )}
                   </div>
                 </div>
                 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaKey,
   FaLock,
@@ -492,9 +493,11 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button onClick={() => onOpenForm(module, page)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors font-medium whitespace-nowrap">
-                    <FaPlus className="h-4 w-4" /> Create Permission
-                  </button>
+                  {canAdd && (
+                    <button onClick={() => onOpenForm(module, page)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors font-medium whitespace-nowrap">
+                      <FaPlus className="h-4 w-4" /> Create Permission
+                    </button>
+                  )}
                   <button onClick={() => onViewPermissions(module, page)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-colors font-medium whitespace-nowrap">
                     <FaEye className="h-4 w-4" /> View Permissions
                   </button>
@@ -561,9 +564,11 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, on
               </div>
             </div>
           </div>
-          <button onClick={() => onOpenForm(module, page)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors font-medium whitespace-nowrap flex-shrink-0">
-            <FaPlus className="h-4 w-4" /> Create New Permission
-          </button>
+          {canAdd && (
+            <button onClick={() => onOpenForm(module, page)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors font-medium whitespace-nowrap flex-shrink-0">
+              <FaPlus className="h-4 w-4" /> Create New Permission
+            </button>
+          )}
         </div>
       </div>
 
@@ -627,10 +632,12 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, on
                       </div>
                     </div>
                     <div className="flex-shrink-0">
-                      <button onClick={() => onDeletePermission(permission)} disabled={deletingPermission} className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50" title="Delete Permission">
-                        {deletingPermission ? <FaSpinner className="animate-spin h-4 w-4" /> : <FaTrash className="h-4 w-4" />}
-                        Delete
-                      </button>
+                      {canDelete && (
+                        <button onClick={() => onDeletePermission(permission)} disabled={deletingPermission} className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50" title="Delete Permission">
+                          {deletingPermission ? <FaSpinner className="animate-spin h-4 w-4" /> : <FaTrash className="h-4 w-4" />}
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -654,6 +661,7 @@ const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, on
 // MAIN COMPONENT
 // ============================================
 export default function PermissionManagementPage() {
+  const { canAdd, canEdit, canDelete } = usePermissions('settings.permission_management');
   const { selectedOrganization } = useOrganizations();
   const [currentPage, setCurrentPage] = useState("modules");
   const [modules, setModules] = useState([]);

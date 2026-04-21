@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import axiosClient from '../../axiosClient';
 import { 
   FaSearch, 
@@ -130,6 +131,7 @@ const ColorPaletteModal = ({
 
 const ManualAdjustments = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('attendance.manual_adjustments');
   const [adjustments, setAdjustments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -1707,19 +1709,23 @@ const ManualAdjustments = () => {
               )}
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={exportAdjustments}
-                disabled={filteredAdjustments.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaDownload /> Export ({filteredAdjustments.length})
-              </button>
-              <button
-                onClick={() => setShowAdjustmentForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FaPlus /> New Adjustment
-              </button>
+              {canEdit && (
+                <button
+                  onClick={exportAdjustments}
+                  disabled={filteredAdjustments.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaDownload /> Export ({filteredAdjustments.length})
+                </button>
+              )}
+              {canAdd && (
+                <button
+                  onClick={() => setShowAdjustmentForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <FaPlus /> New Adjustment
+                </button>
+              )}
             </div>
           </div>
 
@@ -1859,7 +1865,7 @@ const ManualAdjustments = () => {
                             <FaEye />
                           </button>
                           
-                          {adjustment.status === 'pending' && (
+                          {adjustment.status === 'pending' && canEdit && (
                             <>
                               <button
                                 onClick={() => handleApprove(adjustment.id)}
@@ -1878,16 +1884,18 @@ const ManualAdjustments = () => {
                             </>
                           )}
                           
-                          <button
-                            onClick={() => handleEditAdjustment(adjustment)}
-                            className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleEditAdjustment(adjustment)}
+                              className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                              title="Edit"
+                            >
+                              <FaEdit />
+                            </button>
+                          )}
                           
                           {/* Show delete button only for rejected adjustments */}
-                          {adjustment.status === 'rejected' && (
+                          {adjustment.status === 'rejected' && canDelete && (
                             <button
                               onClick={() => handleDelete(adjustment.id)}
                               className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"

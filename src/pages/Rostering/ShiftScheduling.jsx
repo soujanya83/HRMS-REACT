@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   FaCalendarAlt, 
   FaPlus, 
@@ -150,6 +151,7 @@ const ShiftScheduling = () => {
 
   const { selectedOrganization, organizations, isLoading: orgLoading } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit, canDelete } = usePermissions('rostering.shift_scheduling');
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -834,13 +836,15 @@ const ShiftScheduling = () => {
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowShiftForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                disabled={!organizationId}
-              >
-                <FaPlus /> Create Shift
-              </button>
+              {canAdd && (
+                <button
+                  onClick={() => setShowShiftForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!organizationId}
+                >
+                  <FaPlus /> Create Shift
+                </button>
+              )}
             </div>
           </div>
 
@@ -986,36 +990,46 @@ const ShiftScheduling = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
                               {showDeleted ? (
-                                <button
-                                  onClick={() => handleRestore(shift.id)}
-                                  className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
-                                  title="Restore"
-                                >
-                                  <FaUndo /> Restore
-                                </button>
+                                <>
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => handleRestore(shift.id)}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                                      title="Restore"
+                                    >
+                                      <FaUndo /> Restore
+                                    </button>
+                                  )}
+                                </>
                               ) : (
                                 <>
-                                  <button
-                                    onClick={() => handleEdit(shift)}
-                                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
-                                    title="Edit"
-                                  >
-                                    <FaEdit /> Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleCopyShift(shift)}
-                                    className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
-                                    title="Copy"
-                                  >
-                                    <FaCopy /> Copy
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(shift.id)}
-                                    className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors flex items-center gap-1"
-                                    title="Delete"
-                                  >
-                                    <FaTrash /> Delete
-                                  </button>
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => handleEdit(shift)}
+                                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                      title="Edit"
+                                    >
+                                      <FaEdit /> Edit
+                                    </button>
+                                  )}
+                                  {canAdd && (
+                                    <button
+                                      onClick={() => handleCopyShift(shift)}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                                      title="Copy"
+                                    >
+                                      <FaCopy /> Copy
+                                    </button>
+                                  )}
+                                  {canDelete && (
+                                    <button
+                                      onClick={() => handleDelete(shift.id)}
+                                      className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors flex items-center gap-1"
+                                      title="Delete"
+                                    >
+                                      <FaTrash /> Delete
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </div>

@@ -1,5 +1,6 @@
 // components/PayslipGeneration.jsx - FORTNIGHTLY ONLY WITH ALL PAYSLIPS API AND COLOR PALETTE
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaFileInvoice,
   FaSearch,
@@ -119,6 +120,7 @@ const ColorPalette = ({ isOpen, onClose, onColorSelect }) => {
 
 const PayslipGeneration = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('payroll.payroll');
   const organizationId = selectedOrganization?.id || "15";
 
   const [loading, setLoading] = useState({
@@ -1061,23 +1063,25 @@ const PayslipGeneration = () => {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={createPayRun}
-                    disabled={loading.creatingPayRun || payRuns.length > 0}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={
-                      payRuns.length > 0
-                        ? "A pay run already exists for this period"
-                        : ""
-                    }
-                  >
-                    {loading.creatingPayRun ? (
-                      <FaSpinner className="animate-spin" />
-                    ) : (
-                      <FaPlay />
-                    )}
-                    Create Fortnightly Pay Run
-                  </button>
+                  {canAdd && (
+                    <button
+                      onClick={createPayRun}
+                      disabled={loading.creatingPayRun || payRuns.length > 0}
+                      className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={
+                        payRuns.length > 0
+                          ? "A pay run already exists for this period"
+                          : ""
+                      }
+                    >
+                      {loading.creatingPayRun ? (
+                        <FaSpinner className="animate-spin" />
+                      ) : (
+                        <FaPlay />
+                      )}
+                      Create Fortnightly Pay Run
+                    </button>
+                  )}
                 </div>
                 {payRuns.length > 0 && (
                   <p className="mt-3 text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg">
@@ -1203,21 +1207,23 @@ const PayslipGeneration = () => {
                               >
                                 <FaFileInvoice /> View Payslips
                               </button>
-                              <button
-                                onClick={() =>
-                                  syncPayslips(payRun.xero_pay_run_id)
-                                }
-                                disabled={loading.syncing}
-                                className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center justify-center gap-1 disabled:opacity-50"
-                              >
-                                {loading.syncing ? (
-                                  <FaSpinner className="animate-spin" />
-                                ) : (
-                                  <FaSync />
-                                )}
-                                Sync Payslips
-                              </button>
-                              {payRun.status === "DRAFT" && (
+                              {canEdit && (
+                                <button
+                                  onClick={() =>
+                                    syncPayslips(payRun.xero_pay_run_id)
+                                  }
+                                  disabled={loading.syncing}
+                                  className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center justify-center gap-1 disabled:opacity-50"
+                                >
+                                  {loading.syncing ? (
+                                    <FaSpinner className="animate-spin" />
+                                  ) : (
+                                    <FaSync />
+                                  )}
+                                  Sync Payslips
+                                </button>
+                              )}
+                              {canEdit && payRun.status === "DRAFT" && (
                                 <button
                                   onClick={() =>
                                     approvePayRun(payRun.xero_pay_run_id)
@@ -1541,9 +1547,11 @@ const PayslipGeneration = () => {
                       <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2">
                         <FaDownload /> Download Selected
                       </button>
-                      <button className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 flex items-center gap-2">
-                        <FaEnvelope /> Email Selected
-                      </button>
+                      {canEdit && (
+                        <button className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 flex items-center gap-2">
+                          <FaEnvelope /> Email Selected
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

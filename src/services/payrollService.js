@@ -26,7 +26,7 @@ export const payrollService = {
         from_date: fromDate,
         to_date: toDate
       });
-      
+
       console.log('✅ Pay run created successfully');
       return response;
     } catch (error) {
@@ -35,14 +35,14 @@ export const payrollService = {
         data: error.response?.data,
         details: error.response?.data?.details
       });
-      
+
       let errorMessage = 'Failed to create pay run';
       let errorType = 'GENERAL';
-      
+
       if (error.response?.data?.details?.Message) {
         const xeroMessage = error.response.data.details.Message;
         errorMessage = `Xero Error: ${xeroMessage}`;
-        
+
         if (xeroMessage.includes('one draft pay run per pay frequency')) {
           errorMessage = 'Cannot create pay run: There is already a draft pay run for this period. Please approve or void the existing draft pay run first.';
           errorType = 'DRAFT_EXISTS';
@@ -52,7 +52,7 @@ export const payrollService = {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       const customError = new Error(errorMessage);
       customError.type = errorType;
       customError.response = error.response;
@@ -74,7 +74,7 @@ export const payrollService = {
     const params = { organization_id: organizationId };
     if (fromDate) params.from_date = fromDate;
     if (toDate) params.to_date = toDate;
-    
+
     return axiosClient.get(`${API_BASE}/payruns`, { params });
   },
 
@@ -98,6 +98,14 @@ export const payrollService = {
       organization_id: parseInt(organizationId, 10)
     });
   },
+
+  // Sync Employees from Xero-> We have to make changes in routes based on basckend api
+  syncEmployees: (organizationId) => {
+    return axiosClient.post(`${API_BASE}/sync-employees`, {
+      organization_id: organizationId.toString()
+    });
+  },
+
 
   // Sync Payslips from Xero
   syncPayslips: (organizationId, xeroPayRunId) => {

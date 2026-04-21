@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   getEmployees,
   updateEmployeeStatus,
@@ -33,7 +34,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -95,9 +96,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -111,9 +111,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -145,6 +144,8 @@ export default function ProbationConfirmation() {
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.probation_confirmation');
+
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -189,8 +190,8 @@ export default function ProbationConfirmation() {
         filter === "all"
           ? ""
           : filter === "probation"
-          ? "On Probation"
-          : "Active";
+            ? "On Probation"
+            : "Active";
 
       const params = {
         search: searchTerm,
@@ -252,10 +253,10 @@ export default function ProbationConfirmation() {
         prev.map((pp) =>
           pp.employee_id === employeeId
             ? {
-                ...pp,
-                status: "Completed",
-                confirmation_date: new Date().toISOString().split("T")[0],
-              }
+              ...pp,
+              status: "Completed",
+              confirmation_date: new Date().toISOString().split("T")[0],
+            }
             : pp
         )
       );
@@ -300,11 +301,11 @@ export default function ProbationConfirmation() {
         prev.map((pp) =>
           pp.employee_id === employeeId
             ? {
-                ...pp,
-                end_date: extendedDate,
-                status: "Extended",
-                feedback: probationData.feedback,
-              }
+              ...pp,
+              end_date: extendedDate,
+              status: "Extended",
+              feedback: probationData.feedback,
+            }
             : pp
         )
       );
@@ -334,7 +335,7 @@ export default function ProbationConfirmation() {
       notes: "",
       confirmation_date: null,
     };
-    
+
     setProbationForm(newForm);
     setLocalProbationForm(newForm);
     setShowProbationForm(true);
@@ -353,7 +354,7 @@ export default function ProbationConfirmation() {
       notes: probation.feedback || "",
       confirmation_date: probation.confirmation_date,
     };
-    
+
     setProbationForm(newForm);
     setLocalProbationForm(newForm);
     setShowProbationForm(true);
@@ -378,7 +379,7 @@ export default function ProbationConfirmation() {
   const handleFormInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setLocalProbationForm((prev) => ({ ...prev, [name]: value }));
-    
+
     // Update main form after a short delay to prevent excessive re-renders
     setTimeout(() => {
       setProbationForm((prev) => ({ ...prev, [name]: value }));
@@ -406,10 +407,10 @@ export default function ProbationConfirmation() {
           prev.map((pp) =>
             pp.id === editingProbation.id
               ? {
-                  ...pp,
-                  ...apiData,
-                  feedback: apiData.feedback,
-                }
+                ...pp,
+                ...apiData,
+                feedback: apiData.feedback,
+              }
               : pp
           )
         );
@@ -474,7 +475,7 @@ export default function ProbationConfirmation() {
       };
 
       const csvContent = convertToCSV(reportData);
-      
+
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -642,8 +643,8 @@ export default function ProbationConfirmation() {
                         employee
                           ? `${employee.first_name} ${employee.last_name} (${employee.employee_code})`
                           : selectedEmployee
-                          ? `${selectedEmployee.first_name} ${selectedEmployee.last_name} (${selectedEmployee.employee_code})`
-                          : ""
+                            ? `${selectedEmployee.first_name} ${selectedEmployee.last_name} (${selectedEmployee.employee_code})`
+                            : ""
                       }
                       disabled
                       className="w-full border border-gray-300 px-3 py-2 rounded bg-gray-50"
@@ -814,7 +815,7 @@ export default function ProbationConfirmation() {
 
       {ProbationFormModal}
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -904,20 +905,21 @@ export default function ProbationConfirmation() {
             </div>
 
             <div className="md:col-span-5 flex justify-end items-center space-x-4">
-              <button
-                onClick={() => setShowProbationForm(true)}
-                className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium"
-              >
-                <FaPlus className="mr-2" /> Add Probation
-              </button>
+              {canAdd && (
+                <button
+                  onClick={() => setShowProbationForm(true)}
+                  className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium"
+                >
+                  <FaPlus className="mr-2" /> Add Probation
+                </button>
+              )}
               <button
                 onClick={handleGenerateReports}
                 disabled={generatingReport || employees.length === 0}
-                className={`px-5 py-3 rounded-lg transition-colors flex items-center font-medium ${
-                  generatingReport || employees.length === 0
+                className={`px-5 py-3 rounded-lg transition-colors flex items-center font-medium ${generatingReport || employees.length === 0
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
+                  }`}
               >
                 <FaFileExport className="mr-2" />
                 {generatingReport ? "Generating..." : "Generate Reports"}
@@ -977,9 +979,9 @@ export default function ProbationConfirmation() {
                     const probation = getEmployeeProbation(emp.id);
                     const progress = probation
                       ? calculateProbationProgress(
-                          probation.start_date,
-                          probation.end_date
-                        )
+                        probation.start_date,
+                        probation.end_date
+                      )
                       : 0;
                     const remainingDays = probation
                       ? getProbationRemainingDays(probation.end_date)
@@ -1027,13 +1029,12 @@ export default function ProbationConfirmation() {
                             <div className="w-32 mr-3">
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full ${
-                                    progress >= 100
+                                  className={`h-2 rounded-full ${progress >= 100
                                       ? "bg-green-500"
                                       : progress >= 70
-                                      ? "bg-yellow-500"
-                                      : "bg-blue-500"
-                                  }`}
+                                        ? "bg-yellow-500"
+                                        : "bg-blue-500"
+                                    }`}
                                   style={{ width: `${Math.min(progress, 100)}%` }}
                                 ></div>
                               </div>
@@ -1065,13 +1066,12 @@ export default function ProbationConfirmation() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              emp.status === "Active"
+                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.status === "Active"
                                 ? "bg-green-100 text-green-800"
                                 : emp.status === "On Probation"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {emp.status}
                           </span>
@@ -1085,13 +1085,15 @@ export default function ProbationConfirmation() {
                           <div className="flex flex-wrap gap-2">
                             {isOnProbation && (
                               <>
-                                <button
-                                  onClick={() => handleConfirmEmployee(emp.id)}
-                                  className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors flex items-center"
-                                >
-                                  <FaCheckCircle className="mr-1.5" /> Confirm
-                                </button>
-                                {hasProbation && (
+                                {canEdit && (
+                                  <button
+                                    onClick={() => handleConfirmEmployee(emp.id)}
+                                    className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                                  >
+                                    <FaCheckCircle className="mr-1.5" /> Confirm
+                                  </button>
+                                )}
+                                {hasProbation && canEdit && (
                                   <button
                                     onClick={() => handleExtendProbation(emp.id)}
                                     className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
@@ -1103,30 +1105,35 @@ export default function ProbationConfirmation() {
                             )}
                             {hasProbation && (
                               <>
-                                <button
-                                  onClick={() => handleEditProbation(probation)}
-                                  className="px-3 py-1.5 bg-yellow-600 text-white text-xs rounded-lg hover:bg-yellow-700 transition-colors"
-                                  title="Edit Probation"
-                                >
-                                  <FaEdit />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteProbation(probation.id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
-                                  title="Delete Probation"
-                                >
-                                  <FaTrash />
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => handleEditProbation(probation)}
+                                    className="px-3 py-1.5 bg-yellow-600 text-white text-xs rounded-lg hover:bg-yellow-700 transition-colors"
+                                    title="Edit Probation"
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                )}
+                                {canDelete && (
+                                  <button
+                                    onClick={() => handleDeleteProbation(probation.id)}
+                                    className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                                    title="Delete Probation"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                )}
                               </>
                             )}
-                            {isOnProbation && !hasProbation && (
+                            {isOnProbation && !hasProbation && canAdd && (
                               <button
                                 onClick={() => handleAddProbation(emp)}
-                                className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                                className="px-3 py-1.5 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors flex items-center"
                               >
                                 <FaPlus className="mr-1.5" /> Add Probation
                               </button>
                             )}
+
                           </div>
                         </td>
                       </tr>
@@ -1190,11 +1197,10 @@ export default function ProbationConfirmation() {
                         </p>
                       </div>
                       <span
-                        className={`px-3 py-1 text-xs rounded-full font-semibold ${
-                          remainingDays <= 7
+                        className={`px-3 py-1 text-xs rounded-full font-semibold ${remainingDays <= 7
                             ? "bg-red-100 text-red-800"
                             : "bg-orange-100 text-orange-800"
-                        }`}
+                          }`}
                       >
                         {remainingDays} {remainingDays === 1 ? "day" : "days"}
                       </span>
@@ -1220,12 +1226,14 @@ export default function ProbationConfirmation() {
                         </div>
                       </div>
                     )}
-                    <button
-                      onClick={() => handleConfirmEmployee(emp.id)}
-                      className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
-                    >
-                      Confirm Now
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleConfirmEmployee(emp.id)}
+                        className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Confirm Now
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1235,14 +1243,14 @@ export default function ProbationConfirmation() {
               const remainingDays = getProbationRemainingDays(probation.end_date);
               return remainingDays <= 30 && remainingDays > 0;
             }).length === 0 && (
-              <div className="col-span-3 text-center py-8">
-                <FaClock className="text-3xl text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No upcoming confirmations</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  No employees have probation ending in the next 30 days
-                </p>
-              </div>
-            )}
+                <div className="col-span-3 text-center py-8">
+                  <FaClock className="text-3xl text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No upcoming confirmations</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    No employees have probation ending in the next 30 days
+                  </p>
+                </div>
+              )}
           </div>
         </div>
       </div>

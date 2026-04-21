@@ -1,5 +1,6 @@
 // components/TimesheetApprovals.jsx
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   FaCheckCircle, 
   FaTimesCircle, 
@@ -127,6 +128,7 @@ const ColorPaletteModal = ({
 
 const TimesheetApprovals = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canEdit } = usePermissions('timesheet.timesheet_approvals');
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
@@ -858,37 +860,41 @@ const TimesheetApprovals = () => {
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex flex-wrap gap-2">
               {/* Push ALL button */}
-              <button
-                onClick={handlePushAllToXero}
-                disabled={stats.readyForXero === 0 || pushToXeroLoading}
-                className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                  stats.readyForXero > 0 && !pushToXeroLoading
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
-                {pushToXeroLoading ? 'Pushing All...' : `Push All (${stats.readyForXero})`}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handlePushAllToXero}
+                  disabled={stats.readyForXero === 0 || pushToXeroLoading}
+                  className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                    stats.readyForXero > 0 && !pushToXeroLoading
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+                  {pushToXeroLoading ? 'Pushing All...' : `Push All (${stats.readyForXero})`}
+                </button>
+              )}
               
               {/* Push SELECTED button */}
-              <button
-                onClick={handlePushToXero}
-                disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
-                className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                  selectedTimesheetIds.length > 0 && !pushToXeroLoading
-                    ? 'bg-purple-600 text-white hover:bg-purple-700'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
-                {pushToXeroLoading ? 'Pushing...' : `Push Selected (${selectedTimesheetIds.length})`}
-                {selectedTimesheetIds.length > 0 && !pushToXeroLoading && (
-                  <span className="ml-2 px-2 py-0.5 bg-purple-500 text-white text-xs rounded-full">
-                    {formatCurrency(totalSelectedAmount)}
-                  </span>
-                )}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handlePushToXero}
+                  disabled={selectedTimesheetIds.length === 0 || pushToXeroLoading}
+                  className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                    selectedTimesheetIds.length > 0 && !pushToXeroLoading
+                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <FaSyncAlt className={pushToXeroLoading ? 'animate-spin' : ''} />
+                  {pushToXeroLoading ? 'Pushing...' : `Push Selected (${selectedTimesheetIds.length})`}
+                  {selectedTimesheetIds.length > 0 && !pushToXeroLoading && (
+                    <span className="ml-2 px-2 py-0.5 bg-purple-500 text-white text-xs rounded-full">
+                      {formatCurrency(totalSelectedAmount)}
+                    </span>
+                  )}
+                </button>
+              )}
               
               {/* View Results button */}
               {pushResults && (
@@ -1192,7 +1198,7 @@ const TimesheetApprovals = () => {
                               </button>
                               
                               {/* Single Push to Xero Button */}
-                              {timesheet.status === 'submitted' && 
+                              {canEdit && timesheet.status === 'submitted' && 
                                (timesheet.xero_status === null || timesheet.xero_status !== 'pushed') && (
                                 <button
                                   onClick={() => handlePushSingleToXero(timesheet.id)}
@@ -1365,7 +1371,7 @@ const TimesheetApprovals = () => {
                   )}
 
                   {/* Action Buttons */}
-                  {selectedTimesheet.status === 'submitted' && (
+                  {canEdit && selectedTimesheet.status === 'submitted' && (
                     <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
                       <button
                         onClick={() => handlePushSingleToXero(selectedTimesheet.id)}

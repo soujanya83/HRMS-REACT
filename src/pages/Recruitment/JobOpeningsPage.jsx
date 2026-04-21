@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   Routes,
   Route,
@@ -244,6 +245,7 @@ function JobOpeningListPage({ backgroundColor }) {
   const [jobToDelete, setJobToDelete] = useState(null);
   const { selectedOrganization } = useOrganizations();
   const [modalErrors, setModalErrors] = useState(null);
+  const { canAdd, canEdit, canDelete } = usePermissions('recruitment.job_openings');
 
   const fetchJobs = useCallback(async () => {
     if (!selectedOrganization) {
@@ -315,16 +317,18 @@ function JobOpeningListPage({ backgroundColor }) {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Job Openings</h1>
-          <button
-            onClick={() => {
-              setEditingJob(null);
-              setModalErrors(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
-          >
-            <HiPlus /> Create Job Opening
-          </button>
+          {canAdd && (
+            <button
+              onClick={() => {
+                setEditingJob(null);
+                setModalErrors(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition self-start sm:self-center"
+            >
+              <HiPlus /> Create Job Opening
+            </button>
+          )}
         </div>
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
@@ -336,6 +340,8 @@ function JobOpeningListPage({ backgroundColor }) {
               <JobCard
                 key={job.id}
                 job={job}
+                canEdit={canEdit}
+                canDelete={canDelete}
                 onEdit={() => {
                   setEditingJob(job);
                   setModalErrors(null);
@@ -379,7 +385,7 @@ function JobOpeningListPage({ backgroundColor }) {
   );
 }
 
-function JobCard({ job, onEdit, onDelete }) {
+function JobCard({ job, onEdit, onDelete, canEdit = true, canDelete = true }) {
   const getStatusConfig = (status) => {
     const statusLower = status?.toLowerCase() || '';
     switch (statusLower) {
@@ -435,18 +441,22 @@ function JobCard({ job, onEdit, onDelete }) {
               {statusConfig.text}
             </span>
             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={onEdit}
-                className="p-2 text-gray-500 hover:bg-gray-200 rounded-full"
-              >
-                <HiPencil />
-              </button>
-              <button
-                onClick={onDelete}
-                className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
-              >
-                <HiTrash />
-              </button>
+              {canEdit && (
+                <button
+                  onClick={onEdit}
+                  className="p-2 text-gray-500 hover:bg-gray-200 rounded-full"
+                >
+                  <HiPencil />
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={onDelete}
+                  className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full"
+                >
+                  <HiTrash />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -461,6 +471,7 @@ function JobOpeningDetailPage({ backgroundColor }) {
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { canEdit } = usePermissions('recruitment.job_openings');
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -583,9 +594,11 @@ function JobOpeningDetailPage({ backgroundColor }) {
                     {statusConfig.text}
                   </span>
                 )}
-                <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
-                  <HiPencil /> Edit
-                </button>
+                {canEdit && (
+                  <button className="flex items-center gap-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                    <HiPencil /> Edit
+                  </button>
+                )}
               </div>
             </div>
             <hr className="my-6" />

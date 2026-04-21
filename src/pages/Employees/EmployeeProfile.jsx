@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   FaUser, FaBriefcase, FaBuilding, FaPhone, FaEnvelope,
@@ -12,7 +13,7 @@ import {
   FaTimes, FaCheck, FaSpinner, FaUpload  // <-- Add FaUpload here
 } from 'react-icons/fa';
 import { HiOutlineDocumentReport, HiOutlineUserGroup } from 'react-icons/hi';
-import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument } from '../../services/employeeService';
+import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument, deleteEmployeeDocument } from '../../services/employeeService';
 
 // Detail Field Component
 const DetailField = ({ icon, label, value, className = '' }) => (
@@ -61,7 +62,7 @@ const ActionButton = ({ icon, label, onClick, color = 'bg-blue-600 hover:bg-blue
 );
 
 // Document Card Component
-const DocumentCard = ({ document, onView, onDelete }) => {
+const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
     const ext = fileName.split('.').pop()?.toLowerCase();
@@ -119,13 +120,15 @@ const DocumentCard = ({ document, onView, onDelete }) => {
               <FaEye />
             </button>
           )}
-          <button
-            onClick={() => onDelete(document.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-            title="Delete Document"
-          >
-            <FaTrash />
-          </button>
+          {canDelete && (
+            <button
+              onClick={() => onDelete(document.id)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+              title="Delete Document"
+            >
+              <FaTrash />
+            </button>
+          )}
         </div>
       </div>
       <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
@@ -430,6 +433,8 @@ export default function EmployeeProfile() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  
+  const { canEdit } = usePermissions('employee.add_manage_profiles');
 
   // Fetch employee data
   useEffect(() => {
@@ -523,8 +528,7 @@ export default function EmployeeProfile() {
   const handleDeleteDocument = async (documentId) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        // You'll need to add a delete document API call here
-        // await deleteEmployeeDocument(documentId);
+        await deleteEmployeeDocument(documentId);
         setDocuments(documents.filter(doc => doc.id !== documentId));
       } catch (err) {
         console.error('Error deleting document:', err);
@@ -543,7 +547,7 @@ export default function EmployeeProfile() {
 
   // Quick actions
   const quickActions = [
-    { label: 'Edit Profile', icon: <FaEdit className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/edit/${id}`), color: 'bg-blue-600 hover:bg-blue-700' },
+    ...(canEdit ? [{ label: 'Edit Profile', icon: <FaEdit className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/edit/${id}`), color: 'bg-blue-600 hover:bg-blue-700' }] : []),
     { label: 'View Documents', icon: <FaFileAlt className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/documents`), color: 'bg-green-600 hover:bg-green-700' },
     { label: 'History', icon: <FaHistory className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/history`), color: 'bg-purple-600 hover:bg-purple-700' },
     { label: 'Performance', icon: <FaChartLine className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/performance`), color: 'bg-orange-600 hover:bg-orange-700' }
@@ -947,12 +951,14 @@ export default function EmployeeProfile() {
                       </p>
                     </div>
                     <div className="flex gap-3">
-                      <button
-                        onClick={() => setUploadModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <FaPlus /> Upload Document
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => setUploadModalOpen(true)}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <FaPlus /> Upload Document
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/dashboard/employees/${id}/documents`)}
                         className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -976,6 +982,7 @@ export default function EmployeeProfile() {
                             document={doc}
                             onView={handleViewDocument}
                             onDelete={handleDeleteDocument}
+                            canDelete={canEdit}
                           />
                         ))}
                       </div>

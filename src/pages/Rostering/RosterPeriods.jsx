@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaCalendarAlt,
   FaPlus,
@@ -196,6 +197,7 @@ const RosterPeriods = () => {
   });
 
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('rostering.roster_periods');
 
   // Memoized values
   const statusColors = useMemo(() => ({
@@ -892,15 +894,17 @@ const RosterPeriods = () => {
             </div>
             
             <div className="flex gap-2">
-              <button
-                onClick={openCreateModal}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!selectedOrganization}
-                aria-label="Create fortnightly period"
-              >
-                <FaPlus className="h-4 w-4" aria-hidden="true" />
-                Create Fortnightly Period
-              </button>
+              {canAdd && (
+                <button
+                  onClick={openCreateModal}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!selectedOrganization}
+                  aria-label="Create fortnightly period"
+                >
+                  <FaPlus className="h-4 w-4" aria-hidden="true" />
+                  Create Fortnightly Period
+                </button>
+              )}
             </div>
           </div>
 
@@ -1106,8 +1110,8 @@ const RosterPeriods = () => {
                                     <FaList className="text-blue-500" aria-hidden="true" />
                                     View Rosters
                                   </button>
-
-                                  {period.status === 'draft' && (
+                                  
+                                  {period.status === 'draft' && canEdit && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-green-50"
                                       onClick={() => {
@@ -1128,7 +1132,7 @@ const RosterPeriods = () => {
 
                                   <div className="border-t border-gray-100 my-1"></div>
 
-                                  {period.status === 'draft' && (
+                                  {period.status === 'draft' && canEdit && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-green-50"
                                       onClick={() => {
@@ -1142,7 +1146,7 @@ const RosterPeriods = () => {
                                     </button>
                                   )}
 
-                                  {period.status === 'published' && (
+                                  {period.status === 'published' && canEdit && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-yellow-50"
                                       onClick={() => {
@@ -1160,7 +1164,7 @@ const RosterPeriods = () => {
                                     <div className="border-t border-gray-100 my-1"></div>
                                   )}
 
-                                  {period.status === 'draft' && (
+                                  {period.status === 'draft' && canDelete && (
                                     <button
                                       className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 transition-colors focus:outline-none focus:bg-red-50"
                                       onClick={() => {

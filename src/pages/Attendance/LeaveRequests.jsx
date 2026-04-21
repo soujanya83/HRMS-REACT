@@ -1,5 +1,6 @@
 // LeaveRequests.jsx
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaSync,
   FaPaperPlane,
@@ -34,7 +35,7 @@ import employeeService from "../../services/employeeService";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -96,9 +97,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -112,9 +112,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -128,12 +127,13 @@ const ColorPaletteModal = ({
 
 const LeaveRequests = () => {
   const { selectedOrganization } = useOrganizations();
-  
+  const { canAdd, canEdit } = usePermissions('attendance.leave_requests');
+
   // State for employees
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  
+
   // State for leave types
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
@@ -248,12 +248,12 @@ const LeaveRequests = () => {
   // Fetch employees from API using employeeService
   const fetchEmployees = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     setLoadingEmployees(true);
     try {
       console.log("Fetching employees...");
       const response = await employeeService.getEmployeesByOrganization(selectedOrganization.id);
-      
+
       console.log("Employees response:", response.data);
 
       if (response.data?.success === true && Array.isArray(response.data.data)) {
@@ -274,7 +274,7 @@ const LeaveRequests = () => {
   // Fetch leave types from API
   const fetchLeaveTypes = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     setLoadingLeaveTypes(true);
     try {
       console.log("Fetching leave types...");
@@ -297,7 +297,7 @@ const LeaveRequests = () => {
   // Fetch leave history for selected employee
   const fetchLeaveHistory = async (employeeId) => {
     if (!selectedOrganization?.id || !employeeId) return;
-    
+
     setLoadingHistory(true);
     setHistoryError(null);
     setShowHistory(true);
@@ -316,7 +316,7 @@ const LeaveRequests = () => {
       if (response.data?.status === true && Array.isArray(response.data.data)) {
         setLeaveHistory(response.data.data);
         setFilteredHistory(response.data.data);
-        
+
         if (response.data.data.length === 0) {
           showToast(`No leave history found for this employee`, "info");
         } else {
@@ -348,7 +348,7 @@ const LeaveRequests = () => {
 
     // Filter by status
     if (filters.status !== "all") {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.status?.toUpperCase() === filters.status.toUpperCase()
       );
     }
@@ -375,7 +375,7 @@ const LeaveRequests = () => {
     // Filter by search term
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         (item.title?.toLowerCase().includes(searchTerm)) ||
         (item.description?.toLowerCase().includes(searchTerm))
       );
@@ -409,7 +409,7 @@ const LeaveRequests = () => {
 
     try {
       console.log("Syncing leave types from Xero...");
-      
+
       const response = await axiosClient.post('/xero/leaves/sync-types', {
         organization_id: selectedOrganization.id.toString()
       });
@@ -419,7 +419,7 @@ const LeaveRequests = () => {
       if (response.data?.status === true) {
         setSyncSuccess(`Successfully synced ${response.data.data?.length || 0} leave types from Xero`);
         showToast(`Synced ${response.data.data?.length || 0} leave types`, "success");
-        
+
         // Refresh leave types after sync
         await fetchLeaveTypes();
       } else {
@@ -447,7 +447,7 @@ const LeaveRequests = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Clear error for this field
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: null }));
@@ -525,12 +525,12 @@ const LeaveRequests = () => {
 
     try {
       console.log("Submitting leave request...");
-      
+
       // Find selected leave type to get its Xero leave type ID
       const selectedLeaveType = leaveTypes.find(
         type => type.xero_leave_type_id === formData.leave_type_id || type.id.toString() === formData.leave_type_id
       );
-      
+
       const leaveTypeId = selectedLeaveType?.xero_leave_type_id || formData.leave_type_id;
 
       const response = await axiosClient.post('/xero/leaves/apply', {
@@ -547,7 +547,7 @@ const LeaveRequests = () => {
       if (response.data?.status === true) {
         setSubmitSuccess(response.data.message || "Leave request submitted successfully");
         showToast("Leave request submitted successfully!", "success");
-        
+
         // Reset form but keep employee selected
         setFormData({
           employee_id: selectedEmployee?.id || "",
@@ -557,7 +557,7 @@ const LeaveRequests = () => {
           description: "",
         });
         setFormErrors({});
-        
+
         // Refresh leave history for the selected employee
         if (selectedEmployee) {
           await fetchLeaveHistory(selectedEmployee.id);
@@ -633,7 +633,7 @@ const LeaveRequests = () => {
   // If no organization is selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -674,24 +674,22 @@ const LeaveRequests = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         {/* Toast Notification */}
         {toast.show && (
           <div className="fixed top-4 right-4 z-50 animate-slide-in">
-            <div className={`rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[320px] ${
-              toast.type === 'success' ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'
-            }`}>
+            <div className={`rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[320px] ${toast.type === 'success' ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'
+              }`}>
               {toast.type === 'success' ? (
                 <FaCheckCircle className="text-green-500 text-xl flex-shrink-0" />
               ) : (
                 <FaTimesCircle className="text-red-500 text-xl flex-shrink-0" />
               )}
-              <p className={`text-sm font-medium flex-1 ${
-                toast.type === 'success' ? 'text-green-800' : 'text-red-800'
-              }`}>
+              <p className={`text-sm font-medium flex-1 ${toast.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
                 {toast.message}
               </p>
               <button
@@ -860,23 +858,25 @@ const LeaveRequests = () => {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={syncLeaveTypes}
-                  disabled={loadingSync}
-                  className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {loadingSync ? (
-                    <>
-                      <FaSpinner className="animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <FaSync />
-                      Sync Leave Types
-                    </>
-                  )}
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={syncLeaveTypes}
+                    disabled={loadingSync}
+                    className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    {loadingSync ? (
+                      <>
+                        <FaSpinner className="animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <FaSync />
+                        Sync Leave Types
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Sync Status */}
@@ -954,7 +954,7 @@ const LeaveRequests = () => {
                     ) : (
                       employees.map((employee) => (
                         <option key={employee.id} value={employee.id}>
-                          {employee.first_name} {employee.last_name} 
+                          {employee.first_name} {employee.last_name}
                           {employee.employee_code ? ` (${employee.employee_code})` : ''}
                         </option>
                       ))
@@ -962,8 +962,8 @@ const LeaveRequests = () => {
                   </select>
                 </div>
 
-                {/* Apply Leave Form - Only show if employee selected */}
-                {selectedEmployee && (
+                {/* Apply Leave Form - Only show if employee selected and user has permission */}
+                {selectedEmployee && canAdd && (
                   <>
                     {/* Form Header */}
                     <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
@@ -988,9 +988,8 @@ const LeaveRequests = () => {
                             name="leave_type_id"
                             value={formData.leave_type_id}
                             onChange={handleInputChange}
-                            className={`w-full border ${
-                              formErrors.leave_type_id ? 'border-red-500' : 'border-gray-300'
-                            } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                            className={`w-full border ${formErrors.leave_type_id ? 'border-red-500' : 'border-gray-300'
+                              } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
                           >
                             <option value="">Select a leave type</option>
                             {leaveTypes.length > 0 ? (
@@ -1026,9 +1025,8 @@ const LeaveRequests = () => {
                               value={formData.start_date}
                               onChange={handleInputChange}
                               min={new Date().toISOString().split('T')[0]}
-                              className={`w-full border ${
-                                formErrors.start_date ? 'border-red-500' : 'border-gray-300'
-                              } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                              className={`w-full border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'
+                                } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
                             />
                           </div>
                           {formErrors.start_date && (
@@ -1052,9 +1050,8 @@ const LeaveRequests = () => {
                               value={formData.end_date}
                               onChange={handleInputChange}
                               min={formData.start_date || new Date().toISOString().split('T')[0]}
-                              className={`w-full border ${
-                                formErrors.end_date ? 'border-red-500' : 'border-gray-300'
-                              } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                              className={`w-full border ${formErrors.end_date ? 'border-red-500' : 'border-gray-300'
+                                } rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
                             />
                           </div>
                           {formErrors.end_date && (
@@ -1085,9 +1082,8 @@ const LeaveRequests = () => {
                             onChange={handleInputChange}
                             rows="4"
                             placeholder="Please provide a detailed reason for your leave request..."
-                            className={`w-full border ${
-                              formErrors.description ? 'border-red-500' : 'border-gray-300'
-                            } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none`}
+                            className={`w-full border ${formErrors.description ? 'border-red-500' : 'border-gray-300'
+                              } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none`}
                           />
                           {formErrors.description && (
                             <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
@@ -1251,11 +1247,10 @@ const LeaveRequests = () => {
                       <div className="flex justify-between items-center mb-4">
                         <button
                           onClick={() => setShowFilters(!showFilters)}
-                          className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
-                            showFilters || activeFilters > 0 
-                              ? 'bg-blue-100 text-blue-700' 
+                          className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${showFilters || activeFilters > 0
+                              ? 'bg-blue-100 text-blue-700'
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
+                            }`}
                         >
                           <FaFilter />
                           Filters
@@ -1266,7 +1261,7 @@ const LeaveRequests = () => {
                           )}
                           <FaChevronDown className={`text-xs transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                         </button>
-                        
+
                         <p className="text-sm text-gray-500">
                           Showing {filteredHistory.length} of {leaveHistory.length} records
                         </p>
@@ -1394,26 +1389,26 @@ const LeaveRequests = () => {
                                   <p className="text-sm font-medium text-gray-900">
                                     {leave.title || leave.description || 'Leave Request'}
                                   </p>
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <p className="text-sm text-gray-900">{startDate}</p>
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <p className="text-sm text-gray-900">{endDate}</p>
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <p className="text-sm text-gray-900">
                                     {days} day{days !== 1 ? 's' : ''}
                                   </p>
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   {getStatusBadge(leave.status)}
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <p className="text-sm text-gray-500">
                                     {formatDate(leave.created_at)}
                                   </p>
-                                 </td>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center gap-2">
                                     <button
@@ -1424,12 +1419,12 @@ const LeaveRequests = () => {
                                       <FaEye />
                                     </button>
                                   </div>
-                                 </td>
+                                </td>
                               </tr>
                             );
                           })}
                         </tbody>
-                       </table>
+                      </table>
                     </div>
                   </>
                 )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaClock,
   FaCalendarAlt,
@@ -178,6 +179,7 @@ const AttendanceTracking = () => {
   });
 
   const { selectedOrganization } = useOrganizations();
+  const { canEdit } = usePermissions('attendance.attendance_tracking');
 
   // Attendance Rules Form State
   const [ruleForm, setRuleForm] = useState({
@@ -957,13 +959,15 @@ const AttendanceTracking = () => {
             </div>
             
             {/* Attendance Rules Button */}
-            <button
-              onClick={handleOpenRulesModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              <FaClock className="h-4 w-4" />
-              Attendance Rules
-            </button>
+            {canEdit && (
+              <button
+                onClick={handleOpenRulesModal}
+                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                <FaClock className="h-4 w-4" />
+                Attendance Rules
+              </button>
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -1015,12 +1019,14 @@ const AttendanceTracking = () => {
                 <FaSync className={loading ? "animate-spin" : ""} />
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-              >
-                <FaDownload /> Export
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  <FaDownload /> Export
+                </button>
+              )}
             </div>
           </div>
 

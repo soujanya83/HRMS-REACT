@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaHistory,
   FaFilter,
@@ -129,7 +130,7 @@ const ColorPaletteModal = ({
 };
 
 // History Event Component
-const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
+const HistoryEvent = ({ event, onEdit, onDelete, onView, canEdit = true, canDelete = true }) => {
   const getEventType = (eventData) => {
     if (!eventData.reason_for_change) return "Change";
 
@@ -246,20 +247,24 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView }) => {
           >
             <FaEye className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => onEdit(event)}
-            className="p-2.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-            title="Edit"
-          >
-            <FaEdit className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDelete(event)}
-            className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete"
-          >
-            <FaTrash className="h-4 w-4" />
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => onEdit(event)}
+              className="p-2.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+              title="Edit"
+            >
+              <FaEdit className="h-4 w-4" />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => onDelete(event)}
+              className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete"
+            >
+              <FaTrash className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -698,6 +703,7 @@ const StatCard = ({ icon, label, value, color = "blue", description }) => {
 
 // Main Employment History Component
 const EmploymentHistory = () => {
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.employment_history');
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1086,12 +1092,14 @@ const EmploymentHistory = () => {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <FaPlus className="h-4 w-4" /> Add New Record
-              </button>
+              {canAdd && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <FaPlus className="h-4 w-4" /> Add New Record
+                </button>
+              )}
               <button
                 onClick={fetchData}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
@@ -1282,11 +1290,13 @@ const EmploymentHistory = () => {
               <div className="space-y-4">
                 {filteredEvents.map((event, index) => (
                   <HistoryEvent
-                    key={event.id || index}
+                    key={event.id}
                     event={event}
-                    onEdit={() => handleEdit(event)}
-                    onDelete={() => handleDelete(event)}
-                    onView={() => handleView(event)}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onView={handleViewDetails}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                   />
                 ))}
               </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   HiPlus, HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiOutlineClock, 
   HiOutlineUser, HiOutlineVideoCamera, HiX, HiPencil, HiTrash, HiFilter 
@@ -527,6 +528,7 @@ const InterviewSchedulingPage = () => {
   
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit, canDelete } = usePermissions('recruitment.interview_scheduling');
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -939,16 +941,18 @@ const InterviewSchedulingPage = () => {
                 )}
               </button>
               
-              <button 
-                onClick={() => {
-                  setEditingInterview(null);
-                  setFormErrors({});
-                  setSlideOverOpen(true);
-                }}
-                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90"
-              >
-                <HiPlus className="h-5 w-5" /> Schedule Interview
-              </button>
+              {canAdd && (
+                <button 
+                  onClick={() => {
+                    setEditingInterview(null);
+                    setFormErrors({});
+                    setSlideOverOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-90"
+                >
+                  <HiPlus className="h-5 w-5" /> Schedule Interview
+                </button>
+              )}
             </div>
           </div>
 
@@ -1017,7 +1021,9 @@ const InterviewSchedulingPage = () => {
                             <div 
                               key={interview.id} 
                               className="bg-blue-100 text-blue-800 p-1 rounded text-xs truncate cursor-pointer hover:bg-blue-200"
-                              onClick={() => handleEditInterview(interview)}
+                              onClick={() => {
+                                if (canEdit) handleEditInterview(interview);
+                              }}
                               title={`${interview.applicant?.first_name} ${interview.applicant?.last_name} - ${formatInterviewTime(interview.scheduled_at)}`}
                             >
                               {interview.applicant?.first_name} {formatInterviewTime(interview.scheduled_at)}
@@ -1127,10 +1133,11 @@ const InterviewSchedulingPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select
                               value={interview.status || 'scheduled'}
+                              disabled={!canEdit}
                               onChange={(e) => handleStatusUpdate(interview.id, e.target.value)}
                               className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
                                 statusOptions.find(s => s.value === interview.status)?.color || 'bg-gray-100 text-gray-800'
-                              }`}
+                              } ${!canEdit ? 'cursor-not-allowed opacity-75' : ''}`}
                             >
                               {statusOptions.map(option => (
                                 <option key={option.value} value={option.value}>
@@ -1141,20 +1148,24 @@ const InterviewSchedulingPage = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleEditInterview(interview)}
-                                className="text-blue-600 hover:text-blue-900 p-1"
-                                title="Edit"
-                              >
-                                <HiPencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteInterview(interview.id)}
-                                className="text-red-600 hover:text-red-900 p-1"
-                                title="Delete"
-                              >
-                                <HiTrash className="h-4 w-4" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleEditInterview(interview)}
+                                  className="text-blue-600 hover:text-blue-900 p-1"
+                                  title="Edit"
+                                >
+                                  <HiPencil className="h-4 w-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteInterview(interview.id)}
+                                  className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors"
+                                  title="Delete Interview"
+                                >
+                                  <HiTrash className="h-5 w-5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

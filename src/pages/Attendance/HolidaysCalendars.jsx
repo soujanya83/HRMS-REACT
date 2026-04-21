@@ -1,5 +1,6 @@
 // HolidaysCalendars.jsx
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   FaCalendarAlt, 
   FaSearch, 
@@ -121,6 +122,7 @@ const ColorPaletteModal = ({
 
 const HolidaysCalendars = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('attendance.holidays_calendars');
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -829,26 +831,32 @@ const HolidaysCalendars = () => {
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaSync className={loading ? 'animate-spin' : ''} /> 
-                {loading ? 'Refreshing...' : 'Refresh'}
-              </button>
-              <button
-                onClick={() => setShowHolidayForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <FaPlus /> Add Holiday
-              </button>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-              >
-                <FaDownload /> Export
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaSync className={loading ? 'animate-spin' : ''} /> 
+                  {loading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              )}
+              {canAdd && (
+                <button
+                  onClick={() => setShowHolidayForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  <FaPlus /> Add Holiday
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  <FaDownload /> Export
+                </button>
+              )}
             </div>
           </div>
 
@@ -1150,20 +1158,24 @@ const HolidaysCalendars = () => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(holiday)}
-                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                      title="Edit"
-                    >
-                      <FaEdit className="text-sm" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(holiday.id)}
-                      className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
-                      title="Delete"
-                    >
-                      <FaTrash className="text-sm" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleEdit(holiday)}
+                        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                        title="Edit"
+                      >
+                        <FaEdit className="text-sm" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(holiday.id)}
+                        className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                        title="Delete"
+                      >
+                        <FaTrash className="text-sm" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

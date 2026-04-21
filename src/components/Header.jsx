@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HiMenuAlt1, HiOutlineUser, HiOutlineSearch, HiOutlineBell, HiCheck, HiOutlineOfficeBuilding, HiOutlineLogout } from 'react-icons/hi';
 import { useLocation, Link } from 'react-router-dom';
-import profileImage from '../assets/dummy.png'; 
+import profileImage from '../assets/dummy.png';
 import { useOrganizations } from '../contexts/OrganizationContext';
 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
@@ -31,9 +31,9 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         const title = pathName.length > 1 ? pathName[1] : 'Dashboard';
         return title.charAt(0).toUpperCase() + title.slice(1);
     };
-    
+
     const handleLogoutClick = () => { onLogout(); };
-    
+
     const getInitials = (name) => {
         if (!name) return "";
         const words = name.split(' ');
@@ -56,7 +56,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <HiOutlineSearch className="text-gray-400" size={20} />
                         </div>
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -75,9 +75,9 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         {isOrgDropdownOpen && (
                             <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl py-2">
                                 <p className="font-bold px-4 py-2 text-gray-800">Select Organization</p>
-                                <hr/>
+                                <hr />
                                 {organizations.map(org => (
-                                    <button 
+                                    <button
                                         key={org.id}
                                         onClick={() => { selectOrganization(org.id); setOrgDropdownOpen(false); }}
                                         className="flex items-center justify-between w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
@@ -89,16 +89,16 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                             </div>
                         )}
                     </div>
-                    
+
                     <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100"><HiOutlineBell size={24} /></button>
 
                     <div className="relative" ref={userDropdownRef}>
                         <button onClick={() => setUserDropdownOpen(!isUserDropdownOpen)} className="flex items-center">
-                            <span className="text-gray-700 font-medium mr-3 hidden sm:block">{user ? user.name : 'User'}</span>
+                            <span className="text-brand-blue  font-bold mr-3 hidden sm:block">Welcome {user ? user.name : 'User'}</span>
                             <img src={profileImage} alt="User profile" className="w-10 h-10 rounded-full object-cover" />
                         </button>
                         {isUserDropdownOpen && (
-                           <div className="absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl p-4 flex flex-col items-center">
+                            <div className="absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl p-4 flex flex-col items-center">
                                 <img src={profileImage} alt="User profile" className="w-20 h-20 rounded-full object-cover mb-2" />
                                 <p className="font-bold text-gray-800 text-lg">{user ? user.name : 'User Name'}</p>
                                 <p className="text-sm text-gray-500 mb-4">{user ? user.email : 'user@example.com'}</p>
@@ -114,7 +114,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                                         Sign out
                                     </button>
                                 </div>
-                           </div>
+                            </div>
                         )}
                     </div>
                 </div>

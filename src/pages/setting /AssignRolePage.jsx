@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { HiOutlineUsers, HiOutlineShieldCheck, HiOutlineCheck, HiOutlineX, HiOutlineSearch, HiOutlineRefresh } from 'react-icons/hi';
 import { FaSpinner } from 'react-icons/fa';
 import assignRoleService from '../../services/assignRoleService';
@@ -102,6 +103,7 @@ const ColorPaletteModal = ({
 };
 
 const AssignRolePage = () => {
+  const { canEdit } = usePermissions('settings.assign_roles_to_users');
   const { selectedOrganization: currentOrganization } = useOrganizations();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
@@ -844,23 +846,25 @@ const AssignRolePage = () => {
                     </div>
 
                     {/* Assign Button */}
-                    <button
-                      onClick={handleAssignRole}
-                      disabled={!selectedRole || assigning}
-                      className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-                    >
-                      {assigning ? (
-                        <>
-                          <FaSpinner className="animate-spin mr-2" />
-                          Assigning...
-                        </>
-                      ) : (
-                        <>
-                          <HiOutlineCheck className="mr-2" />
-                          Assign Selected Role
-                        </>
-                      )}
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={handleAssignRole}
+                        disabled={!selectedRole || assigning}
+                        className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                      >
+                        {assigning ? (
+                          <>
+                            <FaSpinner className="animate-spin mr-2" />
+                            Assigning...
+                          </>
+                        ) : (
+                          <>
+                            <HiOutlineCheck className="mr-2" />
+                            Assign Selected Role
+                          </>
+                        )}
+                      </button>
+                    )}
 
                     {/* Note */}
                     <div className="mt-6 p-4 bg-yellow-50 rounded-lg">

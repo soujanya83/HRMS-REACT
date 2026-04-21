@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   FaClock, 
   FaCalendarAlt, 
@@ -122,6 +123,7 @@ const ColorPaletteModal = ({
 
 const TimesheetEntry = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('timesheet.timesheet_entry');
   const [timesheetEntries, setTimesheetEntries] = useState([]);
   const [payPeriods, setPayPeriods] = useState([]);
   const [allTimesheets, setAllTimesheets] = useState([]);
@@ -875,32 +877,36 @@ const TimesheetEntry = () => {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={handleOpenGenerateModal}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
-                  disabled={apiLoading}
-                >
-                  <FaSync className={apiLoading ? 'animate-spin' : ''} />
-                  Generate Timesheets
-                </button>
+                {canAdd && (
+                  <button
+                    onClick={handleOpenGenerateModal}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                    disabled={apiLoading}
+                  >
+                    <FaSync className={apiLoading ? 'animate-spin' : ''} />
+                    Generate Timesheets
+                  </button>
+                )}
                 
-                <button
-                  onClick={handleSubmitTimesheet}
-                  disabled={selectedTimesheetIds.length === 0 || apiLoading}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                    selectedTimesheetIds.length > 0
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  <FaPaperPlane />
-                  Submit Selected ({selectedTimesheetIds.length})
-                  {selectedTimesheetIds.length > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
-                      {formatCurrency(totalSelectedAmount)}
-                    </span>
-                  )}
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={handleSubmitTimesheet}
+                    disabled={selectedTimesheetIds.length === 0 || apiLoading}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                      selectedTimesheetIds.length > 0
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <FaPaperPlane />
+                    Submit Selected ({selectedTimesheetIds.length})
+                    {selectedTimesheetIds.length > 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
+                        {formatCurrency(totalSelectedAmount)}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1084,12 +1090,14 @@ const TimesheetEntry = () => {
                         <p className="text-gray-600 mb-4">
                           Generate timesheets to get started
                         </p>
-                        <button
-                          onClick={handleOpenGenerateModal}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                        >
-                          Generate Timesheets
-                        </button>
+                        {canAdd && (
+                          <button
+                            onClick={handleOpenGenerateModal}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            Generate Timesheets
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : filteredTimesheets.length === 0 ? (
@@ -1224,14 +1232,16 @@ const TimesheetEntry = () => {
                                 <FaCheckCircle size={14} />
                               </button>
                               {/* NEW: Delete button for pending timesheets */}
-                              <button
-                                onClick={() => handleDeleteClick(timesheet)}
-                                className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete Timesheet"
-                                disabled={apiLoading || deletingTimesheet}
-                              >
-                                <FaTrash size={14} />
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteClick(timesheet)}
+                                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete Timesheet"
+                                  disabled={apiLoading || deletingTimesheet}
+                                >
+                                  <FaTrash size={14} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

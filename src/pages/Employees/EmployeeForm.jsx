@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   getEmployee,
   updateEmployee,
@@ -1000,7 +1001,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Document Card Component
-const DocumentCard = ({ document, onDelete, onEdit }) => {
+const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
   const today = new Date();
   const expiryDate = document.expiry_date
     ? new Date(document.expiry_date)
@@ -1164,20 +1165,24 @@ const DocumentCard = ({ document, onDelete, onEdit }) => {
             </a>
           </>
         )}
-        <button
-          onClick={() => onEdit(document)}
-          className="flex items-center gap-2 px-3 py-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors text-sm"
-        >
-          <FaEdit />
-          Edit
-        </button>
-        <button
-          onClick={() => onDelete(document.id)}
-          className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm"
-        >
-          <FaTrash />
-          Delete
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => onEdit(document)}
+            className="flex items-center gap-2 px-3 py-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors text-sm"
+          >
+            <FaEdit />
+            Edit
+          </button>
+        )}
+        {canDelete && (
+          <button
+            onClick={() => onDelete(document.id)}
+            className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm"
+          >
+            <FaTrash />
+            Delete
+          </button>
+        )}
       </div>
 
       <div className="mt-3 text-xs text-gray-400">
@@ -1648,6 +1653,8 @@ export default function EmployeeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [formErrors, setFormErrors] = useState({});
+  const { canAdd, canEdit, canDelete } = usePermissions('employee.add_manage_profiles');
+
   const [completedTabs, setCompletedTabs] = useState(new Set());
   const [employeeId, setEmployeeId] = useState(null);
   const [viewMode, setViewMode] = useState("list");
@@ -2523,7 +2530,7 @@ export default function EmployeeForm() {
                       </button>
                     </div>
 
-                    {employeeId ? (
+                    {employeeId && canAdd && (
                       <button
                         type="button"
                         onClick={() => {
@@ -2534,10 +2541,6 @@ export default function EmployeeForm() {
                       >
                         <FaPlus /> Upload Document
                       </button>
-                    ) : (
-                      <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
-                        Create employee first to upload documents
-                      </div>
                     )}
                   </div>
                 </div>
@@ -2604,6 +2607,8 @@ export default function EmployeeForm() {
                               setEditingDocument(doc);
                               setIsCertificateModalOpen(true);
                             }}
+                            canEdit={canEdit}
+                            canDelete={canDelete}
                           />
                         ))}
                       </div>
@@ -2619,15 +2624,17 @@ export default function EmployeeForm() {
                       <p className="text-gray-500 mb-8 max-w-md mx-auto">
                         Upload certificates and documents for this employee.
                       </p>
-                      <button
-                        onClick={() => {
-                          setEditingDocument(null);
-                          setIsCertificateModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                      >
-                        <FaUpload /> Upload First Document
-                      </button>
+                      {canAdd && (
+                        <button
+                          onClick={() => {
+                            setEditingDocument(null);
+                            setIsCertificateModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                        >
+                          <FaUpload /> Upload First Document
+                        </button>
+                      )}
                     </div>
                   )
                 ) : (

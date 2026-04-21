@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { 
   FaCalculator, 
   FaSearch, 
@@ -121,6 +122,7 @@ const ColorPaletteModal = ({
 
 const LeaveBalance = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('attendance.leave_balance');
   
   // State for leave balances
   const [leaveBalances, setLeaveBalances] = useState([]);
@@ -827,26 +829,32 @@ const LeaveBalance = () => {
           {/* Action Buttons */}
           <div className="mb-6 flex justify-end">
             <div className="flex gap-2">
-              <button
-                onClick={handleResetBalances}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaSync className={loading ? "animate-spin" : ""} />
-                {loading ? "Processing..." : "Reset Year"}
-              </button>
-              <button
-                onClick={() => setShowBalanceForm(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <FaPlus /> Add Balance
-              </button>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-              >
-                <FaDownload /> Export
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handleResetBalances}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaSync className={loading ? "animate-spin" : ""} />
+                  {loading ? "Processing..." : "Reset Year"}
+                </button>
+              )}
+              {canAdd && (
+                <button
+                  onClick={() => setShowBalanceForm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  <FaPlus /> Add Balance
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  <FaDownload /> Export
+                </button>
+              )}
             </div>
           </div>
 
@@ -1195,20 +1203,24 @@ const LeaveBalance = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEdit(balance)}
-                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
-                                title="Edit"
-                              >
-                                <FaEdit /> Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(balance.id)}
-                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                                title="Delete"
-                              >
-                                <FaTrash /> Delete
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleEdit(balance)}
+                                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
+                                  title="Edit"
+                                >
+                                  <FaEdit /> Edit
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(balance.id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                                  title="Delete"
+                                >
+                                  <FaTrash /> Delete
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

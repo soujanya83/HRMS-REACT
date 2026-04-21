@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaExchangeAlt,
   FaSearch,
@@ -169,6 +170,7 @@ const ShiftSwapping = () => {
   const [swapAmountDifference, setSwapAmountDifference] = useState(0);
 
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('rostering.shift_swapping_requests');
   const [currentUserId, setCurrentUserId] = useState(3); // This should come from your auth context
 
   const [newRequest, setNewRequest] = useState({
@@ -901,12 +903,14 @@ const ShiftSwapping = () => {
               >
                 <FaDownload /> Export
               </button>
-              <button
-                onClick={() => setShowShiftForm(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <FaPlus /> New Request
-              </button>
+              {canAdd && (
+                <button
+                  onClick={() => setShowShiftForm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  <FaPlus /> New Request
+                </button>
+              )}
             </div>
           </div>
 
@@ -1135,9 +1139,7 @@ const ShiftSwapping = () => {
                                 title="View Details"
                               >
                                 <FaEye size={10} /> View
-                              </button>
-
-                              {request.status === "pending" && (
+                              </button>                               {request.status === "pending" && canEdit && (
                                 <>
                                   <button
                                     onClick={() => handleApproveRequest(request.id)}
@@ -1155,14 +1157,15 @@ const ShiftSwapping = () => {
                                   </button>
                                 </>
                               )}
-
-                              <button
-                                onClick={() => handleDeleteRequest(request.id)}
-                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                                title="Delete"
-                              >
-                                <FaTrash />
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteRequest(request.id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                                  title="Delete"
+                                >
+                                  <FaTrash />
+                                </button>
+                              )}
                             </div>
                            </td>
                          </tr>
@@ -1735,7 +1738,7 @@ const ShiftSwapping = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  {selectedRequest.status === "pending" && (
+                  {selectedRequest.status === "pending" && canEdit && (
                     <div className="flex gap-3 pt-6 border-t border-gray-200">
                       <button
                         onClick={() => handleApproveRequest(selectedRequest.id)}

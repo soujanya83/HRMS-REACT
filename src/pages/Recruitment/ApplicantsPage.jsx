@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FiUsers,
   FiSearch,
@@ -236,6 +237,7 @@ const ApplicantsPage = () => {
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit, canDelete } = usePermissions('recruitment.applicants');
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -645,12 +647,14 @@ const ApplicantsPage = () => {
             <h1 className="text-2xl font-bold text-gray-900">
               Applicant Tracking
             </h1>
-            <button
-              onClick={handleOpenAddForm}
-              className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-            >
-              <FiPlus className="h-5 w-5" /> Add Applicant
-            </button>
+            {canAdd && (
+              <button
+                onClick={handleOpenAddForm}
+                className="inline-flex items-center gap-2 justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+              >
+                <FiPlus className="h-5 w-5" /> Add Applicant
+              </button>
+            )}
           </div>
         </header>
 
@@ -819,10 +823,11 @@ const ApplicantsPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select
                               value={applicant.status || "Applied"}
+                              disabled={!canEdit}
                               onChange={(e) => handleStatusUpdate(applicant.id, e.target.value)}
                               className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
                                 statusInfo.color || "bg-gray-100 text-gray-800"
-                              }`}
+                              } ${!canEdit ? 'cursor-not-allowed opacity-75' : ''}`}
                             >
                               <option value="Applied">Applied </option>
                               <option value="interview-schedule">Interview Schedule</option>
@@ -837,22 +842,26 @@ const ApplicantsPage = () => {
                               >
                                 <FiEye className="h-5 w-5" />
                               </button>
-                              <button
-                                onClick={() => handleEditApplicant(applicant)}
-                                className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 transition-colors"
-                                title="Edit Applicant"
-                              >
-                                <FiEdit className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteApplicant(applicant.id)
-                                }
-                                className="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition-colors"
-                                title="Delete Applicant"
-                              >
-                                <FiTrash2 className="h-5 w-5" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleEditApplicant(applicant)}
+                                  className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 transition-colors"
+                                  title="Edit Applicant"
+                                >
+                                  <FiEdit className="h-5 w-5" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteApplicant(applicant.id)
+                                  }
+                                  className="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition-colors"
+                                  title="Delete Applicant"
+                                >
+                                  <FiTrash2 className="h-5 w-5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -985,13 +994,15 @@ const ApplicantsPage = () => {
                   </dl>
                 </div>
                 <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
-                  <button
-                    type="button"
-                    onClick={() => handleEditApplicant(selectedApplicant)}
-                    className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Edit
-                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => handleEditApplicant(selectedApplicant)}
+                      className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      Edit
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setIsDetailOpen(false)}

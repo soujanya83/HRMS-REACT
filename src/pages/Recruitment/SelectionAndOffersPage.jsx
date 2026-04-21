@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import usePermissions from '../../hooks/usePermissions';
 import { createPortal } from 'react-dom';
 import { 
   HiPlus, HiOutlineBriefcase, HiOutlineUser, HiOutlineCalendar, 
@@ -135,6 +136,7 @@ const SelectionAndOffersPage = () => {
   
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
+  const { canAdd, canEdit } = usePermissions('recruitment.selection_offers');
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
@@ -552,6 +554,7 @@ const SelectionAndOffersPage = () => {
                     key={candidate.id} 
                     candidate={candidate} 
                     onMakeOffer={handleMakeOffer}
+                    canAdd={canAdd}
                   />
                 ))}
               </div>
@@ -637,7 +640,7 @@ const SelectionAndOffersPage = () => {
 };
 
 // Candidate Card Component
-const CandidateCard = ({ candidate, onMakeOffer }) => {
+const CandidateCard = ({ candidate, onMakeOffer, canAdd = true }) => {
   const getAvatar = (candidate) => {
     if (candidate.avatar) return candidate.avatar;
     return candidate.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CC';
@@ -671,12 +674,14 @@ const CandidateCard = ({ candidate, onMakeOffer }) => {
         </div>
       </div>
       <div className="mt-6 flex gap-2">
-        <button
-          onClick={() => onMakeOffer(candidate)}
-          className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:opacity-90 transition-opacity"
-        >
-          <HiOutlineCheckCircle className="mr-2 h-5 w-5" /> Make Offer
-        </button>
+          {canAdd && (
+            <button
+              onClick={() => onMakeOffer(candidate)}
+              className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:opacity-90 transition-opacity"
+            >
+              <HiOutlineCheckCircle className="mr-2 h-5 w-5" /> Make Offer
+            </button>
+          )}
         <button className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           <HiOutlineXCircle className="mr-2 h-5 w-5" /> Reject
         </button>

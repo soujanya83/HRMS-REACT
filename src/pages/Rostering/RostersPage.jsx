@@ -1,5 +1,6 @@
 // pages/RostersPage.js
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import usePermissions from "../../hooks/usePermissions";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -129,6 +130,7 @@ const ColorPaletteModal = ({
 
 const RostersPage = () => {
   const { selectedOrganization } = useOrganizations();
+  const { canAdd, canEdit, canDelete } = usePermissions('rostering.weekly_monthly_rosters');
   const [view, setView] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -1307,14 +1309,18 @@ const RostersPage = () => {
                                     onClick={() => handleEditRoster(roster)}
                                   >
                                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1 z-10">
-                                      <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }} 
-                                        className="p-1 bg-white rounded hover:bg-gray-100 shadow">
-                                        <FaEdit className="text-xs" />
-                                      </button>
-                                      <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }} 
-                                        className="p-1 bg-white rounded hover:bg-gray-100 shadow">
-                                        <FaTrash className="text-xs text-red-500" />
-                                      </button>
+                                      {canEdit && (
+                                        <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }} 
+                                          className="p-1 bg-white rounded hover:bg-gray-100 shadow">
+                                          <FaEdit className="text-xs" />
+                                        </button>
+                                      )}
+                                      {canDelete && (
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }} 
+                                          className="p-1 bg-white rounded hover:bg-gray-100 shadow">
+                                          <FaTrash className="text-xs text-red-500" />
+                                        </button>
+                                      )}
                                     </div>
                                     <div className="font-medium truncate">{shift?.name || "No Shift"}</div>
                                     <div className="truncate text-[10px]">
@@ -1327,7 +1333,7 @@ const RostersPage = () => {
                                   </div>
                                 );
                               })}
-                              {dayRosters.length === 0 && (
+                              {dayRosters.length === 0 && canAdd && (
                                 <button
                                   onClick={() => handleAddRoster(day, employee.id, employee)}
                                   className="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded min-h-[80px]"
@@ -1392,22 +1398,24 @@ const RostersPage = () => {
                         }`}>
                           {date.getDate()}
                         </span>
-                        <button
-                          onClick={() => {
-                            setModalMode("add");
-                            setSelectedDate(date);
-                            setFormData({
-                              employee_id: "",
-                              shift_id: "",
-                              roster_date: dateStr,
-                              notes: ""
-                            });
-                            setShowModal(true);
-                          }}
-                          className="text-gray-400 hover:text-blue-500"
-                        >
-                          <FaPlus className="text-xs" />
-                        </button>
+                        {canAdd && (
+                          <button
+                            onClick={() => {
+                              setModalMode("add");
+                              setSelectedDate(date);
+                              setFormData({
+                                employee_id: "",
+                                shift_id: "",
+                                roster_date: dateStr,
+                                notes: ""
+                              });
+                              setShowModal(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          >
+                            <FaPlus className="text-xs" />
+                          </button>
+                        )}
                       </div>
                       
                       {dayRosters.length > 0 && (
