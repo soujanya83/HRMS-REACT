@@ -4,6 +4,7 @@ import { HiMenuAlt1, HiOutlineUser, HiOutlineSearch, HiOutlineBell, HiCheck, HiO
 import { useLocation, Link } from 'react-router-dom';
 import profileImage from '../assets/dummy.png';
 import { useOrganizations } from '../contexts/OrganizationContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const location = useLocation();
@@ -12,6 +13,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const userDropdownRef = useRef(null);
     const orgDropdownRef = useRef(null);
     const { organizations, selectedOrganization, selectOrganization, isLoading } = useOrganizations();
+    const { sidebarColor } = useTheme();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -28,8 +30,25 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
     const getPageTitle = () => {
         const pathName = location.pathname.split('/').filter(x => x);
-        const title = pathName.length > 1 ? pathName[1] : 'Dashboard';
-        return title.charAt(0).toUpperCase() + title.slice(1);
+        
+        // Define dashboard identifiers
+        const dashboardPaths = ['admin-dashboard', 'employee-dashboard', 'dashboard'];
+        
+        // Determine if we are on a main dashboard page
+        // It's a dashboard if path is just ['dashboard'] or ['dashboard', 'some-dashboard']
+        const isDashboard = (pathName.length === 1 && pathName[0] === 'dashboard') || 
+                           (pathName.length === 2 && pathName[0] === 'dashboard' && dashboardPaths.includes(pathName[1]));
+
+        if (isDashboard) {
+            return `Welcome ${user?.name || 'User'}`;
+        }
+        
+        // For other pages, get the most relevant segment
+        // If length > 2, it's likely a sub-route like /dashboard/recruitment/jobs -> 'jobs'
+        // If length == 2, it's /dashboard/employees -> 'employees'
+        const title = pathName.length > 2 ? pathName[pathName.length - 1] : (pathName.length > 1 ? pathName[1] : pathName[0] || 'Dashboard');
+        
+        return title.charAt(0).toUpperCase() + title.slice(1).replace(/-/g, ' ');
     };
 
     const handleLogoutClick = () => { onLogout(); };
@@ -48,7 +67,9 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <div className="flex items-center">
                     <button onClick={onMenuButtonClick} className="text-gray-600 mr-4 md:hidden" aria-label="Open sidebar"><HiMenuAlt1 size={24} /></button>
-                    <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
+                    <h2 className="text-2xl font-bold transition-colors duration-300" style={{ color: sidebarColor }}>
+                        {getPageTitle()}
+                    </h2>
                 </div>
 
                 <div className="flex-1 flex justify-center px-4 lg:px-6">
@@ -94,7 +115,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
 
                     <div className="relative" ref={userDropdownRef}>
                         <button onClick={() => setUserDropdownOpen(!isUserDropdownOpen)} className="flex items-center">
-                            <span className="text-brand-blue  font-bold mr-3 hidden sm:block">Welcome {user ? user.name : 'User'}</span>
+                            <span className="text-gray-700 font-medium mr-3 hidden sm:block">{user ? user.name : 'User'}</span>
                             <img src={profileImage} alt="User profile" className="w-10 h-10 rounded-full object-cover" />
                         </button>
                         {isUserDropdownOpen && (

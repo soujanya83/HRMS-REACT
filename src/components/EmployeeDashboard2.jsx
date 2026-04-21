@@ -16,6 +16,8 @@ import {
   ArrowRight, IndianRupee, Download, Bell, Info, AlertTriangle, PartyPopper, Calendar,
   Users, ChevronLeft, ChevronRight, Building2, Wallet, Eye, FileText as FileIcon
 } from "lucide-react";
+import rosterService from "../services/rosterService";
+import { attendanceService } from "../services/attendanceService";
 
 // ============================================
 // CALENDAR WIDGET
@@ -295,41 +297,6 @@ const AttendanceCard = () => {
 // ============================================
 // TODAY'S SCHEDULE
 // ============================================
-const scheduleItems = [
-  { time: "9:00 AM", title: "Morning Stand-up", type: "Meeting" },
-  { time: "10:30 AM", title: "Sprint Review – Dashboard Module", type: "Review" },
-  { time: "2:00 PM", title: "1-on-1 with Manager", type: "Meeting" },
-  { time: "4:00 PM", title: "Code Review – Auth Service", type: "Task" },
-];
-
-const TodaySchedule = () => (
-  <DashCard accentColor="#FFE66D">
-    <CardTitle icon={<Icons.Clock />}>Today's Schedule</CardTitle>
-    <p className="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
-      <Clock size={13} /> Shift: 9:00 AM – 6:00 PM
-    </p>
-    <div className="space-y-4">
-      {scheduleItems.map((item, i) => (
-        <div key={i} className="flex items-start gap-3 group">
-          <div className="flex flex-col items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-400 group-hover:scale-125 transition-transform" />
-            {i < scheduleItems.length - 1 && <div className="w-px h-8 bg-gray-200" />}
-          </div>
-          <div className="-mt-1">
-            <p className="text-sm font-medium text-gray-800">{item.title}</p>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <FileText size={11} /> {item.time} · {item.type}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </DashCard>
-);
-
-// ============================================
-// TASKS SECTION
-// ============================================
 const tasks = [
   { title: "Update API documentation", status: "completed" },
   { title: "Fix login page responsive issues", status: "completed" },
@@ -338,10 +305,10 @@ const tasks = [
   { title: "Write unit tests for auth module", status: "pending" },
 ];
 
-const TasksSection = () => (
-  <DashCard accentColor="#A8E6CF">
+const TodayTasksCard = () => (
+  <DashCard accentColor="#FFE66D">
     <div className="flex items-center justify-between mb-5">
-      <CardTitle icon={<Icons.Document />}>Tasks</CardTitle>
+      <CardTitle icon={<Icons.Clock />}>Today's Task</CardTitle>
       <button className="text-xs text-blue-500 font-medium flex items-center gap-1 hover:gap-2 transition-all">
         View All <ArrowRight size={13} />
       </button>
@@ -368,100 +335,10 @@ const TasksSection = () => (
   </DashCard>
 );
 
+
 // ============================================
 // ROSTER SECTION (MOVED TO FIRST POSITION)
 // ============================================
-const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const weekDates = ["7 Apr", "8 Apr", "9 Apr", "10 Apr", "11 Apr", "12 Apr", "13 Apr"];
-
-const departments = [
-  {
-    name: "Engineering Team",
-    gradientClass: "bg-blue-100",
-    employees: [
-      {
-        name: "Liam Chen", position: "Team Lead", avatar: "LC",
-        shifts: {
-          Mon: { time: "9:00 - 5:30", status: "normal" }, Tue: { time: "9:00 - 5:30", status: "normal" },
-          Wed: { time: "9:00 - 5:30", status: "normal" }, Thu: { time: "9:00 - 5:30", status: "normal" },
-          Fri: { time: "9:00 - 5:30", status: "normal" }, Sat: { time: "—", status: "normal" }, Sun: { time: "—", status: "normal" },
-        },
-      },
-      {
-        name: "Noah Singh", position: "Senior Dev", avatar: "NS",
-        shifts: {
-          Mon: { time: "10:00 - 6:30", status: "normal" }, Tue: { time: "10:00 - 6:30", status: "normal" },
-          Wed: { time: "Leave", status: "leave", note: "Annual Leave" }, Thu: { time: "10:00 - 6:30", status: "normal" },
-          Fri: { time: "10:00 - 6:30", status: "normal" }, Sat: { time: "—", status: "normal" }, Sun: { time: "—", status: "normal" },
-        },
-      },
-      {
-        name: "Ava Patel", position: "Frontend Dev", avatar: "AP",
-        shifts: {
-          Mon: { time: "8:30 - 5:00", status: "normal" }, Tue: { time: "8:30 - 5:00", status: "normal" },
-          Wed: { time: "8:30 - 5:00", status: "normal" }, Thu: { time: "8:30 - 5:00", status: "modified", note: "Remote" },
-          Fri: { time: "8:30 - 5:00", status: "normal" }, Sat: { time: "—", status: "normal" }, Sun: { time: "—", status: "normal" },
-        },
-      },
-    ],
-  },
-  {
-    name: "Design Studio",
-    gradientClass: "bg-purple-100",
-    employees: [
-      {
-        name: "Olivia Park", position: "Lead Designer", avatar: "OP",
-        shifts: {
-          Mon: { time: "9:00 - 5:30", status: "normal" }, Tue: { time: "9:00 - 5:30", status: "normal" },
-          Wed: { time: "9:00 - 5:30", status: "normal" }, Thu: { time: "PH - ANZAC Day", status: "holiday" },
-          Fri: { time: "9:00 - 5:30", status: "normal" }, Sat: { time: "—", status: "normal" }, Sun: { time: "—", status: "normal" },
-        },
-      },
-      {
-        name: "Emma Wilson", position: "UI Designer", avatar: "EW",
-        shifts: {
-          Mon: { time: "9:30 - 6:00", status: "normal" }, Tue: { time: "9:30 - 6:00", status: "normal" },
-          Wed: { time: "Leave", status: "leave", note: "Sick Leave" }, Thu: { time: "PH - ANZAC Day", status: "holiday" },
-          Fri: { time: "9:30 - 6:00", status: "normal" }, Sat: { time: "—", status: "normal" }, Sun: { time: "—", status: "normal" },
-        },
-      },
-    ],
-  },
-  {
-    name: "Operations Hub",
-    gradientClass: "bg-orange-100",
-    employees: [
-      {
-        name: "James Taylor", position: "Ops Manager", avatar: "JT",
-        shifts: {
-          Mon: { time: "7:00 - 3:30", status: "normal" }, Tue: { time: "7:00 - 3:30", status: "normal" },
-          Wed: { time: "7:00 - 3:30", status: "normal" }, Thu: { time: "7:00 - 3:30", status: "normal" },
-          Fri: { time: "7:00 - 3:30", status: "normal" }, Sat: { time: "8:00 - 12:00", status: "modified", note: "Half day" },
-          Sun: { time: "—", status: "normal" },
-        },
-      },
-      {
-        name: "Sophie Brown", position: "Coordinator", avatar: "SB",
-        shifts: {
-          Mon: { time: "8:00 - 4:30", status: "normal" }, Tue: { time: "8:00 - 4:30", status: "normal" },
-          Wed: { time: "8:00 - 4:30", status: "normal" }, Thu: { time: "8:00 - 4:30", status: "normal" },
-          Fri: { time: "Leave", status: "leave", note: "Personal Leave" }, Sat: { time: "—", status: "normal" },
-          Sun: { time: "—", status: "normal" },
-        },
-      },
-      {
-        name: "Ryan Mitchell", position: "Support Staff", avatar: "RM",
-        shifts: {
-          Mon: { time: "10:00 - 6:30", status: "normal" }, Tue: { time: "10:00 - 6:30", status: "normal" },
-          Wed: { time: "10:00 - 6:30", status: "normal" }, Thu: { time: "10:00 - 6:30", status: "normal" },
-          Fri: { time: "10:00 - 6:30", status: "normal" }, Sat: { time: "—", status: "normal" },
-          Sun: { time: "—", status: "normal" },
-        },
-      },
-    ],
-  },
-];
-
 const shiftStatusStyles = {
   normal: "bg-blue-50 text-gray-700",
   leave: "bg-red-50 text-red-600 border border-red-100",
@@ -469,13 +346,129 @@ const shiftStatusStyles = {
   modified: "bg-yellow-50 text-amber-600 border border-yellow-100",
 };
 
-const RosterSection = () => {
-  const [currentWeekOffset] = useState(0);
-  const isToday = (dayIndex) => {
-    const today = new Date().getDay();
-    const adjusted = today === 0 ? 6 : today - 1;
-    return dayIndex === adjusted && currentWeekOffset === 0;
+const addDaysToDate = (date, days) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const getStartOfWeek = (date) => {
+  const d = new Date(date);
+  // Get current day (0 for Sun, 1 for Mon, etc.)
+  const day = d.getDay();
+  // Calculate difference to get to Monday (if Sun, go back 6, if Mon go back 0, etc.)
+  const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+const formatDateForAPI = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateForDisplay = (date) => {
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
+const RosterSection = ({ organizationId }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [rosterData, setRosterData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Use local helper for Monday start
+  const weekStart = getStartOfWeek(currentDate);
+  
+  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekDates = weekDays.map((_, i) => addDaysToDate(weekStart, i));
+
+  const fetchRoster = async () => {
+    if (!organizationId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = {
+        organization_id: organizationId,
+        start_date: formatDateForAPI(weekStart),
+        end_date: formatDateForAPI(weekDates[6]),
+      };
+      
+      const response = await rosterService.getWeeklyRoster(params);
+      
+      // Handle the nested structure correctly based on common axios patterns or user's JSON
+      const data = response.data?.success ? response.data.data : (response.data || []);
+      setRosterData(Array.isArray(data) ? data : []);
+      
+    } catch (err) {
+      console.error("Error fetching roster:", err);
+      setError("Failed to load roster data");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchRoster();
+  }, [organizationId, currentDate]);
+
+  const handlePrevWeek = () => setCurrentDate(addDaysToDate(currentDate, -7));
+  const handleNextWeek = () => setCurrentDate(addDaysToDate(currentDate, 7));
+
+  const isTodayDate = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // Group data by employee
+  const groupedRoster = rosterData.reduce((acc, item) => {
+    const empId = item.employee?.id;
+    if (!empId) return acc;
+    
+    if (!acc[empId]) {
+      acc[empId] = {
+        name: `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() || 'Unknown Staff',
+        position: item.employee.designation?.name || 'Employee',
+        avatar: (item.employee.first_name?.[0] || '') + (item.employee.last_name?.[0] || 'E'),
+        shifts: {},
+        department: item.employee.department?.name || "General Staff"
+      };
+    }
+    
+    if (item.roster_date) {
+      const d = new Date(item.roster_date);
+      const dateKey = formatDateForAPI(d);
+      acc[empId].shifts[dateKey] = {
+        time: item.shift ? `${item.shift.start_time.substring(0, 5)} - ${item.shift.end_time.substring(0, 5)}` : "—",
+        status: "normal",
+        color: item.shift?.color_code,
+        note: item.notes
+      };
+    }
+    
+    return acc;
+  }, {});
+
+  // Group employees by department for the UI
+  const departments = Object.values(groupedRoster).reduce((acc, emp) => {
+    const deptName = emp.department;
+    if (!acc[deptName]) {
+      acc[deptName] = {
+        name: deptName,
+        employees: []
+      };
+    }
+    acc[deptName].employees.push(emp);
+    return acc;
+  }, {});
+
+  const departmentList = Object.values(departments);
 
   return (
     <DashCard accentColor="#FF6B6B">
@@ -483,99 +476,131 @@ const RosterSection = () => {
         <CardTitle icon={<Icons.Users />}>Weekly Roster</CardTitle>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500 font-medium px-3 py-1.5 rounded-lg bg-gray-100">
-            {weekDates[0]} – {weekDates[6]}
+            {formatDateForDisplay(weekDates[0])} – {formatDateForDisplay(weekDates[6])}
           </span>
-          <button className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <button 
+            onClick={handlePrevWeek}
+            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
             <ChevronLeft size={14} />
           </button>
-          <button className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <button 
+            onClick={handleNextWeek}
+            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
             <ChevronRight size={14} />
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider pb-3 pl-3 w-[180px] min-w-[160px]">
-                <span className="flex items-center gap-1.5"><Icons.Users size={12} /> Staff</span>
-              </th>
-              {weekDays.map((day, i) => (
-                <th key={day} className="text-center pb-3 min-w-[100px]">
-                  <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl transition-all ${
-                    isToday(i) ? "bg-blue-500 text-white shadow-lg" : "text-gray-500"
-                  }`}>
-                    <span className="text-[10px] font-medium">{day}</span>
-                    <span className={`text-sm font-bold ${isToday(i) ? "text-white" : "text-gray-700"}`}>
-                      {weekDates[i].split(" ")[0]}
-                    </span>
-                  </div>
+
+      {isLoading ? (
+        <div className="py-20 flex flex-col items-center justify-center gap-3">
+          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 font-medium">Fetching weekly roster...</p>
+        </div>
+      ) : error ? (
+        <div className="py-20 text-center">
+          <p className="text-red-500 font-medium">{error}</p>
+          <button onClick={fetchRoster} className="text-blue-500 text-sm mt-2 hover:underline">Try Again</button>
+        </div>
+      ) : departmentList.length === 0 ? (
+        <div className="py-20 text-center">
+          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-gray-200">
+            <Users className="text-gray-300" size={32} />
+          </div>
+          <p className="text-gray-500 font-medium">No roster records for this week</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider pb-3 pl-3 w-[180px] min-w-[160px]">
+                  <span className="flex items-center gap-1.5 font-bold">STAFF MEMBER</span>
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {departments.map((dept, deptIdx) => (
-              <React.Fragment key={`dept-${deptIdx}`}>
-                <tr>
-                  <td colSpan={8} className="pt-4 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-1 h-5 rounded-full ${dept.gradientClass.replace('bg-', 'bg-').replace('-100', '-500')}`} />
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wide">
-                        <Building2 size={12} className="text-gray-500" />
-                        {dept.name}
+                {weekDates.map((date, i) => (
+                  <th key={i} className="text-center pb-3 min-w-[100px]">
+                    <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl transition-all ${
+                      isTodayDate(date) ? "bg-blue-500 text-white shadow-lg" : "text-gray-500"
+                    }`}>
+                      <span className="text-[10px] font-medium uppercase">{weekDays[i]}</span>
+                      <span className={`text-sm font-bold ${isTodayDate(date) ? "text-white" : "text-gray-700"}`}>
+                        {date.getDate()}
                       </span>
-                      <div className="flex-1 h-px bg-gray-100 ml-2" />
                     </div>
-                  </td>
-                </tr>
-                {dept.employees.map((emp, empIdx) => (
-                  <tr key={`emp-${deptIdx}-${empIdx}`} className="group hover:bg-gray-50 transition-colors">
-                    <td className="py-1.5 pl-3 pr-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-lg ${dept.gradientClass} flex items-center justify-center text-gray-700 text-[10px] font-bold shadow-sm`}>
-                          {emp.avatar}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-gray-800 truncate">{emp.name}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{emp.position}</p>
-                        </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {departmentList.map((dept, deptIdx) => (
+                <React.Fragment key={`dept-${deptIdx}`}>
+                  <tr>
+                    <td colSpan={8} className="pt-4 pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-5 rounded-full bg-blue-500 shadow-sm" />
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wide">
+                          <Building2 size={12} className="text-gray-500" />
+                          {dept.name}
+                        </span>
+                        <div className="flex-1 h-px bg-gray-100 ml-2" />
                       </div>
                     </td>
-                    {weekDays.map((day, dayIdx) => {
-                      const shift = emp.shifts[day];
-                      const isDayOff = shift?.time === "—";
-                      const status = shift?.status || "normal";
-                      return (
-                        <td key={day} className="py-1.5 px-1">
-                          <div
-                            className={`text-center rounded-xl px-2 py-2 text-[11px] font-medium transition-all ${
-                              isDayOff ? "text-gray-300" : shiftStatusStyles[status]
-                            } ${isToday(dayIdx) && !isDayOff ? "ring-1 ring-blue-400 shadow-sm" : ""}`}
-                            title={shift?.note || ""}
-                          >
-                            {isDayOff ? (
-                              <span className="text-[10px]">OFF</span>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-center gap-1">
-                                  <Clock size={9} className="opacity-60" />
-                                  <span>{shift?.time}</span>
-                                </div>
-                                {shift?.note && <p className="text-[9px] opacity-70 mt-0.5">{shift.note}</p>}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
                   </tr>
-                ))}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  {dept.employees.map((emp, empIdx) => (
+                    <tr key={`emp-${deptIdx}-${empIdx}`} className="group hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                      <td className="py-2.5 pl-3 pr-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center text-blue-700 text-[10px] font-bold shadow-sm border border-blue-200">
+                            {emp.avatar}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">{emp.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate font-medium">{emp.position}</p>
+                          </div>
+                        </div>
+                      </td>
+                      {weekDates.map((date, dayIdx) => {
+                        const dateKey = formatDateForAPI(date);
+                        const shift = emp.shifts[dateKey];
+                        const isDayOff = !shift;
+                        const status = shift?.status || "normal";
+                        return (
+                          <td key={dayIdx} className="py-2 px-1">
+                            <div
+                              className={`text-center rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all shadow-sm ${
+                                isDayOff ? "bg-gray-50 text-gray-300 border border-transparent" : `${shiftStatusStyles[status]} border-l-4`
+                              } ${isTodayDate(date) && !isDayOff ? "ring-2 ring-blue-400 ring-offset-1" : ""}`}
+                              style={shift?.color ? { borderLeftColor: shift.color } : {}}
+                            >
+                              {isDayOff ? (
+                                <span className="text-[9px] tracking-tighter opacity-50 uppercase">OFF</span>
+                              ) : (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Clock size={10} className="opacity-70" />
+                                    <span>{shift?.time}</span>
+                                  </div>
+                                  {shift?.note && (
+                                    <span className="text-[8px] opacity-70 truncate max-w-full" title={shift.note}>
+                                      {shift.note}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
       <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-gray-100">
         <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Legend:</span>
         {[
@@ -594,71 +619,121 @@ const RosterSection = () => {
   );
 };
 
-// ============================================
-// ATTENDANCE OVERVIEW FOR 2 WEEKS
-// ============================================
-const twoWeekGraphData = [
-  { week: "Week 1", day: "Mon", hours: 8.5 },
-  { week: "Week 1", day: "Tue", hours: 9 },
-  { week: "Week 1", day: "Wed", hours: 7.5 },
-  { week: "Week 1", day: "Thu", hours: 8 },
-  { week: "Week 1", day: "Fri", hours: 9.5 },
-  { week: "Week 1", day: "Sat", hours: 4 },
-  { week: "Week 2", day: "Mon", hours: 8 },
-  { week: "Week 2", day: "Tue", hours: 8.5 },
-  { week: "Week 2", day: "Wed", hours: 9 },
-  { week: "Week 2", day: "Thu", hours: 7 },
-  { week: "Week 2", day: "Fri", hours: 8.5 },
-  { week: "Week 2", day: "Sat", hours: 3.5 },
-];
+const AttendanceOverview = ({ userId }) => {
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [weekRange, setWeekRange] = useState({ start: '', end: '' });
 
-const week1Data = twoWeekGraphData.filter(d => d.week === "Week 1");
-const week2Data = twoWeekGraphData.filter(d => d.week === "Week 2");
+  const fetchWeeklyAttendance = async () => {
+    if (!userId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
+      
+      const response = await attendanceService.getWeeklyAttendance({
+        employee_id: userId,
+        date: dateStr
+      });
+      
+      if (response.data && response.data.success) {
+        const apiDays = response.data.data.days || [];
+        
+        // Define standard week days
+        const standardDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        
+        // Map API data to standard days to ensure all 7 days are present
+        const fullWeekData = standardDays.map(dayName => {
+          const apiDay = apiDays.find(d => d.day === dayName);
+          return apiDay || { day: dayName, total_work_hours: 0, date: "" };
+        });
 
-const AttendanceOverview = () => (
-  <DashCard accentColor="#4ECDC4">
-    <CardTitle icon={<Icons.Chart />}>Attendance Overview (2 Weeks)</CardTitle>
-    <p className="text-xs text-gray-500 mb-5">Last 2 weeks working hours comparison</p>
-    
-    {/* Week 1 */}
-    <div className="mb-6">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3">Week 1 (Apr 7 - Apr 13)</h4>
-      <div className="h-40">
-        <div className="flex items-end justify-between h-full gap-2">
-          {week1Data.map((item, index) => (
-            <div key={index} className="flex flex-col items-center flex-1">
-              <div 
-                className="w-full bg-gradient-to-t from-blue-400 to-blue-300 rounded-lg transition-all duration-500 hover:from-blue-500 hover:to-blue-400"
-                style={{ height: `${(item.hours / 10) * 120}px`, maxHeight: "120px" }}
-              />
-              <p className="text-xs text-gray-500 mt-2">{item.day}</p>
-              <p className="text-xs font-semibold text-gray-700">{item.hours}h</p>
-            </div>
-          ))}
-        </div>
+        setAttendanceData(fullWeekData);
+        setWeekRange({
+          start: response.data.data.week_start,
+          end: response.data.data.week_end
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching weekly attendance:", err);
+      setError("Failed to load attendance data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWeeklyAttendance();
+  }, [userId]);
+
+  const maxHours = Math.max(...attendanceData.map(d => d.total_work_hours || 0), 8);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <DashCard accentColor="#4ECDC4">
+      <div className="flex items-center justify-between mb-2">
+        <CardTitle icon={<Icons.Chart />}>Attendance Overview</CardTitle>
+        {weekRange.start && (
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            {formatDate(weekRange.start)} - {formatDate(weekRange.end)}
+          </span>
+        )}
       </div>
-    </div>
-    
-    {/* Week 2 */}
-    <div>
-      <h4 className="text-sm font-semibold text-gray-700 mb-3">Week 2 (Apr 14 - Apr 20)</h4>
-      <div className="h-40">
-        <div className="flex items-end justify-between h-full gap-2">
-          {week2Data.map((item, index) => (
-            <div key={index} className="flex flex-col items-center flex-1">
-              <div 
-                className="w-full bg-gradient-to-t from-purple-400 to-purple-300 rounded-lg transition-all duration-500 hover:from-purple-500 hover:to-purple-400"
-                style={{ height: `${(item.hours / 10) * 120}px`, maxHeight: "120px" }}
-              />
-              <p className="text-xs text-gray-500 mt-2">{item.day}</p>
-              <p className="text-xs font-semibold text-gray-700">{item.hours}h</p>
-            </div>
-          ))}
+      <p className="text-xs text-gray-500 mb-6">Your working hours for the current week</p>
+      
+      {isLoading ? (
+        <div className="h-64 flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-gray-400">Loading attendance...</p>
         </div>
-      </div>
-    </div>
-  </DashCard>
-);
+      ) : error ? (
+        <div className="h-64 flex flex-col items-center justify-center text-center">
+          <p className="text-xs text-red-500 mb-2">{error}</p>
+          <button onClick={fetchWeeklyAttendance} className="text-[10px] text-blue-500 font-bold uppercase hover:underline">Retry</button>
+        </div>
+      ) : attendanceData.length === 0 ? (
+        <div className="h-64 flex items-center justify-center">
+          <p className="text-xs text-gray-400 italic">No attendance records found for this week</p>
+        </div>
+      ) : (
+        <div className="h-60 mt-4">
+          <div className="flex items-end justify-between h-full gap-3 px-2">
+            {attendanceData.map((item, index) => {
+              const heightPct = (item.total_work_hours / (maxHours * 1.1)) * 100;
+              return (
+                <div key={index} className="flex flex-col items-center flex-1 group">
+                  <div className="relative w-full flex flex-col items-center justify-end h-[180px]">
+                    {/* Tooltip */}
+                    <div className="absolute -top-8 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                      {item.total_work_hours} hours
+                    </div>
+                    
+                    <div 
+                      className={`w-full max-w-[40px] bg-gradient-to-t from-emerald-400 to-teal-300 rounded-t-lg transition-all duration-500 group-hover:from-emerald-500 group-hover:to-teal-400 shadow-sm ${
+                        item.total_work_hours === 0 ? 'h-1 bg-gray-200' : ''
+                      }`}
+                      style={{ height: item.total_work_hours > 0 ? `${heightPct}%` : '4px' }}
+                    />
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-500 mt-3 uppercase tracking-tighter">{item.day}</p>
+                  <p className="text-[10px] font-semibold text-gray-400">{item.total_work_hours}h</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </DashCard>
+  );
+};
 
 // ============================================
 // HOLIDAYS & EVENTS
@@ -818,18 +893,16 @@ const EmployeeDashboard2 = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <CalendarWidget />
             <AttendanceCard />
-            <TodaySchedule />
+            <TodayTasksCard />
           </div>
 
           {/* Row 2: Roster Section (Moved to top of second row) */}
-          <RosterSection />
-
-          {/* Row 3: Tasks */}
-          <TasksSection />
+          <RosterSection organizationId={user?.organization_id || 15} />
 
           {/* Row 4: Attendance Overview (2 weeks) & Holidays */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AttendanceOverview />
+            {/* TODO: Make this dynamic using user?.employee?.id or user?.id */}
+            <AttendanceOverview userId={58} />
             <HolidaysEvents />
           </div>
 

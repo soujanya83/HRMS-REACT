@@ -1,5 +1,5 @@
-// DashboardContent.jsx
 import { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { 
   Icons, 
@@ -107,6 +107,8 @@ const quickActions = [
 
 const DashboardContent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const context = useOutletContext();
+  const user = context?.user || null;
   
   // Use the theme context instead of outlet context
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();

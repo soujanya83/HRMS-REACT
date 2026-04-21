@@ -36,8 +36,7 @@ const DashboardLayout = ({ onLogout, user }) => {
                     style={{ backgroundColor: backgroundColor }}
                 >
                     <div className="p-6">
-                        {/* Pass backgroundColor and setBackgroundColor to Outlet components */}
-                        <Outlet context={{ backgroundColor, setBackgroundColor }} />
+                        <Outlet context={{ backgroundColor, setBackgroundColor, user }} />
                     </div>
                 </main>
             </div>

@@ -76,6 +76,11 @@ export const rosterService = {
   // Get roster statistics
   getRosterStats: (params = {}) => {
     return axiosClient.get('/rosters/stats', { params });
+  },
+
+  // Get weekly roster for dashboard
+  getWeeklyRoster: (params = {}) => {
+    return axiosClient.get('/rosters', { params });
   }
 };
 

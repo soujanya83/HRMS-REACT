@@ -6,6 +6,11 @@ export const attendanceService = {
   // Get attendance records with filters
   getAttendance: (params = {}) => {
     return axiosClient.get('/attendance', { params });
+  },
+
+  // Get weekly attendance for an employee
+  getWeeklyAttendance: (params = {}) => {
+    return axiosClient.get('/attendance/weekly-attendance', { params });
   }
 };
 
