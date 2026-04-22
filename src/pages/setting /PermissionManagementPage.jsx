@@ -448,7 +448,7 @@ const ModulesPage = ({ modules, onViewPages, loading }) => {
 // ============================================
 // PAGE 2: MODULE PAGES PAGE
 // ============================================
-const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack, loading }) => {
+const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack, loading, canAdd }) => {
   const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || "");
 
   return (
@@ -519,7 +519,7 @@ const ModulePagesPage = ({ module, pages, onOpenForm, onViewPermissions, onBack,
 // ============================================
 // PAGE 3: PAGE PERMISSIONS PAGE
 // ============================================
-const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, onDeletePermission, loading, deletingPermission }) => {
+const PagePermissionsPage = ({ module, page, permissions, onBack, onOpenForm, onDeletePermission, loading, deletingPermission, canAdd, canDelete }) => {
   const moduleDetails = getModuleDetails(module?.name?.toLowerCase() || "");
 
   const pagePermissions = React.useMemo(() => {
@@ -967,9 +967,9 @@ export default function PermissionManagementPage() {
           {currentPage === "modules" ? (
             <ModulesPage modules={modules} onViewPages={fetchModulePages} loading={loading} />
           ) : currentPage === "pages" ? (
-            <ModulePagesPage module={selectedModule} pages={pages} onOpenForm={handleOpenPermissionForm} onViewPermissions={fetchPagePermissions} onBack={() => handleBack("modules")} loading={pagesLoading} />
+            <ModulePagesPage module={selectedModule} pages={pages} onOpenForm={handleOpenPermissionForm} onViewPermissions={fetchPagePermissions} onBack={() => handleBack("modules")} loading={pagesLoading} canAdd={canAdd} />
           ) : (
-            <PagePermissionsPage module={selectedModule} page={selectedPage} permissions={permissions} onBack={handleBack} onOpenForm={handleOpenPermissionForm} onDeletePermission={handleDeleteClick} loading={permissionsLoading} deletingPermission={deleting} />
+            <PagePermissionsPage module={selectedModule} page={selectedPage} permissions={permissions} onBack={handleBack} onOpenForm={handleOpenPermissionForm} onDeletePermission={handleDeleteClick} loading={permissionsLoading} deletingPermission={deleting} canAdd={canAdd} canDelete={canDelete} />
           )}
         </div>
       </div>

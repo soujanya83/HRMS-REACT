@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import usePermissions from "../../hooks/usePermissions";
 import {
   FaClock,
@@ -38,6 +38,7 @@ import { HiX } from "react-icons/hi";
 import { attendanceService, attendanceRuleService } from "../../services/attendanceService";
 import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -136,12 +137,29 @@ const ColorPaletteModal = ({
   );
 };
 
+// ============================================
+// INFINITE SCROLL EMPLOYEE DROPDOWN
+// ============================================
+
+
 const AttendanceTracking = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [employeeLastPage, setEmployeeLastPage] = useState(1);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Get current user role and info from localStorage
+  const userRole = (localStorage.getItem('CURRENT_USER_ROLE') || '').toLowerCase();
+  const isEmployee = userRole === 'employee';
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || '{}'); }
+    catch { return {}; }
+  })();
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
   });
@@ -216,6 +234,7 @@ const AttendanceTracking = () => {
     start_date: firstDayOfMonth.toISOString().split('T')[0],
     end_date: lastDayOfMonth.toISOString().split('T')[0],
     employee_id: "all",
+    selectedEmployeeName: "", // Added this
     department: "all",
     status: "all",
     search: "",
@@ -297,77 +316,170 @@ const AttendanceTracking = () => {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching data for org:", selectedOrganization.id);
-      console.log("Date range:", filters.start_date, "to", filters.end_date);
+      await Promise.all([
+        fetchAttendanceData(),
+        fetchEmployees(),
+      ]);
 
-      // Fetch employees
-      const employeesResponse = await employeeService.getEmployees({
+      if (isEmployee) {
+        autoSelectEmployee();
+      }
+    } catch (err) {
+      console.error("Error fetching initial data:", err);
+      setError("Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch employees with pagination
+  const fetchEmployees = async (page = 1, search = '', append = false) => {
+    if (!selectedOrganization?.id) return;
+    if (employeesLoading) return;
+
+    setEmployeesLoading(true);
+    try {
+      const params = {
         organization_id: selectedOrganization.id,
-      });
+        page
+      };
+      if (search) params.search = search;
 
-      // Fetch attendance data - USE CORRECT PARAMETER NAMES
-      const attendanceResponse = await attendanceService.getAttendance({
-        organization_id: selectedOrganization.id,
-        from_date: filters.start_date,
-        to_date: filters.end_date,
-      });
+      const response = await employeeService.getAllEmployees(params);
 
-      console.log("Attendance API response:", attendanceResponse);
-
-      // Handle employees data
-      const employeesData = employeesResponse.data?.data || 
-                           employeesResponse.data || 
-                           [];
-
-      // Handle attendance data - FIXED
-      let attendanceData = [];
-      if (attendanceResponse.data?.success === true) {
-        if (attendanceResponse.data.data?.data && Array.isArray(attendanceResponse.data.data.data)) {
-          // Structure: {success: true, data: {current_page: 1, data: [...]}}
-          attendanceData = attendanceResponse.data.data.data;
-        } else if (Array.isArray(attendanceResponse.data.data)) {
-          attendanceData = attendanceResponse.data.data;
-        } else if (Array.isArray(attendanceResponse.data)) {
-          attendanceData = attendanceResponse.data;
+      let pageData = [];
+      let lastPage = 1;
+      
+      // Handle the paginated response structure
+      if (response?.success === true && response?.data) {
+        if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
+          lastPage = response.data.last_page || 1;
+        } else if (Array.isArray(response.data)) {
+          pageData = response.data;
+        }
+      } else if (response?.data?.success === true && response?.data?.data) {
+        if (Array.isArray(response.data.data.data)) {
+          pageData = response.data.data.data;
+          lastPage = response.data.data.last_page || 1;
+        } else if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
         }
       }
 
-      console.log("Processed attendance data:", attendanceData);
-      console.log("Number of attendance records:", attendanceData.length);
-      
-      // Check for duplicate employee records
-      const employeeIds = attendanceData.map(record => record.employee_id);
-      const uniqueEmployeeIds = [...new Set(employeeIds)];
-      console.log("Unique employee IDs in attendance:", uniqueEmployeeIds);
+      setEmployeeLastPage(lastPage);
+      setEmployeePage(page);
 
-      setEmployees(employeesData);
-      setAttendanceData(attendanceData);
+      if (append) {
+        setEmployees(prev => [...prev, ...pageData]);
+      } else {
+        setEmployees(pageData);
+        // Extract departments from first page of employees
+        extractDepartments(pageData);
+      }
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
 
-      // Extract departments from employees
-      const departmentsMap = new Map();
-      employeesData.forEach((emp) => {
-        if (emp.department_id) {
-          const deptId = emp.department_id;
-          const deptName = emp.department_name || `Department ${deptId}`;
-          
-          if (!departmentsMap.has(deptId)) {
-            departmentsMap.set(deptId, {
-              id: deptId,
-              name: deptName
-            });
-          }
-        }
+  // Load more employees on scroll
+  const loadMoreEmployees = useCallback(() => {
+    if (employeePage < employeeLastPage && !employeesLoading) {
+      fetchEmployees(employeePage + 1, employeeSearch, true);
+    }
+  }, [employeePage, employeeLastPage, employeesLoading, employeeSearch, selectedOrganization]);
+
+  // Auto-select current user as employee if role is 'employee'
+  const autoSelectEmployee = async () => {
+    if (!isEmployee || !currentUser?.email || !selectedOrganization?.id) return;
+
+    try {
+      const searchRes = await employeeService.getAllEmployees({
+        organization_id: selectedOrganization.id,
+        search: currentUser.email
       });
-      
-      const departmentsList = Array.from(departmentsMap.values());
-      console.log("Departments extracted:", departmentsList);
-      setDepartments(departmentsList);
 
+      let matchList = [];
+      if (searchRes?.success && searchRes?.data?.data) {
+        matchList = searchRes.data.data;
+      } else if (searchRes?.data?.success && searchRes?.data?.data?.data) {
+        matchList = searchRes.data.data.data;
+      }
+
+      const match = matchList.find(
+        emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
+               emp.user_id === currentUser.id
+      );
+
+      if (match) {
+        const empId = String(match.employee_id || match.id);
+        const empName = match.name || `${match.first_name || ''} ${match.last_name || ''}`.trim();
+        setFilters(prev => ({ 
+          ...prev, 
+          employee_id: empId,
+          selectedEmployeeName: empName
+        }));
+        // Ensure matched employee is in the list
+        setEmployees(prev => {
+          const exists = prev.some(e => String(e.employee_id || e.id) === empId);
+          return exists ? prev : [match, ...prev];
+        });
+        console.log('👤 Auto-selected employee:', empName, empId);
+      }
+    } catch (err) {
+      console.error('Error auto-selecting employee:', err);
+    }
+  };
+
+  // Extract departments from employee list
+  const extractDepartments = (employeesList) => {
+    const departmentsMap = new Map();
+    employeesList.forEach((emp) => {
+      if (emp.department_id) {
+        const deptId = emp.department_id;
+        const deptName = emp.department_name || `Department ${deptId}`;
+        if (!departmentsMap.has(deptId)) {
+          departmentsMap.set(deptId, { id: deptId, name: deptName });
+        }
+      }
+    });
+    setDepartments(Array.from(departmentsMap.values()));
+  };
+
+  const fetchAttendanceData = async (filterParams = filters) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        organization_id: selectedOrganization.id,
+        from_date: filterParams.start_date,
+        to_date: filterParams.end_date,
+        ...(filterParams.employee_id && filterParams.employee_id !== "all" && {
+          employee_id: filterParams.employee_id,
+        }),
+      };
+
+      const response = await attendanceService.getAttendance(params);
+
+      let attendanceData = [];
+      if (response.data?.success === true) {
+        if (response.data.data?.data && Array.isArray(response.data.data.data)) {
+          attendanceData = response.data.data.data;
+        } else if (Array.isArray(response.data.data)) {
+          attendanceData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          attendanceData = response.data;
+        }
+      }
+
+      setAttendanceData(attendanceData);
       calculateStats(attendanceData);
     } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to load data. Please try again.");
-      setEmployees([]);
+      console.error("Error fetching attendance data:", err);
+      setError("Failed to load attendance data.");
       setAttendanceData([]);
     } finally {
       setLoading(false);
@@ -687,44 +799,7 @@ const AttendanceTracking = () => {
     }
   };
 
-  const fetchAttendanceData = async (filterParams = filters) => {
-    try {
-      setLoading(true);
-      setError(null);
 
-      const params = {
-        organization_id: selectedOrganization.id,
-        from_date: filterParams.start_date,
-        to_date: filterParams.end_date,
-        ...(filterParams.employee_id !== "all" && {
-          employee_id: filterParams.employee_id,
-        }),
-      };
-
-      const response = await attendanceService.getAttendance(params);
-
-      // Handle the response structure
-      let data = [];
-      if (response.data && response.data.success && response.data.data) {
-        if (response.data.data.data) {
-          data = response.data.data.data; // Paginated response
-        } else {
-          data = response.data.data; // Direct array
-        }
-      }
-
-      console.log("Refreshed attendance data:", data);
-      console.log("Number of records:", data.length);
-      setAttendanceData(data);
-      calculateStats(data);
-    } catch (err) {
-      console.error("Error fetching attendance data:", err);
-      setError("Failed to load attendance data.");
-      setAttendanceData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRefresh = async () => {
     await fetchAttendanceData();
@@ -1088,20 +1163,29 @@ const AttendanceTracking = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Employee
                   </label>
-                  <select
+                  <InfiniteScrollEmployeeDropdown
+                    employees={employees}
                     value={filters.employee_id}
-                    onChange={(e) =>
-                      handleFilterChange("employee_id", e.target.value)
-                    }
-                    className="block w-full border border-gray-300 rounded-lg py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  >
-                    <option value="all">All Employees</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.first_name} {emp.last_name} ({emp.employee_code})
-                      </option>
-                    ))}
-                  </select>
+                    selectedName={filters.selectedEmployeeName}
+                    onChange={(val) => {
+                      const emp = employees.find(e => String(e.employee_id || e.id) === val);
+                      setFilters(prev => ({ 
+                        ...prev, 
+                        employee_id: val,
+                        selectedEmployeeName: emp ? (emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim()) : prev.selectedEmployeeName
+                      }));
+                    }}
+                    onLoadMore={loadMoreEmployees}
+                    hasMore={employeePage < employeeLastPage}
+                    isLoading={employeesLoading}
+                    onSearch={(q) => {
+                      setEmployeeSearch(q);
+                      fetchEmployees(1, q, false);
+                    }}
+                    placeholder="All Employees"
+                    allowAll={!isEmployee}
+                    disabled={isEmployee}
+                  />
                 </div>
 
                 {/* Status Filter */}

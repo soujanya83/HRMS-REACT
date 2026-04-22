@@ -1219,6 +1219,117 @@ const RosterPeriods = () => {
               </div>
             </div>
           </div>
+
+          {/* Stats Summary */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Fortnightly Periods</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                </div>
+                <FaCalendarWeek className="text-blue-500 text-2xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Draft</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats.draft}
+                  </p>
+                </div>
+                <FaEdit className="text-blue-500 text-2xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Locked</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {stats.locked}
+                  </p>
+                </div>
+                <FaLock className="text-yellow-500 text-2xl" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Published</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {stats.published}
+                  </p>
+                </div>
+                <FaCheckCircle className="text-green-500 text-2xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Guide */}
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <FaInfoCircle className="text-blue-500" />
+              Quick Guide - Fortnightly Rosters
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <FaPlus className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <h5 className="font-medium text-gray-900">Create Fortnightly Period</h5>
+                </div>
+                <p className="text-sm text-gray-600">
+                  1. Click "Create Fortnightly Period"<br />
+                  2. Select a fortnightly pay period<br />
+                  3. Review period details<br />
+                  4. Click "Create Fortnightly Period"
+                </p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <FaUsers className="h-4 w-4 text-green-600" />
+                  </div>
+                  <h5 className="font-medium text-gray-900">Bulk Assign</h5>
+                </div>
+                <p className="text-sm text-gray-600">
+                  1. Select a draft fortnight period<br />
+                  2. Choose employees (checkboxes)<br />
+                  3. Select a shift<br />
+                  4. Click "Assign Rosters" (14 days per employee)
+                </p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FaCheckCircle className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <h5 className="font-medium text-gray-900">Publish & Lock</h5>
+                </div>
+                <p className="text-sm text-gray-600">
+                  1. Ensure all schedules are set for 14 days<br />
+                  2. Review period details<br />
+                  3. Click "Publish" to make it visible<br />
+                  4. Lock published periods for read-only
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Help Text */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              Note: Only fortnightly (14-day) roster periods are supported. All periods are based on system calendars.<br />
+              Current Organization: <span className="font-medium">{selectedOrganization?.name || "None selected"}</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -2262,116 +2373,6 @@ const RosterPeriods = () => {
         </div>
       )}
 
-      {/* Stats Summary */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Fortnightly Periods</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
-            </div>
-            <FaCalendarWeek className="text-blue-500 text-2xl" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Draft</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {stats.draft}
-              </p>
-            </div>
-            <FaEdit className="text-blue-500 text-2xl" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Locked</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {stats.locked}
-              </p>
-            </div>
-            <FaLock className="text-yellow-500 text-2xl" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Published</p>
-              <p className="text-2xl font-bold text-green-600">
-                {stats.published}
-              </p>
-            </div>
-            <FaCheckCircle className="text-green-500 text-2xl" />
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Guide */}
-      <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-        <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <FaInfoCircle className="text-blue-500" />
-          Quick Guide - Fortnightly Rosters
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <FaPlus className="h-4 w-4 text-blue-600" />
-              </div>
-              <h5 className="font-medium text-gray-900">Create Fortnightly Period</h5>
-            </div>
-            <p className="text-sm text-gray-600">
-              1. Click "Create Fortnightly Period"<br />
-              2. Select a fortnightly pay period<br />
-              3. Review period details<br />
-              4. Click "Create Fortnightly Period"
-            </p>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <FaUsers className="h-4 w-4 text-green-600" />
-              </div>
-              <h5 className="font-medium text-gray-900">Bulk Assign</h5>
-            </div>
-            <p className="text-sm text-gray-600">
-              1. Select a draft fortnight period<br />
-              2. Choose employees (checkboxes)<br />
-              3. Select a shift<br />
-              4. Click "Assign Rosters" (14 days per employee)
-            </p>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <FaCheckCircle className="h-4 w-4 text-purple-600" />
-              </div>
-              <h5 className="font-medium text-gray-900">Publish & Lock</h5>
-            </div>
-            <p className="text-sm text-gray-600">
-              1. Ensure all schedules are set for 14 days<br />
-              2. Review period details<br />
-              3. Click "Publish" to make it visible<br />
-              4. Lock published periods for read-only
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Help Text */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-500">
-          Note: Only fortnightly (14-day) roster periods are supported. All periods are based on system calendars.<br />
-          Current Organization: <span className="font-medium">{selectedOrganization?.name || "None selected"}</span>
-        </p>
-      </div>
     </>
   );
 };

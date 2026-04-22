@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useTheme } from '../contexts/ThemeContext';
-import { 
-  Icons, 
-  DashCard, 
-  CardTitle, 
-  Badge, 
-  StatCard, 
-  ColorPaletteModal 
+import {
+  Icons,
+  DashCard,
+  CardTitle,
+  Badge,
+  StatCard,
+  ColorPaletteModal
 } from './Dashboard/DashboardShared';
 import {
   CalendarDays, Briefcase, Clock, CalendarOff, Clock3, ListTodo, TrendingUp, Timer,
@@ -26,27 +26,27 @@ const CalendarWidget = () => {
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
-  
+
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
-  
+
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-  
+
   const holidays = [10, 25];
   const events = [5, 15, 20];
-  
+
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
   };
-  
+
   const getFirstDayOfMonth = (year, month) => {
     return new Date(year, month, 1).getDay();
   };
-  
+
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
-  
+
   const calendarDays = [];
   for (let i = 0; i < firstDay; i++) {
     calendarDays.push(null);
@@ -54,7 +54,7 @@ const CalendarWidget = () => {
   for (let d = 1; d <= daysInMonth; d++) {
     calendarDays.push(d);
   }
-  
+
   const prevMonth = () => {
     if (month === 0) {
       setMonth(11);
@@ -63,7 +63,7 @@ const CalendarWidget = () => {
       setMonth(month - 1);
     }
   };
-  
+
   const nextMonth = () => {
     if (month === 11) {
       setMonth(0);
@@ -72,12 +72,12 @@ const CalendarWidget = () => {
       setMonth(month + 1);
     }
   };
-  
+
   const goToToday = () => {
     setYear(currentYear);
     setMonth(currentMonth);
   };
-  
+
   return (
     <DashCard accentColor="#FFE66D">
       <div className="flex items-center justify-between mb-4">
@@ -96,39 +96,38 @@ const CalendarWidget = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
         {weekDays.map(day => (
           <div key={day} className="font-semibold text-gray-400 py-1">{day}</div>
         ))}
       </div>
-      
+
       <div className="grid grid-cols-7 gap-1 text-center">
         {calendarDays.map((day, i) => {
           if (day === null) {
             return <div key={`empty-${i}`} className="py-1.5" />;
           }
-          
+
           const isToday = day === today.getDate() && year === currentYear && month === currentMonth;
           const isHoliday = holidays.includes(day);
           const isEvent = events.includes(day);
-          
+
           return (
             <div
               key={i}
-              className={`py-1.5 rounded-full font-medium transition-colors text-xs ${
-                isToday ? 'bg-blue-500 text-white font-bold shadow-sm' :
+              className={`py-1.5 rounded-full font-medium transition-colors text-xs ${isToday ? 'bg-blue-500 text-white font-bold shadow-sm' :
                 isHoliday ? 'bg-red-100 text-red-600' :
-                isEvent ? 'bg-blue-100 text-blue-600' :
-                'text-gray-600 hover:bg-gray-100'
-              }`}
+                  isEvent ? 'bg-blue-100 text-blue-600' :
+                    'text-gray-600 hover:bg-gray-100'
+                }`}
             >
               {day}
             </div>
           );
         })}
       </div>
-      
+
       <div className="flex justify-center gap-4 text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-200" />Holiday</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-200" />Event</span>
@@ -308,7 +307,7 @@ const tasks = [
 const TodayTasksCard = () => (
   <DashCard accentColor="#FFE66D">
     <div className="flex items-center justify-between mb-5">
-      <CardTitle icon={<Icons.Clock />}>Today's Task</CardTitle>
+      <CardTitle icon={<Icons.Clock />}>Tasks</CardTitle>
       <button className="text-xs text-blue-500 font-medium flex items-center gap-1 hover:gap-2 transition-all">
         View All <ArrowRight size={13} />
       </button>
@@ -324,9 +323,8 @@ const TodayTasksCard = () => (
           <span className={`text-sm ${t.status === "completed" ? "line-through text-gray-400" : "text-gray-700"}`}>
             {t.title}
           </span>
-          <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-            t.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-          }`}>
+          <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${t.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+            }`}>
             {t.status === "completed" ? "Done" : "Pending"}
           </span>
         </div>
@@ -382,13 +380,13 @@ const RosterSection = ({ organizationId }) => {
 
   // Use local helper for Monday start
   const weekStart = getStartOfWeek(currentDate);
-  
+
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const weekDates = weekDays.map((_, i) => addDaysToDate(weekStart, i));
 
   const fetchRoster = async () => {
     if (!organizationId) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
@@ -397,13 +395,13 @@ const RosterSection = ({ organizationId }) => {
         start_date: formatDateForAPI(weekStart),
         end_date: formatDateForAPI(weekDates[6]),
       };
-      
+
       const response = await rosterService.getWeeklyRoster(params);
-      
+
       // Handle the nested structure correctly based on common axios patterns or user's JSON
       const data = response.data?.success ? response.data.data : (response.data || []);
       setRosterData(Array.isArray(data) ? data : []);
-      
+
     } catch (err) {
       console.error("Error fetching roster:", err);
       setError("Failed to load roster data");
@@ -422,15 +420,15 @@ const RosterSection = ({ organizationId }) => {
   const isTodayDate = (date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   // Group data by employee
   const groupedRoster = rosterData.reduce((acc, item) => {
     const empId = item.employee?.id;
     if (!empId) return acc;
-    
+
     if (!acc[empId]) {
       acc[empId] = {
         name: `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() || 'Unknown Staff',
@@ -440,7 +438,7 @@ const RosterSection = ({ organizationId }) => {
         department: item.employee.department?.name || "General Staff"
       };
     }
-    
+
     if (item.roster_date) {
       const d = new Date(item.roster_date);
       const dateKey = formatDateForAPI(d);
@@ -451,7 +449,7 @@ const RosterSection = ({ organizationId }) => {
         note: item.notes
       };
     }
-    
+
     return acc;
   }, {});
 
@@ -478,13 +476,13 @@ const RosterSection = ({ organizationId }) => {
           <span className="text-xs text-gray-500 font-medium px-3 py-1.5 rounded-lg bg-gray-100">
             {formatDateForDisplay(weekDates[0])} – {formatDateForDisplay(weekDates[6])}
           </span>
-          <button 
+          <button
             onClick={handlePrevWeek}
             className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
           >
             <ChevronLeft size={14} />
           </button>
-          <button 
+          <button
             onClick={handleNextWeek}
             className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
           >
@@ -520,9 +518,8 @@ const RosterSection = ({ organizationId }) => {
                 </th>
                 {weekDates.map((date, i) => (
                   <th key={i} className="text-center pb-3 min-w-[100px]">
-                    <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl transition-all ${
-                      isTodayDate(date) ? "bg-blue-500 text-white shadow-lg" : "text-gray-500"
-                    }`}>
+                    <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl transition-all ${isTodayDate(date) ? "bg-blue-500 text-white shadow-lg" : "text-gray-500"
+                      }`}>
                       <span className="text-[10px] font-medium uppercase">{weekDays[i]}</span>
                       <span className={`text-sm font-bold ${isTodayDate(date) ? "text-white" : "text-gray-700"}`}>
                         {date.getDate()}
@@ -568,9 +565,8 @@ const RosterSection = ({ organizationId }) => {
                         return (
                           <td key={dayIdx} className="py-2 px-1">
                             <div
-                              className={`text-center rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all shadow-sm ${
-                                isDayOff ? "bg-gray-50 text-gray-300 border border-transparent" : `${shiftStatusStyles[status]} border-l-4`
-                              } ${isTodayDate(date) && !isDayOff ? "ring-2 ring-blue-400 ring-offset-1" : ""}`}
+                              className={`text-center rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all shadow-sm ${isDayOff ? "bg-gray-50 text-gray-300 border border-transparent" : `${shiftStatusStyles[status]} border-l-4`
+                                } ${isTodayDate(date) && !isDayOff ? "ring-2 ring-blue-400 ring-offset-1" : ""}`}
                               style={shift?.color ? { borderLeftColor: shift.color } : {}}
                             >
                               {isDayOff ? (
@@ -600,7 +596,7 @@ const RosterSection = ({ organizationId }) => {
           </table>
         </div>
       )}
-      
+
       <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-gray-100">
         <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Legend:</span>
         {[
@@ -627,24 +623,24 @@ const AttendanceOverview = ({ userId }) => {
 
   const fetchWeeklyAttendance = async () => {
     if (!userId) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
-      
+
       const response = await attendanceService.getWeeklyAttendance({
         employee_id: userId,
         date: dateStr
       });
-      
+
       if (response.data && response.data.success) {
         const apiDays = response.data.data.days || [];
-        
+
         // Define standard week days
         const standardDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        
+
         // Map API data to standard days to ensure all 7 days are present
         const fullWeekData = standardDays.map(dayName => {
           const apiDay = apiDays.find(d => d.day === dayName);
@@ -688,7 +684,7 @@ const AttendanceOverview = ({ userId }) => {
         )}
       </div>
       <p className="text-xs text-gray-500 mb-6">Your working hours for the current week</p>
-      
+
       {isLoading ? (
         <div className="h-64 flex flex-col items-center justify-center gap-3">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -715,11 +711,10 @@ const AttendanceOverview = ({ userId }) => {
                     <div className="absolute -top-8 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
                       {item.total_work_hours} hours
                     </div>
-                    
-                    <div 
-                      className={`w-full max-w-[40px] bg-gradient-to-t from-emerald-400 to-teal-300 rounded-t-lg transition-all duration-500 group-hover:from-emerald-500 group-hover:to-teal-400 shadow-sm ${
-                        item.total_work_hours === 0 ? 'h-1 bg-gray-200' : ''
-                      }`}
+
+                    <div
+                      className={`w-full max-w-[40px] bg-gradient-to-t from-emerald-400 to-teal-300 rounded-t-lg transition-all duration-500 group-hover:from-emerald-500 group-hover:to-teal-400 shadow-sm ${item.total_work_hours === 0 ? 'h-1 bg-gray-200' : ''
+                        }`}
                       style={{ height: item.total_work_hours > 0 ? `${heightPct}%` : '4px' }}
                     />
                   </div>
@@ -854,7 +849,7 @@ const EmployeeDashboard2 = () => {
   // Safe way to get context - provide default values
   const context = useOutletContext();
   const user = context?.user || null;
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
 

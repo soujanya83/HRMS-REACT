@@ -1,5 +1,5 @@
 // LeaveRequests.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import usePermissions from "../../hooks/usePermissions";
 import {
   FaSync,
@@ -29,6 +29,8 @@ import { HiX } from "react-icons/hi";
 import axiosClient from "../../axiosClient";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import employeeService from "../../services/employeeService";
+import { employeeService as empServiceNamed } from "../../services/employeeService";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -125,12 +127,26 @@ const ColorPaletteModal = ({
   );
 };
 
+
+
 const LeaveRequests = () => {
   const { selectedOrganization } = useOrganizations();
   const { canAdd, canEdit } = usePermissions('attendance.leave_requests');
 
+  // Get current user role and info from localStorage
+  const userRole = (localStorage.getItem('CURRENT_USER_ROLE') || '').toLowerCase();
+  const isEmployee = userRole === 'employee';
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || '{}'); }
+    catch { return {}; }
+  })();
+
   // State for employees
   const [employees, setEmployees] = useState([]);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [employeeLastPage, setEmployeeLastPage] = useState(1);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
@@ -205,6 +221,10 @@ const LeaveRequests = () => {
   useEffect(() => {
     if (selectedOrganization?.id) {
       fetchEmployees();
+      // Auto-select after a short delay to ensure employees are loaded
+      if (isEmployee) {
+        setTimeout(() => autoSelectEmployee(), 500);
+      }
     }
   }, [selectedOrganization]);
 
@@ -218,7 +238,9 @@ const LeaveRequests = () => {
   // Fetch leave history when employee is selected
   useEffect(() => {
     if (selectedEmployee) {
-      setFormData(prev => ({ ...prev, employee_id: selectedEmployee.id }));
+      const empId = selectedEmployee.id;
+      setFormData(prev => ({ ...prev, employee_id: empId }));
+      fetchLeaveHistory(empId); // Added this to auto-fetch history
     }
   }, [selectedEmployee]);
 
@@ -245,29 +267,100 @@ const LeaveRequests = () => {
     }, 5000);
   };
 
-  // Fetch employees from API using employeeService
-  const fetchEmployees = async () => {
+  // Fetch employees from API with pagination
+  const fetchEmployees = async (page = 1, search = '', append = false) => {
     if (!selectedOrganization?.id) return;
+    if (employeesLoading) return;
 
-    setLoadingEmployees(true);
+    setEmployeesLoading(true);
+    if (page === 1) setLoadingEmployees(true);
     try {
-      console.log("Fetching employees...");
-      const response = await employeeService.getEmployeesByOrganization(selectedOrganization.id);
+      const params = {
+        organization_id: selectedOrganization.id,
+        page
+      };
+      if (search) params.search = search;
 
-      console.log("Employees response:", response.data);
+      const response = await empServiceNamed.getAllEmployees(params);
 
-      if (response.data?.success === true && Array.isArray(response.data.data)) {
-        setEmployees(response.data.data);
-      } else if (Array.isArray(response.data)) {
-        setEmployees(response.data);
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
-        setEmployees(response.data.data);
+      let pageData = [];
+      let lastPage = 1;
+      if (response?.success === true && response?.data) {
+        if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
+          lastPage = response.data.last_page || 1;
+        } else if (Array.isArray(response.data)) {
+          pageData = response.data;
+        }
+      } else if (response?.data?.success === true && response?.data?.data) {
+        if (Array.isArray(response.data.data.data)) {
+          pageData = response.data.data.data;
+          lastPage = response.data.data.last_page || 1;
+        } else if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
+        }
+      }
+
+      setEmployeeLastPage(lastPage);
+      setEmployeePage(page);
+
+      if (append) {
+        setEmployees(prev => [...prev, ...pageData]);
+      } else {
+        setEmployees(pageData);
       }
     } catch (error) {
       console.error("Failed to fetch employees:", error);
-      showToast("Failed to load employees", "error");
+      if (page === 1) showToast("Failed to load employees", "error");
     } finally {
+      setEmployeesLoading(false);
       setLoadingEmployees(false);
+    }
+  };
+
+  // Load next page of employees
+  const loadMoreEmployees = useCallback(() => {
+    if (employeePage < employeeLastPage && !employeesLoading) {
+      fetchEmployees(employeePage + 1, employeeSearch, true);
+    }
+  }, [employeePage, employeeLastPage, employeesLoading, employeeSearch, selectedOrganization]);
+
+  // Auto-select employee for 'employee' role after employees load
+  const autoSelectEmployee = async () => {
+    if (!isEmployee || !currentUser?.email || !selectedOrganization?.id) return;
+
+    try {
+      const searchRes = await empServiceNamed.getAllEmployees({
+        organization_id: selectedOrganization.id,
+        search: currentUser.email
+      });
+
+      let matchList = [];
+      if (searchRes?.success && searchRes?.data?.data) {
+        matchList = searchRes.data.data;
+      } else if (searchRes?.data?.success && searchRes?.data?.data?.data) {
+        matchList = searchRes.data.data.data;
+      }
+
+      const match = matchList.find(
+        emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
+               emp.user_id === currentUser.id
+      );
+
+      if (match) {
+        const empId = String(match.employee_id || match.id);
+        // Set as selectedEmployee for the form
+        setSelectedEmployee({ ...match, id: match.employee_id || match.id });
+        setFormData(prev => ({ ...prev, employee_id: empId }));
+        // Ensure the matched employee is in the list
+        setEmployees(prev => {
+          const exists = prev.some(e => String(e.employee_id || e.id) === empId);
+          return exists ? prev : [match, ...prev];
+        });
+        console.log('👤 Auto-selected employee:', match.name, empId);
+      }
+    } catch (err) {
+      console.error('Error auto-selecting employee:', err);
     }
   };
 
@@ -923,14 +1016,14 @@ const LeaveRequests = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Employee Selection and Apply Leave Form - Left Side */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-6">
+              <div className="bg-white rounded-xl shadow-lg sticky top-6">
                 {/* Employee Selection Header */}
-                <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                   <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <FaUsers />
                     Select Employee
                   </h2>
-                  <p className="text-purple-100 text-xs mt-1">
+                  <p className="text-blue-100 text-xs mt-1">
                     Choose an employee to manage leaves
                   </p>
                 </div>
@@ -940,26 +1033,31 @@ const LeaveRequests = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Employee <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={selectedEmployee?.id || ""}
-                    onChange={(e) => {
-                      const employee = employees.find(emp => emp.id === parseInt(e.target.value));
-                      handleEmployeeSelect(employee);
+                  <InfiniteScrollEmployeeDropdown
+                    employees={employees}
+                    value={selectedEmployee ? String(selectedEmployee.employee_id || selectedEmployee.id) : ''}
+                    selectedName={selectedEmployee ? `${selectedEmployee.first_name || ''} ${selectedEmployee.last_name || ''}`.trim() || selectedEmployee.name : ''}
+                    onChange={(val) => {
+                      if (val && val !== 'all') {
+                        const emp = employees.find(e => String(e.employee_id || e.id) === val);
+                        if (emp) {
+                          handleEmployeeSelect({ ...emp, id: emp.employee_id || emp.id });
+                        }
+                      } else {
+                        handleEmployeeSelect(null);
+                      }
                     }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  >
-                    <option value="">Select an employee</option>
-                    {loadingEmployees ? (
-                      <option value="" disabled>Loading employees...</option>
-                    ) : (
-                      employees.map((employee) => (
-                        <option key={employee.id} value={employee.id}>
-                          {employee.first_name} {employee.last_name}
-                          {employee.employee_code ? ` (${employee.employee_code})` : ''}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    onLoadMore={loadMoreEmployees}
+                    hasMore={employeePage < employeeLastPage}
+                    isLoading={employeesLoading}
+                    onSearch={(q) => {
+                      setEmployeeSearch(q);
+                      fetchEmployees(1, q, false);
+                    }}
+                    placeholder="Select an employee"
+                    required
+                    disabled={isEmployee}
+                  />
                 </div>
 
                 {/* Apply Leave Form - Only show if employee selected and user has permission */}
@@ -989,7 +1087,7 @@ const LeaveRequests = () => {
                             value={formData.leave_type_id}
                             onChange={handleInputChange}
                             className={`w-full border ${formErrors.leave_type_id ? 'border-red-500' : 'border-gray-300'
-                              } rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                              } rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
                           >
                             <option value="">Select a leave type</option>
                             {leaveTypes.length > 0 ? (

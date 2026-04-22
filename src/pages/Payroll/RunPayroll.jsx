@@ -144,6 +144,11 @@ const RunPayroll = () => {
   const { canAdd, canEdit, canDelete } = usePermissions('payroll.payroll');
   const organizationId = selectedOrganization?.id || "15";
 
+  // Role-based access
+  const userRole = localStorage.getItem('CURRENT_USER_ROLE');
+  const isEmployee = userRole?.toLowerCase() === 'employee';
+  console.log("CURRENT USER ROLE:", userRole, "| isEmployee:", isEmployee);
+
   const [loading, setLoading] = useState({
     payPeriods: false,
     payRuns: false,
@@ -167,7 +172,7 @@ const RunPayroll = () => {
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   
-  const [activeTab, setActiveTab] = useState("payPeriods");
+  const [activeTab, setActiveTab] = useState(isEmployee ? "payslips" : "payPeriods");
   
   // View Modes
   const [payRunViewMode, setPayRunViewMode] = useState("byPeriod"); // 'byPeriod' or 'all'
@@ -829,7 +834,7 @@ const RunPayroll = () => {
               </div>
               <div className="flex flex-col items-end gap-4">
                 <div className="flex flex-wrap gap-3">
-                  {canEdit && (
+                  {!isEmployee && canEdit && (
                     <button
                       onClick={handleSyncEmployees}
                       disabled={loading.syncing}
@@ -840,7 +845,7 @@ const RunPayroll = () => {
                     </button>
                   )}
 
-                  {canAdd && (
+                  {!isEmployee && canAdd && (
                     <button
                       onClick={() => {
                         setActiveTab("payPeriods");
@@ -853,21 +858,23 @@ const RunPayroll = () => {
                     </button>
                   )}
                 </div>
-                <button
-                  onClick={() => {
-                    fetchPayPeriods();
-                    fetchAllPayRunsForOrganization();
-                    fetchAllPayslipsForOrganization();
-                  }}
-                  disabled={loading.payPeriods || loading.allPayRuns || loading.allPayslips}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  <FaSync className={loading.payPeriods || loading.allPayRuns || loading.allPayslips ? "animate-spin" : ""} />
-                  Refresh All Data
-                </button>
+                  {!isEmployee && (
+                    <button
+                      onClick={() => {
+                        fetchPayPeriods();
+                        fetchAllPayRunsForOrganization();
+                        fetchAllPayslipsForOrganization();
+                      }}
+                      disabled={loading.payPeriods || loading.allPayRuns || loading.allPayslips}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      <FaSync className={loading.payPeriods || loading.allPayRuns || loading.allPayslips ? "animate-spin" : ""} />
+                      Refresh All Data
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
           {/* ============ MESSAGES ============ */}
           {error && (
@@ -897,7 +904,7 @@ const RunPayroll = () => {
           )}
 
           {/* ============ STATS CARDS ============ */}
-          {payPeriods.length > 0 && (
+          {!isEmployee && payPeriods.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                 <div className="flex items-center justify-between">
@@ -957,7 +964,9 @@ const RunPayroll = () => {
           {/* ============ TABS NAVIGATION ============ */}
           <div className="mb-6 border-b border-gray-200">
             <nav className="flex space-x-8">
-              {["payPeriods", "payRuns", "payslips"].map((tab) => (
+              {["payPeriods", "payRuns", "payslips"]
+                .filter(tab => !isEmployee || tab === "payslips")
+                .map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import usePermissions from '../../hooks/usePermissions';
 import axiosClient from '../../axiosClient';
 import { 
@@ -31,6 +31,7 @@ import { employeeService } from "../../services/employeeService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -129,9 +130,24 @@ const ColorPaletteModal = ({
   );
 };
 
+// ============================================
+// INFINITE SCROLL EMPLOYEE DROPDOWN
+// ============================================
+
+
 const ManualAdjustments = () => {
   const { selectedOrganization } = useOrganizations();
   const { canAdd, canEdit, canDelete } = usePermissions('attendance.manual_adjustments');
+
+  // Get current user role and info from localStorage
+  const userRole = (localStorage.getItem('CURRENT_USER_ROLE') || '').toLowerCase();
+  const isEmployee = userRole === 'employee';
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch { return {}; }
+  })();
+
   const [adjustments, setAdjustments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -139,6 +155,10 @@ const ManualAdjustments = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [employeeLastPage, setEmployeeLastPage] = useState(1);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
   const [departments, setDepartments] = useState([]);
   const [selectedAdjustment, setSelectedAdjustment] = useState(null);
   const [editingAdjustment, setEditingAdjustment] = useState(null);
@@ -149,6 +169,8 @@ const ManualAdjustments = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  const [matchedEmpId, setMatchedEmpId] = useState('');
+  const [attendanceSearchMessage, setAttendanceSearchMessage] = useState(null);
   
   // Filters state
   const [filters, setFilters] = useState({
@@ -214,15 +236,69 @@ const ManualAdjustments = () => {
     }
   }, [selectedOrganization]);
 
+  // Load existing attendance when employee and date are selected
+  useEffect(() => {
+    if (showAdjustmentForm && newAdjustment.employee_id && newAdjustment.date) {
+      loadExistingAttendance();
+    }
+  }, [newAdjustment.employee_id, newAdjustment.date, showAdjustmentForm]);
+
+  // Re-fetch adjustments when filters change
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      fetchAdjustments();
+    }
+  }, [filters.employee_id, filters.status, filters.startDate, filters.endDate]);
+
   // Fetch initial data
   const fetchInitialData = async () => {
     setLoading(true);
     try {
       await Promise.all([
-        fetchAdjustments(),
         fetchEmployees(),
         fetchDepartments()
       ]);
+
+      // Only fetch adjustments once filters are initialized
+      if (!isEmployee) {
+        fetchAdjustments();
+      }
+
+      // If user is an employee, search for their own record and auto-select
+      if (isEmployee && currentUser?.email) {
+        try {
+          const searchRes = await employeeService.getAllEmployees({
+            organization_id: selectedOrganization.id,
+            search: currentUser.email
+          });
+          
+          let matchList = [];
+          if (searchRes?.success && searchRes?.data?.data) {
+            matchList = searchRes.data.data;
+          } else if (searchRes?.data?.success && searchRes?.data?.data?.data) {
+            matchList = searchRes.data.data.data;
+          }
+          
+          const match = matchList.find(
+            emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
+                   emp.user_id === currentUser.id
+          );
+          
+          if (match) {
+            const empId = String(match.employee_id || match.id);
+            setMatchedEmpId(empId);
+            setFilters(prev => ({ ...prev, employee_id: empId }));
+            // Ensure the matched employee is in the list
+            setEmployees(prev => {
+              const exists = prev.some(e => String(e.employee_id || e.id) === empId);
+              return exists ? prev : [match, ...prev];
+            });
+            console.log('👤 Auto-selected employee:', match.name, empId);
+          }
+        } catch (err) {
+          console.error('Error auto-selecting employee:', err);
+        }
+      }
     } catch (error) {
       console.error('Error fetching initial data:', error);
       toast.error('Failed to load data. Please try again.');
@@ -284,6 +360,7 @@ const ManualAdjustments = () => {
       return {
         id: item.id,
         employee_id: item.employee?.employee_code || `EMP${item.employee_id}`,
+        raw_employee_id: item.employee_id,
         employee_name: item.employee ? 
           `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() : 
           `Employee ${item.employee_id}`,
@@ -320,31 +397,67 @@ const ManualAdjustments = () => {
     });
   };
 
-  // Fetch employees for dropdown
-  const fetchEmployees = async () => {
+  // Fetch employees for dropdown (paginated)
+  const fetchEmployees = async (page = 1, search = '', append = false) => {
     if (!selectedOrganization?.id) return;
+    if (employeesLoading) return;
     
+    setEmployeesLoading(true);
     try {
-      const response = await employeeService.getAllEmployees({ 
-        organization_id: selectedOrganization.id 
-      });
+      const params = { 
+        organization_id: selectedOrganization.id,
+        page
+      };
+      if (search) params.search = search;
+
+      const response = await employeeService.getAllEmployees(params);
       
-      let employeesData = [];
-      if (response?.data?.success === true && Array.isArray(response.data.data)) {
-        employeesData = response.data.data;
-      } else if (Array.isArray(response?.data)) {
-        employeesData = response.data;
-      } else if (response?.data?.data && Array.isArray(response.data.data)) {
-        employeesData = response.data.data;
+      // The API returns: { success: true, data: { current_page, data: [...], last_page } }
+      let pageData = [];
+      let lastPage = 1;
+      if (response?.success === true && response?.data) {
+        if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
+          lastPage = response.data.last_page || 1;
+        } else if (Array.isArray(response.data)) {
+          pageData = response.data;
+        }
+      } else if (response?.data?.success === true && response?.data?.data) {
+        if (Array.isArray(response.data.data.data)) {
+          pageData = response.data.data.data;
+          lastPage = response.data.data.last_page || 1;
+        } else if (Array.isArray(response.data.data)) {
+          pageData = response.data.data;
+        }
       }
       
-      setEmployees(employeesData);
+      setEmployeeLastPage(lastPage);
+      setEmployeePage(page);
+      
+      if (append) {
+        setEmployees(prev => [...prev, ...pageData]);
+      } else {
+        setEmployees(pageData);
+      }
+      
+      console.log(`Employees page ${page}/${lastPage} loaded: ${pageData.length} items`);
     } catch (error) {
       console.error('Error fetching employees:', error);
-      toast.error('Failed to load employees');
-      setEmployees([]);
+      if (page === 1) {
+        toast.error('Failed to load employees');
+        setEmployees([]);
+      }
+    } finally {
+      setEmployeesLoading(false);
     }
   };
+
+  // Load next page of employees
+  const loadMoreEmployees = useCallback(() => {
+    if (employeePage < employeeLastPage && !employeesLoading) {
+      fetchEmployees(employeePage + 1, employeeSearch, true);
+    }
+  }, [employeePage, employeeLastPage, employeesLoading, employeeSearch, selectedOrganization]);
 
   // Fetch departments for dropdown
   const fetchDepartments = async () => {
@@ -369,10 +482,10 @@ const ManualAdjustments = () => {
     }
   };
 
-  // Load existing attendance when employee and date are selected - UPDATED with break times
   const loadExistingAttendance = useCallback(async () => {
     if (!newAdjustment.employee_id || !newAdjustment.date) return;
     
+    setAttendanceSearchMessage(null);
     try {
       const response = await manualAdjustmentService.getAttendanceByEmployeeDate(
         newAdjustment.employee_id,
@@ -397,6 +510,9 @@ const ManualAdjustments = () => {
         }));
       } else {
         // No existing attendance found - keep default times
+        const msg = response.data?.message || "No attendance record found for the specified employee and date.";
+        setAttendanceSearchMessage({ type: 'info', text: msg });
+        
         setNewAdjustment(prev => ({
           ...prev,
           attendance_id: '',
@@ -412,6 +528,9 @@ const ManualAdjustments = () => {
       }
     } catch (error) {
       console.log('No existing attendance found for this date', error);
+      const msg = error.response?.data?.message || "No attendance record found for this date.";
+      setAttendanceSearchMessage({ type: 'warning', text: msg });
+
       // On 404 error, just keep the default times
       setNewAdjustment(prev => ({
         ...prev,
@@ -543,6 +662,7 @@ const ManualAdjustments = () => {
 
   // Reset new adjustment form - UPDATED with break times
   const resetNewAdjustmentForm = () => {
+    setAttendanceSearchMessage(null);
     setNewAdjustment({
       employee_id: '',
       organization_id: selectedOrganization?.id || '',
@@ -560,7 +680,14 @@ const ManualAdjustments = () => {
       created_by: userId
     });
   };
-
+  // Open request modal with smart reset
+  const handleOpenAdjustmentModal = () => {
+    resetNewAdjustmentForm();
+    if (isEmployee && matchedEmpId) {
+      setNewAdjustment(prev => ({ ...prev, employee_id: matchedEmpId }));
+    }
+    setShowAdjustmentForm(true);
+  };
   // Open view modal for adjustment
   const handleViewAdjustment = async (adjustmentId) => {
     try {
@@ -910,7 +1037,7 @@ const ManualAdjustments = () => {
     }
     
     // Employee filter
-    if (filters.employee_id !== 'all' && adj.employee_id !== filters.employee_id) {
+    if (filters.employee_id !== 'all' && String(adj.raw_employee_id) !== String(filters.employee_id)) {
       return false;
     }
     
@@ -1341,23 +1468,23 @@ const ManualAdjustments = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Employee *
                       </label>
-                      <select
-                        name="employee_id"
+                      <InfiniteScrollEmployeeDropdown
+                        employees={employees}
                         value={newAdjustment.employee_id}
-                        onChange={(e) => {
-                          handleInputChange(e);
-                          setTimeout(() => loadExistingAttendance(), 100);
+                        onChange={(val) => {
+                          setNewAdjustment(prev => ({ ...prev, employee_id: val }));
                         }}
+                        onLoadMore={loadMoreEmployees}
+                        hasMore={employeePage < employeeLastPage}
+                        isLoading={employeesLoading}
+                        onSearch={(q) => {
+                          setEmployeeSearch(q);
+                          fetchEmployees(1, q, false);
+                        }}
+                        placeholder="Select Employee"
                         required
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select Employee</option>
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.first_name} {emp.last_name} ({emp.employee_code})
-                          </option>
-                        ))}
-                      </select>
+                        disabled={isEmployee}
+                      />
                     </div>
                     
                     <div>
@@ -1370,7 +1497,6 @@ const ManualAdjustments = () => {
                         value={newAdjustment.date}
                         onChange={(e) => {
                           handleInputChange(e);
-                          setTimeout(() => loadExistingAttendance(), 100);
                         }}
                         required
                         className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1378,6 +1504,16 @@ const ManualAdjustments = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Attendance Search Message */}
+                  {attendanceSearchMessage && (
+                    <div className={`p-3 rounded-lg flex items-center gap-3 ${
+                      attendanceSearchMessage.type === 'warning' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
+                    }`}>
+                      <FaInfoCircle className={attendanceSearchMessage.type === 'warning' ? 'text-amber-500' : 'text-blue-500'} />
+                      <p className="text-sm font-medium">{attendanceSearchMessage.text}</p>
+                    </div>
+                  )}
 
                   {/* Time Adjustments - UPDATED with break times */}
                   <div>
@@ -1661,18 +1797,21 @@ const ManualAdjustments = () => {
                 <option value="rejected">Rejected</option>
               </select>
 
-              <select 
+              <InfiniteScrollEmployeeDropdown
+                employees={employees}
                 value={filters.employee_id}
-                onChange={(e) => handleFilterChange('employee_id', e.target.value)}
-                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Employees</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.first_name} {emp.last_name} ({emp.employee_code})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleFilterChange('employee_id', val)}
+                onLoadMore={loadMoreEmployees}
+                hasMore={employeePage < employeeLastPage}
+                isLoading={employeesLoading}
+                onSearch={(q) => {
+                  setEmployeeSearch(q);
+                  fetchEmployees(1, q, false);
+                }}
+                placeholder="All Employees"
+                allowAll={!isEmployee}
+                disabled={isEmployee}
+              />
 
               <div className="relative">
                 <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
@@ -1681,7 +1820,8 @@ const ManualAdjustments = () => {
                   value={filters.startDate}
                   onChange={(e) => handleFilterChange('startDate', e.target.value)}
                   className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Start Date"
+                  placeholder="From Date"
+                  title="Start Date (From)"
                 />
               </div>
 
@@ -1692,7 +1832,8 @@ const ManualAdjustments = () => {
                   value={filters.endDate}
                   onChange={(e) => handleFilterChange('endDate', e.target.value)}
                   className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="End Date"
+                  placeholder="To Date"
+                  title="End Date (To)"
                 />
               </div>
             </div>
@@ -1720,7 +1861,7 @@ const ManualAdjustments = () => {
               )}
               {canAdd && (
                 <button
-                  onClick={() => setShowAdjustmentForm(true)}
+                  onClick={handleOpenAdjustmentModal}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <FaPlus /> New Adjustment
@@ -1734,7 +1875,7 @@ const ManualAdjustments = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee</th>
+                  {!isEmployee && <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Employee</th>}
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Time Changes</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reason</th>
@@ -1745,7 +1886,7 @@ const ManualAdjustments = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredAdjustments.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={isEmployee ? "5" : "6"} className="px-6 py-12 text-center text-gray-500">
                       <FaExclamationTriangle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
                       <p className="text-lg font-medium">No adjustments found</p>
                       <p className="text-sm text-gray-400 mt-1">
@@ -1756,7 +1897,7 @@ const ManualAdjustments = () => {
                       </p>
                       {adjustments.length === 0 && (
                         <button
-                          onClick={() => setShowAdjustmentForm(true)}
+                          onClick={handleOpenAdjustmentModal}
                           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
                         >
                           <FaPlus /> Create First Adjustment
@@ -1767,6 +1908,7 @@ const ManualAdjustments = () => {
                 ) : (
                   filteredAdjustments.map((adjustment) => (
                     <tr key={adjustment.id} className="hover:bg-gray-50 transition-colors">
+                    {!isEmployee && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -1783,6 +1925,7 @@ const ManualAdjustments = () => {
                           </div>
                         </div>
                        </td>
+                    )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="font-medium">

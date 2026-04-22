@@ -6,12 +6,7 @@ const manualAdjustmentService = {
   // Get attendance by employee and date - FIXED ENDPOINT
   getAttendanceByEmployeeDate: async (employeeId, date) => {
     try {
-      const response = await axiosClient.get('/attendance/attendance/by-employee-date', {
-        params: {
-          employee_id: employeeId,
-          date: date
-        }
-      });
+      const response = await axiosClient.get(`/attendance/get-attendance/${employeeId}/${date}`);
       return response;
     } catch (error) {
       console.error('Error fetching attendance by employee and date:', error);

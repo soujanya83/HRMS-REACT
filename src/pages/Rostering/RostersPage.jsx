@@ -415,7 +415,7 @@ const RostersPage = () => {
 
     const weekDates = getWeekDates();
     const weekStart = weekDates[0].toISOString().split('T')[0];
-    const weekEnd = weekDates[6].toISOString().split('T')[0];
+    const weekEnd = weekDates[weekDates.length - 1].toISOString().split('T')[0];
     
     // Filter rosters for current week
     const weekRosters = rosters.filter(roster => {
@@ -544,7 +544,7 @@ const RostersPage = () => {
     const diff = start.getDate() - day + (day === 0 ? -6 : 1);
     start.setDate(diff);
     
-    return Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: 5 }, (_, i) => {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
       return date;
@@ -630,7 +630,7 @@ const RostersPage = () => {
 
   const handleExport = () => {
     const weekDates = getWeekDates();
-    const weekRange = `${weekDates[0].toLocaleDateString()} - ${weekDates[6].toLocaleDateString()}`;
+    const weekRange = `${weekDates[0].toLocaleDateString()} - ${weekDates[weekDates.length - 1].toLocaleDateString()}`;
     
     const csvContent = [
       [`Weekly Roster Report - ${weekRange}`],
@@ -647,7 +647,7 @@ const RostersPage = () => {
             ? roster.roster_date.split('T')[0]
             : new Date(roster.roster_date).toISOString().split('T')[0];
           const weekStart = weekDates[0].toISOString().split('T')[0];
-          const weekEnd = weekDates[6].toISOString().split('T')[0];
+          const weekEnd = weekDates[weekDates.length - 1].toISOString().split('T')[0];
           return rosterDate >= weekStart && rosterDate <= weekEnd;
         })
         .map((roster) => {
@@ -855,9 +855,9 @@ const RostersPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-300 rounded shadow-sm animate-pulse transition-all"></div>
               ))}
             </div>
             <div className="h-64 bg-gray-300 rounded"></div>
@@ -1078,66 +1078,40 @@ const RostersPage = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-blue-500">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Employees</p>
-                  <p className="text-2xl font-bold text-gray-800">{employees.length}</p>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Total Employees</p>
+                  <p className="text-3xl font-bold text-gray-800 tracking-tight">{employees.length}</p>
                 </div>
-                <FaUsers className="text-blue-500 text-xl" />
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <FaUsers className="text-blue-500 text-2xl" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
+            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{view === "week" ? "Hours This Week" : "Hours This Month"}</p>
-                  <p className="text-2xl font-bold text-gray-800">{weeklyTotals.totalHours}</p>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">{view === "week" ? "Hours This Week" : "Hours This Month"}</p>
+                  <p className="text-3xl font-bold text-gray-800 tracking-tight">{weeklyTotals.totalHours}</p>
                 </div>
-                <FaClock className="text-green-500 text-xl" />
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <FaClock className="text-green-500 text-2xl" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
+            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-gray-800">{formatCurrency(weeklyTotals.totalAmount)}</p>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Different Shifts</p>
+                  <p className="text-3xl font-bold text-gray-800 tracking-tight">{shifts.length}</p>
                 </div>
-                <FaMoneyBillWave className="text-purple-500 text-xl" />
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-orange-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Different Shifts</p>
-                  <p className="text-2xl font-bold text-gray-800">{shifts.length}</p>
+                <div className="p-3 bg-orange-50 rounded-lg">
+                  <FaExchangeAlt className="text-orange-500 text-2xl" />
                 </div>
-                <FaExchangeAlt className="text-orange-500 text-xl" />
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-indigo-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Avg Hours/Employee</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {(weeklyTotals.totalHours / Math.max(weeklyTotals.uniqueEmployees || 1, 1)).toFixed(1)}
-                  </p>
-                </div>
-                <FaHourglassHalf className="text-indigo-500 text-xl" />
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-pink-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Avg Rate</p>
-                  <p className="text-2xl font-bold text-gray-800">{formatCurrency(weeklyTotals.averageRate)}/hr</p>
-                </div>
-                <FaDollarSign className="text-pink-500 text-xl" />
               </div>
             </div>
           </div>
@@ -1151,7 +1125,7 @@ const RostersPage = () => {
                   view === "week" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Week View (Mon-Sun)
+                Week View (Mon-Fri)
               </button>
               <button
                 onClick={() => setView("month")}
@@ -1169,7 +1143,7 @@ const RostersPage = () => {
               </button>
               <div className="text-lg font-semibold">
                 {view === "week"
-                  ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                  ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[weekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                   : currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </div>
               <button onClick={() => navigateDate("next")} className="p-2 hover:bg-gray-100 rounded-full border">
@@ -1243,13 +1217,13 @@ const RostersPage = () => {
           {/* Weekly View */}
           {view === "week" && (
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="grid grid-cols-8 border-b">
+              <div className="border-b" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
                 <div className="p-4 font-semibold bg-gray-50 sticky left-0">Employee</div>
                 {weekDates.map((day, index) => (
                   <div key={day.toString()} className={`p-4 text-center font-semibold border-l bg-gray-50 ${
                     day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
                   }`}>
-                    <div className="text-sm">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</div>
+                    <div className="text-sm">{["Mon", "Tue", "Wed", "Thu", "Fri"][index]}</div>
                     <div className="text-xs text-gray-500">{day.getDate()}/{day.getMonth() + 1}</div>
                   </div>
                 ))}
@@ -1262,8 +1236,8 @@ const RostersPage = () => {
                     const employeeRate = getEmployeeRate(employee);
                     
                     return (
-                      <div key={employee.id} className="grid grid-cols-8 border-b hover:bg-gray-50">
-                        <div className="p-4 border-r bg-gray-50 sticky left-0 min-w-[200px]">
+                      <div key={employee.id} className="border-b hover:bg-gray-50" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
+                        <div className="p-4 border-r bg-gray-50 sticky left-0 z-10">
                           <div className="font-medium">
                             {employee.first_name || ''} {employee.last_name || ''}
                           </div>
@@ -1348,7 +1322,7 @@ const RostersPage = () => {
                     );
                   })
                 ) : (
-                  <div className="p-8 text-center text-gray-500 col-span-8">
+                  <div className="p-8 text-center text-gray-500 col-span-6">
                     No employees found. Try adjusting your filters.
                   </div>
                 )}
@@ -1359,18 +1333,18 @@ const RostersPage = () => {
           {/* Monthly View */}
           {view === "month" && (
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="grid grid-cols-7 border-b">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+              <div className="grid grid-cols-5 border-b">
+                {["Mon", "Tue", "Wed", "Thu", "Fri"].map(day => (
                   <div key={day} className="p-4 text-center font-semibold bg-gray-50">{day}</div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7">
-                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() === 0 ? 6 : new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() - 1 }).map((_, i) => (
+              <div className="grid grid-cols-5">
+                {Array.from({ length: (() => { const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay(); return d === 0 ? 4 : Math.min(d - 1, 4); })() }).map((_, i) => (
                   <div key={`empty-${i}`} className="min-h-32 border-r border-b p-2 bg-gray-50"></div>
                 ))}
                 
-                {monthDates.map(date => {
+                {monthDates.filter(date => { const day = date.getDay(); return day >= 1 && day <= 5; }).map(date => {
                   const dateStr = date.toISOString().split('T')[0];
                   const dayRosters = rosters.filter(r => {
                     if (!r.roster_date) return false;
