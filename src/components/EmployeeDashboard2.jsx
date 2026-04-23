@@ -764,36 +764,526 @@ const HolidaysEvents = () => (
 // ============================================
 // PAYSLIP SECTION (Replaces Payroll)
 // ============================================
+// ============================================
+// PAYSLIP SECTION (Replaces Payroll)
+// =====================================// ============================================
+// PAYSLIP SECTION (Replaces Payroll)
+// ============================================
+// ============================================
+// PAYSLIP SECTION (Replaces Payroll)
+// ============================================
+const GetPayslipsModal = ({ isOpen, onClose }) => {
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+  const [selectedResultIds, setSelectedResultIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [results, setResults] = useState([]);
+
+  // Validation States
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [dateError, setDateError] = useState("");
+  const [feedback, setFeedback] = useState(null);
+
+  if (!isOpen) return null;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const dummyData = [
+    { id: 11, month: "September", year: "2023" },
+    { id: 12, month: "August", year: "2023" },
+    { id: 13, month: "July", year: "2023" },
+    { id: 14, month: "June", year: "2023" },
+    { id: 15, month: "May", year: "2023" },
+    { id: 16, month: "April", year: "2023" },
+  ];
+
+  const showFeedback = (msg, type = "success") => {
+    setFeedback({ msg, type });
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const validateDates = (start, end) => {
+    if (start && end && new Date(start) > new Date(end)) {
+      setDateError("End date cannot be before start date");
+      return false;
+    }
+    setDateError("");
+    return true;
+  };
+
+  const handleFromDateChange = (e) => {
+    const val = e.target.value;
+    setFromDate(val);
+    setSelectedPeriod(null);
+    validateDates(val, toDate);
+  };
+
+  const handleToDateChange = (e) => {
+    const val = e.target.value;
+    setToDate(val);
+    setSelectedPeriod(null);
+    validateDates(fromDate, val);
+  };
+
+  const handlePeriodSelect = (m) => {
+    setSelectedPeriod(m);
+    setFromDate("");
+    setToDate("");
+    setDateError("");
+  };
+
+  const isRetrieveDisabled = () => {
+    if (isLoading) return true;
+    if (selectedPeriod) return false;
+    if (fromDate && toDate && !dateError) return false;
+    return true;
+  };
+
+  const handleRetrieve = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+
+      let generatedData = [];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+      if (selectedPeriod) {
+        // Generate last N months from now
+        const now = new Date();
+        for (let i = 0; i < selectedPeriod; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          generatedData.push({
+            id: 100 + i,
+            month: months[d.getMonth()],
+            year: d.getFullYear().toString()
+          });
+        }
+      } else if (fromDate && toDate) {
+        // Generate months between selected dates
+        const start = new Date(fromDate);
+        const end = new Date(toDate);
+        let current = new Date(end.getFullYear(), end.getMonth(), 1);
+        let count = 0;
+
+        while (current >= new Date(start.getFullYear(), start.getMonth(), 1) && count < 12) {
+          generatedData.push({
+            id: 200 + count,
+            month: months[current.getMonth()],
+            year: current.getFullYear().toString()
+          });
+          current.setMonth(current.getMonth() - 1);
+          count++;
+        }
+      }
+
+      const hasData = generatedData.length > 0 && Math.random() > 0.1;
+      if (hasData) {
+        setResults(generatedData);
+        setShowResults(true);
+        showFeedback(`Found ${generatedData.length} payslips`);
+      } else {
+        setResults([]);
+        setShowResults(true);
+      }
+    }, 1000);
+  };
+
+  const handleBulkDownload = () => {
+    setIsDownloading(true);
+    setTimeout(() => {
+      setIsDownloading(false);
+      showFeedback(`Successfully downloaded ${selectedResultIds.length} payslips`);
+      setTimeout(handleClose, 1500);
+    }, 2000);
+  };
+
+  const toggleSelectResult = (id) => {
+    setSelectedResultIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllResult = () => {
+    if (selectedResultIds.length === results.length) {
+      setSelectedResultIds([]);
+    } else {
+      setSelectedResultIds(results.map(r => r.id));
+    }
+  };
+
+  const handleClose = () => {
+    setShowResults(false);
+    setSelectedResultIds([]);
+    setSelectedPeriod(null);
+    setFromDate("");
+    setToDate("");
+    setResults([]);
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1001] transition-opacity duration-300" onClick={handleClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl z-[1002] overflow-hidden p-8 animate-in fade-in zoom-in duration-300">
+
+        {/* Toast Notification */}
+        {feedback && (
+          <div className={`absolute top-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-xs font-bold shadow-lg animate-in slide-in-from-top-4 duration-300 z-50 ${feedback.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+            }`}>
+            {feedback.msg}
+          </div>
+        )}
+
+        <button
+          onClick={handleClose}
+          className="absolute right-6 top-6 p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+        >
+          <Icons.Close />
+        </button>
+
+        <div className="flex flex-col">
+          {!showResults ? (
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
+                <FileIcon className="text-blue-500 w-8 h-8" />
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Get Payslips</h2>
+              <p className="text-sm text-gray-500 mb-8 font-medium">Choose a period to retrieve your payslips.</p>
+
+              {/* Select a Period */}
+              <div className="w-full space-y-4">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-left">Select a period</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[6, 12, 18].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => handlePeriodSelect(m)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 ${selectedPeriod === m
+                        ? 'border-blue-500 bg-blue-50/50'
+                        : 'border-gray-100 hover:border-gray-200 bg-white'
+                        }`}
+                    >
+                      <Calendar size={18} className={`mb-2 ${selectedPeriod === m ? 'text-blue-500' : 'text-gray-400'}`} />
+                      <span className={`text-xs font-bold ${selectedPeriod === m ? 'text-blue-600' : 'text-gray-600'}`}>{m} Months</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-full flex items-center gap-4 my-6">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-[10px] font-bold text-gray-300 uppercase">or</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+
+              {/* Custom Date Range */}
+              <div className="w-full space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Select a custom date range</p>
+                  {dateError && <span className="text-[9px] font-bold text-red-500 animate-pulse">{dateError}</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 text-left">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">From</label>
+                    <input
+                      type="date"
+                      max={today}
+                      value={fromDate}
+                      onChange={handleFromDateChange}
+                      className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-sm font-medium ${dateError ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-blue-300'
+                        }`}
+                    />
+                  </div>
+                  <div className="space-y-1 text-left">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">To</label>
+                    <input
+                      type="date"
+                      max={today}
+                      value={toDate}
+                      onChange={handleToDateChange}
+                      className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-sm font-medium ${dateError ? 'border-red-200 bg-red-50/30' : 'border-gray-100 focus:border-blue-300'
+                        }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full flex items-center justify-end gap-3 mt-10">
+                <button onClick={handleClose} className="px-6 py-3 text-sm font-bold text-gray-400 hover:text-gray-600">Cancel</button>
+                <button
+                  onClick={handleRetrieve}
+                  disabled={isRetrieveDisabled()}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                >
+                  {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  Retrieve Payslips
+                </button>
+              </div>
+            </div>
+          ) : results.length > 0 ? (
+            <div className="flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <FileIcon className="text-blue-500 w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Retrieve Results</h2>
+                  <p className="text-xs text-gray-500 font-medium">{results.length} payslips found</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4 px-2">
+                <label className="flex items-center gap-3 cursor-pointer group/all">
+                  <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedResultIds.length === results.length && results.length > 0
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'bg-white border-gray-200 group-hover/all:border-blue-300'
+                    }`}>
+                    {selectedResultIds.length === results.length && results.length > 0 && <CheckCircle size={12} className="text-white" />}
+                  </div>
+                  <input type="checkbox" className="hidden" onChange={toggleSelectAllResult} checked={selectedResultIds.length === results.length && results.length > 0} />
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Select All</span>
+                </label>
+                <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                  {selectedResultIds.length} Selected
+                </span>
+              </div>
+
+              <div className="max-h-[320px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                {results.map((res) => (
+                  <div
+                    key={res.id}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${selectedResultIds.includes(res.id)
+                      ? 'bg-blue-50/50 border-blue-100 shadow-sm'
+                      : 'bg-gray-50/50 border-transparent hover:bg-white hover:shadow-md'
+                      }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <label className="cursor-pointer group/item">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedResultIds.includes(res.id)
+                          ? 'bg-blue-500 border-blue-500'
+                          : 'bg-white border-gray-200 group-hover/item:border-blue-300'
+                          }`}>
+                          {selectedResultIds.includes(res.id) && <CheckCircle size={12} className="text-white" />}
+                        </div>
+                        <input type="checkbox" className="hidden" onChange={() => toggleSelectResult(res.id)} checked={selectedResultIds.includes(res.id)} />
+                      </label>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">{res.month}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase">{res.year}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View">
+                        <Eye size={18} />
+                      </button>
+                      <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Download">
+                        <Download size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-50">
+                <button
+                  onClick={() => setShowResults(false)}
+                  className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <ChevronLeft size={16} /> Back
+                </button>
+                <button
+                  disabled={selectedResultIds.length === 0 || isDownloading}
+                  onClick={handleBulkDownload}
+                  className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDownloading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Download size={16} />
+                  )}
+                  {isDownloading ? "Downloading..." : "Download Selected"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center py-10">
+              <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6 border border-dashed border-gray-200">
+                <AlertTriangle className="text-gray-300" size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">No Payslips Found</h3>
+              <p className="text-sm text-gray-500 max-w-[240px] mb-8 font-medium">We couldn't find any payslips for the selected period.</p>
+              <button
+                onClick={() => setShowResults(false)}
+                className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-bold rounded-xl transition-all"
+              >
+                Try Another Period
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
 const payslips = [
-  { month: "March 2024", amount: "₹85,400", downloadUrl: "#", viewUrl: "#" },
-  { month: "February 2024", amount: "₹82,500", downloadUrl: "#", viewUrl: "#" },
-  { month: "January 2024", amount: "₹82,500", downloadUrl: "#", viewUrl: "#" },
-  { month: "December 2023", amount: "₹80,000", downloadUrl: "#", viewUrl: "#" },
+  { id: 1, month: "March", year: "2024", downloadUrl: "#", viewUrl: "#" },
+  { id: 2, month: "February", year: "2024", downloadUrl: "#", viewUrl: "#" },
+  { id: 3, month: "January", year: "2024", downloadUrl: "#", viewUrl: "#" },
+  { id: 4, month: "December", year: "2023", downloadUrl: "#", viewUrl: "#" },
+  { id: 5, month: "November", year: "2023", downloadUrl: "#", viewUrl: "#" },
+  { id: 6, month: "October", year: "2023", downloadUrl: "#", viewUrl: "#" },
 ];
 
-const PayslipSection = () => (
-  <DashCard accentColor="#A8E6CF">
-    <CardTitle icon={<FileIcon size={16} />}>Payslips</CardTitle>
-    <div className="space-y-3">
-      {payslips.map((payslip, i) => (
-        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-          <div>
-            <p className="text-sm font-semibold text-gray-800">{payslip.month}</p>
-            <p className="text-lg font-bold text-green-600">{payslip.amount}</p>
-          </div>
-          <div className="flex gap-2">
-            <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Payslip">
-              <Eye size={18} />
+const PayslipSection = () => {
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isGetPayslipsOpen, setIsGetPayslipsOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  const showFeedback = (msg) => {
+    setFeedback(msg);
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === payslips.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(payslips.map(p => p.id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDownload = () => {
+    setIsDownloading(true);
+    setTimeout(() => {
+      setIsDownloading(false);
+      showFeedback(`Downloaded ${selectedIds.length} slips successfully!`);
+      setSelectedIds([]);
+    }, 2000);
+  };
+
+  return (
+    <DashCard accentColor="#A8E6CF" className="relative group">
+      <div className="flex items-center justify-between mb-5">
+        <CardTitle icon={<FileIcon size={16} />}>Payslips</CardTitle>
+        <div className="flex items-center gap-4">
+          {feedback && (
+            <div className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full animate-in fade-in zoom-in">
+              {feedback}
+            </div>
+          )}
+          {selectedIds.length > 0 && !feedback && (
+            <button
+              onClick={handleBulkDownload}
+              disabled={isDownloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold uppercase transition-all hover:bg-green-100 animate-in fade-in slide-in-from-right-4 disabled:opacity-50"
+              title="Download Selected"
+            >
+              {isDownloading ? (
+                <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download size={12} />
+              )}
+              {isDownloading ? "Wait..." : `Download (${selectedIds.length})`}
             </button>
-            <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Download Payslip">
-              <Download size={18} />
-            </button>
-          </div>
+          )}
+          <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors group/all">
+            <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedIds.length === payslips.length
+              ? 'bg-blue-500 border-blue-500'
+              : 'bg-white border-gray-200 group-hover/all:border-blue-300'
+              }`}>
+              {selectedIds.length === payslips.length && <CheckCircle size={12} className="text-white" />}
+            </div>
+            <input
+              type="checkbox"
+              className="hidden"
+              checked={selectedIds.length === payslips.length}
+              onChange={toggleSelectAll}
+            />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Select All</span>
+          </label>
         </div>
-      ))}
-    </div>
-  </DashCard>
-);
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        {payslips.map((payslip) => (
+          <div
+            key={payslip.id}
+            className={`flex items-center justify-between p-3.5 rounded-2xl transition-all duration-200 border group/card ${selectedIds.includes(payslip.id)
+              ? 'bg-blue-50/50 border-blue-100 shadow-sm'
+              : 'bg-gray-50/50 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
+              }`}
+          >
+            <div className="flex items-center gap-4">
+              <label className="cursor-pointer">
+                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedIds.includes(payslip.id)
+                  ? 'bg-blue-500 border-blue-500'
+                  : 'bg-white border-gray-200 group-hover/card:border-blue-300'
+                  }`}>
+                  {selectedIds.includes(payslip.id) && <CheckCircle size={12} className="text-white" />}
+                </div>
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={selectedIds.includes(payslip.id)}
+                  onChange={() => toggleSelect(payslip.id)}
+                />
+              </label>
+              <div>
+                <p className="text-xs font-bold text-gray-800">{payslip.month}</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{payslip.year}</p>
+              </div>
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                className="w-9 h-9 flex items-center justify-center text-blue-500 bg-white hover:bg-blue-50 rounded-xl transition-all shadow-sm border border-gray-100 group/btn"
+                title="View Payslip"
+              >
+                <Eye size={16} className="group-hover/btn:scale-110 transition-transform" />
+              </button>
+              <button
+                className="w-9 h-9 flex items-center justify-center text-green-600 bg-white hover:bg-green-50 rounded-xl transition-all shadow-sm border border-gray-100 group/btn"
+                title="Download Payslip"
+              >
+                <Download size={16} className="group-hover/btn:scale-110 transition-transform" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setIsGetPayslipsOpen(true)}
+        className="w-full mt-6 py-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-600 text-sm font-bold flex items-center justify-center gap-2 hover:from-blue-100 hover:to-indigo-100 transition-all group/more"
+      >
+        View More
+        <ArrowRight size={16} className="group-hover/more:translate-x-1 transition-transform" />
+      </button>
+
+      <GetPayslipsModal
+        isOpen={isGetPayslipsOpen}
+        onClose={() => setIsGetPayslipsOpen(false)}
+      />
+    </DashCard>
+  );
+};
+
+
+
+
+
+
+
 
 // ============================================
 // NOTIFICATIONS
