@@ -1051,36 +1051,36 @@ const GetPayslipsModal = ({ isOpen, onClose }) => {
                 </span>
               </div>
 
-              <div className="max-h-[320px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+              <div className="max-h-[350px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                 {results.map((res) => (
                   <div
                     key={res.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${selectedResultIds.includes(res.id)
-                      ? 'bg-blue-50/50 border-blue-100 shadow-sm'
-                      : 'bg-gray-50/50 border-transparent hover:bg-white hover:shadow-md'
+                    className={`flex items-center justify-between p-2.5 px-4 rounded-xl transition-all duration-200 border group/card ${selectedResultIds.includes(res.id)
+                        ? 'bg-blue-50/50 border-blue-100 shadow-sm'
+                        : 'bg-gray-50/30 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
                       }`}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <label className="cursor-pointer group/item">
-                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedResultIds.includes(res.id)
-                          ? 'bg-blue-500 border-blue-500'
-                          : 'bg-white border-gray-200 group-hover/item:border-blue-300'
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedResultIds.includes(res.id)
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'bg-white border-gray-300 group-hover/item:border-blue-400'
                           }`}>
-                          {selectedResultIds.includes(res.id) && <CheckCircle size={12} className="text-white" />}
+                          {selectedResultIds.includes(res.id) && <CheckCircle size={10} className="text-white" />}
                         </div>
                         <input type="checkbox" className="hidden" onChange={() => toggleSelectResult(res.id)} checked={selectedResultIds.includes(res.id)} />
                       </label>
-                      <div>
-                        <p className="text-sm font-bold text-gray-800">{res.month}</p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase">{res.year}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-bold text-gray-800">{res.month}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{res.year}</p>
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View">
-                        <Eye size={18} />
+                      <button className="w-8 h-8 flex items-center justify-center text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="View">
+                        <Eye size={15} />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Download">
-                        <Download size={18} />
+                      <button className="w-8 h-8 flex items-center justify-center text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Download">
+                        <Download size={15} />
                       </button>
                     </div>
                   </div>
@@ -1134,8 +1134,6 @@ const payslips = [
   { id: 2, month: "February", year: "2024", downloadUrl: "#", viewUrl: "#" },
   { id: 3, month: "January", year: "2024", downloadUrl: "#", viewUrl: "#" },
   { id: 4, month: "December", year: "2023", downloadUrl: "#", viewUrl: "#" },
-  { id: 5, month: "November", year: "2023", downloadUrl: "#", viewUrl: "#" },
-  { id: 6, month: "October", year: "2023", downloadUrl: "#", viewUrl: "#" },
 ];
 
 const PayslipSection = () => {
@@ -1161,6 +1159,7 @@ const PayslipSection = () => {
     setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+
   };
 
   const handleBulkDownload = () => {
@@ -1174,7 +1173,7 @@ const PayslipSection = () => {
 
   return (
     <DashCard accentColor="#A8E6CF" className="relative group">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-6">
         <CardTitle icon={<FileIcon size={16} />}>Payslips</CardTitle>
         <div className="flex items-center gap-4">
           {feedback && (
@@ -1215,22 +1214,22 @@ const PayslipSection = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-2">
         {payslips.map((payslip) => (
           <div
             key={payslip.id}
-            className={`flex items-center justify-between p-3.5 rounded-2xl transition-all duration-200 border group/card ${selectedIds.includes(payslip.id)
+            className={`flex items-center justify-between p-2.5 px-4 rounded-xl transition-all duration-200 border group/card ${selectedIds.includes(payslip.id)
               ? 'bg-blue-50/50 border-blue-100 shadow-sm'
-              : 'bg-gray-50/50 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
+              : 'bg-gray-50/30 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
               }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <label className="cursor-pointer">
-                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedIds.includes(payslip.id)
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.includes(payslip.id)
                   ? 'bg-blue-500 border-blue-500'
-                  : 'bg-white border-gray-200 group-hover/card:border-blue-300'
+                  : 'bg-white border-gray-300 group-hover/card:border-blue-400'
                   }`}>
-                  {selectedIds.includes(payslip.id) && <CheckCircle size={12} className="text-white" />}
+                  {selectedIds.includes(payslip.id) && <CheckCircle size={10} className="text-white" />}
                 </div>
                 <input
                   type="checkbox"
@@ -1239,36 +1238,39 @@ const PayslipSection = () => {
                   onChange={() => toggleSelect(payslip.id)}
                 />
               </label>
-              <div>
-                <p className="text-xs font-bold text-gray-800">{payslip.month}</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{payslip.year}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] font-bold text-gray-800">{payslip.month}</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{payslip.year}</p>
               </div>
             </div>
+
             <div className="flex gap-1.5">
               <button
-                className="w-9 h-9 flex items-center justify-center text-blue-500 bg-white hover:bg-blue-50 rounded-xl transition-all shadow-sm border border-gray-100 group/btn"
-                title="View Payslip"
+                className="w-8 h-8 flex items-center justify-center text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                title="View"
               >
-                <Eye size={16} className="group-hover/btn:scale-110 transition-transform" />
+                <Eye size={15} />
               </button>
               <button
-                className="w-9 h-9 flex items-center justify-center text-green-600 bg-white hover:bg-green-50 rounded-xl transition-all shadow-sm border border-gray-100 group/btn"
-                title="Download Payslip"
+                className="w-8 h-8 flex items-center justify-center text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                title="Download"
               >
-                <Download size={16} className="group-hover/btn:scale-110 transition-transform" />
+                <Download size={15} />
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        onClick={() => setIsGetPayslipsOpen(true)}
-        className="w-full mt-6 py-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-600 text-sm font-bold flex items-center justify-center gap-2 hover:from-blue-100 hover:to-indigo-100 transition-all group/more"
-      >
-        View More
-        <ArrowRight size={16} className="group-hover/more:translate-x-1 transition-transform" />
-      </button>
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={() => setIsGetPayslipsOpen(true)}
+          className="group flex items-center gap-1.5 text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors uppercase tracking-wider"
+        >
+          View All History
+          <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      </div>
 
       <GetPayslipsModal
         isOpen={isGetPayslipsOpen}
@@ -1374,7 +1376,7 @@ const EmployeeDashboard2 = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           <QuickStats />
 
-          {/* Row 1: Calendar, Attendance, Today's Schedule */}
+          {/* Row 1: Calendar, Attendance, Today's Task */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <CalendarWidget />
             <AttendanceCard />
