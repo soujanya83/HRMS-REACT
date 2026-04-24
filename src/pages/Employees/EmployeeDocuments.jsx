@@ -1,4 +1,3 @@
-// pages/Employees/EmployeeDocuments.jsx
 import React, { useEffect, useState } from 'react';
 import usePermissions from '../../hooks/usePermissions';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -89,7 +88,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
     const file = e.target.files[0];
     if (file) {
       const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
-      
+
       setFormData(prev => ({
         ...prev,
         file,
@@ -100,7 +99,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!documentToEdit && !formData.file) {
       setError('Please select a file to upload');
       return;
@@ -121,15 +120,15 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
 
     try {
       const data = new FormData();
-      
+
       // CORRECT FIELDS FOR /employee-documents ENDPOINT
       data.append('document_type', formData.document_type);
       data.append('file_name', formData.file_name);
-      
+
       if (formData.file) {
         data.append('file', formData.file);
       }
-      
+
       if (formData.issue_date) {
         data.append('issue_date', formData.issue_date);
       }
@@ -143,7 +142,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
       } else {
         await uploadEmployeeDocument(data);
       }
-      
+
       onUploadSuccess();
       onClose();
     } catch (err) {
@@ -173,7 +172,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
             <FaTimes />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -309,13 +308,13 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
 const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
   const today = new Date();
   const expiryDate = document.expiry_date ? new Date(document.expiry_date) : null;
-  
+
   let statusColor = "bg-green-100 text-green-800";
   let statusText = "Valid";
-  
+
   if (expiryDate) {
     const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    
+
     if (daysRemaining < 0) {
       statusColor = "bg-red-100 text-red-800";
       statusText = "Expired";
@@ -341,7 +340,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400 text-2xl" />;
     const ext = fileName.split('.').pop()?.toLowerCase();
-    
+
     if (ext === 'pdf') return <FaFilePdf className="text-red-500 text-2xl" />;
     if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500 text-2xl" />;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500 text-2xl" />;
@@ -366,7 +365,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
           </span>
         )}
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         {document.issue_date && (
           <div>
@@ -381,7 +380,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
           </div>
         )}
       </div>
-      
+
       <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
         {document.file_url && (
           <>
@@ -423,7 +422,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
           </button>
         )}
       </div>
-      
+
       <div className="mt-3 text-xs text-gray-400">
         Uploaded: {formatDate(document.created_at)}
       </div>
@@ -488,9 +487,9 @@ export default function EmployeeDocuments() {
         getEmployee(id),
         getEmployeeDocuments(id)
       ]);
-      
+
       setEmployee(employeeRes.data.data);
-      
+
       let documentsData = [];
       if (docsRes.data) {
         if (docsRes.data.success === true && docsRes.data.data) {
@@ -512,7 +511,7 @@ export default function EmployeeDocuments() {
 
   const handleDeleteDocument = async () => {
     if (!documentToDelete) return;
-    
+
     try {
       await deleteEmployeeDocument(documentToDelete);
       await fetchData();
@@ -573,7 +572,7 @@ export default function EmployeeDocuments() {
             <FaArrowLeft className="text-sm" />
             Back to Profile
           </button>
-          
+
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -585,7 +584,7 @@ export default function EmployeeDocuments() {
                 </p>
               )}
             </div>
-            
+
             {canAdd && (
               <button
                 onClick={() => {
