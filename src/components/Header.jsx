@@ -35,7 +35,6 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         const dashboardPaths = ['admin-dashboard', 'employee-dashboard', 'dashboard'];
         
         // Determine if we are on a main dashboard page
-        // It's a dashboard if path is just ['dashboard'] or ['dashboard', 'some-dashboard']
         const isDashboard = (pathName.length === 1 && pathName[0] === 'dashboard') || 
                            (pathName.length === 2 && pathName[0] === 'dashboard' && dashboardPaths.includes(pathName[1]));
 
@@ -44,9 +43,12 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         }
         
         // For other pages, get the most relevant segment
-        // If length > 2, it's likely a sub-route like /dashboard/recruitment/jobs -> 'jobs'
-        // If length == 2, it's /dashboard/employees -> 'employees'
-        const title = pathName.length > 2 ? pathName[pathName.length - 1] : (pathName.length > 1 ? pathName[1] : pathName[0] || 'Dashboard');
+        let title = pathName.length > 2 ? pathName[pathName.length - 1] : (pathName.length > 1 ? pathName[1] : pathName[0] || 'Dashboard');
+        
+        // Convert 'organizations' to 'Centers'
+        if (title.toLowerCase() === 'organizations') {
+            return 'Centers';
+        }
         
         return title.charAt(0).toUpperCase() + title.slice(1).replace(/-/g, ' ');
     };
@@ -93,7 +95,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                         >
                             <HiOutlineOfficeBuilding size={20} className="text-gray-500" />
                             <span className="font-medium text-gray-700 hidden md:block max-w-[150px] truncate">
-                                {isLoading ? 'Loading...' : selectedOrganization?.name || 'No Organization'}
+                                {isLoading ? 'Loading...' : selectedOrganization?.name || 'No Center'}
                             </span>
                             <HiSelector size={16} className="text-gray-400" />
                         </button>
@@ -118,11 +120,11 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                     <div className="relative" ref={userDropdownRef}>
                         <button onClick={() => setUserDropdownOpen(!isUserDropdownOpen)} className="flex items-center group">
                             <div className="hidden sm:flex flex-col items-end mr-3">
-                                <span className="text-gray-800 font-semibold text-sm group-hover:text-indigo-600 transition-colors uppercase">
+                                <span className="text-gray-800 font-bold text-[15px] group-hover:text-indigo-600 transition-colors leading-tight">
                                     {user ? user.name : 'User'}
                                 </span>
-                                <span className="text-gray-500 text-[10px] font-bold tracking-wider uppercase">
-                                    {currentUserRole || 'Member'}
+                                <span className="text-gray-500 text-[10px] font-medium italic">
+                                    {currentUserRole ? (currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1).toLowerCase()) : 'Member'}
                                 </span>
                             </div>
                             <div className="relative">
