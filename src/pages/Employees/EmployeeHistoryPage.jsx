@@ -29,8 +29,9 @@ import {
   createEmploymentHistory,
   updateEmploymentHistory,
   deleteEmploymentHistory,
-  getEmployeesList,
 } from "../../services/employmentHistoryService";
+import { getEmployees } from "../../services/employeeService";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -312,7 +313,17 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView, canEdit = true, canDele
 };
 
 // Event Form Modal Component
-const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
+const EventFormModal = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  event, 
+  employees, 
+  onLoadMoreEmployees, 
+  hasMoreEmployees, 
+  isEmployeesLoading, 
+  onSearchEmployees 
+}) => {
   const [formData, setFormData] = useState({
     employee_id: "",
     department_id: "",
@@ -467,23 +478,18 @@ const EventFormModal = ({ isOpen, onClose, onSubmit, event, employees }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Employee *
               </label>
-              <select
-                name="employee_id"
+              <InfiniteScrollEmployeeDropdown
+                employees={employees}
                 value={formData.employee_id}
-                onChange={handleChange}
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.employee_id ? "border-red-500" : "border-gray-300"
-                }`}
-              >
-                <option value="">Select Employee</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.first_name} {emp.last_name} (
-                    {emp.employee_code || emp.id})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData(prev => ({ ...prev, employee_id: val }))}
+                onLoadMore={onLoadMoreEmployees}
+                hasMore={hasMoreEmployees}
+                isLoading={isEmployeesLoading}
+                onSearch={onSearchEmployees}
+                placeholder="Search and select employee..."
+                required={true}
+                selectedName={event?.employee ? `${event.employee.first_name} ${event.employee.last_name}` : ''}
+              />
               {errors.employee_id && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.employee_id}
@@ -713,6 +719,10 @@ const EmploymentHistory = () => {
   const [eventTypeFilter, setEventTypeFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [employees, setEmployees] = useState([]);
+  const [employeesPage, setEmployeesPage] = useState(1);
+  const [hasMoreEmployees, setHasMoreEmployees] = useState(true);
+  const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
+  const [employeesSearch, setEmployeesSearch] = useState("");
   const [apiError, setApiError] = useState("");
   const [organizationInfo, setOrganizationInfo] = useState("");
   const [sidebarColor, setSidebarColor] = useState(() => {
@@ -737,8 +747,10 @@ const EmploymentHistory = () => {
 
   // Fetch data
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (selectedOrganization?.id) {
+      fetchData();
+    }
+  }, [selectedOrganization?.id]);
 
   useEffect(() => {
     if (selectedOrganization) {
@@ -754,11 +766,15 @@ const EmploymentHistory = () => {
       console.log("🔄 Fetching employment history data...");
 
       // 1. Fetch employment history
-      const historyResponse = await getEmploymentHistory();
+      const historyResponse = await getEmploymentHistory({
+        organization_id: selectedOrganization.id
+      });
       console.log("Employment History response:", historyResponse);
 
       let historyData = [];
-      if (historyResponse.data?.data) {
+      if (historyResponse.data?.data?.data) {
+        historyData = historyResponse.data.data.data;
+      } else if (historyResponse.data?.data) {
         historyData = historyResponse.data.data;
       } else if (Array.isArray(historyResponse.data)) {
         historyData = historyResponse.data;
@@ -768,17 +784,8 @@ const EmploymentHistory = () => {
       setEvents(historyData);
       setFilteredEvents(historyData);
 
-      // 2. Fetch employees
-      const employeesResponse = await getEmployeesList();
-      let employeesData = [];
-      if (employeesResponse.data?.data) {
-        employeesData = employeesResponse.data.data;
-      } else if (Array.isArray(employeesResponse.data)) {
-        employeesData = employeesResponse.data;
-      }
-
-      console.log(`✅ Loaded ${employeesData.length} employees`);
-      setEmployees(employeesData);
+      // 2. Initial fetch for employees (first page)
+      fetchEmployees(1, "", true);
 
     } catch (error) {
       console.error("❌ Error fetching data:", error);
@@ -795,6 +802,44 @@ const EmploymentHistory = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch employees with pagination
+  const fetchEmployees = async (page = 1, search = "", reset = false) => {
+    if (!selectedOrganization?.id || isEmployeesLoading) return;
+    
+    setIsEmployeesLoading(true);
+    try {
+      const response = await getEmployees({
+        organization_id: selectedOrganization.id,
+        page,
+        search,
+        per_page: 10
+      });
+
+      const resData = response.data?.data;
+      const newData = resData?.data || [];
+      const lastPage = resData?.last_page || 1;
+
+      setEmployees(prev => reset ? newData : [...prev, ...newData]);
+      setHasMoreEmployees(page < lastPage);
+      setEmployeesPage(page);
+    } catch (error) {
+      console.error("❌ Error fetching employees:", error);
+    } finally {
+      setIsEmployeesLoading(false);
+    }
+  };
+
+  const handleLoadMoreEmployees = () => {
+    if (hasMoreEmployees && !isEmployeesLoading) {
+      fetchEmployees(employeesPage + 1, employeesSearch);
+    }
+  };
+
+  const handleSearchEmployees = (search) => {
+    setEmployeesSearch(search);
+    fetchEmployees(1, search, true);
   };
 
   // Apply filters
@@ -1051,6 +1096,10 @@ const EmploymentHistory = () => {
         onSubmit={handleSubmit}
         event={selectedEvent}
         employees={employees}
+        onLoadMoreEmployees={handleLoadMoreEmployees}
+        hasMoreEmployees={hasMoreEmployees}
+        isEmployeesLoading={isEmployeesLoading}
+        onSearchEmployees={handleSearchEmployees}
       />
 
       <div 

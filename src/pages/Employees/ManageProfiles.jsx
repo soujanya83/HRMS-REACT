@@ -263,11 +263,11 @@ export default function ManageProfiles() {
         prev.map((emp) =>
           emp.id === employeeId
             ? {
-                ...emp,
-                reporting_manager: managers.find(
-                  (m) => m.value === newManagerId
-                ),
-              }
+              ...emp,
+              reporting_manager: managers.find(
+                (m) => m.value === newManagerId
+              ),
+            }
             : emp
         )
       );

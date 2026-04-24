@@ -368,7 +368,12 @@ const RosterPeriods = () => {
       });
 
       if (response.data?.success === true) {
-        const activeEmployees = response.data.data.filter(emp => 
+        // Handle both paginated and flat array responses
+        const employeesList = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (response.data.data?.data || []);
+
+        const activeEmployees = employeesList.filter(emp => 
           emp.status === "Active" || emp.status === "active"
         );
         setAvailableEmployees(activeEmployees || []);

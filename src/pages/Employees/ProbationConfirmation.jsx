@@ -28,6 +28,7 @@ import {
 import {
   HiX,
 } from "react-icons/hi";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -126,6 +127,20 @@ const ColorPaletteModal = ({
 
 export default function ProbationConfirmation() {
   const [employees, setEmployees] = useState([]);
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePagination, setTablePagination] = useState({
+    lastPage: 1,
+    total: 0,
+    from: 0,
+    to: 0
+  });
+
+  const [dropdownEmployees, setDropdownEmployees] = useState([]);
+  const [dropdownPage, setDropdownPage] = useState(1);
+  const [hasMoreDropdown, setHasMoreDropdown] = useState(true);
+  const [isDropdownLoading, setIsDropdownLoading] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
+
   const [probationPeriods, setProbationPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -175,7 +190,7 @@ export default function ProbationConfirmation() {
     setLocalProbationForm(probationForm);
   }, [probationForm]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page = 1) => {
     if (!selectedOrganization) {
       setLoading(false);
       setEmployees([]);
@@ -197,6 +212,8 @@ export default function ProbationConfirmation() {
         search: searchTerm,
         organization_id: selectedOrganization.id,
         status: employeeStatusFilter,
+        page: page,
+        per_page: 10
       };
 
       const [employeesRes, probationRes] = await Promise.all([
@@ -204,8 +221,25 @@ export default function ProbationConfirmation() {
         getProbationPeriods({ organization_id: selectedOrganization.id }),
       ]);
 
-      setEmployees(employeesRes.data?.data || []);
-      setProbationPeriods(probationRes.data?.data || []);
+      const empData = employeesRes.data?.data;
+      const empList = empData?.data || [];
+      const lastPage = empData?.last_page || 1;
+
+      setEmployees(empList);
+      setTablePage(page);
+      setTablePagination({
+        lastPage: lastPage,
+        total: empData?.total || 0,
+        from: empData?.from || 0,
+        to: empData?.to || 0
+      });
+      
+      // Also sync first page for dropdown
+      setDropdownEmployees(empList);
+      setDropdownPage(1);
+      setHasMoreDropdown(1 < lastPage);
+
+      setProbationPeriods(probationRes.data?.data?.data || probationRes.data?.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       setError("Failed to load data. Please try again.");
@@ -215,6 +249,49 @@ export default function ProbationConfirmation() {
       setLoading(false);
     }
   }, [selectedOrganization, searchTerm, filter]);
+
+  const handleTablePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= tablePagination.lastPage) {
+      fetchData(newPage);
+    }
+  };
+
+  const fetchMoreDropdownEmployees = async (page = 1, search = "", reset = false) => {
+    if (!selectedOrganization?.id || isDropdownLoading) return;
+
+    setIsDropdownLoading(true);
+    try {
+      const response = await getEmployees({
+        organization_id: selectedOrganization.id,
+        page,
+        search,
+        per_page: 10
+      });
+
+      const resData = response.data?.data;
+      const newData = resData?.data || [];
+      const lastPage = resData?.last_page || 1;
+
+      setDropdownEmployees(prev => reset ? newData : [...prev, ...newData]);
+      setHasMoreDropdown(page < lastPage);
+      setDropdownPage(page);
+    } catch (error) {
+      console.error("❌ Error fetching more employees:", error);
+    } finally {
+      setIsDropdownLoading(false);
+    }
+  };
+
+  const handleLoadMoreDropdownEmployees = () => {
+    if (hasMoreDropdown && !isDropdownLoading) {
+      fetchMoreDropdownEmployees(dropdownPage + 1, dropdownSearch);
+    }
+  };
+
+  const handleSearchDropdownEmployees = (search) => {
+    setDropdownSearch(search);
+    fetchMoreDropdownEmployees(1, search, true);
+  };
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -594,7 +671,7 @@ export default function ProbationConfirmation() {
         (emp) => emp.id === localProbationForm.employee_id
       );
 
-      const availableEmployees = employees.filter((emp) => {
+      const availableEmployees = dropdownEmployees.filter((emp) => {
         const existingProbation = getEmployeeProbation(emp.id);
         return (
           !existingProbation ||
@@ -651,20 +728,21 @@ export default function ProbationConfirmation() {
                       readOnly
                     />
                   ) : (
-                    <select
-                      name="employee_id"
+                    <InfiniteScrollEmployeeDropdown
+                      employees={availableEmployees}
                       value={localProbationForm.employee_id}
-                      onChange={handleFormInputChange}
-                      required
-                      className="w-full border border-gray-300 px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select Employee *</option>
-                      {availableEmployees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.first_name} {emp.last_name} ({emp.employee_code})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => {
+                        setLocalProbationForm(prev => ({ ...prev, employee_id: val }));
+                        setProbationForm(prev => ({ ...prev, employee_id: val }));
+                      }}
+                      onLoadMore={handleLoadMoreDropdownEmployees}
+                      hasMore={hasMoreDropdown}
+                      isLoading={isDropdownLoading}
+                      onSearch={handleSearchDropdownEmployees}
+                      placeholder="Search and select employee..."
+                      required={true}
+                      selectedName={selectedEmployee ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}` : ''}
+                    />
                   )}
                 </div>
 
@@ -917,8 +995,8 @@ export default function ProbationConfirmation() {
                 onClick={handleGenerateReports}
                 disabled={generatingReport || employees.length === 0}
                 className={`px-5 py-3 rounded-lg transition-colors flex items-center font-medium ${generatingReport || employees.length === 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 text-white"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 text-white"
                   }`}
               >
                 <FaFileExport className="mr-2" />
@@ -948,7 +1026,7 @@ export default function ProbationConfirmation() {
                     Employee
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Department
+                    Room
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Joining Date
@@ -1030,10 +1108,10 @@ export default function ProbationConfirmation() {
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                   className={`h-2 rounded-full ${progress >= 100
-                                      ? "bg-green-500"
-                                      : progress >= 70
-                                        ? "bg-yellow-500"
-                                        : "bg-blue-500"
+                                    ? "bg-green-500"
+                                    : progress >= 70
+                                      ? "bg-yellow-500"
+                                      : "bg-blue-500"
                                     }`}
                                   style={{ width: `${Math.min(progress, 100)}%` }}
                                 ></div>
@@ -1067,10 +1145,10 @@ export default function ProbationConfirmation() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.status === "Active"
-                                ? "bg-green-100 text-green-800"
-                                : emp.status === "On Probation"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-gray-100 text-gray-800"
+                              ? "bg-green-100 text-green-800"
+                              : emp.status === "On Probation"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
                               }`}
                           >
                             {emp.status}
@@ -1157,6 +1235,73 @@ export default function ProbationConfirmation() {
               </tbody>
             </table>
           </div>
+
+          {/* Table Pagination */}
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handleTablePageChange(tablePage - 1)}
+                disabled={tablePage === 1}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${tablePage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handleTablePageChange(tablePage + 1)}
+                disabled={tablePage === tablePagination.lastPage}
+                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${tablePage === tablePagination.lastPage ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{tablePagination.from}</span> to <span className="font-medium">{tablePagination.to}</span> of{' '}
+                  <span className="font-medium">{tablePagination.total}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handleTablePageChange(tablePage - 1)}
+                    disabled={tablePage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${tablePage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  {[...Array(tablePagination.lastPage)].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => handleTablePageChange(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        tablePage === i + 1
+                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => handleTablePageChange(tablePage + 1)}
+                    disabled={tablePage === tablePagination.lastPage}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${tablePage === tablePagination.lastPage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Upcoming Confirmations */}
@@ -1198,8 +1343,8 @@ export default function ProbationConfirmation() {
                       </div>
                       <span
                         className={`px-3 py-1 text-xs rounded-full font-semibold ${remainingDays <= 7
-                            ? "bg-red-100 text-red-800"
-                            : "bg-orange-100 text-orange-800"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-orange-100 text-orange-800"
                           }`}
                       >
                         {remainingDays} {remainingDays === 1 ? "day" : "days"}

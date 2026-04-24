@@ -19,6 +19,7 @@ import {
   getEmployees,
   updateEmployeeStatus,
 } from "../../services/employeeService";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 import {
   getEmployeeExits,
   createEmployeeExit,
@@ -263,6 +264,20 @@ const OffboardingPage = () => {
 // Dashboard Component
 const OffboardingDashboard = () => {
   const [employees, setEmployees] = useState([]);
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePagination, setTablePagination] = useState({
+    lastPage: 1,
+    total: 0,
+    from: 0,
+    to: 0
+  });
+
+  const [dropdownEmployees, setDropdownEmployees] = useState([]);
+  const [dropdownPage, setDropdownPage] = useState(1);
+  const [hasMoreDropdown, setHasMoreDropdown] = useState(true);
+  const [isDropdownLoading, setIsDropdownLoading] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
+
   const [exits, setExits] = useState([]);
   const [selectedExit, setSelectedExit] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -280,7 +295,7 @@ const OffboardingDashboard = () => {
   const organizationId = selectedOrganization?.id;
   const { canAdd, canEdit, canDelete } = usePermissions('employee.exit_offboarding');
 
-  const fetchEmployees = useCallback(async () => {
+  const fetchEmployees = useCallback(async (page = 1) => {
     if (!organizationId) {
       setIsLoading(false);
       return;
@@ -293,10 +308,14 @@ const OffboardingDashboard = () => {
       const params = {
         organization_id: organizationId,
         search: searchTerm,
+        page: page,
+        per_page: 10
       };
 
       const employeesRes = await getEmployees(params);
-      const employeesData = employeesRes.data?.data || [];
+      const empData = employeesRes.data?.data;
+      const employeesData = empData?.data || [];
+      const lastPage = empData?.last_page || 1;
 
       // Filter only active employees (not terminated)
       const activeEmployees = employeesData.filter(
@@ -304,6 +323,19 @@ const OffboardingDashboard = () => {
       );
 
       setEmployees(activeEmployees);
+      setTablePage(page);
+      setTablePagination({
+        lastPage: lastPage,
+        total: empData?.total || 0,
+        from: empData?.from || 0,
+        to: empData?.to || 0
+      });
+
+      // Also sync first page for dropdown
+      setDropdownEmployees(employeesData);
+      setDropdownPage(1);
+      setHasMoreDropdown(1 < lastPage);
+
     } catch (err) {
       console.error("Error fetching employees:", err);
       setError("Failed to load employees. Please try again.");
@@ -311,6 +343,49 @@ const OffboardingDashboard = () => {
       setIsLoading(false);
     }
   }, [organizationId, searchTerm]);
+
+  const handleTablePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= tablePagination.lastPage) {
+      fetchEmployees(newPage);
+    }
+  };
+
+  const fetchMoreDropdownEmployees = async (page = 1, search = "", reset = false) => {
+    if (!organizationId || isDropdownLoading) return;
+
+    setIsDropdownLoading(true);
+    try {
+      const response = await getEmployees({
+        organization_id: organizationId,
+        page,
+        search,
+        per_page: 10
+      });
+
+      const resData = response.data?.data;
+      const newData = resData?.data || [];
+      const lastPage = resData?.last_page || 1;
+
+      setDropdownEmployees(prev => reset ? newData : [...prev, ...newData]);
+      setHasMoreDropdown(page < lastPage);
+      setDropdownPage(page);
+    } catch (error) {
+      console.error("❌ Error fetching more employees:", error);
+    } finally {
+      setIsDropdownLoading(false);
+    }
+  };
+
+  const handleLoadMoreDropdownEmployees = () => {
+    if (hasMoreDropdown && !isDropdownLoading) {
+      fetchMoreDropdownEmployees(dropdownPage + 1, dropdownSearch);
+    }
+  };
+
+  const handleSearchDropdownEmployees = (search) => {
+    setDropdownSearch(search);
+    fetchMoreDropdownEmployees(1, search, true);
+  };
 
 const ExitReports = () => {
   const { canView } = usePermissions('employee.exit_offboarding');
@@ -809,46 +884,105 @@ const ExitReports = () => {
             <h2 className="text-lg font-semibold text-gray-800">
               Active Employees
             </h2>
-            <span className="text-sm text-gray-500">
-              {employees.length} employees
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">
+                {tablePagination.total} total
+              </span>
+              {canAdd && (
+                <button
+                  onClick={() => {
+                    setSelectedEmployeeForExit(null);
+                    setInitiateExitModalOpen(true);
+                  }}
+                  className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  title="Initiate Exit for any employee"
+                >
+                  <HiPlus className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {employees.length > 0 ? (
-            <div className="space-y-4">
-              {employees.map((employee) => (
-                <div
-                  key={employee.id}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="font-semibold text-blue-600">
-                        {employee.first_name?.[0]}
-                        {employee.last_name?.[0]}
-                      </span>
+            <>
+              <div className="space-y-4">
+                {employees.map((employee) => (
+                  <div
+                    key={employee.id}
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <span className="font-semibold text-blue-600">
+                          {employee.first_name?.[0]}
+                          {employee.last_name?.[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {employee.first_name} {employee.last_name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {employee.employee_code} •{" "}
+                          {employee.department?.name || "No Department"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {employee.first_name} {employee.last_name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {employee.employee_code} •{" "}
-                        {employee.department?.name || "No Department"}
-                      </p>
-                    </div>
+                    {canAdd && (
+                      <button
+                        onClick={() => handleInitiateExit(employee)}
+                        className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                      >
+                        <HiUserRemove className="mr-1" /> Initiate Exit
+                      </button>
+                    )}
                   </div>
-                  {canAdd && (
-                    <button
-                      onClick={() => handleInitiateExit(employee)}
-                      className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center"
-                    >
-                      <HiUserRemove className="mr-1" /> Initiate Exit
-                    </button>
-                  )}
+                ))}
+              </div>
+              
+              {/* Table Pagination */}
+              <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handleTablePageChange(tablePage - 1)}
+                    disabled={tablePage === 1}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${tablePage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handleTablePageChange(tablePage + 1)}
+                    disabled={tablePage === tablePagination.lastPage}
+                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${tablePage === tablePagination.lastPage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
-            </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs text-gray-700">
+                      Page <span className="font-medium">{tablePage}</span> of <span className="font-medium">{tablePagination.lastPage}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleTablePageChange(tablePage - 1)}
+                      disabled={tablePage === 1}
+                      className={`relative inline-flex items-center px-2 py-1 border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 rounded ${tablePage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => handleTablePageChange(tablePage + 1)}
+                      disabled={tablePage === tablePagination.lastPage}
+                      className={`relative inline-flex items-center px-2 py-1 border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 rounded ${tablePage === tablePagination.lastPage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-gray-500">
               <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
@@ -982,7 +1116,7 @@ const ExitReports = () => {
       </div>
 
       {/* Modals */}
-      {isInitiateExitModalOpen && selectedEmployeeForExit && (
+      {isInitiateExitModalOpen && (
         <InitiateExitModal
           isOpen={isInitiateExitModalOpen}
           onClose={() => {
@@ -992,6 +1126,11 @@ const ExitReports = () => {
           onSubmit={handleSubmitExit}
           employee={selectedEmployeeForExit}
           templates={templates}
+          dropdownEmployees={dropdownEmployees}
+          onLoadMoreEmployees={handleLoadMoreDropdownEmployees}
+          hasMoreEmployees={hasMoreDropdown}
+          isEmployeesLoading={isDropdownLoading}
+          onSearchEmployees={handleSearchDropdownEmployees}
         />
       )}
 
@@ -2032,6 +2171,11 @@ const InitiateExitModal = ({
   onSubmit,
   employee,
   templates,
+  dropdownEmployees,
+  onLoadMoreEmployees,
+  hasMoreEmployees,
+  isEmployeesLoading,
+  onSearchEmployees
 }) => {
   const [formData, setFormData] = useState({
     resignation_date: new Date().toISOString().split("T")[0],
@@ -2047,13 +2191,13 @@ const InitiateExitModal = ({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (employee && isOpen) {
+    if (isOpen) {
       const today = new Date().toISOString().split("T")[0];
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
 
       setFormData({
-        employee_id: employee.id,
+        employee_id: employee?.id || "",
         resignation_date: today,
         last_working_day: nextWeek.toISOString().split("T")[0],
         reason_for_leaving: "",
@@ -2090,6 +2234,8 @@ const InitiateExitModal = ({
     e.preventDefault();
 
     const validationErrors = {};
+    if (!formData.employee_id)
+      validationErrors.employee_id = "Employee is required";
     if (!formData.resignation_date)
       validationErrors.resignation_date = "Resignation date is required";
     if (!formData.last_working_day)
@@ -2105,7 +2251,7 @@ const InitiateExitModal = ({
     setIsSubmitting(true);
     try {
       const exitData = {
-        employee_id: employee.id,
+        employee_id: formData.employee_id,
         resignation_date: formData.resignation_date,
         last_working_day: formData.last_working_day,
         reason_for_leaving: formData.reason_for_leaving,
@@ -2135,6 +2281,13 @@ const InitiateExitModal = ({
     }
   };
 
+  const handleEmployeeChange = (employeeId) => {
+    setFormData(prev => ({ ...prev, employee_id: employeeId }));
+    if (errors.employee_id) {
+      setErrors(prev => ({ ...prev, employee_id: "" }));
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -2142,7 +2295,7 @@ const InitiateExitModal = ({
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-bold text-gray-800">
-            Initiate Exit Process for {employee.first_name} {employee.last_name}
+            {employee ? `Initiate Exit Process for ${employee.first_name} ${employee.last_name}` : "Initiate Exit Process"}
           </h2>
           <button
             onClick={onClose}
@@ -2167,16 +2320,38 @@ const InitiateExitModal = ({
             </div>
           )}
 
-          <div className="mb-4 p-3 bg-blue-50 rounded-md">
-            <p className="text-sm text-blue-800">
-              <strong>Employee:</strong> {employee.first_name}{" "}
-              {employee.last_name} ({employee.employee_code})
-            </p>
-            <p className="text-sm text-blue-800 mt-1">
-              <strong>Department:</strong>{" "}
-              {employee.department?.name || "No Department"}
-            </p>
-          </div>
+          {employee ? (
+            <div className="mb-4 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Employee:</strong> {employee.first_name}{" "}
+                {employee.last_name} ({employee.employee_code})
+              </p>
+              <p className="text-sm text-blue-800 mt-1">
+                <strong>Department:</strong>{" "}
+                {employee.department?.name || "No Department"}
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Employee *
+              </label>
+              <InfiniteScrollEmployeeDropdown
+                employees={dropdownEmployees}
+                value={formData.employee_id}
+                onChange={handleEmployeeChange}
+                onLoadMore={onLoadMoreEmployees}
+                hasMore={hasMoreEmployees}
+                isLoading={isEmployeesLoading}
+                onSearch={onSearchEmployees}
+                placeholder="Search and select employee..."
+                required={true}
+              />
+              {errors.employee_id && (
+                <p className="mt-1 text-xs text-red-600">{errors.employee_id}</p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

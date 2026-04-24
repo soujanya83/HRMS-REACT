@@ -30,6 +30,7 @@ import {
 import { HiX } from "react-icons/hi";
 import shiftSwapService from "../../services/shiftSwapService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScrollEmployeeDropdown";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -154,6 +155,51 @@ const ShiftSwapping = () => {
     employee: "all",
   });
 
+  // State for InfiniteScrollEmployeeDropdown
+  const [dropdownEmployees, setDropdownEmployees] = useState([]);
+  const [dropdownPage, setDropdownPage] = useState(1);
+  const [dropdownHasMore, setDropdownHasMore] = useState(true);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
+
+  const fetchDropdownEmployees = async (page = 1, search = "", append = false) => {
+    if (!selectedOrganization?.id) return;
+    
+    try {
+      setDropdownLoading(true);
+      const response = await shiftSwapService.getEmployees({
+        organization_id: selectedOrganization.id,
+        page,
+        search,
+        per_page: 20
+      });
+
+      if (response?.success) {
+        const newData = response.data?.data || [];
+        const lastPage = response.data?.last_page || 1;
+        
+        setDropdownEmployees(prev => append ? [...prev, ...newData] : newData);
+        setDropdownHasMore(page < lastPage);
+        setDropdownPage(page);
+      }
+    } catch (error) {
+      console.error("Error fetching dropdown employees:", error);
+    } finally {
+      setDropdownLoading(false);
+    }
+  };
+
+  const handleDropdownSearch = (val) => {
+    setDropdownSearch(val);
+    fetchDropdownEmployees(1, val, false);
+  };
+
+  const handleDropdownLoadMore = () => {
+    if (!dropdownLoading && dropdownHasMore) {
+      fetchDropdownEmployees(dropdownPage + 1, dropdownSearch, true);
+    }
+  };
+
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
     localStorage.setItem('sidebarColor', sidebarColor);
@@ -185,6 +231,7 @@ const ShiftSwapping = () => {
   useEffect(() => {
     if (selectedOrganization) {
       fetchAllData();
+      fetchDropdownEmployees(1, "", false);
     }
   }, [selectedOrganization]);
 
@@ -253,6 +300,25 @@ const ShiftSwapping = () => {
       setLoading(true);
       setRatesLoading(true);
 
+      // Helper function to extract data from API response
+      const extractData = (response) => {
+        if (!response || !response.data) return [];
+        if (response.data.success === true) {
+          const data = response.data.data;
+          if (data && data.data && Array.isArray(data.data)) return data.data;
+          if (Array.isArray(data)) return data;
+          return data || [];
+        }
+        if (Array.isArray(response.data)) return response.data;
+        if (response.data.data) {
+          if (Array.isArray(response.data.data)) return response.data.data;
+          if (response.data.data.data && Array.isArray(response.data.data.data)) {
+            return response.data.data.data;
+          }
+        }
+        return [];
+      };
+
       // Fetch all data
       const [
         swapRequestsResponse,
@@ -278,21 +344,15 @@ const ShiftSwapping = () => {
       ]);
 
       // Process swap requests
-      if (
-        swapRequestsResponse.status === "fulfilled" &&
-        swapRequestsResponse.value?.success
-      ) {
-        setSwapRequests(swapRequestsResponse.value.data || []);
+      if (swapRequestsResponse.status === "fulfilled") {
+        setSwapRequests(extractData(swapRequestsResponse.value));
       } else {
         setSwapRequests([]);
       }
 
       // Process employees and their rates
-      if (
-        employeesResponse.status === "fulfilled" &&
-        employeesResponse.value?.success
-      ) {
-        const employeesData = employeesResponse.value.data || [];
+      if (employeesResponse.status === "fulfilled") {
+        const employeesData = extractData(employeesResponse.value);
         const formattedEmployees = employeesData.map((emp) => ({
           id: emp.id,
           name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
@@ -317,31 +377,22 @@ const ShiftSwapping = () => {
       }
 
       // Process rosters
-      if (
-        rostersResponse.status === "fulfilled" &&
-        rostersResponse.value?.success
-      ) {
-        setRosters(rostersResponse.value.data || []);
+      if (rostersResponse.status === "fulfilled") {
+        setRosters(extractData(rostersResponse.value));
       } else {
         setRosters([]);
       }
 
       // Process shifts
-      if (
-        shiftsResponse.status === "fulfilled" &&
-        shiftsResponse.value?.success
-      ) {
-        setShifts(shiftsResponse.value.data || []);
+      if (shiftsResponse.status === "fulfilled") {
+        setShifts(extractData(shiftsResponse.value));
       } else {
         setShifts([]);
       }
 
       // Process departments
-      if (
-        departmentsResponse.status === "fulfilled" &&
-        departmentsResponse.value?.success
-      ) {
-        const departmentsData = departmentsResponse.value.data || [];
+      if (departmentsResponse.status === "fulfilled") {
+        const departmentsData = extractData(departmentsResponse.value);
         const departmentNames = departmentsData.map((dept) => dept.name);
         setDepartments(departmentNames);
       } else {
@@ -977,18 +1028,18 @@ const ShiftSwapping = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Employee
                 </label>
-                <select
+                <InfiniteScrollEmployeeDropdown
+                  employees={dropdownEmployees}
                   value={filters.employee}
-                  onChange={(e) => handleFilterChange("employee", e.target.value)}
-                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
-                >
-                  <option value="all">All Employees</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.employee_code}) - {formatCurrency(emp.hourly_rate || 25)}/hr
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => handleFilterChange("employee", val)}
+                  onLoadMore={handleDropdownLoadMore}
+                  hasMore={dropdownHasMore}
+                  isLoading={dropdownLoading}
+                  onSearch={handleDropdownSearch}
+                  placeholder="All Employees"
+                  allowAll={true}
+                  selectedName={employees.find(e => String(e.id) === String(filters.employee))?.name}
+                />
               </div>
             </div>
           </div>
@@ -1252,23 +1303,17 @@ const ShiftSwapping = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Employee to Swap With *
                       </label>
-                      <select
-                        name="requested_employee_id"
-                        required
+                      <InfiniteScrollEmployeeDropdown
+                        employees={dropdownEmployees.filter(emp => String(emp.id) !== String(currentUserId))}
                         value={newRequest.requested_employee_id}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-                      >
-                        <option value="">Select Employee</option>
-                        {employees
-                          .filter((emp) => emp.id !== currentUserId)
-                          .map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.name} ({emp.employee_code}) -{" "}
-                              {emp.department_name} - {formatCurrency(emp.hourly_rate || 25)}/hr
-                            </option>
-                          ))}
-                      </select>
+                        onChange={(val) => setNewRequest(prev => ({ ...prev, requested_employee_id: val, requested_roster_id: "" }))}
+                        onLoadMore={handleDropdownLoadMore}
+                        hasMore={dropdownHasMore}
+                        isLoading={dropdownLoading}
+                        onSearch={handleDropdownSearch}
+                        placeholder="Select Employee"
+                        selectedName={employees.find(e => String(e.id) === String(newRequest.requested_employee_id))?.name}
+                      />
                     </div>
 
                     {newRequest.requested_employee_id && (

@@ -54,7 +54,7 @@ import SendInviteModal from "../../components/SendInviteModal";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -116,9 +116,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -132,9 +131,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -167,11 +165,10 @@ const ConfirmationModal = ({
       <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center gap-3 mb-4">
           <div
-            className={`p-3 rounded-full ${
-              type === "delete"
+            className={`p-3 rounded-full ${type === "delete"
                 ? "bg-red-100 text-red-600"
                 : "bg-green-100 text-green-600"
-            }`}
+              }`}
           >
             {type === "delete" ? (
               <FaTrash className="h-6 w-6" />
@@ -222,7 +219,7 @@ const XeroStatusBadge = ({ employee, onClick, syncing }) => {
 
   if (hasXeroConnection || xeroStatus === "synced" || xeroStatus === "Synced") {
     return (
-      <div 
+      <div
         className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full cursor-pointer hover:bg-green-200 transition-colors"
         title="Already linked to Xero. Click to view details."
         onClick={() => onClick(employee)}
@@ -250,9 +247,9 @@ const XeroStatusBadge = ({ employee, onClick, syncing }) => {
 const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
   if (!isOpen || !employee) return null;
 
-  const xeroEmployeeId = 
-    employee.xero_employee_connection?.xero_employee_id || 
-    employee.xero_employee_id || 
+  const xeroEmployeeId =
+    employee.xero_employee_connection?.xero_employee_id ||
+    employee.xero_employee_id ||
     'N/A';
 
   const xeroStatus = employee.xero_synced_status || employee.xero_status || 'synced';
@@ -284,7 +281,7 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
             <p className="text-gray-900">{employee.first_name} {employee.last_name}</p>
             <p className="text-sm text-gray-500">{employee.employee_code || 'No Code'}</p>
           </div>
-          
+
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Xero Employee ID</p>
             <div className="flex items-center gap-2">
@@ -413,6 +410,9 @@ export default function EmployeeList() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [view, setView] = useState("active");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const [departments, setDepartments] = useState([]);
   const [syncingAll, setSyncingAll] = useState(false);
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -501,30 +501,8 @@ export default function EmployeeList() {
 
   // Apply filters function
   const applyFilters = useCallback((employeesList, search, status, department) => {
-    let filtered = [...employeesList];
-
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = filtered.filter((employee) =>
-        employee.first_name?.toLowerCase().includes(searchLower) ||
-        employee.last_name?.toLowerCase().includes(searchLower) ||
-        employee.personal_email?.toLowerCase().includes(searchLower) ||
-        employee.employee_code?.toLowerCase().includes(searchLower) ||
-        employee.phone_number?.includes(search)
-      );
-    }
-
-    if (status !== "all") {
-      filtered = filtered.filter((employee) => employee.status === status);
-    }
-
-    if (department !== "all") {
-      filtered = filtered.filter((employee) => 
-        employee.department?.name === department
-      );
-    }
-
-    setFilteredEmployees(filtered);
+    // If the API already handled filtering, we just set the list
+    setFilteredEmployees(employeesList);
   }, []);
 
   // Fetch employees
@@ -538,27 +516,37 @@ export default function EmployeeList() {
     try {
       let response;
       let employeesData = [];
-      
+
       if (view === "active") {
         response = await getEmployees({
           organization_id: selectedOrganization.id,
+          search: searchTerm,
+          status: selectedStatus !== "all" ? selectedStatus : undefined,
+          department_id: selectedDepartment !== "all" ? selectedDepartment : undefined,
+          page: currentPage
         });
-        employeesData = response.data?.data || [];
+        employeesData = response.data?.data?.data || [];
+        setPagination(response.data?.data);
       } else {
+        // Trashed might not be paginated yet, but let's handle it safely
         response = await axiosClient.post('/employees/trashed', {
           organization_id: selectedOrganization.id
         });
-        
+
         if (response.data?.success === true && Array.isArray(response.data.data)) {
           employeesData = response.data.data;
+        } else if (response.data?.data?.data) {
+          employeesData = response.data.data.data;
+          setPagination(response.data.data);
         } else if (Array.isArray(response.data)) {
           employeesData = response.data;
         }
       }
 
       setEmployees(employeesData);
-      applyFilters(employeesData, searchTerm, selectedStatus, selectedDepartment);
+      setFilteredEmployees(employeesData);
 
+      // Stats calculation (might be limited to current page now)
       const activeCount = employeesData.filter(
         (emp) => emp.status === "Active"
       ).length;
@@ -576,7 +564,7 @@ export default function EmployeeList() {
       });
 
       setStats({
-        total: employeesData.length,
+        total: response.data?.data?.total || employeesData.length,
         active: activeCount,
         inactive: inactiveCount,
         onLeave: onLeaveCount,
@@ -589,11 +577,25 @@ export default function EmployeeList() {
     } finally {
       setLoading(false);
     }
-  }, [selectedOrganization, view, searchTerm, selectedStatus, selectedDepartment, applyFilters]);
+  }, [selectedOrganization, view, searchTerm, selectedStatus, selectedDepartment, currentPage]);
 
   useEffect(() => {
     applyFilters(employees, searchTerm, selectedStatus, selectedDepartment);
   }, [searchTerm, selectedStatus, selectedDepartment, employees, applyFilters]);
+
+  // Fetch departments
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      axiosClient
+        .get(`/organizations/${selectedOrganization.id}/departments`)
+        .then((res) => {
+          if (res.data && res.data.success) {
+            setDepartments(res.data.data || []);
+          }
+        })
+        .catch((err) => console.error("Error fetching departments:", err));
+    }
+  }, [selectedOrganization]);
 
   useEffect(() => {
     fetchEmployees();
@@ -629,10 +631,9 @@ export default function EmployeeList() {
         await modalState.action();
         fetchEmployees();
         toast.success(
-          `${
-            modalState.type === "delete"
-              ? "Employee moved to trash"
-              : "Employee restored"
+          `${modalState.type === "delete"
+            ? "Employee moved to trash"
+            : "Employee restored"
           } successfully!`
         );
       } catch (error) {
@@ -702,29 +703,29 @@ export default function EmployeeList() {
     }
 
     setSyncingEmployees((prev) => ({ ...prev, [employee.id]: true }));
-    
+
     try {
       const response = await syncEmployeeToXero(
         selectedOrganization.id,
         employee.id
       );
-      
+
       if (response.data?.status === true) {
         const xeroEmployeeId = response.data.xero_employee_id;
-        
+
         if (response.data.message === "Employee already linked with Xero.") {
           toast.info(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`);
         } else {
           toast.success(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`);
         }
-        
+
         await fetchEmployees();
       } else {
         throw new Error(response.data?.message || 'Failed to sync with Xero');
       }
     } catch (error) {
       console.error("Failed to sync to Xero:", error);
-      
+
       if (error.response?.data?.error?.includes("No query results for model")) {
         toast.error(`Employee ${employee.first_name} ${employee.last_name} not found in the system.`);
       } else {
@@ -742,7 +743,7 @@ export default function EmployeeList() {
       return;
     }
 
-    const unsyncedEmployees = employees.filter(emp => 
+    const unsyncedEmployees = employees.filter(emp =>
       !emp.xero_employee_id && !emp.xero_employee_connection
     );
 
@@ -763,9 +764,9 @@ export default function EmployeeList() {
     for (const employee of unsyncedEmployees) {
       try {
         setSyncingEmployees(prev => ({ ...prev, [employee.id]: true }));
-        
+
         const response = await syncEmployeeToXero(selectedOrganization.id, employee.id);
-        
+
         if (response.data?.status === true) {
           successCount++;
         } else {
@@ -835,9 +836,6 @@ export default function EmployeeList() {
     toast.success("Export started! Check your downloads folder.");
   };
 
-  const departments = [
-    ...new Set(employees.map((emp) => emp.department?.name).filter(Boolean)),
-  ];
   const statuses = [
     "Active",
     "Inactive",
@@ -851,7 +849,7 @@ export default function EmployeeList() {
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
@@ -900,7 +898,7 @@ export default function EmployeeList() {
         employee={xeroDetailsModal.employee}
       />
 
-      <div 
+      <div
         className="p-3 sm:p-4 lg:p-5 font-sans min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -930,7 +928,7 @@ export default function EmployeeList() {
                 >
                   {syncingAll ? (
                     <>
-                      <FaSpinner className="animate-spin h-3.5 w-3.5" /> 
+                      <FaSpinner className="animate-spin h-3.5 w-3.5" />
                       Syncing...
                     </>
                   ) : (
@@ -1009,21 +1007,19 @@ export default function EmployeeList() {
               <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg">
                 <button
                   onClick={() => setView("active")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
-                    view === "active"
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${view === "active"
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
-                  }`}
+                    }`}
                 >
                   Active
                 </button>
                 <button
                   onClick={() => setView("trashed")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${
-                    view === "trashed"
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${view === "trashed"
                       ? "bg-white text-red-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
-                  }`}
+                    }`}
                 >
                   <FaTrash className="h-3 w-3" />
                   Trash ({trashedCount})
@@ -1038,7 +1034,10 @@ export default function EmployeeList() {
                     type="text"
                     placeholder="Search employees..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   />
                 </div>
@@ -1046,7 +1045,10 @@ export default function EmployeeList() {
                 <div className="flex gap-2">
                   <select
                     value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedStatus(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[120px]"
                   >
                     <option value="all">All Status</option>
@@ -1059,13 +1061,16 @@ export default function EmployeeList() {
 
                   <select
                     value={selectedDepartment}
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedDepartment(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[140px]"
                   >
-                    <option value="all">All Depts</option>
+                    <option value="all">All Rooms</option>
                     {departments.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
                       </option>
                     ))}
                   </select>
@@ -1125,12 +1130,12 @@ export default function EmployeeList() {
                       </h3>
                       <p className="text-xs text-gray-500 mb-2">
                         {searchTerm ||
-                        selectedStatus !== "all" ||
-                        selectedDepartment !== "all"
+                          selectedStatus !== "all" ||
+                          selectedDepartment !== "all"
                           ? "Try adjusting your search or filters"
                           : view === "trashed"
-                          ? "Trash is empty"
-                          : "Add your first employee"}
+                            ? "Trash is empty"
+                            : "Add your first employee"}
                       </p>
                       {view === "active" && !searchTerm && canAdd && (
                         <button
@@ -1175,7 +1180,7 @@ export default function EmployeeList() {
                           <FaPhone className="text-gray-400 h-3 w-3" />
                           {employee.phone_number || "No phone"}
                         </div>
-                       </td>
+                      </td>
                       <td className="px-3 py-2">
                         <div className="text-xs text-gray-900 flex items-center gap-1 mb-0.5">
                           <FaBriefcase className="text-gray-400 h-3 w-3" />
@@ -1185,35 +1190,21 @@ export default function EmployeeList() {
                           <FaBuilding className="text-gray-400 h-3 w-3" />
                           {employee.department?.name || "No dept"}
                         </div>
-                       </td>
-                       <td className="px-3 py-2">
+                      </td>
+                      <td className="px-3 py-2">
                         {canEdit && (
-                          <XeroStatusBadge 
+                          <XeroStatusBadge
                             employee={employee}
                             onClick={() => handleSyncToXero(employee)}
                             syncing={syncingEmployees[employee.id]}
                           />
                         )}
-                       </td>
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex flex-col gap-1">
                           <StatusBadge status={employee.status} />
-                          {view === "active" &&
-                            employee.status !== "Terminated" && canEdit && (
-                              <select
-                                value={employee.status}
-                                onChange={(e) =>
-                                  handleStatusChange(employee.id, e.target.value)
-                                }
-                                className="text-[10px] bg-white border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              >
-                                {["Active", "Inactive", "On Leave", "Terminated", "On Probation"].map((s) => (
-                                  <option key={s} value={s}>{s}</option>
-                                ))}
-                              </select>
-                            )}
                         </div>
-                       </td>
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         <div className="text-xs text-gray-900">
                           {employee.joining_date
@@ -1224,12 +1215,12 @@ export default function EmployeeList() {
                           <div className="text-[10px] text-gray-400">
                             {Math.floor(
                               (new Date() - new Date(employee.joining_date)) /
-                                (1000 * 60 * 60 * 24 * 365)
+                              (1000 * 60 * 60 * 24 * 365)
                             )}{" "}
                             yrs
                           </div>
                         )}
-                       </td>
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         <div className="flex items-center gap-0.5">
                           {view === "active" ? (
@@ -1256,7 +1247,7 @@ export default function EmployeeList() {
                               >
                                 <FaFileAlt className="h-3.5 w-3.5" />
                               </Link>
-                              
+
                               {canDelete && (
                                 <button
                                   onClick={() => handleDelete(employee)}
@@ -1290,7 +1281,7 @@ export default function EmployeeList() {
                             </>
                           )}
                         </div>
-                       </td>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -1324,6 +1315,76 @@ export default function EmployeeList() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {pagination && pagination.last_page > 1 && (
+          <div className="mt-4 flex flex-col md:flex-row justify-between items-center bg-white p-3 shadow-sm rounded-xl border border-gray-200 gap-4">
+            <div className="text-xs text-gray-600">
+              Showing <span className="font-semibold">{pagination.from}</span> to{" "}
+              <span className="font-semibold">{pagination.to}</span> of{" "}
+              <span className="font-semibold">{pagination.total}</span> entries
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === 1
+                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  }`}
+              >
+                Prev
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(pagination.last_page)].map((_, i) => {
+                  const pageNum = i + 1;
+                  if (
+                    pageNum === 1 ||
+                    pageNum === pagination.last_page ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${currentPage === pageNum
+                            ? "bg-blue-600 text-white shadow-sm scale-105"
+                            : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return (
+                      <span key={pageNum} className="px-1 text-gray-400 text-xs">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(prev + 1, pagination.last_page)
+                  )
+                }
+                disabled={currentPage === pagination.last_page}
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === pagination.last_page
+                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  }`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Department Distribution Chart */}
         {Object.keys(stats.departments).length > 0 && view === "active" && (

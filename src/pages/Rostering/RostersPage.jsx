@@ -25,7 +25,7 @@ import {
   FaDollarSign
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
-import rosterService from "../../services/rosterService"; 
+import rosterService from "../../services/rosterService";
 import employeeService from "../../services/employeeService"; // Import employee service
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import { toast, ToastContainer } from "react-toastify";
@@ -36,7 +36,7 @@ import "react-toastify/dist/ReactToastify.css";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -98,9 +98,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -114,9 +113,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -164,7 +162,7 @@ const RostersPage = () => {
   const [selectedRoster, setSelectedRoster] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     employee_id: "",
@@ -198,43 +196,43 @@ const RostersPage = () => {
   // Calculate net working hours
   const calculateNetWorkingHours = useCallback((shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 0;
-    
+
     const start = new Date(`2000-01-01T${shift.start_time}`);
     const end = new Date(`2000-01-01T${shift.end_time}`);
-    
+
     let totalDuration = (end - start) / (1000 * 60 * 60);
     if (totalDuration < 0) totalDuration += 24;
-    
+
     if (shift.total_break_minutes) {
       totalDuration -= (parseInt(shift.total_break_minutes) / 60);
     } else if (shift.break_duration) {
       totalDuration -= (shift.break_duration / 60);
     }
-    
+
     return parseFloat(totalDuration.toFixed(2));
   }, []);
 
   // Get employee hourly rate from employee data
   const getEmployeeRate = useCallback((employee) => {
     if (!employee) return 25; // Default fallback rate
-    
+
     // Try different possible rate fields
-    return employee.hourly_wage || 
-           employee.pay_rate || 
-           employee.rate || 
-           employee.hourly_rate || 
-           25; // Default fallback
+    return employee.hourly_wage ||
+      employee.pay_rate ||
+      employee.rate ||
+      employee.hourly_rate ||
+      25; // Default fallback
   }, []);
 
   // Calculate amount for a roster
   const calculateRosterAmount = useCallback((roster) => {
     if (!roster) return 0;
-    
+
     const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
     if (!shift) return 0;
-    
+
     const hours = calculateNetWorkingHours(shift);
-    
+
     // Get rate from employee data
     let rate = 25; // Default
     if (roster.employee) {
@@ -243,14 +241,14 @@ const RostersPage = () => {
       const employee = employees.find(e => e.id === roster.employee_id);
       rate = getEmployeeRate(employee);
     }
-    
+
     return hours * rate;
   }, [shifts, employees, getEmployeeRate, calculateNetWorkingHours]);
 
   // Get shift color style
   const getShiftColor = useCallback((shiftId) => {
-    const shift = shifts.find(s => s.id === shiftId) || 
-                  rosters.find(r => r.shift?.id === shiftId)?.shift;
+    const shift = shifts.find(s => s.id === shiftId) ||
+      rosters.find(r => r.shift?.id === shiftId)?.shift;
     if (!shift) return {
       backgroundColor: '#f3f4f6',
       color: '#374151',
@@ -265,21 +263,21 @@ const RostersPage = () => {
       };
     }
 
-    return { 
-      backgroundColor: '#f3f4f6', 
-      color: '#374151', 
-      borderColor: '#d1d5db' 
+    return {
+      backgroundColor: '#f3f4f6',
+      color: '#374151',
+      borderColor: '#d1d5db'
     };
   }, [shifts, rosters]);
 
   // Fetch employee rates separately
   const fetchEmployeeRates = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     setRatesLoading(true);
     try {
       const response = await employeeService.getEmployees({ organization_id: selectedOrganization.id });
-      
+
       // Extract employees data from response
       let employeesData = [];
       if (response?.data) {
@@ -289,13 +287,13 @@ const RostersPage = () => {
           employeesData = response.data.data;
         }
       }
-      
+
       // Build rates object
       const rates = {};
       employeesData.forEach(emp => {
         rates[emp.id] = getEmployeeRate(emp);
       });
-      
+
       setEmployeeRates(rates);
       console.log("💰 Employee rates loaded:", rates);
     } catch (error) {
@@ -322,17 +320,37 @@ const RostersPage = () => {
 
       // Helper function to extract data from API response
       const extractData = (response) => {
-        if (response && response.data) {
-          if (response.data.success && response.data.data) {
-            return response.data.data;
+        if (!response || !response.data) return [];
+
+        // case 1: response.data is success and has data
+        if (response.data.success === true) {
+          const data = response.data.data;
+          // handle paginated structure { current_page, data: [], ... }
+          if (data && data.data && Array.isArray(data.data)) {
+            return data.data;
           }
-          if (Array.isArray(response.data)) {
-            return response.data;
+          // handle flat array structure
+          if (Array.isArray(data)) {
+            return data;
           }
-          if (response.data.data) {
-            return response.data.data;
-          }
+          // fallback to data itself if it's truthy
+          return data || [];
         }
+
+        // case 2: response.data itself is an array
+        if (Array.isArray(response.data)) {
+          return response.data;
+        }
+
+        // case 3: response.data.data exists but success is not explicit
+        if (response.data.data) {
+          if (Array.isArray(response.data.data)) return response.data.data;
+          if (response.data.data.data && Array.isArray(response.data.data.data)) {
+            return response.data.data.data;
+          }
+          return response.data.data || [];
+        }
+
         return [];
       };
 
@@ -356,7 +374,7 @@ const RostersPage = () => {
       if (employeesRes.status === "fulfilled") {
         employeesData = extractData(employeesRes.value);
         console.log("Employees loaded:", employeesData.length);
-        
+
         // Extract and store employee rates
         const rates = {};
         employeesData.forEach(emp => {
@@ -416,11 +434,11 @@ const RostersPage = () => {
     const weekDates = getWeekDates();
     const weekStart = weekDates[0].toISOString().split('T')[0];
     const weekEnd = weekDates[weekDates.length - 1].toISOString().split('T')[0];
-    
+
     // Filter rosters for current week
     const weekRosters = rosters.filter(roster => {
       if (!roster.roster_date) return false;
-      const rosterDate = typeof roster.roster_date === 'string' 
+      const rosterDate = typeof roster.roster_date === 'string'
         ? roster.roster_date.split('T')[0]
         : new Date(roster.roster_date).toISOString().split('T')[0];
       return rosterDate >= weekStart && rosterDate <= weekEnd;
@@ -516,12 +534,12 @@ const RostersPage = () => {
     if (formData.shift_id && formData.employee_id) {
       const shift = shifts.find(s => s.id === parseInt(formData.shift_id));
       setSelectedShift(shift);
-      
+
       const employee = employees.find(e => e.id === parseInt(formData.employee_id));
       const rate = employee ? getEmployeeRate(employee) : 25;
       const hours = calculateNetWorkingHours(shift);
       const amount = hours * rate;
-      
+
       setEstimatedAmount(amount);
     } else {
       setEstimatedAmount(0);
@@ -538,12 +556,12 @@ const RostersPage = () => {
   const getWeekDates = useCallback(() => {
     const start = new Date(currentDate);
     start.setHours(0, 0, 0, 0);
-    
+
     // Adjust to get Monday as first day
     const day = start.getDay();
     const diff = start.getDate() - day + (day === 0 ? -6 : 1);
     start.setDate(diff);
-    
+
     return Array.from({ length: 5 }, (_, i) => {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
@@ -570,15 +588,15 @@ const RostersPage = () => {
 
   const getRostersForEmployeeAndDate = useCallback((employeeId, date) => {
     if (!date || !employeeId) return [];
-    
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const targetDateStr = `${year}-${month}-${day}`;
-    
+
     return rosters.filter((roster) => {
       if (roster.employee_id !== employeeId && roster.employee?.id !== employeeId) return false;
-      
+
       let rosterDateStr = '';
       if (typeof roster.roster_date === 'string') {
         rosterDateStr = roster.roster_date.split('T')[0];
@@ -586,7 +604,7 @@ const RostersPage = () => {
         const d = roster.roster_date;
         rosterDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
-      
+
       return rosterDateStr === targetDateStr;
     });
   }, [rosters]);
@@ -594,14 +612,14 @@ const RostersPage = () => {
   // Filter employees based on search and department
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
-      const matchesDepartment = filters.department === "all" || 
+      const matchesDepartment = filters.department === "all" ||
         employee.department_id?.toString() === filters.department;
-      
+
       const matchesSearch = filters.search === "" ||
         (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
         (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
         (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
-      
+
       return matchesDepartment && matchesSearch;
     });
   }, [employees, filters]);
@@ -631,7 +649,7 @@ const RostersPage = () => {
   const handleExport = () => {
     const weekDates = getWeekDates();
     const weekRange = `${weekDates[0].toLocaleDateString()} - ${weekDates[weekDates.length - 1].toLocaleDateString()}`;
-    
+
     const csvContent = [
       [`Weekly Roster Report - ${weekRange}`],
       [`Generated: ${new Date().toLocaleString()}`],
@@ -643,7 +661,7 @@ const RostersPage = () => {
       ...rosters
         .filter(roster => {
           if (!roster.roster_date) return false;
-          const rosterDate = typeof roster.roster_date === 'string' 
+          const rosterDate = typeof roster.roster_date === 'string'
             ? roster.roster_date.split('T')[0]
             : new Date(roster.roster_date).toISOString().split('T')[0];
           const weekStart = weekDates[0].toISOString().split('T')[0];
@@ -656,9 +674,9 @@ const RostersPage = () => {
           const hours = calculateNetWorkingHours(shift);
           const rate = employee ? getEmployeeRate(employee) : 25;
           const amount = hours * rate;
-          
+
           const dept = departments.find(d => d.id === employee?.department_id);
-          
+
           return [
             employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : "Unknown",
             dept?.name || "N/A",
@@ -719,32 +737,32 @@ const RostersPage = () => {
     setModalMode("add");
     setSelectedDate(date);
     setSelectedEmployee(employeeId);
-    
+
     const formattedDate = date.toISOString().split('T')[0];
-    
+
     setFormData({
       employee_id: employeeId,
       shift_id: "",
       roster_date: formattedDate,
       notes: ""
     });
-    
+
     setShowModal(true);
   };
 
   const handleEditRoster = (roster) => {
     setModalMode("edit");
     setSelectedRoster(roster);
-    
+
     setFormData({
       employee_id: roster.employee_id || roster.employee?.id,
       shift_id: roster.shift_id || roster.shift?.id,
-      roster_date: typeof roster.roster_date === 'string' 
+      roster_date: typeof roster.roster_date === 'string'
         ? roster.roster_date.split('T')[0]
         : new Date(roster.roster_date).toISOString().split('T')[0],
       notes: roster.notes || ""
     });
-    
+
     setShowModal(true);
   };
 
@@ -755,7 +773,7 @@ const RostersPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const selectedShift = shifts.find(s => s.id === parseInt(formData.shift_id));
       if (!selectedShift) {
@@ -785,7 +803,7 @@ const RostersPage = () => {
         toast.success(`Roster ${modalMode === "add" ? "created" : "updated"} successfully!`);
         fetchData();
         setShowModal(false);
-        
+
         setFormData({
           employee_id: "",
           shift_id: "",
@@ -797,7 +815,7 @@ const RostersPage = () => {
       }
     } catch (error) {
       console.error("Error saving roster:", error);
-      
+
       if (error.response) {
         console.error("Error response:", error.response.data);
         toast.error(error.response.data?.message || `Failed to ${modalMode} roster`);
@@ -825,15 +843,15 @@ const RostersPage = () => {
   };
 
   const getEmployeeName = useCallback((employeeId) => {
-    const employee = employees.find(emp => emp.id === employeeId) || 
-                     rosters.find(r => r.employee?.id === employeeId)?.employee;
+    const employee = employees.find(emp => emp.id === employeeId) ||
+      rosters.find(r => r.employee?.id === employeeId)?.employee;
     return employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : "Unknown Employee";
   }, [employees, rosters]);
 
   // If no organization is selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -848,7 +866,7 @@ const RostersPage = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -898,12 +916,12 @@ const RostersPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <ToastContainer position="top-right" autoClose={3000} />
-        
+
         {/* Add/Edit Roster Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -938,7 +956,7 @@ const RostersPage = () => {
                           <option value="">Select Employee</option>
                           {filteredEmployees.map(employee => (
                             <option key={employee.id} value={employee.id}>
-                              {employee.first_name || ''} {employee.last_name || ''} 
+                              {employee.first_name || ''} {employee.last_name || ''}
                               {employee.employee_code ? ` (${employee.employee_code})` : ''}
                               {' - '}{formatCurrency(getEmployeeRate(employee))}/hr
                             </option>
@@ -1121,17 +1139,15 @@ const RostersPage = () => {
             <div className="flex gap-2 p-1 bg-white rounded-lg shadow-sm">
               <button
                 onClick={() => setView("week")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  view === "week" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
-                }`}
+                className={`px-4 py-2 rounded-md transition-colors ${view === "week" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
+                  }`}
               >
                 Week View (Mon-Fri)
               </button>
               <button
                 onClick={() => setView("month")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  view === "month" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
-                }`}
+                className={`px-4 py-2 rounded-md transition-colors ${view === "month" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-800"
+                  }`}
               >
                 Month View
               </button>
@@ -1158,7 +1174,7 @@ const RostersPage = () => {
               <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 <FaPrint /> Print
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setModalMode("add");
                   setFormData({
@@ -1195,7 +1211,7 @@ const RostersPage = () => {
                 onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
                 className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Departments</option>
+                <option value="all">All Rooms</option>
                 {departments.map(dept => (
                   <option key={dept.id} value={dept.id}>{dept.name}</option>
                 ))}
@@ -1220,9 +1236,8 @@ const RostersPage = () => {
               <div className="border-b" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
                 <div className="p-4 font-semibold bg-gray-50 sticky left-0">Employee</div>
                 {weekDates.map((day, index) => (
-                  <div key={day.toString()} className={`p-4 text-center font-semibold border-l bg-gray-50 ${
-                    day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
-                  }`}>
+                  <div key={day.toString()} className={`p-4 text-center font-semibold border-l bg-gray-50 ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
+                    }`}>
                     <div className="text-sm">{["Mon", "Tue", "Wed", "Thu", "Fri"][index]}</div>
                     <div className="text-xs text-gray-500">{day.getDate()}/{day.getMonth() + 1}</div>
                   </div>
@@ -1234,7 +1249,7 @@ const RostersPage = () => {
                   filteredEmployees.map(employee => {
                     const employeeTotal = weeklyTotals.byEmployee[employee.id] || { hours: 0, amount: 0 };
                     const employeeRate = getEmployeeRate(employee);
-                    
+
                     return (
                       <div key={employee.id} className="border-b hover:bg-gray-50" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
                         <div className="p-4 border-r bg-gray-50 sticky left-0 z-10">
@@ -1262,15 +1277,14 @@ const RostersPage = () => {
                         {weekDates.map(day => {
                           const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
                           return (
-                            <div key={day.toString()} className={`p-2 border-l min-h-32 relative ${
-                              day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
-                            }`}>
+                            <div key={day.toString()} className={`p-2 border-l min-h-32 relative ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
+                              }`}>
                               {dayRosters.map(roster => {
                                 const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                                 const shiftColor = getShiftColor(roster.shift_id);
                                 const hours = calculateNetWorkingHours(shift);
                                 const amount = calculateRosterAmount(roster);
-                                
+
                                 return (
                                   <div
                                     key={roster.id}
@@ -1284,13 +1298,13 @@ const RostersPage = () => {
                                   >
                                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1 z-10">
                                       {canEdit && (
-                                        <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }} 
+                                        <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }}
                                           className="p-1 bg-white rounded hover:bg-gray-100 shadow">
                                           <FaEdit className="text-xs" />
                                         </button>
                                       )}
                                       {canDelete && (
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }} 
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }}
                                           className="p-1 bg-white rounded hover:bg-gray-100 shadow">
                                           <FaTrash className="text-xs text-red-500" />
                                         </button>
@@ -1343,17 +1357,17 @@ const RostersPage = () => {
                 {Array.from({ length: (() => { const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay(); return d === 0 ? 4 : Math.min(d - 1, 4); })() }).map((_, i) => (
                   <div key={`empty-${i}`} className="min-h-32 border-r border-b p-2 bg-gray-50"></div>
                 ))}
-                
+
                 {monthDates.filter(date => { const day = date.getDay(); return day >= 1 && day <= 5; }).map(date => {
                   const dateStr = date.toISOString().split('T')[0];
                   const dayRosters = rosters.filter(r => {
                     if (!r.roster_date) return false;
-                    const rosterDate = typeof r.roster_date === 'string' 
+                    const rosterDate = typeof r.roster_date === 'string'
                       ? r.roster_date.split('T')[0]
                       : new Date(r.roster_date).toISOString().split('T')[0];
                     return rosterDate === dateStr;
                   });
-                  
+
                   const dayTotalHours = dayRosters.reduce((total, roster) => {
                     const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                     return total + calculateNetWorkingHours(shift);
@@ -1361,15 +1375,13 @@ const RostersPage = () => {
                   const dayTotalAmount = dayRosters.reduce((total, roster) => {
                     return total + calculateRosterAmount(roster);
                   }, 0);
-                  
+
                   return (
-                    <div key={dateStr} className={`min-h-32 border-r border-b p-2 ${
-                      date.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
-                    }`}>
+                    <div key={dateStr} className={`min-h-32 border-r border-b p-2 ${date.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
+                      }`}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className={`text-sm font-medium ${
-                          date.toDateString() === new Date().toDateString() ? 'text-blue-600 font-bold' : ''
-                        }`}>
+                        <span className={`text-sm font-medium ${date.toDateString() === new Date().toDateString() ? 'text-blue-600 font-bold' : ''
+                          }`}>
                           {date.getDate()}
                         </span>
                         {canAdd && (
@@ -1391,20 +1403,20 @@ const RostersPage = () => {
                           </button>
                         )}
                       </div>
-                      
+
                       {dayRosters.length > 0 && (
                         <div className="mb-2 p-1 bg-green-50 rounded text-[10px]">
                           <div className="font-semibold text-green-700">{dayTotalHours.toFixed(1)}h</div>
                           <div className="font-bold text-purple-700">{formatCurrency(dayTotalAmount)}</div>
                         </div>
                       )}
-                      
+
                       <div className="space-y-1 overflow-y-auto max-h-24">
                         {dayRosters.slice(0, 3).map(roster => {
                           const employee = roster.employee || employees.find(e => e.id === roster.employee_id);
                           const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
                           const shiftColor = getShiftColor(roster.shift_id);
-                          
+
                           return (
                             <div
                               key={roster.id}
