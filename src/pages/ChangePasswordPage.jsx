@@ -6,7 +6,7 @@ import { changePassword } from "../services/auth";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const ChangePasswordPage = () => {
+const ChangePasswordPage = ({ onLogout }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -43,8 +43,13 @@ const ChangePasswordPage = () => {
             autoClose: 3000,
           });
 
-          localStorage.clear();
-          navigate("/login", { replace: true });
+          // Call onLogout to clear global state and redirect
+          if (onLogout) {
+            onLogout();
+          } else {
+            localStorage.clear();
+            navigate("/login", { replace: true });
+          }
         } else {
           setErrors({ api: response.data.message || "Failed to change password" });
         }

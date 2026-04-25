@@ -219,7 +219,7 @@ function App() {
     },
     {
       path: "/change-password",
-      element: <ProtectedRoute isLoggedIn={isLoggedIn} user={user} isChangePasswordPage={true}><ChangePasswordPage /></ProtectedRoute>,
+      element: <ProtectedRoute isLoggedIn={isLoggedIn} user={user} isChangePasswordPage={true}><ChangePasswordPage onLogout={handleLogout} /></ProtectedRoute>,
     },
     // Protected routes - Dashboard wrapped with OrganizationProvider at the top level
     {
