@@ -106,6 +106,16 @@ const PublicRoute = ({ isLoggedIn, user, children }) => {
   return children;
 };
 
+// --- Role Guard for protecting specific dashboard routes ---
+const RoleGuard = ({ children, allowedRoles }) => {
+  const { currentUserRole, isLoading } = useOrganizations();
+  if (isLoading) return null;
+  if (!allowedRoles.includes(currentUserRole?.toLowerCase())) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
 // --- Dashboard Router Component - Uses context from parent provider ---
 const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // This hook is now safe because it's inside OrganizationProvider
@@ -333,7 +343,7 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-        { path: "profile", element: <PublicEmployeeForm isDashboard={true} /> },
+        { path: "profile", element: <RoleGuard allowedRoles={['employee']}><PublicEmployeeForm isDashboard={true} /></RoleGuard> },
       ],
     },
     // Default redirects

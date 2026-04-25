@@ -143,12 +143,14 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
                                 <p className="text-indigo-600 font-bold text-xs uppercase mb-1">{currentUserRole || 'Member'}</p>
                                 <p className="text-sm text-gray-500 mb-4">{user ? user.email : 'user@example.com'}</p>
                                 <hr className="w-full my-2" />
-                                <div className="w-full text-left">
-                                    <Link to="/dashboard/profile" className="flex items-center w-full px-4 py-2 text-gray-700 rounded-md hover:bg-gray-100" onClick={() => setUserDropdownOpen(false)}>
-                                        <HiOutlineUser className="mr-3 text-indigo-500" />
-                                        My Profile
-                                    </Link>
-                                </div>
+                                {currentUserRole?.toLowerCase() === 'employee' && (
+                                    <div className="w-full text-left">
+                                        <Link to="/dashboard/profile" className="flex items-center w-full px-4 py-2 text-gray-700 rounded-md hover:bg-gray-100" onClick={() => setUserDropdownOpen(false)}>
+                                            <HiOutlineUser className="mr-3 text-indigo-500" />
+                                            My Profile
+                                        </Link>
+                                    </div>
+                                )}
                                 <div className="w-full mt-4">
                                     <button onClick={handleLogoutClick} className="w-full px-4 py-2 border border-red-500 rounded-lg text-red-500 font-semibold hover:bg-red-500 hover:text-white transition-colors duration-200 flex items-center justify-center gap-2">
                                         <HiOutlineLogout />
