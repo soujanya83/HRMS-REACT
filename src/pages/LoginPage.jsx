@@ -73,6 +73,7 @@ const handleSubmit = async (e) => {
       
       const token = response.data.data.token;
       const userData = response.data.data.user;
+      const employeeData = response.data.data.employee; // Added employee data
       const userRoles = response.data.data.roles || [];
       
       console.log("User Roles from API:", userRoles);
@@ -81,13 +82,16 @@ const handleSubmit = async (e) => {
       localStorage.setItem('ACCESS_TOKEN', token);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('USER_ROLES', JSON.stringify(userRoles));
+      if (employeeData) {
+        localStorage.setItem('employee', JSON.stringify(employeeData));
+      }
 
       // 1. Check for temporary password FIRST
       if (userData.temp_pass_status === 0) {
         console.log("🚀 Redirecting to Change Password Page (Temporary Password detected)");
         
         // Still need to call onLogin to set global state
-        onLogin(userData, userRoles);
+        onLogin(userData, userRoles, employeeData);
         
         navigate("/change-password");
         return;
@@ -128,8 +132,8 @@ const handleSubmit = async (e) => {
         console.log(`✅ Selected Organization: ${selectedOrg.organization_name} (ID: ${selectedOrg.organization_id}) with role: ${selectedRole}`);
       }
       
-      // Pass both user data and roles to onLogin
-      onLogin(userData, userRoles);
+      // Pass both user data, roles, and employee data to onLogin
+      onLogin(userData, userRoles, employeeData);
       
       // Determine which dashboard to navigate to
       const isAdmin = selectedRole?.toLowerCase() === 'superadmin' || 

@@ -181,11 +181,19 @@ function App() {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
   });
+  const [employee, setEmployee] = useState(() => {
+    const employeeData = localStorage.getItem("employee");
+    return employeeData ? JSON.parse(employeeData) : null;
+  });
 
-  const handleLogin = (userData, roles) => {
+  const handleLogin = (userData, roles, employeeData) => {
     localStorage.setItem("user", JSON.stringify(userData));
     if (roles) {
       localStorage.setItem("USER_ROLES", JSON.stringify(roles));
+    }
+    if (employeeData) {
+      localStorage.setItem("employee", JSON.stringify(employeeData));
+      setEmployee(employeeData);
     }
     setUser(userData);
     setIsLoggedIn(true);

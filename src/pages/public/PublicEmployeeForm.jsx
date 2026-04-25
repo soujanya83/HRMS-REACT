@@ -798,17 +798,28 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      // Get logged in user from localStorage
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        toast.error('User session not found');
-        navigate('/login');
+      // Get logged in employee from localStorage (added in new login response)
+      const employeeStr = localStorage.getItem('employee');
+      if (!employeeStr) {
+        // Fallback to user if employee not found, but backend changes suggest employee is better
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          toast.error('User session not found');
+          navigate('/login');
+          return;
+        }
+        const user = JSON.parse(userStr);
+        const response = await axiosClient.get(`/employeedata/${user.id}`);
+        if (response.data?.success && response.data?.data) {
+          populateFormData(response.data.data);
+        }
         return;
       }
-      const user = JSON.parse(userStr);
       
-      // Use the employeedata endpoint for logged in user (works with user.id)
-      const response = await axiosClient.get(`/employeedata/${user.id}`);
+      const employee = JSON.parse(employeeStr);
+      
+      // Use the employeedata endpoint with employee.id
+      const response = await axiosClient.get(`/employeedata/${employee.id}`);
       
       if (response.data?.success && response.data?.data) {
         const employee = response.data.data;
