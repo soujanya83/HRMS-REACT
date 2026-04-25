@@ -15,6 +15,7 @@ import ApplicationSuccess from './pages/public/ApplicationSuccess';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import EmployeeDashboardLayout from "./components/EmployeeDashboardLayout";
 import ErrorPage from "./pages/ErrorPage";
@@ -83,13 +84,25 @@ const isAdminUser = (roleName) => {
 };
 
 // --- Route Protectors ---
-const ProtectedRoute = ({ isLoggedIn, children }) => {
+const ProtectedRoute = ({ isLoggedIn, user, children, isChangePasswordPage = false }) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
+  
+  // If user has a temporary password and is NOT on the change password page, redirect them there
+  if (user?.temp_pass_status === 0 && !isChangePasswordPage) {
+    return <Navigate to="/change-password" replace />;
+  }
+  
   return children;
 };
 
-const PublicRoute = ({ isLoggedIn, children }) => {
-  if (isLoggedIn) return <Navigate to="/dashboard" replace />;
+const PublicRoute = ({ isLoggedIn, user, children }) => {
+  if (isLoggedIn) {
+    // If logged in but has temporary password, redirect to change password
+    if (user?.temp_pass_status === 0) {
+      return <Navigate to="/change-password" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
   return children;
 };
 
@@ -202,13 +215,17 @@ function App() {
     },
     {
       path: "/login",
-      element: <PublicRoute isLoggedIn={isLoggedIn}><LoginPage onLogin={handleLogin} /></PublicRoute>,
+      element: <PublicRoute isLoggedIn={isLoggedIn} user={user}><LoginPage onLogin={handleLogin} /></PublicRoute>,
+    },
+    {
+      path: "/change-password",
+      element: <ProtectedRoute isLoggedIn={isLoggedIn} user={user} isChangePasswordPage={true}><ChangePasswordPage /></ProtectedRoute>,
     },
     // Protected routes - Dashboard wrapped with OrganizationProvider at the top level
     {
       path: "/dashboard",
       element: (
-        <ProtectedRoute isLoggedIn={isLoggedIn}>
+        <ProtectedRoute isLoggedIn={isLoggedIn} user={user}>
           <OrganizationProvider>
             <DashboardRouter isLoggedIn={isLoggedIn} user={user} onLogout={handleLogout} />
           </OrganizationProvider>

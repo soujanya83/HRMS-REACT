@@ -40,6 +40,14 @@ export const resetPassword = (email, otp, password, password_confirmation) => {
   });
 };
 
+// Change Password (for temporary password users)
+export const changePassword = (new_password, new_password_confirmation) => {
+  return axiosClient.post("/change-password", { 
+    new_password, 
+    new_password_confirmation 
+  });
+};
+
 // Logout function
 export const logout = () => {
   // Clear token from localStorage

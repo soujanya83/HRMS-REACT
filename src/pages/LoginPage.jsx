@@ -81,8 +81,19 @@ const handleSubmit = async (e) => {
       localStorage.setItem('ACCESS_TOKEN', token);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('USER_ROLES', JSON.stringify(userRoles));
+
+      // 1. Check for temporary password FIRST
+      if (userData.temp_pass_status === 0) {
+        console.log("🚀 Redirecting to Change Password Page (Temporary Password detected)");
+        
+        // Still need to call onLogin to set global state
+        onLogin(userData, userRoles);
+        
+        navigate("/change-password");
+        return;
+      }
       
-      // Find the organization with superadmin role first
+      // 2. Continue with organization/role selection if password is NOT temporary
       let selectedOrg = null;
       let selectedRole = null;
       
