@@ -325,7 +325,7 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-        { path: "profile", element: <div>Profile Settings Page</div> },
+        { path: "profile", element: <PublicEmployeeForm isDashboard={true} /> },
       ],
     },
     // Default redirects

@@ -733,7 +733,7 @@ const EncryptedInput = ({ label, name, value, onChange, required, placeholder, e
 // ============================================
 // MAIN PUBLIC EMPLOYEE FORM
 // ============================================
-const PublicEmployeeForm = () => {
+const PublicEmployeeForm = ({ isDashboard = false }) => {
   const { organizationId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -779,19 +779,50 @@ const PublicEmployeeForm = () => {
   });
 
   useEffect(() => {
-    if (organizationId) {
+    if (isDashboard) {
+      fetchProfile();
+    } else if (organizationId) {
       fetchEmployeeData();
     } else {
       toast.error('Invalid application link');
       setTimeout(() => navigate('/login'), 2000);
     }
-  }, [organizationId]);
+  }, [organizationId, isDashboard]);
 
   useEffect(() => {
     if (employeeId) {
       fetchDocuments();
     }
   }, [employeeId]);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      // Get logged in user from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        toast.error('User session not found');
+        navigate('/login');
+        return;
+      }
+      const user = JSON.parse(userStr);
+      
+      // Use the employeedata endpoint for logged in user (works with user.id)
+      const response = await axiosClient.get(`/employeedata/${user.id}`);
+      
+      if (response.data?.success && response.data?.data) {
+        const employee = response.data.data;
+        populateFormData(employee);
+      } else {
+        toast.error('Profile not found');
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchEmployeeData = async () => {
     setLoading(true);
@@ -800,41 +831,7 @@ const PublicEmployeeForm = () => {
       
       if (response.data?.success && response.data?.data) {
         const employee = response.data.data;
-        setEmployeeData(employee);
-        setEmployeeId(employee.id);
-        
-        setFormData({
-          employee_id: employee.id || '',
-          first_name: employee.first_name || '',
-          middle_name: employee.middle_name || '',
-          last_name: employee.last_name || '',
-          email: employee.personal_email || '',
-          phone_number: employee.phone_number || '',
-          date_of_birth: employee.date_of_birth || '',
-          gender: employee.gender || '',
-          address: employee.address || '',
-          emergency_contact_name: employee.emergency_contact_name || '',
-          emergency_contact_phone: employee.emergency_contact_phone || '',
-          emergency_contact_relationship: employee.emergency_contact_relationship || '',
-          tax_file_number: '',
-          superannuation_fund_name: employee.superannuation_fund_name || '',
-          superannuation_member_number: employee.superannuation_member_number || '',
-          bank_bsb: employee.bank_bsb || '',
-          bank_account_number: employee.bank_account_number || '',
-          citizenship_status: employee.citizenship_status || '',
-          is_australian_citizen: employee.is_australian_citizen === '1' || employee.is_australian_citizen === true,
-          is_pr: employee.is_pr === '1' || employee.is_pr === true,
-          visa_type: employee.visa_type || '',
-          department_id: employee.department_id || '',
-          designation_id: employee.designation_id || '',
-          employment_type: employee.employment_type || 'Full-time',
-          hourly_wage: employee.hourly_wage || '',
-        });
-        
-        if (employee.organization_id) {
-          fetchDepartments(employee.organization_id);
-          fetchDesignations(employee.organization_id);
-        }
+        populateFormData(employee);
       } else {
         toast.error('Employee not found');
       }
@@ -843,6 +840,48 @@ const PublicEmployeeForm = () => {
       toast.error(error.response?.data?.message || 'Failed to load employee data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const populateFormData = (employee) => {
+    setEmployeeData(employee);
+    setEmployeeId(employee.id);
+    
+    setFormData({
+      employee_id: employee.id || '',
+      first_name: employee.first_name || '',
+      middle_name: employee.middle_name || '',
+      last_name: employee.last_name || '',
+      email: employee.personal_email || '',
+      phone_number: employee.phone_number || '',
+      date_of_birth: employee.date_of_birth || '',
+      gender: employee.gender || '',
+      address: employee.address || '',
+      emergency_contact_name: employee.emergency_contact_name || '',
+      emergency_contact_phone: employee.emergency_contact_phone || '',
+      emergency_contact_relationship: employee.emergency_contact_relationship || '',
+      tax_file_number: employee.tax_file_number || '',
+      superannuation_fund_name: employee.superannuation_fund_name || '',
+      superannuation_member_number: employee.superannuation_member_number || '',
+      bank_bsb: employee.bank_bsb || '',
+      bank_account_number: employee.bank_account_number || '',
+      citizenship_status: employee.citizenship_status || '',
+      is_australian_citizen: employee.is_australian_citizen === '1' || employee.is_australian_citizen === true || employee.is_australian_citizen === 1,
+      is_pr: employee.is_pr === '1' || employee.is_pr === true || employee.is_pr === 1,
+      visa_type: employee.visa_type || '',
+      department_id: employee.department_id || '',
+      designation_id: employee.designation_id || '',
+      employment_type: employee.employment_type || 'Full-time',
+      hourly_wage: employee.hourly_wage || '',
+    });
+    
+    if (employee.organization_id) {
+      fetchDepartments(employee.organization_id);
+      fetchDesignations(employee.organization_id);
+    }
+
+    if (employee.documents) {
+      setDocuments(employee.documents);
     }
   };
 
