@@ -23,7 +23,7 @@ const permissionService = {
       }
       
       const params = organizationId ? { organization_id: parseInt(organizationId) } : {};
-      console.log('📥 Fetching permissions with params:', params);
+      // console.log('📥 Fetching permissions with params:', params);
       
       const response = await axiosClient.get('/permissions', { params });
       return response.data;
@@ -73,11 +73,11 @@ const permissionService = {
         organization_id: finalOrgId ? parseInt(finalOrgId) : null
       };
       
-      console.log('📤 Creating permission with payload:', payload);
-      console.log('📤 Organization ID source:', organizationId ? 'localStorage' : (permissionData.organization_id ? 'formData' : 'null'));
+      // console.log('📤 Creating permission with payload:', payload);
+      // console.log('📤 Organization ID source:', organizationId ? 'localStorage' : (permissionData.organization_id ? 'formData' : 'null'));
       
       const response = await axiosClient.post('/permissions', payload);
-      console.log('✅ Permission created successfully:', response.data);
+      // console.log('✅ Permission created successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error creating permission:', error);

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import usePermissions from '../../hooks/usePermissions';
-import { 
-  FaCalendarAlt, 
-  FaPlus, 
-  FaEdit, 
-  FaTrash, 
+import {
+  FaCalendarAlt,
+  FaPlus,
+  FaEdit,
+  FaTrash,
   FaSearch,
   FaDownload,
   FaUser,
@@ -36,7 +36,7 @@ import employeeService from '../../services/employeeService';
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -98,9 +98,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -114,9 +113,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -182,30 +180,30 @@ const ShiftScheduling = () => {
 
   // Predefined shift options with break times
   const predefinedShifts = [
-    { 
-      name: 'Morning Shift', 
-      color: '#4CAF50', 
-      start_time: '09:00', 
+    {
+      name: 'Morning Shift',
+      color: '#4CAF50',
+      start_time: '09:00',
       end_time: '17:00',
       break_start: '13:00',
       break_end: '14:00',
       break_duration: 60,
       break_grace_minutes: 0
     },
-    { 
-      name: 'Mid Shift', 
-      color: '#2196F3', 
-      start_time: '12:00', 
+    {
+      name: 'Mid Shift',
+      color: '#2196F3',
+      start_time: '12:00',
       end_time: '20:00',
       break_start: '16:00',
       break_end: '17:00',
       break_duration: 60,
       break_grace_minutes: 0
     },
-    { 
-      name: 'Late Shift', 
-      color: '#FF9800', 
-      start_time: '15:00', 
+    {
+      name: 'Late Shift',
+      color: '#FF9800',
+      start_time: '15:00',
       end_time: '23:00',
       break_start: '19:00',
       break_end: '20:00',
@@ -255,10 +253,10 @@ const ShiftScheduling = () => {
         newShift.break_end,
         newShift.break_grace_minutes
       );
-      
+
       const rate = hourlyRates[newShift.employee_id];
       const estimatedAmount = netHours * rate;
-      
+
       setNewShift(prev => ({
         ...prev,
         hourly_rate: rate,
@@ -277,13 +275,13 @@ const ShiftScheduling = () => {
 
   const fetchEmployees = async () => {
     if (!organizationId) return;
-    
+
     try {
       setLoadingRates(true);
       // Fetch employees for this organization
       const response = await employeeService.getEmployees({ organization_id: organizationId });
-      console.log('📋 Employees API response:', response);
-      
+      //console.log('📋 Employees API response:', response);
+
       // Handle different response structures based on your API
       let employeesData = [];
       if (response?.data) {
@@ -295,16 +293,16 @@ const ShiftScheduling = () => {
       } else if (Array.isArray(response)) {
         employeesData = response;
       }
-      
+
       setEmployees(employeesData);
-      
+
       // Fetch hourly rates for employees (you may need to adjust this based on your API)
       const rates = {};
       employeesData.forEach(employee => {
         // Try to get rate from employee data if available, otherwise use default
         rates[employee.id] = employee.hourly_rate || employee.pay_rate || 25; // Default fallback rate
       });
-      
+
       setHourlyRates(rates);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -330,9 +328,9 @@ const ShiftScheduling = () => {
       } else {
         response = await shiftSchedulingService.getShifts({ organization_id: organizationId });
       }
-      
+
       console.log('📋 Shifts API response:', response);
-      
+
       // Handle the response structure you showed
       let shiftsData = [];
       if (response?.success && Array.isArray(response.data)) {
@@ -346,7 +344,7 @@ const ShiftScheduling = () => {
       } else if (Array.isArray(response)) {
         shiftsData = response;
       }
-      
+
       setShifts(shiftsData);
     } catch (error) {
       console.error('Error fetching shifts:', error);
@@ -360,26 +358,26 @@ const ShiftScheduling = () => {
   // Calculate break duration
   const calculateBreakDuration = (breakStart, breakEnd) => {
     if (!breakStart || !breakEnd) return 0;
-    
+
     const start = new Date(`2000-01-01T${breakStart}`);
     const end = new Date(`2000-01-01T${breakEnd}`);
-    
+
     let diff = (end - start) / (1000 * 60);
     if (diff < 0) diff += 24 * 60;
-    
+
     return Math.round(diff);
   };
 
   // Calculate total shift duration
   const calculateTotalDuration = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
-    
+
     const start = new Date(`2000-01-01T${startTime}`);
     const end = new Date(`2000-01-01T${endTime}`);
-    
+
     let diff = (end - start) / (1000 * 60 * 60);
     if (diff < 0) diff += 24;
-    
+
     return parseFloat(diff.toFixed(1));
   };
 
@@ -389,10 +387,10 @@ const ShiftScheduling = () => {
     const breakMinutes = calculateBreakDuration(breakStart, breakEnd);
     const breakHours = breakMinutes / 60;
     const graceHours = breakGraceMinutes / 60;
-    
+
     // Grace minutes are usually added to break time (buffer before/after break)
     const totalBreakHours = (breakMinutes + breakGraceMinutes) / 60;
-    
+
     return parseFloat((totalDuration - totalBreakHours).toFixed(1));
   };
 
@@ -403,11 +401,11 @@ const ShiftScheduling = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'break_start' || name === 'break_end') {
       const newBreakStart = name === 'break_start' ? value : newShift.break_start;
       const newBreakEnd = name === 'break_end' ? value : newShift.break_end;
-      
+
       setNewShift(prev => ({
         ...prev,
         [name]: value,
@@ -442,8 +440,8 @@ const ShiftScheduling = () => {
   };
 
   const handleCustomShift = () => {
-    setNewShift(prev => ({ 
-      ...prev, 
+    setNewShift(prev => ({
+      ...prev,
       name: '',
       shift_type: 'custom',
       color_code: '#4CAF50',
@@ -488,7 +486,7 @@ const ShiftScheduling = () => {
     if (newShift.break_start && newShift.break_end) {
       const totalDuration = calculateTotalDuration(newShift.start_time, newShift.end_time);
       const totalBreakHours = (newShift.break_duration + newShift.break_grace_minutes) / 60;
-      
+
       if (totalBreakHours >= totalDuration) {
         setError('Total break duration (including grace minutes) cannot be longer than total shift duration');
         return;
@@ -525,13 +523,13 @@ const ShiftScheduling = () => {
       resetForm();
       setShowShiftForm(false);
       setEditingShift(null);
-      
+
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error saving shift:', error);
-      const errorMsg = error.response?.data?.message || 
-                      error.response?.data?.errors?.join?.('\n') || 
-                      'Failed to save shift. Please try again.';
+      const errorMsg = error.response?.data?.message ||
+        error.response?.data?.errors?.join?.('\n') ||
+        'Failed to save shift. Please try again.';
       setError(errorMsg);
     }
   };
@@ -633,7 +631,7 @@ const ShiftScheduling = () => {
 
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    
+
     const time = timeString.split(':');
     const hour = parseInt(time[0]);
     const minute = time[1] || '00';
@@ -659,9 +657,9 @@ const ShiftScheduling = () => {
 
   const exportShifts = () => {
     const dataStr = JSON.stringify(shifts, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     const exportFileDefaultName = `shifts-${new Date().toISOString().split('T')[0]}.json`;
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -670,7 +668,7 @@ const ShiftScheduling = () => {
 
   if (orgLoading) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -684,7 +682,7 @@ const ShiftScheduling = () => {
 
   if (!organizationId && organizations.length === 0) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -712,12 +710,12 @@ const ShiftScheduling = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -725,12 +723,12 @@ const ShiftScheduling = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
-          
+
           {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start">
@@ -766,29 +764,29 @@ const ShiftScheduling = () => {
                 <FaCalendarAlt className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Avg Net Hours</p>
                   <p className="text-2xl font-bold text-gray-800">
-                    {shifts.length > 0 
+                    {shifts.length > 0
                       ? (shifts.reduce((total, shift) => total + calculateNetWorkingHours(
-                          shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
-                        ), 0) / shifts.length).toFixed(1)
+                        shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
+                      ), 0) / shifts.length).toFixed(1)
                       : '0'}h
                   </p>
                 </div>
                 <FaHourglassHalf className="text-green-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Avg Break</p>
                   <p className="text-2xl font-bold text-gray-800">
-                    {shifts.length > 0 
+                    {shifts.length > 0
                       ? formatMinutes(shifts.reduce((total, shift) => total + (shift.break_duration || 0), 0) / shifts.length)
                       : '0'}
                   </p>
@@ -806,7 +804,7 @@ const ShiftScheduling = () => {
                 <FaUser className="text-yellow-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -825,11 +823,10 @@ const ShiftScheduling = () => {
             <div className="flex gap-2 p-1 bg-white rounded-lg shadow-sm">
               <button
                 onClick={() => setView('list')}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  view === 'list' 
-                    ? 'bg-blue-600 text-white' 
+                className={`px-4 py-2 rounded-md transition-colors ${view === 'list'
+                    ? 'bg-blue-600 text-white'
                     : 'text-gray-600 hover:text-gray-800'
-                }`}
+                  }`}
               >
                 List View
               </button>
@@ -853,15 +850,15 @@ const ShiftScheduling = () => {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="text"
                   placeholder="Search shifts by name..."
                   className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div className="flex gap-2">
-                <input 
+                <input
                   type="date"
                   value={selectedDate.toISOString().split('T')[0]}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
@@ -903,15 +900,15 @@ const ShiftScheduling = () => {
                         shift.start_time, shift.end_time, shift.break_start, shift.break_end, shift.break_grace_minutes
                       );
                       const totalBreakWithGrace = calculateTotalBreakWithGrace(
-                        shift.total_break_minutes || 60, 
+                        shift.total_break_minutes || 60,
                         shift.break_grace_minutes || 0
                       );
-                      
+
                       return (
                         <tr key={shift.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div 
+                              <div
                                 className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold border border-gray-200"
                                 style={{ backgroundColor: shift.color_code || '#4CAF50' }}
                               >
@@ -969,7 +966,7 @@ const ShiftScheduling = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div 
+                              <div
                                 className="h-6 w-6 rounded-full border border-gray-300"
                                 style={{ backgroundColor: shift.color_code || '#4CAF50' }}
                               />
@@ -979,11 +976,10 @@ const ShiftScheduling = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              showDeleted 
-                                ? 'bg-red-100 text-red-800' 
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${showDeleted
+                                ? 'bg-red-100 text-red-800'
                                 : 'bg-green-100 text-green-800'
-                            }`}>
+                              }`}>
                               {showDeleted ? 'Deleted' : 'Active'}
                             </span>
                           </td>
@@ -1062,7 +1058,7 @@ const ShiftScheduling = () => {
                     <FaTimes />
                   </button>
                 </div>
-                
+
                 {!organizationId ? (
                   <div className="text-center p-8">
                     <FaExclamationTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
@@ -1087,36 +1083,34 @@ const ShiftScheduling = () => {
                               key={index}
                               type="button"
                               onClick={() => handlePredefinedShiftSelect(shift)}
-                              className={`w-full text-left p-3 rounded-lg border transition-all ${
-                                newShift.name === shift.name 
-                                  ? 'border-blue-500 bg-blue-50' 
+                              className={`w-full text-left p-3 rounded-lg border transition-all ${newShift.name === shift.name
+                                  ? 'border-blue-500 bg-blue-50'
                                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center">
-                                <div 
+                                <div
                                   className="h-6 w-6 rounded-full mr-3 border border-gray-300"
                                   style={{ backgroundColor: shift.color }}
                                 />
                                 <div>
                                   <div className="font-medium text-gray-800">{shift.name}</div>
                                   <div className="text-xs text-gray-500">
-                                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)} 
+                                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                                     (Break: {formatTime(shift.break_start)}-{formatTime(shift.break_end)})
                                   </div>
                                 </div>
                               </div>
                             </button>
                           ))}
-                          
+
                           <button
                             type="button"
                             onClick={handleCustomShift}
-                            className={`w-full text-left p-3 rounded-lg border transition-all ${
-                              newShift.shift_type === 'custom'
-                                ? 'border-purple-500 bg-purple-50' 
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${newShift.shift_type === 'custom'
+                                ? 'border-purple-500 bg-purple-50'
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center">
                               <div className="h-6 w-6 rounded-full mr-3 border border-dashed border-gray-400 flex items-center justify-center">
@@ -1187,7 +1181,7 @@ const ShiftScheduling = () => {
                     {/* Shift Times Section */}
                     <div className="border-t pt-6 mb-6">
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">Shift Times</h3>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1302,9 +1296,9 @@ const ShiftScheduling = () => {
                           <div className="text-sm font-medium text-green-700">Net Working Hours</div>
                           <div className="text-lg font-bold text-green-800">
                             {calculateNetWorkingHours(
-                              newShift.start_time, 
-                              newShift.end_time, 
-                              newShift.break_start, 
+                              newShift.start_time,
+                              newShift.end_time,
+                              newShift.break_start,
                               newShift.break_end,
                               newShift.break_grace_minutes
                             )}h
@@ -1331,7 +1325,7 @@ const ShiftScheduling = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex justify-end gap-4 pt-4 border-t">
                       <button
                         type="button"

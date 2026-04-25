@@ -344,7 +344,7 @@ const LeaveRequests = () => {
 
       const match = matchList.find(
         emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
-               emp.user_id === currentUser.id
+          emp.user_id === currentUser.id
       );
 
       if (match) {
@@ -357,7 +357,7 @@ const LeaveRequests = () => {
           const exists = prev.some(e => String(e.employee_id || e.id) === empId);
           return exists ? prev : [match, ...prev];
         });
-        console.log('👤 Auto-selected employee:', match.name, empId);
+        //console.log('👤 Auto-selected employee:', match.name, empId);
       }
     } catch (err) {
       console.error('Error auto-selecting employee:', err);
@@ -370,12 +370,12 @@ const LeaveRequests = () => {
 
     setLoadingLeaveTypes(true);
     try {
-      console.log("Fetching leave types...");
+      //console.log("Fetching leave types...");
       const response = await axiosClient.post('/xero-leave-types', {
         organization_id: selectedOrganization.id
       });
 
-      console.log("Leave types response:", response.data);
+      //console.log("Leave types response:", response.data);
 
       if (response.data?.success === true && Array.isArray(response.data.data)) {
         setLeaveTypes(response.data.data);
@@ -396,7 +396,7 @@ const LeaveRequests = () => {
     setShowHistory(true);
 
     try {
-      console.log(`Fetching leave history for employee ${employeeId}...`);
+      //console.log(`Fetching leave history for employee ${employeeId}...`);
       const response = await axiosClient.get('/xero/leaves', {
         params: {
           organization_id: selectedOrganization.id,
@@ -404,7 +404,7 @@ const LeaveRequests = () => {
         }
       });
 
-      console.log("Leave history response:", response.data);
+      //console.log("Leave history response:", response.data);
 
       if (response.data?.status === true && Array.isArray(response.data.data)) {
         setLeaveHistory(response.data.data);
@@ -501,13 +501,13 @@ const LeaveRequests = () => {
     setSyncError(null);
 
     try {
-      console.log("Syncing leave types from Xero...");
+      //console.log("Syncing leave types from Xero...");
 
       const response = await axiosClient.post('/xero/leaves/sync-types', {
         organization_id: selectedOrganization.id.toString()
       });
 
-      console.log("Sync types response:", response.data);
+      //console.log("Sync types response:", response.data);
 
       if (response.data?.status === true) {
         setSyncSuccess(`Successfully synced ${response.data.data?.length || 0} leave types from Xero`);
@@ -617,7 +617,7 @@ const LeaveRequests = () => {
     setSubmitError(null);
 
     try {
-      console.log("Submitting leave request...");
+      // console.log("Submitting leave request...");
 
       // Find selected leave type to get its Xero leave type ID
       const selectedLeaveType = leaveTypes.find(
@@ -635,7 +635,7 @@ const LeaveRequests = () => {
         description: formData.description.trim(),
       });
 
-      console.log("Submit response:", response.data);
+      //console.log("Submit response:", response.data);
 
       if (response.data?.status === true) {
         setSubmitSuccess(response.data.message || "Leave request submitted successfully");
@@ -754,12 +754,12 @@ const LeaveRequests = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1346,8 +1346,8 @@ const LeaveRequests = () => {
                         <button
                           onClick={() => setShowFilters(!showFilters)}
                           className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${showFilters || activeFilters > 0
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                         >
                           <FaFilter />

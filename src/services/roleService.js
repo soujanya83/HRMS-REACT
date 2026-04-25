@@ -17,7 +17,7 @@ const roleService = {
           organization_id: parseInt(organizationId)
         }
       });
-      console.log('Roles API response:', response.data);
+      // console.log('Roles API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching roles:', error);
@@ -53,7 +53,7 @@ const roleService = {
         organization_id: organizationId ? parseInt(organizationId) : 15
       };
 
-      console.log('Creating role with payload:', payload);
+      // console.log('Creating role with payload:', payload);
       const response = await axiosClient.post('/roles', payload);
       return response.data;
     } catch (error) {
@@ -74,7 +74,7 @@ const roleService = {
         _method: 'PUT'
       };
 
-      console.log('Updating role with payload:', payload);
+      // console.log('Updating role with payload:', payload);
       const response = await axiosClient.post(`/roles/${id}`, payload);
       return response.data;
     } catch (error) {
@@ -125,7 +125,7 @@ const roleService = {
 
       const organizationId = localStorage.getItem('selectedOrgId');
 
-      console.log('Syncing permissions for role:', roleId, 'Permissions:', permissionIds);
+      // console.log('Syncing permissions for role:', roleId, 'Permissions:', permissionIds);
 
       const payload = {
         permissions: permissionIds,
@@ -197,7 +197,7 @@ const roleService = {
       const organizationId = JSON.parse(localStorage.getItem('selectedOrgId'));
 
       const response = await axiosClient.get(`/me/permissions/${organizationId}`);
-      console.log("permissions", response.data);
+      // console.log("permissions", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching user permissions:', error);
@@ -261,7 +261,7 @@ const roleService = {
           organization_id: organizationId ? parseInt(organizationId) : 15
         }
       });
-      console.log('Permissions API response:', response.data);
+      // console.log('Permissions API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching all permissions:', error);

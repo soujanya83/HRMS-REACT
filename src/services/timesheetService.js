@@ -8,7 +8,7 @@ export const timesheetService = {
       const response = await axiosClient.get('/pay-periods', {
         params: { organization_id: organizationId }
       });
-      console.log('📅 Pay periods API response:', response.data);
+      // console.log('📅 Pay periods API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error fetching pay periods:', error);
@@ -24,7 +24,7 @@ export const timesheetService = {
         to: toDate,
         organization_id: organizationId  // ← ADD THIS
       });
-      console.log('🔄 Generate timesheets response:', response.data);
+      // console.log('🔄 Generate timesheets response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error generating timesheets:', error);
@@ -36,7 +36,7 @@ export const timesheetService = {
   getTimesheets: async (organizationId) => {
     try {
       const response = await axiosClient.get(`/timesheets/${organizationId}`);
-      console.log('📋 Timesheets API response:', response.data);
+      // console.log('📋 Timesheets API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error fetching timesheets:', error);
@@ -50,7 +50,7 @@ export const timesheetService = {
       const response = await axiosClient.post('/timesheets/submit', {
         timesheet_ids: timesheetIds
       });
-      console.log('✅ Submit timesheets response:', response.data);
+      // console.log('✅ Submit timesheets response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error submitting timesheets:', error);
@@ -69,7 +69,7 @@ export const timesheetService = {
           'Content-Type': 'multipart/form-data'
         }
       });
-      console.log('📤 Push to Xero (bulk) response:', response.data);
+      // console.log('📤 Push to Xero (bulk) response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error pushing to Xero (bulk):', error);
@@ -80,14 +80,14 @@ export const timesheetService = {
   // ✅ NEW: Push single employee to Xero
   pushEmployeeToXero: async (organizationId, employeeId) => {
     try {
-      console.log('📤 Pushing employee to Xero:', { organizationId, employeeId });
+      // console.log('📤 Pushing employee to Xero:', { organizationId, employeeId });
       
       const response = await axiosClient.post('/xero/timesheet/push-employee', {
         organization_id: organizationId,
         employee_id: employeeId
       });
       
-      console.log('✅ Push single employee to Xero response:', response.data);
+      // console.log('✅ Push single employee to Xero response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error pushing employee to Xero:', {
@@ -113,11 +113,11 @@ export const timesheetService = {
   // ✅ NEW: Push multiple employees to Xero
   pushEmployeesToXero: async (organizationId, employeeIds) => {
     try {
-      console.log('📤 Pushing multiple employees to Xero:', {
-        organizationId,
-        employeeCount: employeeIds.length,
-        employeeIds
-      });
+      // console.log('📤 Pushing multiple employees to Xero:', {
+      //   organizationId,
+      //   employeeCount: employeeIds.length,
+      //   employeeIds
+      // });
       
       const responses = [];
       for (const employeeId of employeeIds) {
@@ -131,7 +131,7 @@ export const timesheetService = {
             success: true,
             data: response.data
           });
-          console.log(`✅ Successfully pushed employee ${employeeId} to Xero`);
+          // console.log(`✅ Successfully pushed employee ${employeeId} to Xero`);
         } catch (error) {
           responses.push({
             employeeId,
@@ -141,7 +141,7 @@ export const timesheetService = {
           console.error(`❌ Failed to push employee ${employeeId} to Xero:`, error);
         }
       }
-      console.log('📤 Push multiple employees to Xero responses:', responses);
+      // console.log('📤 Push multiple employees to Xero responses:', responses);
       return responses;
     } catch (error) {
       console.error('❌ Error pushing employees to Xero:', error);
@@ -153,7 +153,7 @@ export const timesheetService = {
   approveTimesheet: async (timesheetId) => {
     try {
       const response = await axiosClient.post(`/timesheets/${timesheetId}/approve`);
-      console.log('✅ Approve timesheet response:', response.data);
+      // console.log('✅ Approve timesheet response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error approving timesheet:', error);
@@ -167,7 +167,7 @@ export const timesheetService = {
       const response = await axiosClient.post(`/timesheets/${timesheetId}/reject`, {
         reason: reason
       });
-      console.log('✅ Reject timesheet response:', response.data);
+      // console.log('✅ Reject timesheet response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error rejecting timesheet:', error);

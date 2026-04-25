@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  HiOutlineSwitchHorizontal, 
-  HiOutlineCheckCircle, 
+import {
+  HiOutlineSwitchHorizontal,
+  HiOutlineCheckCircle,
   HiOutlineRefresh,
   HiOutlineUsers,
   HiOutlineClock,
@@ -14,10 +14,10 @@ import {
   HiOutlineDownload,
   HiOutlineCog
 } from 'react-icons/hi';
-import { 
-  FaSync, 
-  FaUserCheck, 
-  FaUserTimes, 
+import {
+  FaSync,
+  FaUserCheck,
+  FaUserTimes,
   FaCalendarCheck,
   FaCalendarTimes,
   FaSpinner,
@@ -37,7 +37,7 @@ import { useOrganizations } from '../../contexts/OrganizationContext';
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -99,9 +99,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -115,9 +114,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -140,7 +138,7 @@ axiosClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   console.log('🚀 Making API Request:', {
     method: config.method?.toUpperCase(),
     url: config.url,
@@ -148,7 +146,7 @@ axiosClient.interceptors.request.use((config) => {
     data: config.data,
     params: config.params
   });
-  
+
   return config;
 });
 
@@ -169,10 +167,10 @@ axiosClient.interceptors.response.use(
       data: error.response?.data,
       headers: error.response?.headers
     });
-    
+
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('ACCESS_TOKEN');
-      window.location.href = '/login'; 
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -312,7 +310,7 @@ const XeroIntegrationPage = () => {
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [error, setError] = useState(null);
   const [fetchingXeroData, setFetchingXeroData] = useState(false);
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -321,7 +319,7 @@ const XeroIntegrationPage = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   const [stats, setStats] = useState({
     total: 0,
     synced: 0,
@@ -351,9 +349,9 @@ const XeroIntegrationPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // 1. Check Xero connection status
-      console.log('Checking Xero connection status...');
+      //console.log('Checking Xero connection status...');
       const connectionStatus = await xeroService.getConnectionStatus();
       setXeroConnectionStatus({
         ...connectionStatus,
@@ -362,7 +360,7 @@ const XeroIntegrationPage = () => {
 
       // 2. ALWAYS fetch employees, regardless of Xero connection status
       await fetchEmployeesWithXeroStatus();
-      
+
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load data. Please try again.');
@@ -382,26 +380,26 @@ const XeroIntegrationPage = () => {
   const fetchEmployeesWithXeroStatus = async () => {
     try {
       setFetchingXeroData(true);
-      
+
       // 1. Get all employees from HRMS
-      console.log('Fetching all employees...');
+      // console.log('Fetching all employees...');
       const employeesResponse = await xeroService.getAllEmployees();
-      
+
       if (employeesResponse.success && employeesResponse.data) {
         const hrmsEmployees = employeesResponse.data;
-        console.log(`Found ${hrmsEmployees.length} employees in HRMS`);
-        
+        //console.log(`Found ${hrmsEmployees.length} employees in HRMS`);
+
         // 2. For each employee, check Xero connection status (only if Xero is connected)
         const employeesWithXeroData = await Promise.all(
           hrmsEmployees.map(async (hrmsEmployee) => {
             try {
               let xeroResponse = { connected: false, data: null };
-              
+
               // Only try to fetch Xero data if Xero is connected
               if (xeroConnectionStatus.connected) {
                 xeroResponse = await xeroService.getEmployeeXeroConnection(hrmsEmployee.id);
               }
-              
+
               // Combine HRMS data with Xero data
               return {
                 // HRMS Data
@@ -415,7 +413,7 @@ const XeroIntegrationPage = () => {
                 status: hrmsEmployee.status,
                 personal_email: hrmsEmployee.personal_email,
                 phone_number: hrmsEmployee.phone_number,
-                
+
                 // Xero Data (if connected)
                 xero_connected: xeroResponse.connected,
                 xero_data: xeroResponse.data,
@@ -429,7 +427,7 @@ const XeroIntegrationPage = () => {
                 xero_start_date: xeroResponse.data?.xero_start_date || null,
                 xero_termination_date: xeroResponse.data?.xero_termination_date || null,
                 xero_employee_number: xeroResponse.data?.xero_employee_number || null,
-                
+
                 // Additional Xero fields
                 xerocalenderId: xeroResponse.data?.xerocalenderId || null,
                 OrdinaryEarningsRateID: xeroResponse.data?.OrdinaryEarningsRateID || null,
@@ -452,12 +450,12 @@ const XeroIntegrationPage = () => {
             }
           })
         );
-        
+
         setEmployees(employeesWithXeroData);
         calculateStats(employeesWithXeroData);
-        console.log('Employees with Xero data:', employeesWithXeroData);
+        // console.log('Employees with Xero data:', employeesWithXeroData);
       } else {
-        console.log('No employees found in HRMS');
+        //console.log('No employees found in HRMS');
         setEmployees([]);
         resetStats();
       }
@@ -497,9 +495,9 @@ const XeroIntegrationPage = () => {
     try {
       setConnectingToXero(true);
       setError(null);
-      
+
       const response = await xeroService.connectToXero();
-      
+
       if (response.auth_url) {
         // Redirect to Xero authorization URL
         window.location.href = response.auth_url;
@@ -517,35 +515,35 @@ const XeroIntegrationPage = () => {
 
   const handleSyncEmployee = async (employeeId, employeeName) => {
     if (!window.confirm(`Sync ${employeeName} to Xero?`)) return;
-    
+
     setSyncingEmployee(employeeId);
     setError(null);
-    
+
     try {
       const response = await xeroService.syncEmployeeToXero(employeeId);
-      
+
       if (response.success) {
         // Update local state
-        setEmployees(prev => prev.map(emp => 
-          emp.id === employeeId 
-            ? { 
-                ...emp, 
-                is_synced: true, 
-                last_synced_at: new Date().toISOString(),
-                sync_status: 'synced',
-                sync_error: null,
-                xero_connected: true
-              } 
+        setEmployees(prev => prev.map(emp =>
+          emp.id === employeeId
+            ? {
+              ...emp,
+              is_synced: true,
+              last_synced_at: new Date().toISOString(),
+              sync_status: 'synced',
+              sync_error: null,
+              xero_connected: true
+            }
             : emp
         ));
-        
+
         // Recalculate stats
-        calculateStats(employees.map(emp => 
-          emp.id === employeeId 
+        calculateStats(employees.map(emp =>
+          emp.id === employeeId
             ? { ...emp, is_synced: true, sync_status: 'synced' }
             : emp
         ));
-        
+
         alert(`✅ ${employeeName} synced successfully!`);
       } else {
         throw new Error(response.message || 'Failed to sync employee');
@@ -554,15 +552,15 @@ const XeroIntegrationPage = () => {
       console.error('Sync error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to sync employee';
       alert(`❌ ${errorMessage}`);
-      
+
       // Update employee with error
-      setEmployees(prev => prev.map(emp => 
-        emp.id === employeeId 
-          ? { 
-              ...emp, 
-              sync_status: 'needs_update',
-              sync_error: errorMessage
-            } 
+      setEmployees(prev => prev.map(emp =>
+        emp.id === employeeId
+          ? {
+            ...emp,
+            sync_status: 'needs_update',
+            sync_error: errorMessage
+          }
           : emp
       ));
     } finally {
@@ -575,22 +573,22 @@ const XeroIntegrationPage = () => {
       alert('No employees to sync');
       return;
     }
-    
+
     const notSyncedEmployees = employees.filter(emp => !emp.is_synced);
     if (!notSyncedEmployees.length) {
       alert('All employees are already synced!');
       return;
     }
-    
+
     if (!window.confirm(`Sync ${notSyncedEmployees.length} unsynced employees to Xero?`)) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const employeeIds = notSyncedEmployees.map(emp => emp.id);
       const response = await xeroService.bulkSyncEmployees(employeeIds);
-      
+
       if (response.success) {
         alert(`✅ Bulk sync initiated for ${employeeIds.length} employees!`);
         // Refresh data
@@ -695,25 +693,25 @@ const XeroIntegrationPage = () => {
   };
 
   const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = !filters.search || 
+    const matchesSearch = !filters.search ||
       employee.employee_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
       employee.employee_code?.toLowerCase().includes(filters.search.toLowerCase());
-    
-    const matchesSyncStatus = filters.syncStatus === 'all' || 
+
+    const matchesSyncStatus = filters.syncStatus === 'all' ||
       (filters.syncStatus === 'synced' && employee.is_synced) ||
       (filters.syncStatus === 'not_synced' && !employee.is_synced) ||
       (filters.syncStatus === 'needs_update' && employee.sync_status === 'needs_update');
-    
-    const matchesXeroStatus = filters.xeroStatus === 'all' || 
+
+    const matchesXeroStatus = filters.xeroStatus === 'all' ||
       employee.xero_status === filters.xeroStatus;
-    
+
     return matchesSearch && matchesSyncStatus && matchesXeroStatus;
   });
 
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -728,7 +726,7 @@ const XeroIntegrationPage = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -756,12 +754,12 @@ const XeroIntegrationPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          // console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -769,12 +767,12 @@ const XeroIntegrationPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
-          
+
           {/* Header - BOTH BUTTONS SIDE BY SIDE */}
           <div className="mb-8">
             <div className="flex justify-between items-start">
@@ -793,7 +791,7 @@ const XeroIntegrationPage = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 {/* Connect to Xero Button - Shows when NOT connected */}
                 {!xeroConnectionStatus.connected && (
@@ -810,7 +808,7 @@ const XeroIntegrationPage = () => {
                     {connectingToXero ? 'Connecting...' : 'Connect to Xero'}
                   </button>
                 )}
-                
+
                 {/* Bulk Sync Button - Shows when connected */}
                 {xeroConnectionStatus.connected && (
                   <button
@@ -823,7 +821,7 @@ const XeroIntegrationPage = () => {
                 )}
               </div>
             </div>
-            
+
             {/* Connection Status Badge - Below the header */}
             {xeroConnectionStatus.connected && (
               <div className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200 inline-block">
@@ -887,7 +885,7 @@ const XeroIntegrationPage = () => {
                 <FaUser className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -897,7 +895,7 @@ const XeroIntegrationPage = () => {
                 <HiOutlineCheckCircle className="text-green-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -907,7 +905,7 @@ const XeroIntegrationPage = () => {
                 <FaUserCheck className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -925,7 +923,7 @@ const XeroIntegrationPage = () => {
               <div className="flex items-center">
                 <HiOutlineExclamationCircle className="h-5 w-5 text-yellow-500 mr-2" />
                 <p className="text-yellow-700">
-                  <span className="font-semibold">Xero is not connected.</span> 
+                  <span className="font-semibold">Xero is not connected.</span>
                   Connect to Xero to enable employee synchronization and view detailed Xero status.
                 </p>
               </div>
@@ -943,17 +941,17 @@ const XeroIntegrationPage = () => {
                     type="text"
                     placeholder="Search employees..."
                     value={filters.search}
-                    onChange={(e) => setFilters({...filters, search: e.target.value})}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                     className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sync Status</label>
                 <select
                   value={filters.syncStatus}
-                  onChange={(e) => setFilters({...filters, syncStatus: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, syncStatus: e.target.value })}
                   className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
                 >
                   <option value="all">All Sync Status</option>
@@ -962,12 +960,12 @@ const XeroIntegrationPage = () => {
                   <option value="needs_update">Needs Update</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Xero Status</label>
                 <select
                   value={filters.xeroStatus}
-                  onChange={(e) => setFilters({...filters, xeroStatus: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, xeroStatus: e.target.value })}
                   className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white text-sm"
                 >
                   <option value="all">All Xero Status</option>
@@ -976,16 +974,16 @@ const XeroIntegrationPage = () => {
                   <option value="null">Not in Xero</option>
                 </select>
               </div>
-              
+
               <div className="flex items-end gap-2">
                 <button
-                  onClick={() => setFilters({search: '', syncStatus: 'all', xeroStatus: 'all'})}
+                  onClick={() => setFilters({ search: '', syncStatus: 'all', xeroStatus: 'all' })}
                   className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
                 >
                   Clear Filters
                 </button>
-                <button 
-                  onClick={() => fetchData()} 
+                <button
+                  onClick={() => fetchData()}
                   className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
                 >
                   <HiOutlineRefresh /> Refresh
@@ -1078,7 +1076,7 @@ const XeroIntegrationPage = () => {
                                 <FaPlug /> Connect
                               </button>
                             )}
-                            
+
                             <button
                               onClick={() => handleViewDetails(employee)}
                               className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
@@ -1086,7 +1084,7 @@ const XeroIntegrationPage = () => {
                             >
                               <HiOutlineEye /> View
                             </button>
-                            
+
                             {employee.xero_contact_id && xeroConnectionStatus.connected && (
                               <a
                                 href={`https://go.xero.com/Contacts/View/${employee.xero_contact_id}`}
@@ -1225,7 +1223,7 @@ const XeroIntegrationPage = () => {
                     <FaTimes className="text-gray-500" />
                   </button>
                 </div>
-                
+
                 <div className="p-6">
                   {/* Basic Info */}
                   <div className="flex items-center gap-4 mb-6">
@@ -1271,7 +1269,7 @@ const XeroIntegrationPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Xero Info */}
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -1297,7 +1295,7 @@ const XeroIntegrationPage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Dates */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-gray-50 p-4 rounded-lg">
@@ -1308,7 +1306,7 @@ const XeroIntegrationPage = () => {
                         {selectedEmployee.xero_start_date ? formatDate(selectedEmployee.xero_start_date) : 'N/A'}
                       </p>
                     </div>
-                    
+
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <FaCalendarTimes /> Termination Date
@@ -1317,7 +1315,7 @@ const XeroIntegrationPage = () => {
                         {selectedEmployee.xero_termination_date ? formatDate(selectedEmployee.xero_termination_date) : 'N/A'}
                       </p>
                     </div>
-                    
+
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <HiOutlineClock /> Last Synced
@@ -1327,7 +1325,7 @@ const XeroIntegrationPage = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Error Message */}
                   {selectedEmployee.sync_error && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -1338,7 +1336,7 @@ const XeroIntegrationPage = () => {
                       <p className="text-red-700 text-sm">{selectedEmployee.sync_error}</p>
                     </div>
                   )}
-                  
+
                   {/* Actions */}
                   <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                     <button

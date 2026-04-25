@@ -8,7 +8,7 @@ export const getEmployees = (params = {}) => {
 
 export const getEmployee = (id) => {
   const cleanId = id.toString().replace('manage:', '').replace('edit:', '');
-  console.log('EmployeeService - Fetching employee with cleaned ID:', cleanId);
+  //console.log('EmployeeService - Fetching employee with cleaned ID:', cleanId);
   return axiosClient.get(`/employees/${cleanId}`);
 };
 
@@ -107,15 +107,15 @@ export const getEmployeeDocuments = (employeeId) => {
 
 // Upload new employee document - FIXED: Use /employee-documents endpoint with correct fields
 export const uploadEmployeeDocument = (documentData) => {
-  console.log('DEBUG - uploadEmployeeDocument called with data:');
-  
+  //console.log('DEBUG - uploadEmployeeDocument called with data:');
+
   // Log FormData contents for debugging
-  if (documentData instanceof FormData) {
-    for (let pair of documentData.entries()) {
-      console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1]);
-    }
-  }
-  
+  // if (documentData instanceof FormData) {
+  //   for (let pair of documentData.entries()) {
+  //     //console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1]);
+  //   }
+  // }
+
   // The API expects: document_type, file_name, file, issue_date, expiry_date
   // This matches the database schema
   return axiosClient.post('/employee-documents', documentData, {

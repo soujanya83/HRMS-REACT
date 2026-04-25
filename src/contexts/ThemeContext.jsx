@@ -16,9 +16,9 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     const savedSidebar = localStorage.getItem('sidebarColor');
     const savedBackground = localStorage.getItem('backgroundColor');
-    
-    console.log("📦 Loading from localStorage - Sidebar:", savedSidebar, "Background:", savedBackground);
-    
+
+    //console.log("📦 Loading from localStorage - Sidebar:", savedSidebar, "Background:", savedBackground);
+
     if (savedSidebar && savedSidebar !== 'undefined') {
       setSidebarColor(savedSidebar);
     }
@@ -31,7 +31,7 @@ export const ThemeProvider = ({ children }) => {
   // Save to localStorage whenever colors change
   useEffect(() => {
     if (isLoaded && sidebarColor) {
-      console.log("💾 Saving sidebar color:", sidebarColor);
+      //console.log("💾 Saving sidebar color:", sidebarColor);
       localStorage.setItem('sidebarColor', sidebarColor);
       // Dispatch event for Sidebar component
       window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
@@ -40,18 +40,18 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     if (isLoaded && backgroundColor) {
-      console.log("💾 Saving background color:", backgroundColor);
+      //console.log("💾 Saving background color:", backgroundColor);
       localStorage.setItem('backgroundColor', backgroundColor);
     }
   }, [backgroundColor, isLoaded]);
 
   const updateSidebarColor = (color) => {
-    console.log("🔄 Updating sidebar color to:", color);
+    //console.log("🔄 Updating sidebar color to:", color);
     setSidebarColor(color);
   };
 
   const updateBackgroundColor = (color) => {
-    console.log("🔄 Updating background color to:", color);
+    // console.log("🔄 Updating background color to:", color);
     setBackgroundColor(color);
   };
 

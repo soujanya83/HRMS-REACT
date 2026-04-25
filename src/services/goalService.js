@@ -38,7 +38,7 @@ const goalService = {
         throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
       
-      console.log('Creating goal with data:', goalData);
+      // console.log('Creating goal with data:', goalData);
       const response = await axiosClient.post('/performance-goals', goalData);
       return response.data;
     } catch (error) {

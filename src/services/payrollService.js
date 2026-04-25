@@ -15,11 +15,11 @@ export const payrollService = {
   // Create Pay Run
   createPayRun: async (organizationId, fromDate, toDate) => {
     try {
-      console.log('🎯 Creating pay run:', {
-        organization_id: organizationId,
-        from_date: fromDate,
-        to_date: toDate
-      });
+      // console.log('🎯 Creating pay run:', {
+      //   organization_id: organizationId,
+      //   from_date: fromDate,
+      //   to_date: toDate
+      // });
 
       const response = await axiosClient.post(`${API_BASE}/payruns/create`, {
         organization_id: organizationId.toString(),
@@ -27,7 +27,7 @@ export const payrollService = {
         to_date: toDate
       });
 
-      console.log('✅ Pay run created successfully');
+      // console.log('✅ Pay run created successfully');
       return response;
     } catch (error) {
       console.error('❌ CREATE PAY RUN ERROR:', {
@@ -63,7 +63,7 @@ export const payrollService = {
 
   // Get All Pay Runs by Organization (POST)
   getAllPayRunsByOrganization: (organizationId) => {
-    console.log('📡 Fetching ALL pay runs for organization:', organizationId);
+    // console.log('📡 Fetching ALL pay runs for organization:', organizationId);
     return axiosClient.post(`${API_BASE}-payruns/by-organization`, {
       organization_id: parseInt(organizationId, 10)
     });
@@ -93,7 +93,7 @@ export const payrollService = {
   // ============ PAYSLIPS ============
   // NEW: Get All Payslips by Organization (POST)
   getAllPayslipsByOrganization: (organizationId) => {
-    console.log('📡 Fetching ALL payslips for organization:', organizationId);
+    // console.log('📡 Fetching ALL payslips for organization:', organizationId);
     return axiosClient.post(`${API_BASE}-payslips/by-organization`, {
       organization_id: parseInt(organizationId, 10)
     });

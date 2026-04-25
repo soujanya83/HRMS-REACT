@@ -36,7 +36,7 @@ const StatCard = ({ icon, label, value, color = 'blue' }) => {
     purple: 'bg-purple-50 text-purple-600',
     orange: 'bg-orange-50 text-orange-600'
   };
-  
+
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
@@ -66,7 +66,7 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
     const ext = fileName.split('.').pop()?.toLowerCase();
-    
+
     if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
     if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
@@ -154,117 +154,117 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
 const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
- // In DocumentUploadModal component - Update initial state
-const [formData, setFormData] = useState({
-  document_type: '',
-  issue_date: '',
-  expiry_date: '',
-  file: null,
-  file_name: '', // Add this
-});
+  // In DocumentUploadModal component - Update initial state
+  const [formData, setFormData] = useState({
+    document_type: '',
+    issue_date: '',
+    expiry_date: '',
+    file: null,
+    file_name: '', // Add this
+  });
 
   // In EmployeeProfile.jsx - Update handleFileChange
-const handleFileChange = (e) => {
-  if (e.target.files && e.target.files[0]) {
-    const file = e.target.files[0];
-    // Get filename without extension
-    const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
-    
-    setFormData({ 
-      ...formData, 
-      file: file,
-      // Auto-populate file_name with a cleaned version of the filename
-      file_name: formData.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      // Auto-suggest document type from filename if not set
-      document_type: formData.document_type || 
-        fileNameWithoutExt
-          .replace(/[_-]/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase())
-    });
-  }
-};
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Get filename without extension
+      const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+
+      setFormData({
+        ...formData,
+        file: file,
+        // Auto-populate file_name with a cleaned version of the filename
+        file_name: formData.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        // Auto-suggest document type from filename if not set
+        document_type: formData.document_type ||
+          fileNameWithoutExt
+            .replace(/[_-]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase())
+      });
+    }
+  };
 
   // In EmployeeProfile.jsx - FIXED handleSubmit function in DocumentUploadModal
-// In EmployeeProfile.jsx - Update the handleSubmit function in DocumentUploadModal
-// In EmployeeProfile.jsx - CORRECTED handleSubmit function
-// In EmployeeProfile.jsx - UPDATED handleSubmit function
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log('DEBUG - handleSubmit triggered in EmployeeProfile');
-  console.log('Employee ID:', employeeId);
-  console.log('Form data:', formData);
-  
-  if (!formData.file) {
-    setError('Please select a file to upload');
-    return;
-  }
+  // In EmployeeProfile.jsx - Update the handleSubmit function in DocumentUploadModal
+  // In EmployeeProfile.jsx - CORRECTED handleSubmit function
+  // In EmployeeProfile.jsx - UPDATED handleSubmit function
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // console.log('DEBUG - handleSubmit triggered in EmployeeProfile');
+    // console.log('Employee ID:', employeeId);
+    // console.log('Form data:', formData);
 
-  setUploading(true);
-  setError('');
-
-  try {
-    const actualFormData = new FormData();
-    
-    // CORRECT FIELD NAMES BASED ON PREVIOUS VALIDATION ERRORS:
-    // 1. Add employee_id (required)
-    actualFormData.append('employee_id', employeeId);
-    
-    // 2. API expects 'document_type' - NOT document_name!
-    actualFormData.append('document_type', formData.document_type);
-    
-    // 3. API expects 'file' field for file upload - NOT document!
-    actualFormData.append('file', formData.file);
-    
-    // 4. API expects 'file_name' field (required)
-    actualFormData.append('file_name', formData.file_name || formData.file.name || 'document');
-    
-    // 5. Optional fields
-    if (formData.issue_date) {
-      actualFormData.append('issue_date', formData.issue_date);
-    }
-    if (formData.expiry_date) {
-      actualFormData.append('expiry_date', formData.expiry_date);
+    if (!formData.file) {
+      setError('Please select a file to upload');
+      return;
     }
 
-    // Debug: Show FormData contents
-    console.log('DEBUG - CORRECTED EmployeeProfile FormData being sent:');
-    const formDataObj = {};
-    for (let pair of actualFormData.entries()) {
-      const value = pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1];
-      console.log(`${pair[0]}: ${value}`);
-      formDataObj[pair[0]] = value;
-    }
-    console.log('CORRECTED FormData summary:', formDataObj);
+    setUploading(true);
+    setError('');
 
-    // Call the API
-    await uploadEmployeeDocument(actualFormData);
-    
-    console.log('DEBUG - Document upload successful');
-    onUploadSuccess();
-    onClose();
-  } catch (err) {
-    console.error('Upload error details:', {
-      message: err.message,
-      response: err.response?.data,
-      status: err.response?.status,
-      url: err.config?.url,
-      config: err.config
-    });
-    
-    if (err.response?.status === 422) {
-      const errors = err.response.data?.errors || {};
-      const errorMessages = Object.values(errors).flat();
-      setError(errorMessages.join(', ') || 'Validation failed. Please check all fields.');
-      
-      // Show specific field errors if available
-      console.error('Validation errors:', errors);
-    } else {
-      setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
+    try {
+      const actualFormData = new FormData();
+
+      // CORRECT FIELD NAMES BASED ON PREVIOUS VALIDATION ERRORS:
+      // 1. Add employee_id (required)
+      actualFormData.append('employee_id', employeeId);
+
+      // 2. API expects 'document_type' - NOT document_name!
+      actualFormData.append('document_type', formData.document_type);
+
+      // 3. API expects 'file' field for file upload - NOT document!
+      actualFormData.append('file', formData.file);
+
+      // 4. API expects 'file_name' field (required)
+      actualFormData.append('file_name', formData.file_name || formData.file.name || 'document');
+
+      // 5. Optional fields
+      if (formData.issue_date) {
+        actualFormData.append('issue_date', formData.issue_date);
+      }
+      if (formData.expiry_date) {
+        actualFormData.append('expiry_date', formData.expiry_date);
+      }
+
+      // Debug: Show FormData contents
+      //console.log('DEBUG - CORRECTED EmployeeProfile FormData being sent:');
+      const formDataObj = {};
+      for (let pair of actualFormData.entries()) {
+        const value = pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1];
+        //console.log(`${pair[0]}: ${value}`);
+        formDataObj[pair[0]] = value;
+      }
+      //console.log('CORRECTED FormData summary:', formDataObj);
+
+      // Call the API
+      await uploadEmployeeDocument(actualFormData);
+
+      //console.log('DEBUG - Document upload successful');
+      onUploadSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Upload error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url,
+        config: err.config
+      });
+
+      if (err.response?.status === 422) {
+        const errors = err.response.data?.errors || {};
+        const errorMessages = Object.values(errors).flat();
+        setError(errorMessages.join(', ') || 'Validation failed. Please check all fields.');
+
+        // Show specific field errors if available
+        console.error('Validation errors:', errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
+      }
+    } finally {
+      setUploading(false);
     }
-  } finally {
-    setUploading(false);
-  }
-};
+  };
 
   if (!isOpen) return null;
 
@@ -292,112 +292,112 @@ const handleSubmit = async (e) => {
 
           <div className="space-y-4">
             <div>
- <label className="block text-sm font-medium text-gray-700 mb-1">
-      Document Type *
-    </label>
-    <select
-      value={formData.document_type}
-      onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      required
-    >
-      <option value="">Select Type</option>
-      <option value="Aadhaar Card">Aadhaar Card</option>
-      <option value="PAN Card">PAN Card</option>
-      <option value="Passport">Passport</option>
-      <option value="Driving License">Driving License</option>
-      <option value="Visa">Visa</option>
-      <option value="Work Permit">Work Permit</option>
-      <option value="Employment Contract">Employment Contract</option>
-      <option value="Offer Letter">Offer Letter</option>
-      <option value="Experience Letter">Experience Letter</option>
-      <option value="Salary Slip">Salary Slip</option>
-      <option value="Bank Statement">Bank Statement</option>
-      <option value="Tax Document">Tax Document</option>
-      <option value="Education Certificate">Education Certificate</option>
-      <option value="Professional Certificate">Professional Certificate</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Document Type *
+              </label>
+              <select
+                value={formData.document_type}
+                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Aadhaar Card">Aadhaar Card</option>
+                <option value="PAN Card">PAN Card</option>
+                <option value="Passport">Passport</option>
+                <option value="Driving License">Driving License</option>
+                <option value="Visa">Visa</option>
+                <option value="Work Permit">Work Permit</option>
+                <option value="Employment Contract">Employment Contract</option>
+                <option value="Offer Letter">Offer Letter</option>
+                <option value="Experience Letter">Experience Letter</option>
+                <option value="Salary Slip">Salary Slip</option>
+                <option value="Bank Statement">Bank Statement</option>
+                <option value="Tax Document">Tax Document</option>
+                <option value="Education Certificate">Education Certificate</option>
+                <option value="Professional Certificate">Professional Certificate</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
 
-  {/* File Name - ADD THIS */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      File Name *
-    </label>
-    <input
-      type="text"
-      value={formData.file_name || ''}
-      onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
-      placeholder="Enter a descriptive file name (e.g., 'John_Aadhaar_Card')"
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      required
-    />
-    <p className="text-xs text-gray-500 mt-1">
-      This will be the name shown in the documents list
-    </p>
-  </div>
+            {/* File Name - ADD THIS */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                File Name *
+              </label>
+              <input
+                type="text"
+                value={formData.file_name || ''}
+                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                placeholder="Enter a descriptive file name (e.g., 'John_Aadhaar_Card')"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This will be the name shown in the documents list
+              </p>
+            </div>
 
-  {/* Dates Row */}
-  <div className="grid grid-cols-2 gap-4">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Issue Date
-      </label>
-      <input
-        type="date"
-        value={formData.issue_date}
-        onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Expiry Date
-      </label>
-      <input
-        type="date"
-        value={formData.expiry_date}
-        onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-  </div>
+            {/* Dates Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Issue Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.issue_date}
+                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Expiry Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.expiry_date}
+                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
 
-  {/* File Upload */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Document File *
-    </label>
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-      <input
-        type="file"
-        onChange={handleFileChange}
-        className="hidden"
-        id="file-upload"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        required
-      />
-      <label htmlFor="file-upload" className="cursor-pointer">
-        {formData.file ? (
-          <div className="text-green-600">
-            <FaCheck className="h-8 w-8 mx-auto mb-2" />
-            <p className="font-medium">{formData.file.name}</p>
-            <p className="text-sm text-gray-500">
-              {(formData.file.size / 1024 / 1024).toFixed(2)} MB
-            </p>
+            {/* File Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Document File *
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  required
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  {formData.file ? (
+                    <div className="text-green-600">
+                      <FaCheck className="h-8 w-8 mx-auto mb-2" />
+                      <p className="font-medium">{formData.file.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(formData.file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">
+                      <FaFileAlt className="h-8 w-8 mx-auto mb-2" />
+                      <p className="font-medium">Click to select file</p>
+                      <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="text-gray-500">
-            <FaFileAlt className="h-8 w-8 mx-auto mb-2" />
-            <p className="font-medium">Click to select file</p>
-            <p className="text-sm">PDF, DOC, JPG, PNG up to 10MB</p>
-          </div>
-        )}
-      </label>
-    </div>
-  </div>
-</div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
             <button
@@ -433,7 +433,7 @@ export default function EmployeeProfile() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  
+
   const { canEdit } = usePermissions('employee.add_manage_profiles');
 
   // Fetch employee data
@@ -455,7 +455,7 @@ export default function EmployeeProfile() {
         setLoading(false);
       }
     };
-    
+
     fetchEmployee();
   }, [id]);
 
@@ -468,7 +468,7 @@ export default function EmployeeProfile() {
 
   const fetchDocuments = async () => {
     if (!employee?.id) return;
-    
+
     setLoadingDocuments(true);
     try {
       const response = await getEmployeeDocuments(employee.id);
@@ -504,7 +504,7 @@ export default function EmployeeProfile() {
     const years = now.getFullYear() - join.getFullYear();
     const months = now.getMonth() - join.getMonth();
     const totalMonths = years * 12 + months;
-    
+
     if (totalMonths >= 12) {
       return `${years} year${years > 1 ? 's' : ''}`;
     } else {
@@ -627,7 +627,7 @@ export default function EmployeeProfile() {
               >
                 <FaArrowLeft /> Back to Employees
               </button>
-              
+
               <div className="flex items-center gap-2">
                 {secondaryActions.map((action, index) => (
                   <button
@@ -651,17 +651,16 @@ export default function EmployeeProfile() {
                 <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-white border-opacity-30">
                   {employee.first_name?.[0]}{employee.last_name?.[0]}
                 </div>
-                <span className={`absolute bottom-0 right-0 px-3 py-1 rounded-full text-xs font-bold ${
-                  employee.status === 'Active' 
-                    ? 'bg-green-500 text-white' 
+                <span className={`absolute bottom-0 right-0 px-3 py-1 rounded-full text-xs font-bold ${employee.status === 'Active'
+                    ? 'bg-green-500 text-white'
                     : employee.status === 'On Leave'
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-red-500 text-white'
-                }`}>
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-red-500 text-white'
+                  }`}>
                   {employee.status}
                 </span>
               </div>
-              
+
               {/* Basic Info */}
               <div className="flex-grow">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -673,7 +672,7 @@ export default function EmployeeProfile() {
                       {employee.designation?.title || 'No Designation'}
                       {employee.department?.name && ` • ${employee.department.name}`}
                     </p>
-                    
+
                     <div className="flex flex-wrap gap-4 mt-4">
                       <div className="flex items-center gap-2">
                         <FaEnvelope className="text-blue-200" />
@@ -689,7 +688,7 @@ export default function EmployeeProfile() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Quick Actions */}
                   <div className="flex-shrink-0">
                     <div className="flex flex-wrap gap-2">
@@ -725,11 +724,10 @@ export default function EmployeeProfile() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-4 font-medium border-b-2 whitespace-nowrap transition-colors ${
-                      activeTab === tab
+                    className={`px-6 py-4 font-medium border-b-2 whitespace-nowrap transition-colors ${activeTab === tab
                         ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
@@ -1020,7 +1018,7 @@ export default function EmployeeProfile() {
                   <div className="text-lg font-semibold text-gray-700">{employee.first_name} {employee.last_name}</div>
                   <div className="text-sm text-gray-600 mt-2">{employee.designation?.title}</div>
                 </div>
-                <button 
+                <button
                   onClick={() => window.print()}
                   className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >

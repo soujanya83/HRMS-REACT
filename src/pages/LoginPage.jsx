@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaEnvelope, FaKey } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/image1.png";
-import { login, forgotPassword, verifyOtp, resetPassword } from "../services/auth"; 
+import { login, forgotPassword, verifyOtp, resetPassword } from "../services/auth";
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -10,7 +10,7 @@ const LoginPage = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Forgot Password States
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -23,7 +23,7 @@ const LoginPage = ({ onLogin }) => {
   const [resetEmail, setResetEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [countdown, setCountdown] = useState(0);
-  
+
   const navigate = useNavigate();
 
   // Function to determine dashboard based on user role
@@ -32,20 +32,20 @@ const LoginPage = ({ onLogin }) => {
     const userRoleForOrg = roles.find(
       role => role.organization_id === selectedOrganizationId
     );
-    
+
     if (!userRoleForOrg) {
       return "/dashboard"; // Default to admin dashboard
     }
-    
+
     const roleName = userRoleForOrg.role_name?.toLowerCase();
-    
+
     // Check if user is admin (superadmin, organization_admin, hr_manager)
-    const isAdminRole = roleName === 'superadmin' || 
-                        roleName === 'organization_admin' || 
-                        roleName === 'hr_manager' ||
-                        roleName === 'payroll_manager' ||
-                        roleName === 'recruiter';
-    
+    const isAdminRole = roleName === 'superadmin' ||
+      roleName === 'organization_admin' ||
+      roleName === 'hr_manager' ||
+      roleName === 'payroll_manager' ||
+      roleName === 'recruiter';
+
     if (isAdminRole) {
       return "/dashboard"; // Admin Dashboard (DashboardContent)
     } else {
@@ -56,111 +56,111 @@ const LoginPage = ({ onLogin }) => {
   // Handle login submit
   // In LoginPage.jsx, update the handleSubmit function:
 
-// src/pages/LoginPage.jsx - Updated handleSubmit function
-// In LoginPage.jsx, update the handleSubmit function:
+  // src/pages/LoginPage.jsx - Updated handleSubmit function
+  // In LoginPage.jsx, update the handleSubmit function:
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setErrors({});
-  if (validateForm()) {
-    setIsSubmitting(true);
-    try {
-      const response = await login(email, password);
-      console.log("API Response:", response.data);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    if (validateForm()) {
+      setIsSubmitting(true);
+      try {
+        const response = await login(email, password);
+        console.log("API Response:", response.data);
 
-      // Clear existing data first
-      localStorage.clear();
-      
-      const token = response.data.data.token;
-      const userData = response.data.data.user;
-      const employeeData = response.data.data.employee; // Added employee data
-      const userRoles = response.data.data.roles || [];
-      
-      console.log("User Roles from API:", userRoles);
-      
-      // Store new data
-      localStorage.setItem('ACCESS_TOKEN', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('USER_ROLES', JSON.stringify(userRoles));
-      if (employeeData) {
-        localStorage.setItem('employee', JSON.stringify(employeeData));
-      }
+        // Clear existing data first
+        localStorage.clear();
 
-      // 1. Check for temporary password FIRST
-      if (userData.temp_pass_status === 0) {
-        console.log("🚀 Redirecting to Change Password Page (Temporary Password detected)");
-        
-        // Still need to call onLogin to set global state
-        onLogin(userData, userRoles, employeeData);
-        
-        navigate("/change-password");
-        return;
-      }
-      
-      // 2. Continue with organization/role selection if password is NOT temporary
-      let selectedOrg = null;
-      let selectedRole = null;
-      
-      // Priority: superadmin first
-      const superAdminOrg = userRoles.find(r => r.role_name?.toLowerCase() === 'superadmin');
-      if (superAdminOrg) {
-        selectedOrg = superAdminOrg;
-        selectedRole = superAdminOrg.role_name;
-        console.log("Found superadmin organization:", superAdminOrg.organization_name);
-      } else {
-        // Then check other admin roles
-        const adminRoles = ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
-        for (const role of adminRoles) {
-          const adminOrg = userRoles.find(r => r.role_name?.toLowerCase() === role);
-          if (adminOrg) {
-            selectedOrg = adminOrg;
-            selectedRole = role;
-            break;
+        const token = response.data.data.token;
+        const userData = response.data.data.user;
+        const employeeData = response.data.data.employee; // Added employee data
+        const userRoles = response.data.data.roles || [];
+
+        console.log("User Roles from API:", userRoles);
+
+        // Store new data
+        localStorage.setItem('ACCESS_TOKEN', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('USER_ROLES', JSON.stringify(userRoles));
+        if (employeeData) {
+          localStorage.setItem('employee', JSON.stringify(employeeData));
+        }
+
+        // 1. Check for temporary password FIRST
+        if (userData.temp_pass_status === 0) {
+          console.log("🚀 Redirecting to Change Password Page (Temporary Password detected)");
+
+          // Still need to call onLogin to set global state
+          onLogin(userData, userRoles, employeeData);
+
+          navigate("/change-password");
+          return;
+        }
+
+        // 2. Continue with organization/role selection if password is NOT temporary
+        let selectedOrg = null;
+        let selectedRole = null;
+
+        // Priority: superadmin first
+        const superAdminOrg = userRoles.find(r => r.role_name?.toLowerCase() === 'superadmin');
+        if (superAdminOrg) {
+          selectedOrg = superAdminOrg;
+          selectedRole = superAdminOrg.role_name;
+          console.log("Found superadmin organization:", superAdminOrg.organization_name);
+        } else {
+          // Then check other admin roles
+          const adminRoles = ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+          for (const role of adminRoles) {
+            const adminOrg = userRoles.find(r => r.role_name?.toLowerCase() === role);
+            if (adminOrg) {
+              selectedOrg = adminOrg;
+              selectedRole = role;
+              break;
+            }
           }
         }
-      }
-      
-      // If no admin role found, use the first organization
-      if (!selectedOrg && userRoles.length > 0) {
-        selectedOrg = userRoles[0];
-        selectedRole = selectedOrg.role_name;
-      }
-      
-      if (selectedOrg) {
-        localStorage.setItem('selectedOrgId', selectedOrg.organization_id);
-        localStorage.setItem('CURRENT_USER_ROLE', selectedRole);
-        console.log(`✅ Selected Organization: ${selectedOrg.organization_name} (ID: ${selectedOrg.organization_id}) with role: ${selectedRole}`);
-      }
-      
-      // Pass both user data, roles, and employee data to onLogin
-      onLogin(userData, userRoles, employeeData);
-      
-      // Determine which dashboard to navigate to
-      const isAdmin = selectedRole?.toLowerCase() === 'superadmin' || 
-                      ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'].includes(selectedRole?.toLowerCase());
-      
-      if (isAdmin) {
-        console.log("🚀 Redirecting to Admin Dashboard");
-        navigate("/dashboard/admin-dashboard");
-      } else {
-        console.log("🚀 Redirecting to Employee Dashboard");
-        navigate("/dashboard/employee-dashboard");
-      }
 
-    } catch (error) {
-      console.error("Login error:", error);
-      const newErrors = {};
-      if (error.response?.data?.message) {
+        // If no admin role found, use the first organization
+        if (!selectedOrg && userRoles.length > 0) {
+          selectedOrg = userRoles[0];
+          selectedRole = selectedOrg.role_name;
+        }
+
+        if (selectedOrg) {
+          localStorage.setItem('selectedOrgId', selectedOrg.organization_id);
+          localStorage.setItem('CURRENT_USER_ROLE', selectedRole);
+          //console.log(`✅ Selected Organization: ${selectedOrg.organization_name} (ID: ${selectedOrg.organization_id}) with role: ${selectedRole}`);
+        }
+
+        // Pass both user data, roles, and employee data to onLogin
+        onLogin(userData, userRoles, employeeData);
+
+        // Determine which dashboard to navigate to
+        const isAdmin = selectedRole?.toLowerCase() === 'superadmin' ||
+          ['organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'].includes(selectedRole?.toLowerCase());
+
+        if (isAdmin) {
+          //console.log("🚀 Redirecting to Admin Dashboard");
+          navigate("/dashboard/admin-dashboard");
+        } else {
+          //console.log("🚀 Redirecting to Employee Dashboard");
+          navigate("/dashboard/employee-dashboard");
+        }
+
+      } catch (error) {
+        console.error("Login error:", error);
+        const newErrors = {};
+        if (error.response?.data?.message) {
           newErrors.api = error.response.data.message;
-      } else {
+        } else {
           newErrors.api = "Login failed. Please check your credentials.";
+        }
+        setErrors(newErrors);
+      } finally {
+        setIsSubmitting(false);
       }
-      setErrors(newErrors);
-    } finally {
-      setIsSubmitting(false);
     }
-  }
-};
+  };
 
   // Validate login form
   const validateForm = () => {
@@ -206,18 +206,18 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccessMessage("");
-    
+
     if (validateForgotPasswordForm()) {
       setIsSubmitting(true);
       try {
         const response = await forgotPassword(resetEmail);
-        console.log("Forgot Password Response:", response.data);
-        
+        // console.log("Forgot Password Response:", response.data);
+
         if (response.data.status === true) {
           setSuccessMessage(response.data.message || "Password reset OTP sent to email");
           setShowForgotPassword(false);
           setShowOtpVerification(true);
-          
+
           // Start countdown for OTP resend (60 seconds)
           setCountdown(60);
           const timer = setInterval(() => {
@@ -247,13 +247,13 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccessMessage("");
-    
+
     if (validateOtpForm()) {
       setIsSubmitting(true);
       try {
         const response = await verifyOtp(resetEmail, otp);
-        console.log("Verify OTP Response:", response.data);
-        
+        //console.log("Verify OTP Response:", response.data);
+
         if (response.data.status === true) {
           setSuccessMessage("OTP verified successfully");
           setShowOtpVerification(false);
@@ -276,16 +276,16 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccessMessage("");
-    
+
     if (validateResetPasswordForm()) {
       setIsSubmitting(true);
       try {
         const response = await resetPassword(resetEmail, otp, newPassword, confirmPassword);
-        console.log("Reset Password Response:", response.data);
-        
+        // console.log("Reset Password Response:", response.data);
+
         if (response.data.status === true) {
           setSuccessMessage("Password reset successfully! You can now login with your new password.");
-          
+
           // Reset all states
           setTimeout(() => {
             setShowResetPassword(false);
@@ -311,15 +311,15 @@ const handleSubmit = async (e) => {
   // Resend OTP
   const handleResendOtp = async () => {
     if (countdown > 0) return;
-    
+
     setErrors({});
     setSuccessMessage("");
     setIsSubmitting(true);
-    
+
     try {
       const response = await forgotPassword(resetEmail);
-      console.log("Resend OTP Response:", response.data);
-      
+      // console.log("Resend OTP Response:", response.data);
+
       if (response.data.status === true) {
         setSuccessMessage("New OTP sent to your email");
         setCountdown(60);
@@ -367,8 +367,8 @@ const handleSubmit = async (e) => {
           <div>
             <h1 className="text-4xl font-bold mb-4">CHRISPP</h1>
             <h2 className="text-2xl font-light leading-tight">
-              {showForgotPassword || showOtpVerification || showResetPassword 
-                ? "Password Recovery" 
+              {showForgotPassword || showOtpVerification || showResetPassword
+                ? "Password Recovery"
                 : "Welcome to"}
             </h2>
             {!showForgotPassword && !showOtpVerification && !showResetPassword && (
@@ -417,9 +417,8 @@ const handleSubmit = async (e) => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={isSubmitting}
-                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.email ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.email ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                     </div>
                     {errors.email && (
@@ -438,9 +437,8 @@ const handleSubmit = async (e) => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isSubmitting}
-                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.password ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.password ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                       <button
                         type="button"
@@ -484,16 +482,16 @@ const handleSubmit = async (e) => {
               <>
                 <h3 className="text-3xl font-bold text-gray-800 mb-2">Forgot Password</h3>
                 <p className="text-gray-500 mb-8">Enter your email to receive OTP</p>
-                
+
                 {successMessage && (
                   <p className="text-green-500 text-sm text-center mb-4 bg-green-100 p-3 rounded-lg">{successMessage}</p>
                 )}
-                
+
                 <form onSubmit={handleForgotPassword} noValidate>
                   {errors.api && (
                     <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
                   )}
-                  
+
                   <div className="mb-6">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -506,9 +504,8 @@ const handleSubmit = async (e) => {
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                         disabled={isSubmitting}
-                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.resetEmail ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.resetEmail ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                     </div>
                     {errors.resetEmail && (
@@ -541,16 +538,16 @@ const handleSubmit = async (e) => {
               <>
                 <h3 className="text-3xl font-bold text-gray-800 mb-2">Verify OTP</h3>
                 <p className="text-gray-500 mb-8">Enter the 6-digit code sent to {resetEmail}</p>
-                
+
                 {successMessage && (
                   <p className="text-green-500 text-sm text-center mb-4 bg-green-100 p-3 rounded-lg">{successMessage}</p>
                 )}
-                
+
                 <form onSubmit={handleVerifyOtp} noValidate>
                   {errors.api && (
                     <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
                   )}
-                  
+
                   <div className="mb-6">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -564,9 +561,8 @@ const handleSubmit = async (e) => {
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         disabled={isSubmitting}
                         maxLength="6"
-                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.otp ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.otp ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                     </div>
                     {errors.otp && (
@@ -613,16 +609,16 @@ const handleSubmit = async (e) => {
               <>
                 <h3 className="text-3xl font-bold text-gray-800 mb-2">Reset Password</h3>
                 <p className="text-gray-500 mb-8">Create a new password for your account</p>
-                
+
                 {successMessage && (
                   <p className="text-green-500 text-sm text-center mb-4 bg-green-100 p-3 rounded-lg">{successMessage}</p>
                 )}
-                
+
                 <form onSubmit={handleResetPassword} noValidate>
                   {errors.api && (
                     <p className="text-red-500 text-sm text-center mb-4 bg-red-100 p-3 rounded-lg">{errors.api}</p>
                   )}
-                  
+
                   <div className="mb-4">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -635,9 +631,8 @@ const handleSubmit = async (e) => {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         disabled={isSubmitting}
-                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.newPassword ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.newPassword ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                       <button
                         type="button"
@@ -665,9 +660,8 @@ const handleSubmit = async (e) => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={isSubmitting}
-                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${
-                          errors.confirmPassword ? "border-red-500" : "border-gray-200"
-                        }`}
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed ${errors.confirmPassword ? "border-red-500" : "border-gray-200"
+                          }`}
                       />
                       <button
                         type="button"

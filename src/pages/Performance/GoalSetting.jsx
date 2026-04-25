@@ -38,7 +38,7 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -100,9 +100,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -116,9 +115,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -224,7 +222,7 @@ const getStatusConfig = (status) => {
 
 const getPriorityConfig = (priority) => {
   const priorityLower = priority?.toLowerCase() || "medium";
-  
+
   const configs = {
     low: { color: "bg-green-100 text-green-800", label: "Low" },
     medium: { color: "bg-yellow-100 text-yellow-800", label: "Medium" },
@@ -432,9 +430,8 @@ const GoalFormModal = ({
                 value={formData.title}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.title ? "border-red-300" : "border-gray-300"
-                }`}
+                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.title ? "border-red-300" : "border-gray-300"
+                  }`}
                 placeholder="e.g., Increase Sales Conversion Rate"
               />
               {errors.title && (
@@ -451,9 +448,8 @@ const GoalFormModal = ({
                 value={formData.review_cycle_id}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.review_cycle_id ? "border-red-300" : "border-gray-300"
-                }`}
+                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.review_cycle_id ? "border-red-300" : "border-gray-300"
+                  }`}
               >
                 <option value="">Select Review Cycle</option>
                 {reviewCycles.map((cycle) => (
@@ -496,9 +492,8 @@ const GoalFormModal = ({
                 value={formData.employee_id}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.employee_id ? "border-red-300" : "border-gray-300"
-                }`}
+                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.employee_id ? "border-red-300" : "border-gray-300"
+                  }`}
               >
                 <option value="">Select Employee</option>
                 {employees.map((emp) => (
@@ -581,9 +576,8 @@ const GoalFormModal = ({
                 value={formData.due_date}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.due_date ? "border-red-300" : "border-gray-300"
-                }`}
+                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.due_date ? "border-red-300" : "border-gray-300"
+                  }`}
               />
               {errors.due_date && (
                 <p className="mt-1 text-xs text-red-600">{errors.due_date}</p>
@@ -767,9 +761,8 @@ const KeyResultFormModal = ({
               onChange={handleInputChange}
               disabled={loading}
               rows={2}
-              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.description ? "border-red-300" : "border-gray-300"
-              }`}
+              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.description ? "border-red-300" : "border-gray-300"
+                }`}
               placeholder="e.g., Increase monthly customer satisfaction score"
             />
             {errors.description && (
@@ -841,9 +834,8 @@ const KeyResultFormModal = ({
                 onChange={handleInputChange}
                 disabled={loading}
                 step="0.01"
-                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.target_value ? "border-red-300" : "border-gray-300"
-                }`}
+                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.target_value ? "border-red-300" : "border-gray-300"
+                  }`}
                 placeholder="Target value"
               />
               {errors.target_value && (
@@ -1129,158 +1121,158 @@ const GoalDetailModal = ({
             </div>
 
             if (!keyResults || keyResults.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                <FaBullseye className="mx-auto text-3xl text-gray-300 mb-2" />
-                <h4 className="text-sm font-medium text-gray-600 mb-1">
-                  No Key Results
-                </h4>
-                <p className="text-xs text-gray-500">
-                  Add key results to track specific outcomes
-                </p>
-              </div>
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <FaBullseye className="mx-auto text-3xl text-gray-300 mb-2" />
+              <h4 className="text-sm font-medium text-gray-600 mb-1">
+                No Key Results
+              </h4>
+              <p className="text-xs text-gray-500">
+                Add key results to track specific outcomes
+              </p>
+            </div>
             ) : (
-              <div className="space-y-3">
-                {keyResults.map((kr) => {
-                  const progress = goalService.calculateProgress(
-                    parseFloat(kr.start_value),
-                    parseFloat(kr.target_value),
-                    parseFloat(kr.current_value),
-                  );
-                  const isExpanded = expandedKeyResults.includes(kr.id);
+            <div className="space-y-3">
+              {keyResults.map((kr) => {
+                const progress = goalService.calculateProgress(
+                  parseFloat(kr.start_value),
+                  parseFloat(kr.target_value),
+                  parseFloat(kr.current_value),
+                );
+                const isExpanded = expandedKeyResults.includes(kr.id);
 
-                  return (
+                return (
+                  <div
+                    key={kr.id}
+                    className="border border-gray-200 rounded-lg overflow-hidden"
+                  >
                     <div
-                      key={kr.id}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
+                      className="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                      onClick={() => toggleKeyResult(kr.id)}
                     >
-                      <div
-                        className="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                        onClick={() => toggleKeyResult(kr.id)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-800 text-sm">
-                              {kr.description}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {kr.type}
-                            </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-800 text-sm">
+                            {kr.description}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <div className="text-sm font-semibold">
-                                {formatValue(kr.current_value, kr.type)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                of {formatValue(kr.target_value, kr.type)}
-                              </div>
-                            </div>
-                            {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                          <div className="text-xs text-gray-500 mt-1">
+                            {kr.type}
                           </div>
                         </div>
-
-                        <div className="mt-2">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>{formatValue(kr.start_value, kr.type)}</span>
-                            <span>{Math.round(progress)}%</span>
-                            <span>{formatValue(kr.target_value, kr.type)}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className="text-sm font-semibold">
+                              {formatValue(kr.current_value, kr.type)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              of {formatValue(kr.target_value, kr.type)}
+                            </div>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div
-                              className="bg-blue-600 h-1.5 rounded-full"
-                              style={{ width: `${progress}%` }}
-                            ></div>
-                          </div>
+                          {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                         </div>
                       </div>
 
-                      {isExpanded && (
-                        <div className="p-3 border-t border-gray-200 bg-white">
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-3 gap-3 text-sm">
-                              <div>
-                                <div className="text-xs text-gray-500">
-                                  Start Value
-                                </div>
-                                <div className="font-medium">
-                                  {formatValue(kr.start_value, kr.type)}
-                                </div>
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>{formatValue(kr.start_value, kr.type)}</span>
+                          <span>{Math.round(progress)}%</span>
+                          <span>{formatValue(kr.target_value, kr.type)}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className="bg-blue-600 h-1.5 rounded-full"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="p-3 border-t border-gray-200 bg-white">
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div>
+                              <div className="text-xs text-gray-500">
+                                Start Value
                               </div>
-                              <div>
-                                <div className="text-xs text-gray-500">
-                                  Current Value
-                                </div>
-                                <div className="font-medium">
-                                  <input
-                                    type="number"
-                                    value={kr.current_value}
-                                    onChange={(e) =>
-                                      onUpdateKeyResult(
-                                        kr.id,
-                                        "current_value",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="w-full border border-gray-300 px-2 py-1 rounded text-sm"
-                                    step="0.01"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500">
-                                  Target Value
-                                </div>
-                                <div className="font-medium">
-                                  {formatValue(kr.target_value, kr.type)}
-                                </div>
+                              <div className="font-medium">
+                                {formatValue(kr.start_value, kr.type)}
                               </div>
                             </div>
-
-                            {kr.notes && (
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">
-                                  Notes
-                                </div>
-                                <p className="text-sm text-gray-800">
-                                  {kr.notes}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="flex justify-between items-center">
+                            <div>
                               <div className="text-xs text-gray-500">
-                                Updated: {formatDate(kr.updated_at)}
+                                Current Value
                               </div>
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => onEditKeyResult(kr)}
-                                  className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded"
-                                  title="Edit"
-                                >
-                                  <FaEdit size={12} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (
-                                      window.confirm("Delete this key result?")
-                                    ) {
-                                      onDeleteKeyResult(kr.id);
-                                    }
-                                  }}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                  title="Delete"
-                                >
-                                  <FaTrash size={12} />
-                                </button>
+                              <div className="font-medium">
+                                <input
+                                  type="number"
+                                  value={kr.current_value}
+                                  onChange={(e) =>
+                                    onUpdateKeyResult(
+                                      kr.id,
+                                      "current_value",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="w-full border border-gray-300 px-2 py-1 rounded text-sm"
+                                  step="0.01"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">
+                                Target Value
+                              </div>
+                              <div className="font-medium">
+                                {formatValue(kr.target_value, kr.type)}
                               </div>
                             </div>
                           </div>
+
+                          {kr.notes && (
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">
+                                Notes
+                              </div>
+                              <p className="text-sm text-gray-800">
+                                {kr.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center">
+                            <div className="text-xs text-gray-500">
+                              Updated: {formatDate(kr.updated_at)}
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => onEditKeyResult(kr)}
+                                className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded"
+                                title="Edit"
+                              >
+                                <FaEdit size={12} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (
+                                    window.confirm("Delete this key result?")
+                                  ) {
+                                    onDeleteKeyResult(kr.id);
+                                  }
+                                }}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <FaTrash size={12} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
             )
           </div>
         </div>
@@ -1309,7 +1301,7 @@ const GoalSetting = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -1447,7 +1439,7 @@ const GoalSetting = () => {
       console.error("Error creating goal:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to create goal. Please try again.",
+        "Failed to create goal. Please try again.",
       );
       throw err;
     } finally {
@@ -1468,21 +1460,21 @@ const GoalSetting = () => {
         prev.map((goal) =>
           goal.id === id
             ? {
-                ...goal,
-                ...response.data,
-                employee:
-                  employees.find(
-                    (e) => e.id === parseInt(formData.employee_id),
-                  ) || goal.employee,
-                manager:
-                  employees.find(
-                    (e) => e.id === parseInt(formData.manager_id),
-                  ) || goal.manager,
-                review_cycle:
-                  reviewCycles.find(
-                    (c) => c.id === parseInt(formData.review_cycle_id),
-                  ) || goal.review_cycle,
-              }
+              ...goal,
+              ...response.data,
+              employee:
+                employees.find(
+                  (e) => e.id === parseInt(formData.employee_id),
+                ) || goal.employee,
+              manager:
+                employees.find(
+                  (e) => e.id === parseInt(formData.manager_id),
+                ) || goal.manager,
+              review_cycle:
+                reviewCycles.find(
+                  (c) => c.id === parseInt(formData.review_cycle_id),
+                ) || goal.review_cycle,
+            }
             : goal,
         ),
       );
@@ -1497,7 +1489,7 @@ const GoalSetting = () => {
       console.error("Error updating goal:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to update goal. Please try again.",
+        "Failed to update goal. Please try again.",
       );
       throw err;
     } finally {
@@ -1526,7 +1518,7 @@ const GoalSetting = () => {
       console.error("Error deleting goal:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to delete goal. Please try again.",
+        "Failed to delete goal. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -1560,7 +1552,7 @@ const GoalSetting = () => {
       console.error("Error creating key result:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to add key result. Please try again.",
+        "Failed to add key result. Please try again.",
       );
       throw err;
     } finally {
@@ -1611,7 +1603,7 @@ const GoalSetting = () => {
       console.error("Error deleting key result:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to delete key result. Please try again.",
+        "Failed to delete key result. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -1660,7 +1652,7 @@ const GoalSetting = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1675,7 +1667,7 @@ const GoalSetting = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1703,12 +1695,12 @@ const GoalSetting = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1716,7 +1708,7 @@ const GoalSetting = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1915,255 +1907,255 @@ const GoalSetting = () => {
 
         {/* Goals Table */}
         {/* Goals Table */}
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Goal Details
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Employee & Cycle
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Timeline
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Key Results & Progress
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {filteredGoals.map((goal) => {
-          const employee = goal.employee || {};
-          const cycle = goal.review_cycle || {};
-          const goalKeyResults = keyResults.filter(
-            (kr) => kr.performance_goal_id === goal.id,
-          );
-          const daysLeft = getDaysLeft(goal.due_date);
-          const statusConfig = getStatusConfig(goal.status);
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Goal Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee & Cycle
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Timeline
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Key Results & Progress
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredGoals.map((goal) => {
+                  const employee = goal.employee || {};
+                  const cycle = goal.review_cycle || {};
+                  const goalKeyResults = keyResults.filter(
+                    (kr) => kr.performance_goal_id === goal.id,
+                  );
+                  const daysLeft = getDaysLeft(goal.due_date);
+                  const statusConfig = getStatusConfig(goal.status);
 
-          // Calculate average progress from key results
-          const avgProgress =
-            goalKeyResults.length > 0
-              ? Math.round(
-                  goalKeyResults.reduce((sum, kr) => {
-                    const progress = goalService.calculateProgress(
-                      parseFloat(kr.start_value),
-                      parseFloat(kr.target_value),
-                      parseFloat(kr.current_value),
-                    );
-                    return sum + progress;
-                  }, 0) / goalKeyResults.length,
-                )
-              : 0;
+                  // Calculate average progress from key results
+                  const avgProgress =
+                    goalKeyResults.length > 0
+                      ? Math.round(
+                        goalKeyResults.reduce((sum, kr) => {
+                          const progress = goalService.calculateProgress(
+                            parseFloat(kr.start_value),
+                            parseFloat(kr.target_value),
+                            parseFloat(kr.current_value),
+                          );
+                          return sum + progress;
+                        }, 0) / goalKeyResults.length,
+                      )
+                      : 0;
 
-          return (
-            <tr key={goal.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    <FaBullseye className="text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {goal.title}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {goal.description
-                        ? goal.description.length > 80
-                          ? `${goal.description.substring(0, 80)}...`
-                          : goal.description
-                        : "No description"}
-                    </div>
-                  </div>
-                </div>
-              </td>
+                  return (
+                    <tr key={goal.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            <FaBullseye className="text-blue-500" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {goal.title}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {goal.description
+                                ? goal.description.length > 80
+                                  ? `${goal.description.substring(0, 80)}...`
+                                  : goal.description
+                                : "No description"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-              <td className="px-6 py-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <FaUser className="text-gray-400" size={14} />
-                    <span className="text-sm font-medium">
-                      {getEmployeeName(employee)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaCalendarAlt className="text-gray-400" size={14} />
-                    <span className="text-sm text-gray-600">
-                      {cycle.name || "No Cycle"}
-                    </span>
-                  </div>
-                </div>
-              </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <FaUser className="text-gray-400" size={14} />
+                            <span className="text-sm font-medium">
+                              {getEmployeeName(employee)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <FaCalendarAlt className="text-gray-400" size={14} />
+                            <span className="text-sm text-gray-600">
+                              {cycle.name || "No Cycle"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
-              <td className="px-6 py-4">
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <div className="text-gray-600">
-                      Start: {formatDate(goal.start_date)}
-                    </div>
-                    <div
-                      className={`font-medium ${daysLeft !== null && daysLeft < 0 ? "text-red-600" : ""}`}
-                    >
-                      Due: {formatDate(goal.due_date)}
-                      {daysLeft !== null && daysLeft < 0 && " (Overdue)"}
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {daysLeft !== null && daysLeft > 0
-                      ? `${daysLeft} days left`
-                      : ""}
-                  </div>
-                </div>
-              </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <div className="text-gray-600">
+                              Start: {formatDate(goal.start_date)}
+                            </div>
+                            <div
+                              className={`font-medium ${daysLeft !== null && daysLeft < 0 ? "text-red-600" : ""}`}
+                            >
+                              Due: {formatDate(goal.due_date)}
+                              {daysLeft !== null && daysLeft < 0 && " (Overdue)"}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {daysLeft !== null && daysLeft > 0
+                              ? `${daysLeft} days left`
+                              : ""}
+                          </div>
+                        </div>
+                      </td>
 
-              <td className="px-6 py-4">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">
-                        {goalKeyResults.length} Key Results
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {avgProgress}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${statusConfig.progressColor}`}
-                        style={{ width: `${avgProgress}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                      <td className="px-6 py-4">
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">
+                                {goalKeyResults.length} Key Results
+                              </span>
+                              <span className="text-sm font-semibold">
+                                {avgProgress}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${statusConfig.progressColor}`}
+                                style={{ width: `${avgProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
 
-                  {goalKeyResults.slice(0, 2).map((kr) => (
-                    <div
-                      key={kr.id}
-                      className="flex items-center justify-between text-xs"
-                    >
-                      <span className="text-gray-600 truncate max-w-[120px]">
-                        {kr.description.length > 20
-                          ? `${kr.description.substring(0, 20)}...`
-                          : kr.description}
-                      </span>
-                      <span className="font-medium">
-                        {formatValue(kr.current_value, kr.type)}/
-                        {formatValue(kr.target_value, kr.type)}
-                      </span>
-                    </div>
-                  ))}
+                          {goalKeyResults.slice(0, 2).map((kr) => (
+                            <div
+                              key={kr.id}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-gray-600 truncate max-w-[120px]">
+                                {kr.description.length > 20
+                                  ? `${kr.description.substring(0, 20)}...`
+                                  : kr.description}
+                              </span>
+                              <span className="font-medium">
+                                {formatValue(kr.current_value, kr.type)}/
+                                {formatValue(kr.target_value, kr.type)}
+                              </span>
+                            </div>
+                          ))}
 
-                  {goalKeyResults.length > 2 && (
-                    <div className="text-xs text-blue-600 font-medium">
-                      +{goalKeyResults.length - 2} more key results
-                    </div>
-                  )}
-                </div>
-              </td>
+                          {goalKeyResults.length > 2 && (
+                            <div className="text-xs text-blue-600 font-medium">
+                              +{goalKeyResults.length - 2} more key results
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleViewGoalDetails(goal)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                    title="View Details"
-                  >
-                    <FaSearch />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setModalState((prev) => ({
-                        ...prev,
-                        showGoalForm: true,
-                        selectedGoal: goal,
-                      }))
-                    }
-                    className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                    title="Edit Goal"
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Delete this goal and all its key results?",
-                        )
-                      ) {
-                        handleDeleteGoal(goal.id);
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleViewGoalDetails(goal)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="View Details"
+                          >
+                            <FaSearch />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setModalState((prev) => ({
+                                ...prev,
+                                showGoalForm: true,
+                                selectedGoal: goal,
+                              }))
+                            }
+                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                            title="Edit Goal"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Delete this goal and all its key results?",
+                                )
+                              ) {
+                                handleDeleteGoal(goal.id);
+                              }
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Delete Goal"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {filteredGoals.length === 0 && (
+              <div className="text-center py-12">
+                <FaBullseye className="mx-auto text-4xl text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  {filters.search ||
+                    filters.status !== "all" ||
+                    filters.cycle !== "all" ||
+                    filters.employee !== "all"
+                    ? "No matching performance goals found"
+                    : "No performance goals yet"}
+                </h3>
+                <p className="text-gray-500">
+                  {filters.search ||
+                    filters.status !== "all" ||
+                    filters.cycle !== "all" ||
+                    filters.employee !== "all"
+                    ? "Try adjusting your filters or search terms"
+                    : "Create your first performance goal to get started"}
+                </p>
+                {!(
+                  filters.search ||
+                  filters.status !== "all" ||
+                  filters.cycle !== "all" ||
+                  filters.employee !== "all"
+                ) && (
+                    <button
+                      onClick={() =>
+                        setModalState((prev) => ({ ...prev, showGoalForm: true }))
                       }
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                    title="Delete Goal"
-                  >
-                    <FaTrash />
-                  </button>
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Create First Goal
+                    </button>
+                  )}
+              </div>
+            )}
+          </div>
+
+          {/* Summary Footer */}
+          {filteredGoals.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <div className="text-sm text-gray-600 mb-2 md:mb-0">
+                  Showing {filteredGoals.length} of {goals.length} goals
                 </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-
-    {filteredGoals.length === 0 && (
-      <div className="text-center py-12">
-        <FaBullseye className="mx-auto text-4xl text-gray-300 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">
-          {filters.search ||
-          filters.status !== "all" ||
-          filters.cycle !== "all" ||
-          filters.employee !== "all"
-            ? "No matching performance goals found"
-            : "No performance goals yet"}
-        </h3>
-        <p className="text-gray-500">
-          {filters.search ||
-          filters.status !== "all" ||
-          filters.cycle !== "all" ||
-          filters.employee !== "all"
-            ? "Try adjusting your filters or search terms"
-            : "Create your first performance goal to get started"}
-        </p>
-        {!(
-          filters.search ||
-          filters.status !== "all" ||
-          filters.cycle !== "all" ||
-          filters.employee !== "all"
-        ) && (
-          <button
-            onClick={() =>
-              setModalState((prev) => ({ ...prev, showGoalForm: true }))
-            }
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Create First Goal
-          </button>
-        )}
-      </div>
-    )}
-  </div>
-
-  {/* Summary Footer */}
-  {filteredGoals.length > 0 && (
-    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-      <div className="flex flex-col md:flex-row justify-between items-center">
-        <div className="text-sm text-gray-600 mb-2 md:mb-0">
-          Showing {filteredGoals.length} of {goals.length} goals
+                <div className="text-sm text-gray-700 font-medium">
+                  {keyResults.length} total key results • {stats.Draft} Draft •{" "}
+                  {stats.in_progress} in progress • {stats.completed} completed
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <div className="text-sm text-gray-700 font-medium">
-          {keyResults.length} total key results • {stats.Draft} Draft •{" "}
-          {stats.in_progress} in progress • {stats.completed} completed
-        </div>
-      </div>
-    </div>
-  )}
-</div>
 
         {/* Modals */}
         <GoalFormModal

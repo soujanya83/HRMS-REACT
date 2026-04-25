@@ -230,8 +230,8 @@ const PayslipGeneration = () => {
       console.error("Error fetching pay periods:", error);
       setError(
         error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch pay periods.",
+        error.message ||
+        "Failed to fetch pay periods.",
       );
     } finally {
       setLoading((prev) => ({ ...prev, payPeriods: false }));
@@ -284,7 +284,7 @@ const PayslipGeneration = () => {
       if (response.data && response.data.status) {
         const payRunsData = response.data.data || [];
         setPayRuns(payRunsData);
-        console.log(`📊 Found ${payRunsData.length} pay run(s) for period`);
+        //console.log(`📊 Found ${payRunsData.length} pay run(s) for period`);
       } else {
         setPayRuns([]);
       }
@@ -301,16 +301,16 @@ const PayslipGeneration = () => {
       setLoading((prev) => ({ ...prev, allPayslips: true }));
       setError(null);
 
-      console.log("📡 Fetching ALL payslips for organization:", organizationId);
+      //console.log("📡 Fetching ALL payslips for organization:", organizationId);
       const response =
         await payrollService.getAllPayslipsByOrganization(organizationId);
 
       if (response.data && response.data.status) {
         const payslipsData = response.data.data || [];
         setAllPayslips(payslipsData);
-        console.log(
-          `📊 Loaded ${payslipsData.length} payslips for organization`,
-        );
+        //console.log(
+        //  `📊 Loaded ${payslipsData.length} payslips for organization`,
+        //);
       }
     } catch (error) {
       console.error("Error fetching all payslips:", error);
@@ -342,7 +342,7 @@ const PayslipGeneration = () => {
         setPayslips(payslipData);
         setSelectedPayRun(xeroPayRunId);
         setPayslipViewMode("byPayRun");
-        console.log(`📋 Loaded ${payslipData.length} payslips from database`);
+        //console.log(`📋 Loaded ${payslipData.length} payslips from database`);
       } else {
         setPayslips([]);
       }
@@ -365,8 +365,8 @@ const PayslipGeneration = () => {
       const existingPayRun = payRuns[0];
       setError(
         `⚠️ Cannot create pay run: A ${existingPayRun.status} pay run already exists for this period.\n\n` +
-          `Period: ${formatDate(selectedPeriod.start_date)} to ${formatDate(selectedPeriod.end_date)}\n` +
-          `Existing Pay Run Status: ${existingPayRun.status}`,
+        `Period: ${formatDate(selectedPeriod.start_date)} to ${formatDate(selectedPeriod.end_date)}\n` +
+        `Existing Pay Run Status: ${existingPayRun.status}`,
       );
       return;
     }
@@ -395,7 +395,7 @@ const PayslipGeneration = () => {
       ) {
         setError(
           `⚠️ Cannot create pay run: There is already a draft pay run for this period.\n\n` +
-            `Please go to the Pay Runs table below and approve or delete the existing draft pay run.`,
+          `Please go to the Pay Runs table below and approve or delete the existing draft pay run.`,
         );
       } else {
         setError(error.message || "Failed to create pay run.");
@@ -441,8 +441,8 @@ const PayslipGeneration = () => {
       } else {
         setError(
           error.response?.data?.message ||
-            error.message ||
-            "Failed to approve pay run.",
+          error.message ||
+          "Failed to approve pay run.",
         );
       }
     } finally {
@@ -472,8 +472,8 @@ const PayslipGeneration = () => {
       console.error("Error syncing payslips:", error);
       setError(
         error.response?.data?.message ||
-          error.message ||
-          "Failed to sync payslips.",
+        error.message ||
+        "Failed to sync payslips.",
       );
     } finally {
       setLoading((prev) => ({ ...prev, syncing: false }));
@@ -1013,11 +1013,10 @@ const PayslipGeneration = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => handlePeriodChange(period)}
-                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                            selectedPeriod?.id === period.id
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedPeriod?.id === period.id
                               ? "bg-green-600 text-white hover:bg-green-700"
                               : "bg-blue-600 text-white hover:bg-blue-700"
-                          }`}
+                            }`}
                         >
                           {selectedPeriod?.id === period.id
                             ? "Selected"
@@ -1286,11 +1285,10 @@ const PayslipGeneration = () => {
                           onClick={() =>
                             handlePayslipViewModeChange("byPayRun")
                           }
-                          className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                            payslipViewMode === "byPayRun"
+                          className={`px-3 py-1 text-xs font-medium rounded-lg ${payslipViewMode === "byPayRun"
                               ? "bg-blue-600 text-white"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                            }`}
                           disabled={!selectedPayRun}
                         >
                           <FaFileInvoice className="inline mr-1" />
@@ -1298,11 +1296,10 @@ const PayslipGeneration = () => {
                         </button>
                         <button
                           onClick={() => handlePayslipViewModeChange("all")}
-                          className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                            payslipViewMode === "all"
+                          className={`px-3 py-1 text-xs font-medium rounded-lg ${payslipViewMode === "all"
                               ? "bg-blue-600 text-white"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                            }`}
                         >
                           <FaListAlt className="inline mr-1" />
                           All Payslips ({allPayslips.length})
@@ -1370,7 +1367,7 @@ const PayslipGeneration = () => {
                           type="checkbox"
                           checked={
                             selectedPayslips.length ===
-                              currentFilteredPayslips.length &&
+                            currentFilteredPayslips.length &&
                             currentFilteredPayslips.length > 0
                           }
                           onChange={handleSelectAll}
@@ -1880,12 +1877,12 @@ const PayslipGeneration = () => {
                       <p className="text-gray-500">
                         {formatDate(
                           previewPayslip.pay_run?.period_start_date ||
-                            payRunDateRange.from_date,
+                          payRunDateRange.from_date,
                         )}{" "}
                         -{" "}
                         {formatDate(
                           previewPayslip.pay_run?.period_end_date ||
-                            payRunDateRange.to_date,
+                          payRunDateRange.to_date,
                         )}
                       </p>
                     </div>
@@ -1917,7 +1914,7 @@ const PayslipGeneration = () => {
                           <strong>Payment Date:</strong>{" "}
                           {formatDate(
                             previewPayslip.pay_run?.payment_date ||
-                              payRunDateRange.to_date,
+                            payRunDateRange.to_date,
                           )}
                         </p>
                       </div>

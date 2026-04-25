@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import usePermissions from '../../hooks/usePermissions';
-import { 
-  FaCalculator, 
-  FaSearch, 
-  FaFilter, 
+import {
+  FaCalculator,
+  FaSearch,
+  FaFilter,
   FaDownload,
   FaSync,
   FaPlus,
@@ -28,7 +28,7 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -90,9 +90,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -106,9 +105,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -123,7 +121,7 @@ const ColorPaletteModal = ({
 const LeaveBalance = () => {
   const { selectedOrganization } = useOrganizations();
   const { canAdd, canEdit, canDelete } = usePermissions('attendance.leave_balance');
-  
+
   // State for leave balances
   const [leaveBalances, setLeaveBalances] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +129,7 @@ const LeaveBalance = () => {
   const [editingBalance, setEditingBalance] = useState(null);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [leaveSummary, setLeaveSummary] = useState(null);
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -140,7 +138,7 @@ const LeaveBalance = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   // Filters
   const [filters, setFilters] = useState({
     department: 'all',
@@ -213,13 +211,13 @@ const LeaveBalance = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      console.log('📊 Fetching leave balance data for organization ID:', organizationId);
-      
+      //console.log('📊 Fetching leave balance data for organization ID:', organizationId);
+
       // 1. Fetch leave balance
       try {
         const balanceResponse = await leaveService.getLeaveBalance(organizationId);
-        console.log('✅ Leave balance response:', balanceResponse.data);
-        
+        //console.log('✅ Leave balance response:', balanceResponse.data);
+
         if (balanceResponse.data) {
           let balanceData = [];
           if (balanceResponse.data.success && balanceResponse.data.data) {
@@ -229,7 +227,7 @@ const LeaveBalance = () => {
           } else if (balanceResponse.data.data && Array.isArray(balanceResponse.data.data)) {
             balanceData = balanceResponse.data.data;
           }
-          
+
           setLeaveBalances(balanceData);
           calculateStats(balanceData);
         } else {
@@ -365,35 +363,35 @@ const LeaveBalance = () => {
         last_updated: '2024-03-20'
       }
     ];
-    
+
     setLeaveBalances(staticData);
     calculateStats(staticData);
   };
 
   // Calculate statistics
   const calculateStats = (data) => {
-    const lowBalance = data.filter(balance => 
-      (balance.annual_leave_remaining || 0) <= 5 || 
+    const lowBalance = data.filter(balance =>
+      (balance.annual_leave_remaining || 0) <= 5 ||
       (balance.sick_leave_remaining || 0) <= 3
     ).length;
-    
-    const zeroBalance = data.filter(balance => 
-      (balance.annual_leave_remaining || 0) === 0 || 
+
+    const zeroBalance = data.filter(balance =>
+      (balance.annual_leave_remaining || 0) === 0 ||
       (balance.sick_leave_remaining || 0) === 0
     ).length;
-    
-    const healthyBalance = data.filter(balance => 
-      (balance.annual_leave_remaining || 0) > 10 && 
+
+    const healthyBalance = data.filter(balance =>
+      (balance.annual_leave_remaining || 0) > 10 &&
       (balance.sick_leave_remaining || 0) > 6
     ).length;
 
-    const totalLeaveRemaining = data.reduce((sum, balance) => 
-      sum + (balance.annual_leave_remaining || 0) + (balance.sick_leave_remaining || 0) + 
+    const totalLeaveRemaining = data.reduce((sum, balance) =>
+      sum + (balance.annual_leave_remaining || 0) + (balance.sick_leave_remaining || 0) +
       (balance.emergency_leave_remaining || 0) + (balance.casual_leave_remaining || 0), 0
     );
 
-    const totalLeaveUsed = data.reduce((sum, balance) => 
-      sum + (balance.annual_leave_used || 0) + (balance.sick_leave_used || 0) + 
+    const totalLeaveUsed = data.reduce((sum, balance) =>
+      sum + (balance.annual_leave_used || 0) + (balance.sick_leave_used || 0) +
       (balance.emergency_leave_used || 0) + (balance.casual_leave_used || 0), 0
     );
 
@@ -415,12 +413,12 @@ const LeaveBalance = () => {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewBalance(prev => { 
-      const updated = { 
-        ...prev, 
+    setNewBalance(prev => {
+      const updated = {
+        ...prev,
         [name]: value,
         ...(name.includes('_total') || name.includes('_used') ? {
-          annual_leave_remaining: name === 'annual_leave_total' || name === 'annual_leave_used' 
+          annual_leave_remaining: name === 'annual_leave_total' || name === 'annual_leave_used'
             ? calculateRemaining('annual_leave_total', 'annual_leave_used', name, value, prev)
             : prev.annual_leave_remaining,
           sick_leave_remaining: name === 'sick_leave_total' || name === 'sick_leave_used'
@@ -440,9 +438,9 @@ const LeaveBalance = () => {
             : prev.casual_leave_remaining
         } : {})
       };
-      
+
       updated.total_leave_taken = calculateTotalLeaveTaken(updated);
-      
+
       return updated;
     });
   };
@@ -464,7 +462,7 @@ const LeaveBalance = () => {
       'paternity_leave_used',
       'casual_leave_used'
     ];
-    
+
     return leaveTypes.reduce((total, type) => total + (parseInt(balance[type]) || 0), 0);
   };
 
@@ -473,7 +471,7 @@ const LeaveBalance = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      
+
       const finalBalance = {
         ...newBalance,
         total_leave_taken: calculateTotalLeaveTaken(newBalance),
@@ -481,22 +479,22 @@ const LeaveBalance = () => {
       };
 
       alert(editingBalance ? 'Leave balance updated successfully!' : 'Leave balance added successfully!');
-      
+
       setShowBalanceForm(false);
       resetForm();
-      
+
       if (editingBalance) {
-        setLeaveBalances(prev => 
-          prev.map(balance => 
+        setLeaveBalances(prev =>
+          prev.map(balance =>
             balance.id === editingBalance.id ? { ...balance, ...finalBalance } : balance
           )
         );
       } else {
         setLeaveBalances(prev => [...prev, { ...finalBalance, id: Date.now() }]);
       }
-      
+
       calculateStats(leaveBalances);
-      
+
     } catch (error) {
       console.error('Error saving leave balance:', error);
       alert('Failed to save leave balance');
@@ -541,7 +539,7 @@ const LeaveBalance = () => {
   // Handle delete
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this leave balance?')) return;
-    
+
     try {
       setLeaveBalances(prev => prev.filter(balance => balance.id !== id));
       alert('Leave balance deleted successfully!');
@@ -555,7 +553,7 @@ const LeaveBalance = () => {
   // Handle reset balances
   const handleResetBalances = async () => {
     if (!window.confirm('Are you sure you want to reset all leave balances for the new year? This action cannot be undone.')) return;
-    
+
     try {
       setLoading(true);
       alert('Leave balances have been reset for the new year!');
@@ -681,15 +679,15 @@ const LeaveBalance = () => {
   const filteredBalances = leaveBalances.filter(balance => {
     if (filters.department !== 'all' && balance.department !== filters.department) return false;
     if (filters.year && balance.year !== filters.year) return false;
-    if (filters.search && !balance.employee_name?.toLowerCase().includes(filters.search.toLowerCase()) && 
-        !balance.employee_id?.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.search && !balance.employee_name?.toLowerCase().includes(filters.search.toLowerCase()) &&
+      !balance.employee_id?.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
   });
 
   // Loading state
   if (loading && leaveBalances.length === 0) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -704,7 +702,7 @@ const LeaveBalance = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -732,12 +730,12 @@ const LeaveBalance = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -745,12 +743,12 @@ const LeaveBalance = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
-          
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Leave Balance Management</h1>
@@ -774,7 +772,7 @@ const LeaveBalance = () => {
                 <FaUser className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -784,7 +782,7 @@ const LeaveBalance = () => {
                 <FaCheckCircle className="text-green-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -794,7 +792,7 @@ const LeaveBalance = () => {
                 <FaExclamationTriangle className="text-orange-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -863,7 +861,7 @@ const LeaveBalance = () => {
             <div className="space-y-4">
               <div className="relative max-w-md">
                 <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="text"
                   placeholder="Search employees by name or ID..."
                   value={filters.search}
@@ -877,7 +875,7 @@ const LeaveBalance = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Department
                   </label>
-                  <select 
+                  <select
                     value={filters.department}
                     onChange={(e) => handleFilterChange('department', e.target.value)}
                     className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
@@ -893,7 +891,7 @@ const LeaveBalance = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Year
                   </label>
-                  <select 
+                  <select
                     value={filters.year}
                     onChange={(e) => handleFilterChange('year', parseInt(e.target.value))}
                     className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
@@ -934,7 +932,7 @@ const LeaveBalance = () => {
                     <FaTimes className="text-gray-500" />
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmitBalance} className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="md:col-span-3">
@@ -954,7 +952,7 @@ const LeaveBalance = () => {
                             placeholder="EMP001"
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Employee Name *
@@ -987,7 +985,7 @@ const LeaveBalance = () => {
                             ))}
                           </select>
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Year *
@@ -1132,8 +1130,8 @@ const LeaveBalance = () => {
                     filteredBalances.map((balance) => {
                       const annualStatus = getBalanceStatus(balance.annual_leave_remaining, balance.annual_leave_total);
                       const sickStatus = getBalanceStatus(balance.sick_leave_remaining, balance.sick_leave_total);
-                      const overallStatus = annualStatus === 'critical' || sickStatus === 'critical' ? 'critical' : 
-                                         annualStatus === 'low' || sickStatus === 'low' ? 'low' : 'healthy';
+                      const overallStatus = annualStatus === 'critical' || sickStatus === 'critical' ? 'critical' :
+                        annualStatus === 'low' || sickStatus === 'low' ? 'low' : 'healthy';
 
                       return (
                         <tr key={balance.id} className="hover:bg-gray-50 transition-colors">
@@ -1153,10 +1151,10 @@ const LeaveBalance = () => {
                                 {balance.annual_leave_remaining}/{balance.annual_leave_total}
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                <div 
+                                <div
                                   className={`h-2 rounded-full ${getStatusColor(annualStatus)}`}
-                                  style={{ 
-                                    width: `${Math.min(100, (balance.annual_leave_remaining / balance.annual_leave_total) * 100)}%` 
+                                  style={{
+                                    width: `${Math.min(100, (balance.annual_leave_remaining / balance.annual_leave_total) * 100)}%`
                                   }}
                                 ></div>
                               </div>
@@ -1168,10 +1166,10 @@ const LeaveBalance = () => {
                                 {balance.sick_leave_remaining}/{balance.sick_leave_total}
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                <div 
+                                <div
                                   className={`h-2 rounded-full ${getStatusColor(sickStatus)}`}
-                                  style={{ 
-                                    width: `${Math.min(100, (balance.sick_leave_remaining / balance.sick_leave_total) * 100)}%` 
+                                  style={{
+                                    width: `${Math.min(100, (balance.sick_leave_remaining / balance.sick_leave_total) * 100)}%`
                                   }}
                                 ></div>
                               </div>
@@ -1192,11 +1190,10 @@ const LeaveBalance = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               {getStatusIcon(overallStatus)}
-                              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                overallStatus === 'critical' ? 'bg-red-100 text-red-800 border border-red-200' :
-                                overallStatus === 'low' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                                'bg-green-100 text-green-800 border border-green-200'
-                              }`}>
+                              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${overallStatus === 'critical' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                  overallStatus === 'low' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                                    'bg-green-100 text-green-800 border border-green-200'
+                                }`}>
                                 {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
                               </span>
                             </div>
@@ -1235,7 +1232,7 @@ const LeaveBalance = () => {
                             No leave balances found
                           </p>
                           <p className="text-gray-500">
-                            {leaveBalances.length === 0 
+                            {leaveBalances.length === 0
                               ? "No leave balance data available. Add your first leave balance."
                               : "No leave balances match your filters. Try adjusting your search criteria."}
                           </p>

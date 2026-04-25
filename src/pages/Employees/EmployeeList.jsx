@@ -166,8 +166,8 @@ const ConfirmationModal = ({
         <div className="flex items-center gap-3 mb-4">
           <div
             className={`p-3 rounded-full ${type === "delete"
-                ? "bg-red-100 text-red-600"
-                : "bg-green-100 text-green-600"
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
               }`}
           >
             {type === "delete" ? (
@@ -863,12 +863,12 @@ export default function EmployeeList() {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1008,8 +1008,8 @@ export default function EmployeeList() {
                 <button
                   onClick={() => setView("active")}
                   className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${view === "active"
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
                   Active
@@ -1017,8 +1017,8 @@ export default function EmployeeList() {
                 <button
                   onClick={() => setView("trashed")}
                   className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${view === "trashed"
-                      ? "bg-white text-red-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+                    ? "bg-white text-red-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
                   <FaTrash className="h-3 w-3" />
@@ -1329,8 +1329,8 @@ export default function EmployeeList() {
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === 1
-                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                  : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
                   }`}
               >
                 Prev
@@ -1348,8 +1348,8 @@ export default function EmployeeList() {
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${currentPage === pageNum
-                            ? "bg-blue-600 text-white shadow-sm scale-105"
-                            : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
+                          ? "bg-blue-600 text-white shadow-sm scale-105"
+                          : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
                           }`}
                       >
                         {pageNum}
@@ -1376,8 +1376,8 @@ export default function EmployeeList() {
                 }
                 disabled={currentPage === pagination.last_page}
                 className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === pagination.last_page
-                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                  : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
                   }`}
               >
                 Next

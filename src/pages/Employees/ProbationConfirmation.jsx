@@ -233,7 +233,7 @@ export default function ProbationConfirmation() {
         from: empData?.from || 0,
         to: empData?.to || 0
       });
-      
+
       // Also sync first page for dropdown
       setDropdownEmployees(empList);
       setDropdownPage(1);
@@ -878,12 +878,12 @@ export default function ProbationConfirmation() {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1273,16 +1273,15 @@ export default function ProbationConfirmation() {
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  
+
                   {[...Array(tablePagination.lastPage)].map((_, i) => (
                     <button
                       key={i + 1}
                       onClick={() => handleTablePageChange(i + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        tablePage === i + 1
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${tablePage === i + 1
                           ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
                           : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {i + 1}
                     </button>

@@ -45,7 +45,7 @@ import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScro
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -107,9 +107,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -123,9 +122,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -271,7 +269,7 @@ const AttendanceTracking = () => {
 
       // Calculate total minutes
       let totalMinutes = (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
-      
+
       // Handle cross-midnight (if check-out is earlier than check-in)
       if (totalMinutes < 0) {
         totalMinutes += 24 * 60; // Add 24 hours
@@ -281,7 +279,7 @@ const AttendanceTracking = () => {
       const totalHours = totalMinutes / 60;
       const breakHours = (breakDuration || 0) / 60;
       const netHours = Math.max(0, totalHours - breakHours);
-      
+
       // Calculate overtime (assuming 8 hours regular work day)
       const overtimeHours = Math.max(0, netHours - 8);
 
@@ -349,7 +347,7 @@ const AttendanceTracking = () => {
 
       let pageData = [];
       let lastPage = 1;
-      
+
       // Handle the paginated response structure
       if (response?.success === true && response?.data) {
         if (Array.isArray(response.data.data)) {
@@ -410,14 +408,14 @@ const AttendanceTracking = () => {
 
       const match = matchList.find(
         emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
-               emp.user_id === currentUser.id
+          emp.user_id === currentUser.id
       );
 
       if (match) {
         const empId = String(match.employee_id || match.id);
         const empName = match.name || `${match.first_name || ''} ${match.last_name || ''}`.trim();
-        setFilters(prev => ({ 
-          ...prev, 
+        setFilters(prev => ({
+          ...prev,
           employee_id: empId,
           selectedEmployeeName: empName
         }));
@@ -489,22 +487,22 @@ const AttendanceTracking = () => {
   // Function to handle view details
   const handleViewDetails = (record) => {
     setSelectedRecord(record);
-    
+
     // Calculate hours for this record
     const hours = calculateHours(
-      record.check_in, 
-      record.check_out, 
+      record.check_in,
+      record.check_out,
       record.break_duration,
       record.is_late
     );
-    
+
     setCalculatedHours({
       totalHours: parseFloat(hours.total) || 0,
       breakHours: parseFloat(hours.break) || 0,
       netHours: parseFloat(hours.net) || 0,
       overtimeHours: parseFloat(hours.overtime) || 0
     });
-    
+
     setShowDetailsModal(true);
   };
 
@@ -522,19 +520,19 @@ const AttendanceTracking = () => {
     try {
       // Call API to get attendance rules by organization ID
       const response = await attendanceRuleService.getRulesByOrganization(selectedOrganization.id);
-      
-      console.log("Attendance Rules API Response:", response.data);
-      
+
+      //console.log("Attendance Rules API Response:", response.data);
+
       if (response.data && response.data.status === true && response.data.data) {
         const rulesData = response.data.data;
-        
+
         if (Array.isArray(rulesData) && rulesData.length > 0) {
           // Get the first rule (assuming one rule per organization)
           const organizationRule = rulesData[0];
-          console.log("Found existing rule for organization:", organizationRule);
-          
+          //console.log("Found existing rule for organization:", organizationRule);
+
           setExistingRule(organizationRule);
-          
+
           // FIXED: Pre-fill form with existing data - properly handle all fields
           setRuleForm({
             shift_name: organizationRule.shift_name || "",
@@ -560,21 +558,21 @@ const AttendanceTracking = () => {
             is_active: organizationRule.is_active !== undefined ? organizationRule.is_active : true
           });
         } else {
-          console.log("No rule found for organization - will create new");
+          //console.log("No rule found for organization - will create new");
           setExistingRule(null);
           resetRuleForm();
         }
       } else {
-        console.log("No rules data found in response");
+        //console.log("No rules data found in response");
         setExistingRule(null);
         resetRuleForm();
       }
     } catch (err) {
       console.error("Error fetching attendance rules:", err);
-      
+
       // Check if it's a 404 error (no rules exist)
       if (err.response?.status === 404) {
-        console.log("No attendance rules found - will create new");
+        //console.log("No attendance rules found - will create new");
         setExistingRule(null);
         resetRuleForm();
         setRulesError(null);
@@ -626,8 +624,8 @@ const AttendanceTracking = () => {
     const { name, value, type, checked } = e.target;
     setRuleForm(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : 
-              (type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value)
+      [name]: type === 'checkbox' ? checked :
+        (type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value)
     }));
   };
 
@@ -635,14 +633,14 @@ const AttendanceTracking = () => {
   const handleWeeklyOffDaysChange = (e) => {
     const { value, checked } = e.target;
     const currentDays = ruleForm.weekly_off_days.split(',').filter(day => day.trim());
-    
+
     let updatedDays;
     if (checked) {
       updatedDays = [...currentDays, value];
     } else {
       updatedDays = currentDays.filter(day => day !== value);
     }
-    
+
     setRuleForm(prev => ({
       ...prev,
       weekly_off_days: updatedDays.join(',')
@@ -692,24 +690,24 @@ const AttendanceTracking = () => {
 
     try {
       let response;
-      
+
       if (existingRule) {
         // Update existing rule - USE PUT
-        console.log("Updating rule with ID:", existingRule.id);
+        //console.log("Updating rule with ID:", existingRule.id);
         response = await attendanceRuleService.updateRule(existingRule.id, formData);
       } else {
         // Create new rule
-        console.log("Creating new rule");
+        //console.log("Creating new rule");
         response = await attendanceRuleService.createRule(formData);
       }
 
-      console.log("API Response:", response.data);
+      //console.log("API Response:", response.data);
 
       if (response.data.status === true) {
         setRulesSuccess(response.data.message || (existingRule ? "Attendance rule updated successfully!" : "Attendance rule created successfully!"));
         // Refresh rules
         await fetchAttendanceRules();
-        
+
         // Auto-close modal after success
         setTimeout(() => {
           setShowRulesModal(false);
@@ -719,7 +717,7 @@ const AttendanceTracking = () => {
       }
     } catch (err) {
       console.error("Error saving attendance rule:", err);
-      
+
       // Check for 405 error specifically
       if (err.response?.status === 405) {
         setRulesError("Method not allowed. Trying PUT method instead of POST...");
@@ -748,30 +746,30 @@ const AttendanceTracking = () => {
   const calculateWorkHours = () => {
     const checkIn = new Date(`2000-01-01T${ruleForm.check_in}`);
     const checkOut = new Date(`2000-01-01T${ruleForm.check_out}`);
-    
+
     let diff = (checkOut - checkIn) / (1000 * 60 * 60);
     if (diff < 0) diff += 24;
-    
+
     return diff.toFixed(1);
   };
 
   const calculateStats = (data) => {
     const attendanceArray = Array.isArray(data) ? data : [];
-    
-    const present = attendanceArray.filter(emp => 
+
+    const present = attendanceArray.filter(emp =>
       emp.status && emp.status.toLowerCase() === "present"
     ).length;
-    
-    const absent = attendanceArray.filter(emp => 
+
+    const absent = attendanceArray.filter(emp =>
       emp.status && emp.status.toLowerCase() === "absent"
     ).length;
-    
-    const late = attendanceArray.filter(emp => 
+
+    const late = attendanceArray.filter(emp =>
       emp.is_late && emp.is_late !== "0" && emp.is_late !== "0.00"
     ).length;
-    
+
     const onTime = present - late;
-    const onLeave = attendanceArray.filter(emp => 
+    const onLeave = attendanceArray.filter(emp =>
       emp.status && (emp.status.toLowerCase() === "on_leave" || emp.status.toLowerCase() === "on leave")
     ).length;
 
@@ -792,7 +790,7 @@ const AttendanceTracking = () => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    
+
     // Refresh data when date filters change
     if (key === 'start_date' || key === 'end_date') {
       fetchAttendanceData(newFilters);
@@ -846,7 +844,7 @@ const AttendanceTracking = () => {
     if (isLate && parseFloat(isLate) > 0) {
       return "px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-200";
     }
-    
+
     const statusConfig = {
       present: "bg-green-100 text-green-800 border border-green-200",
       Present: "bg-green-100 text-green-800 border border-green-200",
@@ -858,9 +856,8 @@ const AttendanceTracking = () => {
       on_leave: "bg-blue-100 text-blue-800 border border-blue-200",
     };
 
-    return `px-3 py-1 text-xs font-semibold rounded-full ${
-      statusConfig[status] || "bg-gray-100 text-gray-800 border border-gray-200"
-    }`;
+    return `px-3 py-1 text-xs font-semibold rounded-full ${statusConfig[status] || "bg-gray-100 text-gray-800 border border-gray-200"
+      }`;
   };
 
   const formatTime = (timeString) => {
@@ -908,27 +905,27 @@ const AttendanceTracking = () => {
   // Filter data based on current filters
   const filteredData = Array.isArray(attendanceData)
     ? attendanceData.filter((record) => {
-        const employee = record.employee || {};
-        const matchesSearch =
-          !filters.search ||
-          (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
-          (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
-          (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
+      const employee = record.employee || {};
+      const matchesSearch =
+        !filters.search ||
+        (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+        (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
+        (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
 
-        const matchesDepartment =
-          filters.department === "all" ||
-          (employee.department_id && employee.department_id.toString() === filters.department.toString());
+      const matchesDepartment =
+        filters.department === "all" ||
+        (employee.department_id && employee.department_id.toString() === filters.department.toString());
 
-        const matchesStatus =
-          filters.status === "all" ||
-          (record.status && record.status.toLowerCase() === filters.status.toLowerCase());
+      const matchesStatus =
+        filters.status === "all" ||
+        (record.status && record.status.toLowerCase() === filters.status.toLowerCase());
 
-        const matchesEmployee =
-          filters.employee_id === "all" ||
-          (record.employee_id && record.employee_id.toString() === filters.employee_id.toString());
+      const matchesEmployee =
+        filters.employee_id === "all" ||
+        (record.employee_id && record.employee_id.toString() === filters.employee_id.toString());
 
-        return matchesSearch && matchesDepartment && matchesStatus && matchesEmployee;
-      })
+      return matchesSearch && matchesDepartment && matchesStatus && matchesEmployee;
+    })
     : [];
 
   const statusCards = [
@@ -972,7 +969,7 @@ const AttendanceTracking = () => {
 
   if (loading && attendanceData.length === 0) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -999,12 +996,12 @@ const AttendanceTracking = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1012,7 +1009,7 @@ const AttendanceTracking = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1027,12 +1024,12 @@ const AttendanceTracking = () => {
                 Monitor and manage employee attendance in real-time
               </p>
               <div className="mt-2 text-sm text-gray-500">
-                <span className="font-medium">Date Range:</span> {formatDate(filters.start_date)} to {formatDate(filters.end_date)} | 
-                <span className="font-medium ml-2">Records:</span> {attendanceData.length} | 
+                <span className="font-medium">Date Range:</span> {formatDate(filters.start_date)} to {formatDate(filters.end_date)} |
+                <span className="font-medium ml-2">Records:</span> {attendanceData.length} |
                 <span className="font-medium ml-2">Unique Employees:</span> {stats.totalEmployees}
               </div>
             </div>
-            
+
             {/* Attendance Rules Button */}
             {canEdit && (
               <button
@@ -1143,7 +1140,7 @@ const AttendanceTracking = () => {
                 {/* End Date */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    End Date 
+                    End Date
                   </label>
                   <div className="relative">
                     <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -1169,8 +1166,8 @@ const AttendanceTracking = () => {
                     selectedName={filters.selectedEmployeeName}
                     onChange={(val) => {
                       const emp = employees.find(e => String(e.employee_id || e.id) === val);
-                      setFilters(prev => ({ 
-                        ...prev, 
+                      setFilters(prev => ({
+                        ...prev,
                         employee_id: val,
                         selectedEmployeeName: emp ? (emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim()) : prev.selectedEmployeeName
                       }));
@@ -1265,30 +1262,30 @@ const AttendanceTracking = () => {
                   ) : (
                     filteredData.map((record) => {
                       const hours = calculateHours(
-                        record.check_in, 
-                        record.check_out, 
+                        record.check_in,
+                        record.check_out,
                         record.break_duration,
                         record.is_late
                       );
-                      
+
                       const overtimeValue = parseFloat(hours.overtime);
                       const isOvertime = overtimeValue > 0;
                       const lateMinutes = parseFloat(record.is_late) || 0;
                       const isLate = lateMinutes > 0;
-                      
-                      const employeeCode = record.employee?.employee_code || 
-                                          record.employee_code || 
-                                          record.employee?.id || 
-                                          'N/A';
-                      
+
+                      const employeeCode = record.employee?.employee_code ||
+                        record.employee_code ||
+                        record.employee?.id ||
+                        'N/A';
+
                       const employeeName = record.employee?.first_name && record.employee?.last_name
                         ? `${record.employee.first_name} ${record.employee.last_name}`
                         : record.employee_name || 'Unknown Employee';
-                      
-                      const employeeInitials = record.employee?.first_name?.[0] || 
-                                              (record.employee_name?.[0]) || 
-                                              'E';
-                      
+
+                      const employeeInitials = record.employee?.first_name?.[0] ||
+                        (record.employee_name?.[0]) ||
+                        'E';
+
                       return (
                         <tr
                           key={`${record.id}-${record.date}`}
@@ -1305,44 +1302,44 @@ const AttendanceTracking = () => {
                                 {employeeName}
                               </div>
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
                               {employeeCode}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs font-medium text-gray-900">
                               {formatDate(record.date)}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs text-gray-900 font-mono">
                               {formatTime(record.check_in) || "-"}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs text-gray-900 font-mono">
                               {formatTime(record.check_out) || "-"}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs text-gray-900 font-mono">
                               {record.break_start ? formatTime(record.break_start) : "-"}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs text-gray-900 font-mono">
                               {record.break_end ? formatTime(record.break_end) : "-"}
                             </div>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-xs font-medium text-gray-900">
                               {hours.net} hrs
@@ -1359,14 +1356,14 @@ const AttendanceTracking = () => {
                                 Late: {lateMinutes} mins
                               </div>
                             )}
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className={getStatusBadge(record.status, record.is_late)}>
                               {record.status?.replace("_", " ") || "Unknown"}
                             </span>
-                           </td>
-                          
+                          </td>
+
                           <td className="px-4 py-3 whitespace-nowrap">
                             <button
                               className="text-xs text-blue-600 hover:text-blue-900 px-2 py-1 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
@@ -1374,13 +1371,13 @@ const AttendanceTracking = () => {
                             >
                               View
                             </button>
-                           </td>
-                         </tr>
+                          </td>
+                        </tr>
                       );
                     })
                   )}
                 </tbody>
-               </table>
+              </table>
             </div>
           </div>
 
@@ -1553,7 +1550,7 @@ const AttendanceTracking = () => {
                             <FaBuilding className="inline mr-2" />
                             Basic Settings
                           </h4>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Shift Name *
@@ -1611,7 +1608,7 @@ const AttendanceTracking = () => {
                             <FaCoffee className="inline mr-2" />
                             Break Settings
                           </h4>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1654,7 +1651,7 @@ const AttendanceTracking = () => {
                             <FaExclamationTriangle className="inline mr-2" />
                             Grace Period & Thresholds
                           </h4>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Late Grace Period (minutes)
@@ -1707,7 +1704,7 @@ const AttendanceTracking = () => {
                             <FaMoneyBill className="inline mr-2" />
                             Overtime & Penalties
                           </h4>
-                          
+
                           <div className="flex items-center">
                             <input
                               type="checkbox"
@@ -1787,7 +1784,7 @@ const AttendanceTracking = () => {
                             <FaCalendar className="inline mr-2" />
                             Weekly Off Days
                           </h4>
-                          
+
                           <div className="grid grid-cols-2 gap-2">
                             {weekDays.map(day => {
                               const isSelected = ruleForm.weekly_off_days.split(',').includes(day);
@@ -1816,7 +1813,7 @@ const AttendanceTracking = () => {
                             <FaHome className="inline mr-2" />
                             Additional Settings
                           </h4>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center">
                               <input
@@ -1897,7 +1894,7 @@ const AttendanceTracking = () => {
                             <FaStickyNote className="inline mr-2" />
                             Policy Details
                           </h4>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Relaxation / Special Cases
@@ -1959,7 +1956,7 @@ const AttendanceTracking = () => {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex gap-3">
                           <button
                             type="button"
@@ -1969,14 +1966,14 @@ const AttendanceTracking = () => {
                           >
                             Cancel
                           </button>
-                          
+
                           {existingRule && (
                             <button
                               type="button"
                               onClick={() => {
                                 if (window.confirm("Are you sure you want to delete this attendance rule?")) {
                                   // Add delete functionality here
-                                  console.log("Delete rule");
+                                  //console.log("Delete rule");
                                 }
                               }}
                               className="px-5 py-2.5 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors shadow-sm flex items-center gap-2"
@@ -1985,7 +1982,7 @@ const AttendanceTracking = () => {
                               <FaTrash /> Delete
                             </button>
                           )}
-                          
+
                           <button
                             type="submit"
                             disabled={isSubmitting}

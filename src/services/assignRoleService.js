@@ -15,7 +15,7 @@ const assignRoleService = {
 
   // Assign role to user in organization
   assignRoleToUser: async (organizationId, userId, roleName) => {
-    console.log("Assign role data : ", [organizationId, userId, roleName])
+    //console.log("Assign role data : ", [organizationId, userId, roleName])
     try {
       const response = await axiosClient.post(`/organizations/${organizationId}/users/${userId}/roles`, {
         roles: [roleName]

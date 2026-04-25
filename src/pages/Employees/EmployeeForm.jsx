@@ -567,11 +567,9 @@ const SuperFundSearch = ({
           onFocus={() => query.trim().length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full pl-10 pr-10 py-2.5 border ${
-            error ? "border-red-500 bg-red-50" : "border-gray-300"
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-            disabled ? "bg-gray-100 cursor-not-allowed" : ""
-          }`}
+          className={`w-full pl-10 pr-10 py-2.5 border ${error ? "border-red-500 bg-red-50" : "border-gray-300"
+            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
           autoComplete="off"
         />
 
@@ -731,10 +729,10 @@ const DocumentUploadModal = ({
         prev.expiry_date ||
         (selectedCert?.hasExpiry
           ? new Date(
-              Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000,
-            )
-              .toISOString()
-              .split("T")[0]
+            Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0]
           : ""),
     }));
   };
@@ -1130,13 +1128,12 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`h-2 rounded-full ${
-                daysRemaining <= 30
+              className={`h-2 rounded-full ${daysRemaining <= 30
                   ? "bg-red-500"
                   : daysRemaining <= 60
                     ? "bg-orange-500"
                     : "bg-yellow-500"
-              }`}
+                }`}
               style={{ width: `${Math.min(100, (daysRemaining / 90) * 100)}%` }}
             ></div>
           </div>
@@ -1267,13 +1264,12 @@ const ComplianceChecklist = ({ certificates = [] }) => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className={`h-3 rounded-full ${
-                  compliancePercentage >= 80
+                className={`h-3 rounded-full ${compliancePercentage >= 80
                     ? "bg-green-500"
                     : compliancePercentage >= 50
                       ? "bg-yellow-500"
                       : "bg-red-500"
-                }`}
+                  }`}
                 style={{ width: `${compliancePercentage}%` }}
               ></div>
             </div>
@@ -1375,9 +1371,8 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                     return (
                       <div
                         key={item.id}
-                        className={`flex items-start gap-3 p-3 rounded-lg ${
-                          item.bgColor || "bg-gray-50"
-                        }`}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${item.bgColor || "bg-gray-50"
+                          }`}
                       >
                         <div className="mt-1">
                           {uploaded ? (
@@ -1416,12 +1411,11 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                                   <>
                                     <span className="text-gray-400">|</span>
                                     <span
-                                      className={`${
-                                        new Date(uploadedDoc.expiry_date) <
-                                        new Date()
+                                      className={`${new Date(uploadedDoc.expiry_date) <
+                                          new Date()
                                           ? "text-red-600"
                                           : "text-green-600"
-                                      }`}
+                                        }`}
                                     >
                                       Exp:{" "}
                                       {new Date(
@@ -1443,10 +1437,9 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                               {item.includes.map((inc, idx) => (
                                 <span
                                   key={idx}
-                                  className={`text-xs px-2 py-0.5 rounded-full ${
-                                    category.badgeColor ||
+                                  className={`text-xs px-2 py-0.5 rounded-full ${category.badgeColor ||
                                     "bg-gray-100 text-gray-800"
-                                  }`}
+                                    }`}
                                 >
                                   {inc}
                                 </span>
@@ -1496,11 +1489,10 @@ const InputField = ({
       required={required}
       disabled={disabled}
       placeholder={placeholder}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error
+      className={`w-full px-4 py-2.5 rounded-lg border ${error
           ? "border-red-500 bg-red-50"
           : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
     />
     {error && (
       <div className="mt-1 flex items-center text-red-600 text-sm">
@@ -1538,11 +1530,10 @@ const SelectField = ({
       onChange={onChange}
       required={required}
       disabled={disabled}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error
+      className={`w-full px-4 py-2.5 rounded-lg border ${error
           ? "border-red-500 bg-red-50"
           : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
+        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
     >
       <option value="">{placeholder}</option>
       {options.map((option) => (
@@ -1587,11 +1578,10 @@ const TextAreaField = ({
       required={required}
       placeholder={placeholder}
       rows={rows}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error
+      className={`w-full px-4 py-2.5 rounded-lg border ${error
           ? "border-red-500 bg-red-50"
           : "border-gray-300 hover:border-gray-400"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
+        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
     />
     {error && (
       <div className="mt-1 flex items-center text-red-600 text-sm">
@@ -1607,20 +1597,18 @@ const TabButton = ({ active, onClick, icon, label, step, completed }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${
-      active
+    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${active
         ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
         : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-    }`}
+      }`}
   >
     <div
-      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-        active
+      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${active
           ? "bg-blue-100 text-blue-600"
           : completed
             ? "bg-green-100 text-green-600"
             : "bg-gray-100 text-gray-400"
-      }`}
+        }`}
     >
       {completed && !active ? <FaCheck className="text-sm" /> : icon}
     </div>
@@ -1726,7 +1714,7 @@ export default function EmployeeForm() {
 
   useEffect(() => {
     if (id) {
-      console.log("URL has ID param:", id);
+      //console.log("URL has ID param:", id);
       setEmployeeId(id);
     }
   }, [id]);
@@ -1735,14 +1723,14 @@ export default function EmployeeForm() {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
     if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
-      console.log("Setting active tab from URL:", tabParam);
+      //console.log("Setting active tab from URL:", tabParam);
       setActiveTab(tabParam);
     }
   }, [location.search]);
 
   useEffect(() => {
     if (employeeId) {
-      console.log("Employee ID changed to:", employeeId, "- fetching data");
+      //console.log("Employee ID changed to:", employeeId, "- fetching data");
       fetchEmployeeData();
       fetchCertificates();
       setCompletedTabs((prev) => new Set([...prev, "personal"]));
@@ -1754,7 +1742,7 @@ export default function EmployeeForm() {
       const params = new URLSearchParams(location.search);
       params.set("tab", activeTab);
       navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-      console.log("URL updated with tab:", activeTab);
+      //console.log("URL updated with tab:", activeTab);
     }
   }, [activeTab, employeeId, navigate, location.pathname]);
 
@@ -1777,9 +1765,9 @@ export default function EmployeeForm() {
     setCertificateError("");
 
     try {
-      console.log("Fetching certificates for employee:", employeeId);
+      // console.log("Fetching certificates for employee:", employeeId);
       const response = await getEmployeeDocuments(employeeId);
-      console.log("Documents response:", response);
+      // console.log("Documents response:", response);
 
       let documentsData = [];
 
@@ -1863,16 +1851,16 @@ export default function EmployeeForm() {
     const fetchDesignations = async () => {
       // Only fetch if we have an organization ID
       if (!organizationId) {
-        console.log("No organization ID available");
+        //console.log("No organization ID available");
         setDesignations([]);
         return;
       }
 
       try {
-        console.log(
-          "Fetching all designations for organization:",
-          organizationId,
-        );
+        // console.log(
+        //   "Fetching all designations for organization:",
+        //   organizationId,
+        // );
 
         // Use the organization-level endpoint to get all designations
         const response = await getDesignationsByDeptId(organizationId);
@@ -1891,7 +1879,7 @@ export default function EmployeeForm() {
           }
         }
 
-        console.log("Processed designations:", designationsData);
+        //console.log("Processed designations:", designationsData);
 
         // Map to the format expected by SelectField
         setDesignations(
@@ -1920,7 +1908,7 @@ export default function EmployeeForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Field changed: ${name} = ${value}`);
+    //console.log(`Field changed: ${name} = ${value}`);
 
     setFormData((prev) => ({ ...prev, [name]: value }));
 
@@ -1943,19 +1931,19 @@ export default function EmployeeForm() {
 
   const handleUploadDocument = async (empId, formData, isEdit = false) => {
     try {
-      console.log("Uploading document with employee ID:", empId);
-      console.log("Is edit mode:", isEdit);
+      //console.log("Uploading document with employee ID:", empId);
+      //console.log("Is edit mode:", isEdit);
 
       let response;
       if (isEdit && editingDocument) {
-        console.log("Updating document with ID:", editingDocument.id);
+        //console.log("Updating document with ID:", editingDocument.id);
         response = await updateEmployeeDocument(editingDocument.id, formData);
       } else {
-        console.log("Creating new document");
+        //console.log("Creating new document");
         response = await uploadEmployeeDocument(formData);
       }
 
-      console.log("Upload response:", response);
+      //console.log("Upload response:", response);
 
       await fetchCertificates();
       alert(`Document ${isEdit ? "updated" : "uploaded"} successfully!`);
@@ -2057,9 +2045,9 @@ export default function EmployeeForm() {
     };
 
     try {
-      console.log("Creating employee with data:", basicEmployeeData);
+      //console.log("Creating employee with data:", basicEmployeeData);
       const response = await createEmployeeBasic(basicEmployeeData);
-      console.log("Create employee response:", response);
+      //console.log("Create employee response:", response);
 
       const newEmployeeId =
         response.data?.data?.employee?.id ||
@@ -2090,7 +2078,7 @@ export default function EmployeeForm() {
       } else {
         alert(
           error.response?.data?.message ||
-            "An unexpected error occurred. Please try again.",
+          "An unexpected error occurred. Please try again.",
         );
       }
     } finally {
@@ -2510,21 +2498,19 @@ export default function EmployeeForm() {
                     <div className="flex items-center bg-gray-100 rounded-lg p-1">
                       <button
                         onClick={() => setViewMode("list")}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                          viewMode === "list"
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
-                        }`}
+                          }`}
                       >
                         List View
                       </button>
                       <button
                         onClick={() => setViewMode("checklist")}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                          viewMode === "checklist"
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "checklist"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
-                        }`}
+                          }`}
                       >
                         Compliance Checklist
                       </button>
@@ -2680,7 +2666,7 @@ export default function EmployeeForm() {
                     value={formData.room_id || ""}
                     onChange={(e) => {
                       const value = e.target.value;
-                      console.log("Room selected, value:", value);
+                      //console.log("Room selected, value:", value);
                       handleChange(e);
                     }}
                     options={departments}

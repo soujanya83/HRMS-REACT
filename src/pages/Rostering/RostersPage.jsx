@@ -295,7 +295,7 @@ const RostersPage = () => {
       });
 
       setEmployeeRates(rates);
-      console.log("💰 Employee rates loaded:", rates);
+      //console.log("💰 Employee rates loaded:", rates);
     } catch (error) {
       console.error("Error fetching employee rates:", error);
     } finally {
@@ -316,7 +316,7 @@ const RostersPage = () => {
         return;
       }
 
-      console.log("Fetching data for organization:", selectedOrganization.id);
+      //console.log("Fetching data for organization:", selectedOrganization.id);
 
       // Helper function to extract data from API response
       const extractData = (response) => {
@@ -366,14 +366,14 @@ const RostersPage = () => {
       let rostersData = [];
       if (rostersRes.status === "fulfilled") {
         rostersData = extractData(rostersRes.value);
-        console.log("Rosters loaded:", rostersData.length);
+        //console.log("Rosters loaded:", rostersData.length);
       }
 
       // Process employees and their rates
       let employeesData = [];
       if (employeesRes.status === "fulfilled") {
         employeesData = extractData(employeesRes.value);
-        console.log("Employees loaded:", employeesData.length);
+        //console.log("Employees loaded:", employeesData.length);
 
         // Extract and store employee rates
         const rates = {};
@@ -387,14 +387,14 @@ const RostersPage = () => {
       let shiftsData = [];
       if (shiftsRes.status === "fulfilled") {
         shiftsData = extractData(shiftsRes.value);
-        console.log("Shifts loaded:", shiftsData.length);
+        //console.log("Shifts loaded:", shiftsData.length);
       }
 
       // Process departments
       let departmentsData = [];
       if (departmentsRes.status === "fulfilled") {
         departmentsData = extractData(departmentsRes.value);
-        console.log("Departments loaded:", departmentsData.length);
+        //console.log("Departments loaded:", departmentsData.length);
       }
 
       // Update all states
@@ -444,7 +444,7 @@ const RostersPage = () => {
       return rosterDate >= weekStart && rosterDate <= weekEnd;
     });
 
-    console.log("📊 Calculating weekly totals for", weekRosters.length, "rosters");
+    //console.log("📊 Calculating weekly totals for", weekRosters.length, "rosters");
 
     let totalHours = 0;
     let totalAmount = 0;
@@ -517,7 +517,7 @@ const RostersPage = () => {
       uniqueEmployees: Object.keys(byEmployee).length
     };
 
-    console.log("✅ Weekly totals updated:", newTotals);
+    //console.log("✅ Weekly totals updated:", newTotals);
     setWeeklyTotals(newTotals);
 
   }, [rosters, employees, shifts, departments, currentDate, calculateNetWorkingHours, calculateRosterAmount, getEmployeeRate]);
@@ -790,7 +790,7 @@ const RostersPage = () => {
         created_by: 4
       };
 
-      console.log("Submitting roster data:", rosterData);
+      //console.log("Submitting roster data:", rosterData);
 
       let response;
       if (modalMode === "add") {
@@ -903,12 +903,12 @@ const RostersPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          // console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}

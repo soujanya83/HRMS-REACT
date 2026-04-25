@@ -31,7 +31,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -93,9 +93,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -109,9 +108,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -216,7 +214,7 @@ const ApplicantsPage = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   const [applicants, setApplicants] = useState([]);
   const [jobOpenings, setJobOpenings] = useState([]);
   const [filteredApplicants, setFilteredApplicants] = useState([]);
@@ -382,7 +380,7 @@ const ApplicantsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("=== STARTING FORM SUBMISSION ===");
+    //console.log("=== STARTING FORM SUBMISSION ===");
 
     setFormErrors({});
 
@@ -427,21 +425,21 @@ const ApplicantsPage = () => {
       formDataInstance.append("resume", resumeFile);
     }
 
-    console.log("=== FORM DATA BEING SENT ===");
-    for (let pair of formDataInstance.entries()) {
-      console.log(pair[0] + ":", pair[1]);
-    }
+    //console.log("=== FORM DATA BEING SENT ===");
+    // for (let pair of formDataInstance.entries()) {
+    //   console.log(pair[0] + ":", pair[1]);
+    // }
 
     try {
       if (isEditMode) {
-        console.log("Editing applicant:", selectedApplicant.id);
+        //console.log("Editing applicant:", selectedApplicant.id);
         await updateApplicant(selectedApplicant.id, formDataInstance);
       } else {
-        console.log("Creating new applicant");
+        //console.log("Creating new applicant");
         await createApplicant(formDataInstance);
       }
 
-      console.log("=== SUCCESS ===");
+      //console.log("=== SUCCESS ===");
       setIsFormOpen(false);
       setResumeFile(null);
       setFormData(initialFormData);
@@ -467,8 +465,7 @@ const ApplicantsPage = () => {
           const errorMessages = Object.entries(serverErrors)
             .map(
               ([field, messages]) =>
-                `• ${field}: ${
-                  Array.isArray(messages) ? messages.join(", ") : messages
+                `• ${field}: ${Array.isArray(messages) ? messages.join(", ") : messages
                 }`
             )
             .join("\n");
@@ -478,8 +475,7 @@ const ApplicantsPage = () => {
         }
       } else {
         alert(
-          `Error: ${
-            err.response?.data?.message || "An unexpected error occurred"
+          `Error: ${err.response?.data?.message || "An unexpected error occurred"
           }`
         );
       }
@@ -592,17 +588,17 @@ const ApplicantsPage = () => {
 
   if (loading)
     return (
-      <div 
+      <div
         className="flex justify-center items-center h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <FiLoader className="animate-spin text-indigo-600 h-12 w-12" />
       </div>
     );
-  
+
   if (error)
     return (
-      <div 
+      <div
         className="text-center text-red-500 p-8 transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -625,12 +621,12 @@ const ApplicantsPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -638,7 +634,7 @@ const ApplicantsPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -815,8 +811,8 @@ const ApplicantsPage = () => {
                             <div className="text-sm text-gray-900">
                               {applicant.applied_date
                                 ? new Date(
-                                    applicant.applied_date
-                                  ).toLocaleDateString()
+                                  applicant.applied_date
+                                ).toLocaleDateString()
                                 : "N/A"}
                             </div>
                           </td>
@@ -825,9 +821,8 @@ const ApplicantsPage = () => {
                               value={applicant.status || "Applied"}
                               disabled={!canEdit}
                               onChange={(e) => handleStatusUpdate(applicant.id, e.target.value)}
-                              className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${
-                                statusInfo.color || "bg-gray-100 text-gray-800"
-                              } ${!canEdit ? 'cursor-not-allowed opacity-75' : ''}`}
+                              className={`text-xs font-semibold rounded-full px-3 py-1 border-0 ${statusInfo.color || "bg-gray-100 text-gray-800"
+                                } ${!canEdit ? 'cursor-not-allowed opacity-75' : ''}`}
                             >
                               <option value="Applied">Applied </option>
                               <option value="interview-schedule">Interview Schedule</option>
@@ -949,7 +944,7 @@ const ApplicantsPage = () => {
                           onChange={(e) =>
                             handleStatusUpdate(
                               selectedApplicant.id,
-                              e.target.value  
+                              e.target.value
                             )
                           }
                         >
@@ -1052,11 +1047,10 @@ const ApplicantsPage = () => {
                           name="first_name"
                           id="first_name"
                           required
-                          className={`block w-full border ${
-                            formErrors.first_name
+                          className={`block w-full border ${formErrors.first_name
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.first_name}
                           onChange={handleInputChange}
                         />
@@ -1079,11 +1073,10 @@ const ApplicantsPage = () => {
                           name="last_name"
                           id="last_name"
                           required
-                          className={`block w-full border ${
-                            formErrors.last_name
+                          className={`block w-full border ${formErrors.last_name
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.last_name}
                           onChange={handleInputChange}
                         />
@@ -1106,11 +1099,10 @@ const ApplicantsPage = () => {
                           name="email"
                           id="email"
                           required
-                          className={`block w-full border ${
-                            formErrors.email
+                          className={`block w-full border ${formErrors.email
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.email}
                           onChange={handleInputChange}
                         />
@@ -1133,11 +1125,10 @@ const ApplicantsPage = () => {
                           name="phone"
                           id="phone"
                           required
-                          className={`block w-full border ${
-                            formErrors.phone
+                          className={`block w-full border ${formErrors.phone
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.phone}
                           onChange={handleInputChange}
                         />
@@ -1159,11 +1150,10 @@ const ApplicantsPage = () => {
                           name="job_opening_id"
                           id="job_opening_id"
                           required
-                          className={`block w-full border ${
-                            formErrors.job_opening_id
+                          className={`block w-full border ${formErrors.job_opening_id
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.job_opening_id}
                           onChange={handleInputChange}
                         >
@@ -1191,11 +1181,10 @@ const ApplicantsPage = () => {
                         <select
                           name="source"
                           id="source"
-                          className={`block w-full border ${
-                            formErrors.source
+                          className={`block w-full border ${formErrors.source
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.source}
                           onChange={handleInputChange}
                         >
@@ -1222,11 +1211,10 @@ const ApplicantsPage = () => {
                         <select
                           name="status"
                           id="status"
-                          className={`block w-full border ${
-                            formErrors.status
+                          className={`block w-full border ${formErrors.status
                               ? "border-red-500"
                               : "border-gray-300"
-                          } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
+                            } rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 transition-colors outline-none`}
                           value={formData.status}
                           onChange={handleInputChange}
                         >
@@ -1266,11 +1254,10 @@ const ApplicantsPage = () => {
                           {isEditMode && "(Optional: to replace existing)"}
                         </label>
                         <div
-                          className={`mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 ${
-                            formErrors.resume
+                          className={`mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 ${formErrors.resume
                               ? "border-red-500"
                               : "border-gray-300"
-                          } border-dashed rounded-md focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 transition-colors`}
+                            } border-dashed rounded-md focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 transition-colors`}
                         >
                           <div className="space-y-1 text-center">
                             <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />

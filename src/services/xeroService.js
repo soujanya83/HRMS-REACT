@@ -7,7 +7,7 @@ export const syncEmployeeToXero = async (employeeId) => {
       employee_id: employeeId,
     });
     
-    console.log('✅ Xero Sync API Response:', response.data);
+    // console.log('✅ Xero Sync API Response:', response.data);
     return response.data;
   } catch (error) {
     console.error('❌ Xero Sync API Error:', error);

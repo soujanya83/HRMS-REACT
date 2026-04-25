@@ -42,7 +42,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -104,9 +104,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -120,9 +119,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -186,12 +184,12 @@ const OffboardingPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -199,7 +197,7 @@ const OffboardingPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -219,31 +217,28 @@ const OffboardingPage = () => {
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "dashboard"
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "dashboard"
                     ? "border-red-600 text-red-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Offboarding Dashboard
               </button>
               <button
                 onClick={() => setActiveTab("templates")}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "templates"
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "templates"
                     ? "border-red-600 text-red-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Offboarding Templates
               </button>
               <button
                 onClick={() => setActiveTab("reports")}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "reports"
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "reports"
                     ? "border-red-600 text-red-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Exit Reports
               </button>
@@ -387,97 +382,97 @@ const OffboardingDashboard = () => {
     fetchMoreDropdownEmployees(1, search, true);
   };
 
-const ExitReports = () => {
-  const { canView } = usePermissions('employee.exit_offboarding');
-  const [stats, setStats] = useState({
-    totalExits: 0,
-    voluntary: 0,
-    involuntary: 0,
-    completionRate: 0,
-    avgProcessingDays: 0,
-  });
-  const [exits, setExits] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const ExitReports = () => {
+    const { canView } = usePermissions('employee.exit_offboarding');
+    const [stats, setStats] = useState({
+      totalExits: 0,
+      voluntary: 0,
+      involuntary: 0,
+      completionRate: 0,
+      avgProcessingDays: 0,
+    });
+    const [exits, setExits] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const { selectedOrganization } = useOrganizations();
-  const organizationId = selectedOrganization?.id;
+    const { selectedOrganization } = useOrganizations();
+    const organizationId = selectedOrganization?.id;
 
-  const fetchExitStats = useCallback(async () => {
-    if (!organizationId) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const exitsRes = await getEmployeeExits({
-        organization_id: organizationId,
-      });
-      const exitsData = exitsRes.data?.data || [];
-      setExits(exitsData);
+    const fetchExitStats = useCallback(async () => {
+      if (!organizationId) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const exitsRes = await getEmployeeExits({
+          organization_id: organizationId,
+        });
+        const exitsData = exitsRes.data?.data || [];
+        setExits(exitsData);
 
-      // Simple stats calculation
-      const total = exitsData.length;
-      const voluntary = exitsData.filter(
-        (e) => e.reason_for_leaving?.toLowerCase().includes("voluntary")
-      ).length;
-      const involuntary = total - voluntary;
+        // Simple stats calculation
+        const total = exitsData.length;
+        const voluntary = exitsData.filter(
+          (e) => e.reason_for_leaving?.toLowerCase().includes("voluntary")
+        ).length;
+        const involuntary = total - voluntary;
 
-      setStats({
-        totalExits: total,
-        voluntary,
-        involuntary,
-        completionRate: 85, // Mock data or calculate if tasks available
-        avgProcessingDays: 14,
-      });
-    } catch (err) {
-      console.error("Error fetching exit stats:", err);
-      setError("Failed to load exit reports.");
-    } finally {
-      setIsLoading(false);
+        setStats({
+          totalExits: total,
+          voluntary,
+          involuntary,
+          completionRate: 85, // Mock data or calculate if tasks available
+          avgProcessingDays: 14,
+        });
+      } catch (err) {
+        console.error("Error fetching exit stats:", err);
+        setError("Failed to load exit reports.");
+      } finally {
+        setIsLoading(false);
+      }
+    }, [organizationId]);
+
+    useEffect(() => {
+      fetchExitStats();
+    }, [fetchExitStats]);
+
+    if (!canView) {
+      return (
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800">Access Denied</h3>
+          <p className="text-gray-500">You do not have permission to view exit reports.</p>
+        </div>
+      );
     }
-  }, [organizationId]);
 
-  useEffect(() => {
-    fetchExitStats();
-  }, [fetchExitStats]);
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        </div>
+      );
+    }
 
-  if (!canView) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-8 text-center">
-        <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-800">Access Denied</h3>
-        <p className="text-gray-500">You do not have permission to view exit reports.</p>
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Exit Reports</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-500">Total Exits</p>
+            <p className="text-2xl font-bold text-gray-800">{stats.totalExits}</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-500">Voluntary</p>
+            <p className="text-2xl font-bold text-gray-800">{stats.voluntary}</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-500">Involuntary</p>
+            <p className="text-2xl font-bold text-gray-800">{stats.involuntary}</p>
+          </div>
+        </div>
       </div>
     );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Exit Reports</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Total Exits</p>
-          <p className="text-2xl font-bold text-gray-800">{stats.totalExits}</p>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Voluntary</p>
-          <p className="text-2xl font-bold text-gray-800">{stats.voluntary}</p>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Involuntary</p>
-          <p className="text-2xl font-bold text-gray-800">{stats.involuntary}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
+  };
 
   const fetchExits = useCallback(async () => {
     if (!organizationId) return;
@@ -755,7 +750,7 @@ const ExitReports = () => {
   };
 
   const handleDeleteExit = async (exit) => {
-    
+
     if (
       !window.confirm(
         "Are you sure you want to delete this exit record? The employee status will be reverted to Active."
@@ -765,8 +760,8 @@ const ExitReports = () => {
 
     try {
       await deleteEmployeeExit(exit.id);
-  
-      
+
+
       // Update employee status back to Active
       if (exit.employee_id) {
         await updateEmployeeStatus(exit.employee_id, "Active");
@@ -776,7 +771,7 @@ const ExitReports = () => {
       fetchEmployees();
       fetchExits();
     } catch (error) {
-      console.error("Error deleting exit:", error, );
+      console.error("Error deleting exit:", error,);
       alert("Failed to delete exit record");
     }
   };
@@ -939,7 +934,7 @@ const ExitReports = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Table Pagination */}
               <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
                 <div className="flex-1 flex justify-between sm:hidden">
@@ -1030,18 +1025,17 @@ const ExitReports = () => {
                             Exit Date:{" "}
                             {exit.last_working_day
                               ? new Date(
-                                  exit.last_working_day
-                                ).toLocaleDateString()
+                                exit.last_working_day
+                              ).toLocaleDateString()
                               : "Not set"}
                           </p>
                         </div>
                       </div>
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          exit.is_eligible_for_rehire
+                        className={`px-2 py-1 text-xs rounded-full ${exit.is_eligible_for_rehire
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}
+                          }`}
                       >
                         {exit.is_eligible_for_rehire
                           ? "Rehire Eligible"
@@ -1188,7 +1182,7 @@ const ExitDetailModal = ({
   const [isCompletingTask, setIsCompletingTask] = useState(null);
   const { canAdd, canEdit, canDelete } = usePermissions('employee.exit_offboarding');
 
-console.log(setIsLoading)
+  console.log(setIsLoading)
   useEffect(() => {
     setTasks(exit.tasks);
   }, [exit.tasks]);
@@ -1212,11 +1206,11 @@ console.log(setIsLoading)
         tasks.map((task) =>
           task.id === taskId
             ? {
-                ...task,
-                status: newStatus,
-                completed_at:
-                  newStatus === "completed" ? new Date().toISOString() : null,
-              }
+              ...task,
+              status: newStatus,
+              completed_at:
+                newStatus === "completed" ? new Date().toISOString() : null,
+            }
             : task
         )
       );
@@ -1308,11 +1302,10 @@ console.log(setIsLoading)
                 <p className="text-sm text-gray-500">Eligible for Rehire</p>
                 <p className="font-medium">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      exit.is_eligible_for_rehire
+                    className={`px-2 py-1 rounded-full text-xs ${exit.is_eligible_for_rehire
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
-                    }`}
+                      }`}
                   >
                     {exit.is_eligible_for_rehire ? "Yes" : "No"}
                   </span>
@@ -1443,22 +1436,20 @@ console.log(setIsLoading)
                         <HiCheckCircle className="h-5 w-5 text-green-500" />
                       ) : (
                         <div
-                          className={`h-5 w-5 border-2 ${
-                            isCompletingTask === task.id
+                          className={`h-5 w-5 border-2 ${isCompletingTask === task.id
                               ? "border-gray-400"
                               : "border-gray-300"
-                          } rounded-full`}
+                            } rounded-full`}
                         />
                       )}
                     </button>
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between items-start">
                         <span
-                          className={`text-sm font-medium ${
-                            task.status === "completed"
+                          className={`text-sm font-medium ${task.status === "completed"
                               ? "text-gray-500 line-through"
                               : "text-gray-800"
-                          }`}
+                            }`}
                         >
                           {task.task_name}
                           {isCompletingTask === task.id && (
@@ -1488,11 +1479,10 @@ console.log(setIsLoading)
                             task.days_left < 3 &&
                             task.days_left >= 0 ? (
                             <span
-                              className={`text-xs px-2 py-1 rounded ${
-                                task.days_left === 0
+                              className={`text-xs px-2 py-1 rounded ${task.days_left === 0
                                   ? "bg-orange-100 text-orange-800"
                                   : "bg-red-100 text-red-800"
-                              }`}
+                                }`}
                             >
                               {task.days_left === 0
                                 ? "Today"
@@ -1657,7 +1647,7 @@ const OffboardingTemplateManager = () => {
       };
 
       console.log("Creating template with payload:", payload);
-      
+
       await createOffboardingTemplate(payload);
       await fetchTemplates();
       setTemplateModalOpen(false);
@@ -1699,7 +1689,7 @@ const OffboardingTemplateManager = () => {
       }
 
       const role = taskData.default_assigned_role.toLowerCase().trim();
-      
+
       // Validate role
       if (!validRoles.includes(role)) {
         alert(`Invalid role "${role}". Must be one of: ${validRoles.join(", ")}`);
@@ -1980,24 +1970,24 @@ const TaskManagementModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.task_name.trim()) {
       alert("Task name is required");
       return;
     }
-    
+
     if (formData.due_before_days < 0) {
       alert("Due before days must be 0 or more");
       return;
     }
-    
+
     const role = formData.default_assigned_role.toLowerCase().trim();
     if (!validRoles.includes(role)) {
       alert(`Invalid role. Must be one of: ${validRoles.join(", ")}`);
       return;
     }
-    
+
     setIsSubmitting(true);
     onSubmit(formData);
   };
@@ -2369,9 +2359,8 @@ const InitiateExitModal = ({
                 onChange={handleChange}
                 required
                 disabled={isSubmitting}
-                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${
-                  errors.resignation_date ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${errors.resignation_date ? "border-red-500" : "border-gray-300"
+                  }`}
               />
             </div>
 
@@ -2390,9 +2379,8 @@ const InitiateExitModal = ({
                 onChange={handleChange}
                 required
                 disabled={isSubmitting}
-                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${
-                  errors.last_working_day ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${errors.last_working_day ? "border-red-500" : "border-gray-300"
+                  }`}
               />
             </div>
 
@@ -2410,11 +2398,10 @@ const InitiateExitModal = ({
                 onChange={handleChange}
                 required
                 disabled={isSubmitting}
-                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${
-                  errors.reason_for_leaving
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 ${errors.reason_for_leaving
                     ? "border-red-500"
                     : "border-gray-300"
-                }`}
+                  }`}
               >
                 <option value="">Select Reason</option>
                 <option value="Resignation">Resignation</option>
@@ -2590,7 +2577,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, exit }) => {
       const defaultDueDate = exit.last_working_day
         ? exit.last_working_day
         : new Date().toISOString().split("T")[0];
-      
+
       setFormData({
         task_name: "",
         description: "",
@@ -3245,11 +3232,10 @@ const ExitReports = () => {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          exit.is_eligible_for_rehire
+                        className={`px-2 py-1 text-xs rounded-full ${exit.is_eligible_for_rehire
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}
+                          }`}
                       >
                         {exit.is_eligible_for_rehire ? "Yes" : "No"}
                       </span>

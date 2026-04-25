@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import usePermissions from '../../hooks/usePermissions';
-import { 
-  FaClock, 
-  FaCalendarAlt, 
+import {
+  FaClock,
+  FaCalendarAlt,
   FaCalculator,
   FaPaperPlane,
   FaSearch,
@@ -29,7 +29,7 @@ import employeeService from '../../services/employeeService';
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -91,9 +91,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -107,9 +106,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -134,7 +132,7 @@ const TimesheetEntry = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedTimesheetIds, setSelectedTimesheetIds] = useState([]);
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -143,7 +141,7 @@ const TimesheetEntry = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   // New state for generate timesheet modal
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [fortnightlyPeriods, setFortnightlyPeriods] = useState([]);
@@ -201,12 +199,12 @@ const TimesheetEntry = () => {
   // NEW: Fetch employee rates
   const fetchEmployeeRates = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     setRatesLoading(true);
     try {
       const response = await employeeService.getEmployees({ organization_id: selectedOrganization.id });
-      console.log('👥 Employees API response:', response);
-      
+      //console.log('👥 Employees API response:', response);
+
       // Extract employees data from response
       let employeesData = [];
       if (response?.data) {
@@ -216,14 +214,14 @@ const TimesheetEntry = () => {
           employeesData = response.data.data;
         }
       }
-      
+
       // Build rates object
       const rates = {};
       employeesData.forEach(emp => {
         // Try different possible rate fields
         rates[emp.id] = emp.hourly_wage || emp.pay_rate || emp.rate || 25;
       });
-      
+
       setEmployeeRates(rates);
       console.log('💰 Employee rates loaded:', rates);
     } catch (error) {
@@ -243,24 +241,24 @@ const TimesheetEntry = () => {
   // NEW: Calculate amounts for all timesheets
   const calculateTimesheetAmounts = () => {
     const amounts = {};
-    
+
     allTimesheets.forEach(timesheet => {
       const employeeId = timesheet.employee_id || timesheet.employee?.id;
       const rate = employeeRates[employeeId] || 25;
-      
+
       const regularHours = parseFloat(timesheet.regular_hours || 0);
       const overtimeHours = parseFloat(timesheet.overtime_hours || 0);
-      
+
       // Calculate regular amount
       const regularAmount = regularHours * rate;
-      
+
       // Calculate overtime amount (assuming 1.5x rate)
       const overtimeRate = rate * 1.5;
       const overtimeAmount = overtimeHours * overtimeRate;
-      
+
       // Calculate total
       const totalAmount = regularAmount + overtimeAmount;
-      
+
       amounts[timesheet.id] = {
         rate,
         regularHours,
@@ -271,9 +269,9 @@ const TimesheetEntry = () => {
         overtimeRate
       };
     });
-    
+
     setTimesheetAmounts(amounts);
-    console.log('💰 Timesheet amounts calculated:', amounts);
+    //console.log('💰 Timesheet amounts calculated:', amounts);
   };
 
   // Fetch all required data from API
@@ -284,10 +282,10 @@ const TimesheetEntry = () => {
         fetchPayPeriods(),
         fetchAllOrganizationTimesheets()
       ]);
-      
+
       // Fetch employee rates after we have timesheets
       await fetchEmployeeRates();
-      
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -298,16 +296,16 @@ const TimesheetEntry = () => {
   // Fetch pay periods from API - Only get fortnightly periods
   const fetchPayPeriods = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     try {
       const response = await timesheetService.getPayPeriods(selectedOrganization.id);
       if (response?.status && Array.isArray(response.data)) {
         // Filter only FORTNIGHTLY pay periods
-        const fortnightlyPeriods = response.data.filter(period => 
+        const fortnightlyPeriods = response.data.filter(period =>
           period.calendar_type === 'FORTNIGHTLY'
         );
         setPayPeriods(fortnightlyPeriods);
-        
+
         // Find current fortnightly pay period
         const currentPayPeriod = fortnightlyPeriods.find(period => period.is_current === true);
         if (currentPayPeriod) {
@@ -332,12 +330,12 @@ const TimesheetEntry = () => {
   // Fetch all timesheets for organization from API
   const fetchAllOrganizationTimesheets = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     try {
       const response = await timesheetService.getTimesheets(selectedOrganization.id);
       if (response?.status && Array.isArray(response.data)) {
         setAllTimesheets(response.data);
-        
+
         // Convert API timesheets to entries format for display
         const entries = convertTimesheetsToEntries(response.data);
         setTimesheetEntries(entries);
@@ -350,13 +348,13 @@ const TimesheetEntry = () => {
   // Convert API timesheets data to entries format
   const convertTimesheetsToEntries = (timesheets) => {
     if (!Array.isArray(timesheets)) return [];
-    
+
     return timesheets.flatMap(timesheet => {
       const entries = [];
       const employeeName = `${timesheet.employee?.first_name || ''} ${timesheet.employee?.last_name || ''}`.trim();
       const employeeId = timesheet.employee_id || timesheet.employee?.id;
       const rate = employeeRates[employeeId] || 25;
-      
+
       // If there's daily breakdown data, create entries for each day
       if (timesheet.daily_breakdown && typeof timesheet.daily_breakdown === 'object') {
         Object.entries(timesheet.daily_breakdown).forEach(([date, hours]) => {
@@ -406,7 +404,7 @@ const TimesheetEntry = () => {
           });
         }
       }
-      
+
       return entries;
     });
   };
@@ -422,17 +420,17 @@ const TimesheetEntry = () => {
         entriesCount: 0
       };
     }
-    
-    const pendingEntries = entries.filter(entry => 
+
+    const pendingEntries = entries.filter(entry =>
       entry.status === 'pending' || entry.status === 'draft'
     );
-    
-    const totalHours = pendingEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);  
+
+    const totalHours = pendingEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
     const billableHours = pendingEntries
       .filter(entry => entry.billable)
       .reduce((sum, entry) => sum + (entry.hours || 0), 0);
     const totalAmount = pendingEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    
+
     return {
       totalHours,
       billableHours,
@@ -457,7 +455,7 @@ const TimesheetEntry = () => {
       setApiLoading(true);
       try {
         const response = await timesheetService.submitTimesheets(selectedTimesheetIds);
-        
+
         if (response.status) {
           alert(`Timesheets submitted successfully for approval! Total amount: ${formatCurrency(totalSelectedAmount)}`);
           // Refresh data
@@ -484,20 +482,20 @@ const TimesheetEntry = () => {
 
   const handleConfirmDelete = async () => {
     if (!timesheetToDelete) return;
-    
+
     setDeletingTimesheet(true);
     setDeleteError(null);
-    
+
     try {
       // Call the delete API - you'll need to add this to your timesheetService
       const response = await timesheetService.deleteTimesheet(timesheetToDelete.id);
-      
+
       if (response.status) {
         alert(`Timesheet for ${timesheetToDelete.employee?.first_name} ${timesheetToDelete.employee?.last_name} deleted successfully!`);
-        
+
         // Remove from selection if present
         setSelectedTimesheetIds(prev => prev.filter(id => id !== timesheetToDelete.id));
-        
+
         // Refresh data
         await fetchAllOrganizationTimesheets();
       } else {
@@ -533,13 +531,13 @@ const TimesheetEntry = () => {
         // Filter only fortnightly periods
         const fortnightly = response.data.filter(p => p.calendar_type === 'FORTNIGHTLY');
         setFortnightlyPeriods(fortnightly);
-        
+
         if (fortnightly.length > 0) {
           // Select the current fortnightly period if available
           const currentFortnightly = fortnightly.find(p => p.is_current === true);
           setSelectedFortnightlyPeriod(currentFortnightly || fortnightly[0]);
         }
-        
+
         setShowGenerateModal(true);
       }
     } catch (error) {
@@ -566,7 +564,7 @@ const TimesheetEntry = () => {
         selectedFortnightlyPeriod.end_date.split('T')[0],
         selectedOrganization.id
       );
-      
+
       if (response.status) {
         alert(`Successfully generated ${response.created} timesheets for the selected period!`);
         // Refresh data
@@ -585,26 +583,26 @@ const TimesheetEntry = () => {
 
   // Filter timesheets - Only show pending/draft timesheets (not submitted/approved/pushed)
   const getPendingTimesheets = () => {
-    return allTimesheets.filter(timesheet => 
+    return allTimesheets.filter(timesheet =>
       timesheet.status === 'pending' || timesheet.status === 'draft'
     );
   };
 
   // Filter timesheets based on search and filter
   const filteredTimesheets = getPendingTimesheets().filter(timesheet => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       `${timesheet.employee?.first_name || ''} ${timesheet.employee?.last_name || ''}`
         .toLowerCase().includes(searchQuery.toLowerCase()) ||
       timesheet.employee?.employee_code?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesFilter = filterStatus === 'all' || timesheet.status === filterStatus;
-    
+
     return matchesSearch && matchesFilter;
   });
 
   // Toggle timesheet selection
   const toggleTimesheetSelection = (timesheetId) => {
-    setSelectedTimesheetIds(prev => 
+    setSelectedTimesheetIds(prev =>
       prev.includes(timesheetId)
         ? prev.filter(id => id !== timesheetId)
         : [...prev, timesheetId]
@@ -614,7 +612,7 @@ const TimesheetEntry = () => {
   // Select all timesheets
   const selectAllTimesheets = () => {
     const allIds = getPendingTimesheets().map(t => t.id);
-    
+
     if (selectedTimesheetIds.length === allIds.length) {
       setSelectedTimesheetIds([]);
     } else {
@@ -653,7 +651,7 @@ const TimesheetEntry = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -668,7 +666,7 @@ const TimesheetEntry = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="min-h-screen p-6 flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -696,12 +694,12 @@ const TimesheetEntry = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -709,12 +707,12 @@ const TimesheetEntry = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto space-y-6">
-          
+
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
@@ -727,7 +725,7 @@ const TimesheetEntry = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Organization Stats - Updated with Amount */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <div className="text-sm text-gray-600 mb-2 font-medium">Organization Stats</div>
@@ -766,7 +764,7 @@ const TimesheetEntry = () => {
               </div>
               <div className="mt-2 text-xs text-gray-500">{stats.entriesCount} pending entries</div>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -792,7 +790,7 @@ const TimesheetEntry = () => {
               </div>
               <div className="mt-2 text-xs text-gray-500">Based on hourly rates</div>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -830,13 +828,12 @@ const TimesheetEntry = () => {
                 </h4>
                 <div className="space-y-2">
                   {payPeriods.slice(0, 5).map((period, index) => (
-                    <div 
+                    <div
                       key={`fortnightly-${period.id}-${index}`}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
-                        period.is_current 
-                          ? 'border-blue-300 bg-blue-50' 
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${period.is_current
+                          ? 'border-blue-300 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
+                        }`}
                       onClick={() => {
                         if (period.start_date) {
                           setSelectedDate(period.start_date.split('T')[0]);
@@ -845,9 +842,8 @@ const TimesheetEntry = () => {
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-8 rounded-full ${
-                          period.is_current ? 'bg-blue-500' : 'bg-gray-300'
-                        }`}></div>
+                        <div className={`w-2 h-8 rounded-full ${period.is_current ? 'bg-blue-500' : 'bg-gray-300'
+                          }`}></div>
                         <div>
                           <div className="font-medium text-gray-900">{period.calendar_name}</div>
                           <div className="text-xs text-gray-500">
@@ -875,7 +871,7 @@ const TimesheetEntry = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Timesheet Actions</h3>
                 <p className="text-sm text-gray-600">Generate and submit timesheets</p>
               </div>
-              
+
               <div className="flex flex-wrap gap-2">
                 {canAdd && (
                   <button
@@ -887,16 +883,15 @@ const TimesheetEntry = () => {
                     Generate Timesheets
                   </button>
                 )}
-                
+
                 {canEdit && (
                   <button
                     onClick={handleSubmitTimesheet}
                     disabled={selectedTimesheetIds.length === 0 || apiLoading}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
-                      selectedTimesheetIds.length > 0
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${selectedTimesheetIds.length > 0
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     <FaPaperPlane />
                     Submit Selected ({selectedTimesheetIds.length})
@@ -924,7 +919,7 @@ const TimesheetEntry = () => {
                     <p className="text-sm text-gray-500">This action cannot be undone</p>
                   </div>
                 </div>
-                
+
                 <p className="text-gray-700 mb-6">
                   Are you sure you want to delete the timesheet for <strong>{timesheetToDelete.employee?.first_name} {timesheetToDelete.employee?.last_name}</strong>?
                   <br />
@@ -979,7 +974,7 @@ const TimesheetEntry = () => {
                     Showing {getPendingTimesheets().length} pending/draft timesheets
                   </p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-3">
                   {/* Search */}
                   <div className="relative">
@@ -1121,7 +1116,7 @@ const TimesheetEntry = () => {
                         totalAmount: 0,
                         overtimeRate: 37.5
                       };
-                      
+
                       return (
                         <tr key={timesheet.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4">
@@ -1155,7 +1150,7 @@ const TimesheetEntry = () => {
                                   {formatDate(timesheet.from_date)} - {formatDate(timesheet.to_date)}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                  {timesheet.from_date && timesheet.to_date 
+                                  {timesheet.from_date && timesheet.to_date
                                     ? Math.round((new Date(timesheet.to_date) - new Date(timesheet.from_date)) / (1000 * 60 * 60 * 24)) + 1 + ' days'
                                     : 'N/A'
                                   }
@@ -1198,13 +1193,12 @@ const TimesheetEntry = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              timesheet.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${timesheet.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                                 : timesheet.status === 'draft'
-                                ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                                : 'bg-blue-100 text-blue-800 border border-blue-200'
-                            }`}>
+                                  ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+                              }`}>
                               {timesheet.status?.charAt(0).toUpperCase() + (timesheet.status?.slice(1) || '')}
                             </span>
                           </td>
@@ -1222,11 +1216,10 @@ const TimesheetEntry = () => {
                               </button>
                               <button
                                 onClick={() => toggleTimesheetSelection(timesheet.id)}
-                                className={`p-2 rounded-lg transition-colors ${
-                                  selectedTimesheetIds.includes(timesheet.id)
+                                className={`p-2 rounded-lg transition-colors ${selectedTimesheetIds.includes(timesheet.id)
                                     ? 'text-green-600 hover:text-green-800 hover:bg-green-50'
                                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                                }`}
+                                  }`}
                                 title="Select for Submission"
                               >
                                 <FaCheckCircle size={14} />
@@ -1272,12 +1265,12 @@ const TimesheetEntry = () => {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 mb-4">
                     Select a fortnightly pay period to generate timesheets for all employees.
                   </p>
-                  
+
                   {fortnightlyPeriods.length === 0 ? (
                     <div className="text-center py-8">
                       <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
@@ -1295,11 +1288,10 @@ const TimesheetEntry = () => {
                         {fortnightlyPeriods.map((period) => (
                           <div
                             key={period.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
-                              selectedFortnightlyPeriod?.id === period.id
+                            className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${selectedFortnightlyPeriod?.id === period.id
                                 ? 'border-blue-300 bg-blue-50'
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            }`}
+                              }`}
                             onClick={() => setSelectedFortnightlyPeriod(period)}
                           >
                             <div className="flex items-center justify-between">
@@ -1362,11 +1354,10 @@ const TimesheetEntry = () => {
                   <button
                     onClick={handleGenerateTimesheets}
                     disabled={!selectedFortnightlyPeriod || generatingTimesheet}
-                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${
-                      selectedFortnightlyPeriod && !generatingTimesheet
+                    className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 ${selectedFortnightlyPeriod && !generatingTimesheet
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     {generatingTimesheet ? (
                       <>

@@ -207,11 +207,11 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, permissionName, l
               <p className="text-sm text-gray-500">This action cannot be undone</p>
             </div>
           </div>
-          
+
           <p className="text-gray-700 mb-6">
             Are you sure you want to delete the permission <strong className="font-mono">{permissionName}</strong>?
           </p>
-          
+
           <div className="flex justify-end gap-3">
             <button onClick={onClose} disabled={loading} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium disabled:opacity-50">Cancel</button>
             <button onClick={onConfirm} disabled={loading} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50">
@@ -679,7 +679,7 @@ export default function PermissionManagementPage() {
   const [showPermissionForm, setShowPermissionForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState(null);
-  
+
   // Background color state - REMOVED COLOR PALETTE
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
@@ -693,7 +693,7 @@ export default function PermissionManagementPage() {
   useEffect(() => {
     if (selectedOrganization?.id) {
       localStorage.setItem('selectedOrgId', selectedOrganization.id);
-      console.log('✅ Saved organization ID to localStorage:', selectedOrganization.id);
+      //console.log('✅ Saved organization ID to localStorage:', selectedOrganization.id);
     }
   }, [selectedOrganization]);
 
@@ -784,7 +784,7 @@ export default function PermissionManagementPage() {
       if (selectedOrganization?.id) {
         localStorage.setItem('selectedOrgId', selectedOrganization.id);
       }
-      
+
       const savedPermission = await permissionService.createPermission(formData);
       setPermissions((prev) => [...prev, savedPermission]);
       setSuccessMessage(`Permission "${savedPermission.name}" created successfully! Organization ID: ${savedPermission.organization_id || selectedOrganization?.id}`);
@@ -812,15 +812,15 @@ export default function PermissionManagementPage() {
 
   const handleConfirmDelete = async () => {
     if (!permissionToDelete) return;
-    
+
     setDeleting(true);
     setError(null);
-    
+
     try {
       await permissionService.deletePermission(permissionToDelete.id);
       setPermissions((prev) => prev.filter(p => p.id !== permissionToDelete.id));
       setSuccessMessage(`Permission "${permissionToDelete.name}" deleted successfully!`);
-      
+
       setTimeout(() => {
         setSuccessMessage(null);
         setShowDeleteModal(false);

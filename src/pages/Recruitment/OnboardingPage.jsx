@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import usePermissions from "../../hooks/usePermissions";
-import { 
-  HiPlus, 
-  HiPencil, 
-  HiTrash, 
-  HiCheckCircle, 
-  HiX, 
+import {
+  HiPlus,
+  HiPencil,
+  HiTrash,
+  HiCheckCircle,
+  HiX,
   HiTemplate,
   HiOutlineClock,
   HiCheck,
@@ -32,7 +32,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -94,9 +94,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -110,9 +109,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -127,16 +125,16 @@ const ColorPaletteModal = ({
 // Helper function to calculate days left
 const calculateDaysLeft = (dueDate) => {
   if (!dueDate) return null;
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const due = new Date(dueDate);
   due.setHours(0, 0, 0, 0);
-  
+
   const diffTime = due - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   return diffDays;
 };
 
@@ -176,12 +174,12 @@ const OnboardingPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -189,7 +187,7 @@ const OnboardingPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -209,21 +207,19 @@ const OnboardingPage = () => {
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "dashboard"
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "dashboard"
                     ? "border-brand-blue text-brand-blue"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Onboarding Dashboard
               </button>
               <button
                 onClick={() => setActiveTab("templates")}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "templates"
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "templates"
                     ? "border-brand-blue text-brand-blue"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Template Management
               </button>
@@ -256,90 +252,90 @@ const OnboardingDashboard = ({ backgroundColor }) => {
   const organizationId = selectedOrganization?.id;
   const { canAdd, canEdit, canDelete } = usePermissions('recruitment.onboarding');
 
- const fetchNewHires = useCallback(async () => {
-  if (!organizationId) {
-    setIsLoading(false);
-    return;
-  }
+  const fetchNewHires = useCallback(async () => {
+    if (!organizationId) {
+      setIsLoading(false);
+      return;
+    }
 
-  setIsLoading(true);
-  setError(null);
+    setIsLoading(true);
+    setError(null);
 
-  try {
-    const allApplicantsRes = await getHiredApplicants(organizationId);
-    const allApplicants = allApplicantsRes.data?.data || [];
-    
-    const hiredApplicants = allApplicants.filter(applicant => {
-      const status = applicant.status?.toLowerCase();
-      return status === 'hired';
-    });
+    try {
+      const allApplicantsRes = await getHiredApplicants(organizationId);
+      const allApplicants = allApplicantsRes.data?.data || [];
 
-    const hiresWithTasks = await Promise.all(
-      hiredApplicants.map(async (applicant) => {
-        try {
-          const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
-          const tasks = tasksRes.data?.data || [];
+      const hiredApplicants = allApplicants.filter(applicant => {
+        const status = applicant.status?.toLowerCase();
+        return status === 'hired';
+      });
 
-          // Normalize all task statuses to lowercase for consistent comparison
-          const tasksWithDaysLeft = tasks.map((task) => ({
-            id: task.id,
-            task_name: task.task_name,
-            description: task.description,
-            due_date: task.due_date,
-            // Normalize status to lowercase
-            status: task.status?.toLowerCase() || "pending",
-            // Use correct field name from API
-            completed_at: task.completed_at,
-            days_left: calculateDaysLeft(task.due_date)
-          }));
+      const hiresWithTasks = await Promise.all(
+        hiredApplicants.map(async (applicant) => {
+          try {
+            const tasksRes = await getOnboardingTasksByApplicant(applicant.id);
+            const tasks = tasksRes.data?.data || [];
 
-          // Count completed tasks (lowercase comparison)
-          const CompletedTasks = tasksWithDaysLeft.filter(t => t.status === "completed").length;
+            // Normalize all task statuses to lowercase for consistent comparison
+            const tasksWithDaysLeft = tasks.map((task) => ({
+              id: task.id,
+              task_name: task.task_name,
+              description: task.description,
+              due_date: task.due_date,
+              // Normalize status to lowercase
+              status: task.status?.toLowerCase() || "pending",
+              // Use correct field name from API
+              completed_at: task.completed_at,
+              days_left: calculateDaysLeft(task.due_date)
+            }));
 
-          return {
-            id: applicant.id,
-            applicant: {
-              first_name: applicant.first_name,
-              last_name: applicant.last_name,
-              job_opening: applicant.job_opening || {
-                title: "Not specified",
+            // Count completed tasks (lowercase comparison)
+            const CompletedTasks = tasksWithDaysLeft.filter(t => t.status === "completed").length;
+
+            return {
+              id: applicant.id,
+              applicant: {
+                first_name: applicant.first_name,
+                last_name: applicant.last_name,
+                job_opening: applicant.job_opening || {
+                  title: "Not specified",
+                },
+                status: applicant.status,
               },
-              status: applicant.status,
-            },
-            start_date: applicant.start_date || new Date().toISOString().split("T")[0],
-            tasks: tasksWithDaysLeft,
-            CompletedTasks: CompletedTasks,
-            totalTasks: tasksWithDaysLeft.length
-          };
-        } catch (error) {
-          console.error(`Error fetching tasks for applicant ${applicant.id}:`, error);
-          return {
-            id: applicant.id,
-            applicant: {
-              first_name: applicant.first_name,
-              last_name: applicant.last_name,
-              job_opening: applicant.job_opening || {
-                title: "Not specified",
+              start_date: applicant.start_date || new Date().toISOString().split("T")[0],
+              tasks: tasksWithDaysLeft,
+              CompletedTasks: CompletedTasks,
+              totalTasks: tasksWithDaysLeft.length
+            };
+          } catch (error) {
+            console.error(`Error fetching tasks for applicant ${applicant.id}:`, error);
+            return {
+              id: applicant.id,
+              applicant: {
+                first_name: applicant.first_name,
+                last_name: applicant.last_name,
+                job_opening: applicant.job_opening || {
+                  title: "Not specified",
+                },
+                status: applicant.status,
               },
-              status: applicant.status,
-            },
-            start_date: applicant.start_date || new Date().toISOString().split("T")[0],
-            tasks: [],
-            CompletedTasks: 0,
-            totalTasks: 0
-          };
-        }
-      })
-    );
+              start_date: applicant.start_date || new Date().toISOString().split("T")[0],
+              tasks: [],
+              CompletedTasks: 0,
+              totalTasks: 0
+            };
+          }
+        })
+      );
 
-    setNewHires(hiresWithTasks);
-  } catch (err) {
-    console.error("Error fetching new hires:", err);
-    setError("Failed to load onboarding data. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-}, [organizationId]);
+      setNewHires(hiresWithTasks);
+    } catch (err) {
+      console.error("Error fetching new hires:", err);
+      setError("Failed to load onboarding data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [organizationId]);
 
   const fetchTemplates = useCallback(async () => {
     if (!organizationId) return;
@@ -379,7 +375,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
       }
 
       const applicantStatus = selectedApplicantForTask.applicant?.status?.toLowerCase();
-      
+
       if (applicantStatus !== 'hired') {
         alert(`Cannot create task: Applicant status is "${selectedApplicantForTask.applicant?.status}" but must be "Hired"`);
         return;
@@ -405,7 +401,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
       alert("Task added successfully!");
     } catch (err) {
       console.error("Error creating task:", err);
-      
+
       if (err.response?.status === 400) {
         const errorData = err.response.data;
         alert(`Error: ${errorData.message}\nCurrent status: ${errorData.current_status}`);
@@ -423,17 +419,17 @@ const OnboardingDashboard = ({ backgroundColor }) => {
       }
 
       const applicantStatus = selectedApplicantForTask.applicant?.status?.toLowerCase();
-      
+
       if (applicantStatus !== 'hired') {
         alert(`Cannot apply template: Applicant status is "${selectedApplicantForTask.applicant?.status}" but must be "Hired"`);
         return;
       }
 
-      console.log("Applying template with data:", {
-        applicantId: selectedApplicantForTask.id,
-        templateId: templateId,
-        organizationId: organizationId
-      });
+      // console.log("Applying template with data:", {
+      //   applicantId: selectedApplicantForTask.id,
+      //   templateId: templateId,
+      //   organizationId: organizationId
+      // });
 
       // First try with the basic call
       try {
@@ -441,7 +437,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
         alert("Template applied successfully!");
       } catch (apiErr) {
         console.error("API error details:", apiErr.response?.data);
-        
+
         // If API fails, try to create tasks manually from template
         const selectedTemplate = templates.find(t => t.id == templateId);
         if (selectedTemplate && selectedTemplate.tasks.length > 0) {
@@ -459,22 +455,22 @@ const OnboardingDashboard = ({ backgroundColor }) => {
       await fetchNewHires();
       setApplyTemplateModalOpen(false);
       setSelectedApplicantForTask(null);
-      
+
     } catch (err) {
       console.error("Error applying template:", err);
-      
+
       if (err.response?.status === 400) {
         const errorData = err.response.data;
         let errorMessage = "Failed to apply template.";
-        
+
         if (errorData.message) {
           errorMessage += ` Error: ${errorData.message}`;
         }
-        
+
         if (errorData.errors) {
           errorMessage += ` Details: ${JSON.stringify(errorData.errors)}`;
         }
-        
+
         alert(errorMessage);
       } else {
         alert("Failed to apply template. Please try again.");
@@ -485,12 +481,12 @@ const OnboardingDashboard = ({ backgroundColor }) => {
   // Fallback function to create tasks manually if API fails
   const createTasksFromTemplateManually = async (template) => {
     const tasksToCreate = template.tasks;
-    
+
     for (const templateTask of tasksToCreate) {
       try {
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + (templateTask.default_due_days || 1));
-        
+
         const payload = {
           applicant_id: parseInt(selectedApplicantForTask.id),
           task_name: templateTask.task_name,
@@ -499,7 +495,7 @@ const OnboardingDashboard = ({ backgroundColor }) => {
           status: "pending",
           organization_id: parseInt(organizationId),
         };
-        
+
         await createOnboardingTask(payload);
       } catch (taskErr) {
         console.error(`Error creating task "${templateTask.task_name}":`, taskErr);
@@ -749,16 +745,16 @@ const TemplateManager = ({ backgroundColor }) => {
         ...templateData,
         organization_id: parseInt(organizationId),
       };
-      
-      console.log("Creating template with payload:", payload);
-      
+
+      //console.log("Creating template with payload:", payload);
+
       await createOnboardingTemplate(payload);
       await fetchTemplates();
       setTemplateModalOpen(false);
       alert('Template created successfully!');
     } catch (err) {
       console.error("Error creating template:", err);
-      
+
       if (err.response?.data?.errors) {
         const errorMessages = Object.entries(err.response.data.errors)
           .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -774,7 +770,7 @@ const TemplateManager = ({ backgroundColor }) => {
 
   const handleDeleteTemplate = async (templateId) => {
     if (!window.confirm("Are you sure you want to delete this template?")) return;
-    
+
     try {
       await deleteOnboardingTemplate(templateId);
       await fetchTemplates();
@@ -792,7 +788,7 @@ const TemplateManager = ({ backgroundColor }) => {
       }
 
       const role = taskData.default_assigned_role.toLowerCase();
-      
+
       const payload = {
         onboarding_template_id: parseInt(selectedTemplate.id),
         task_name: taskData.task_name,
@@ -802,17 +798,17 @@ const TemplateManager = ({ backgroundColor }) => {
         organization_id: parseInt(organizationId)
       };
 
-      console.log("Creating template task with payload:", payload);
+      //console.log("Creating template task with payload:", payload);
 
       await createOnboardingTemplateTask(payload);
       await fetchTemplates();
       setTaskModalOpen(false);
       setSelectedTemplate(null);
-      
+
       alert('Task added to template successfully!');
     } catch (err) {
       console.error("Error creating task:", err);
-      
+
       if (err.response?.data?.errors) {
         const errorMessages = Object.entries(err.response.data.errors)
           .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -890,7 +886,7 @@ const TemplateManager = ({ backgroundColor }) => {
                     >
                       <HiOutlineEye />
                     </button>
-                    
+
                     {canAddTemplate && (
                       <button
                         onClick={() => {
@@ -904,7 +900,7 @@ const TemplateManager = ({ backgroundColor }) => {
                         <HiPlus />
                       </button>
                     )}
-                    
+
                     {canDeleteTemplate && (
                       <button
                         onClick={() => handleDeleteTemplate(template.id)}
@@ -917,7 +913,7 @@ const TemplateManager = ({ backgroundColor }) => {
                     )}
                   </div>
                 </div>
-                
+
                 {expandedTemplates[template.id] && template.tasks.length > 0 && (
                   <div className="mt-4 pl-4 border-l-2 border-gray-200">
                     <div className="flex justify-between items-center mb-2">
@@ -952,7 +948,7 @@ const TemplateManager = ({ backgroundColor }) => {
                     </ul>
                   </div>
                 )}
-                
+
                 {expandedTemplates[template.id] && template.tasks.length === 0 && (
                   <div className="mt-4 pl-4 border-l-2 border-gray-200">
                     <div className="flex justify-between items-center">
@@ -1026,13 +1022,13 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     let processedValue = value;
-    
+
     if (name === "default_due_days") {
       processedValue = parseInt(value) || 0;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: processedValue,
@@ -1083,7 +1079,7 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
               placeholder="e.g., Sign Employment Contract"
             />
           </div>
-          
+
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description
@@ -1098,7 +1094,7 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
               placeholder="Task description..."
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="default_due_days" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1136,7 +1132,7 @@ const TaskManagementModal = ({ isOpen, onClose, template, onSubmit, validRoles }
               </p>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
@@ -1171,40 +1167,40 @@ const NewHireChecklistSlideOver = ({
   const [isCompletingTask, setIsCompletingTask] = useState(null);
 
   const handleToggleTask = async (taskId, currentStatus) => {
-  // Normalize current status to handle case variations
-  const normalizedCurrentStatus = currentStatus?.toLowerCase() || "pending";
-  const newStatus = normalizedCurrentStatus === "completed" ? "pending" : "completed";
+    // Normalize current status to handle case variations
+    const normalizedCurrentStatus = currentStatus?.toLowerCase() || "pending";
+    const newStatus = normalizedCurrentStatus === "completed" ? "pending" : "completed";
 
-  try {
-    setIsCompletingTask(taskId);
+    try {
+      setIsCompletingTask(taskId);
 
-    if (newStatus === "completed") {
-      await completeOnboardingTask(taskId);
-    } else {
-      await updateOnboardingTask(taskId, { status: "pending" });
-    }
+      if (newStatus === "completed") {
+        await completeOnboardingTask(taskId);
+      } else {
+        await updateOnboardingTask(taskId, { status: "pending" });
+      }
 
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? {
+      setTasks(
+        tasks.map((task) =>
+          task.id === taskId
+            ? {
               ...task,
               status: newStatus,
               // FIX: Use correct field name
               completed_at: newStatus === "completed" ? new Date().toISOString() : null
             }
-          : task
-      )
-    );
+            : task
+        )
+      );
 
-    onTaskUpdate();
-  } catch (err) {
-    console.error("Error updating task:", err);
-    alert("Failed to update task status. Please try again.");
-  } finally {
-    setIsCompletingTask(null);
-  }
-};
+      onTaskUpdate();
+    } catch (err) {
+      console.error("Error updating task:", err);
+      alert("Failed to update task status. Please try again.");
+    } finally {
+      setIsCompletingTask(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -1274,46 +1270,44 @@ const NewHireChecklistSlideOver = ({
                         className="mt-1 flex-shrink-0 focus:outline-none"
                         aria-label={task.status === "Completed" ? "Mark task as pending" : "Mark task as Completed"}
                       >
-                      {task.status === "completed" ? (
-  <HiCheckCircle className="h-5 w-5 text-green-500" />
-) : (
-  <div className={`h-5 w-5 border-2 ${isCompletingTask === task.id ? 'border-gray-400' : 'border-gray-300'} rounded-full`} />
-)}
+                        {task.status === "completed" ? (
+                          <HiCheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <div className={`h-5 w-5 border-2 ${isCompletingTask === task.id ? 'border-gray-400' : 'border-gray-300'} rounded-full`} />
+                        )}
                       </button>
                       <div className="ml-3 flex-1">
                         <div className="flex justify-between items-start">
-                          <span className={`text-sm font-medium ${
-                            task.status === "Completed"
+                          <span className={`text-sm font-medium ${task.status === "Completed"
                               ? "text-gray-500 line-through"
                               : "text-gray-800"
-                          }`}>
+                            }`}>
                             {task.task_name}
                             {isCompletingTask === task.id && (
                               <span className="ml-2 text-xs text-gray-500">Updating...</span>
                             )}
                           </span>
                           {task.status === "completed" ? (
-  <div className="flex items-center">
-    <HiCheck className="h-4 w-4 text-green-500 mr-1" />
-    <span className="text-xs text-green-600">Completed</span>
-  </div>
-) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
-  <span className={`text-xs px-2 py-1 rounded ${
-    task.days_left === 0 
-      ? 'bg-orange-100 text-orange-800'
-      : 'bg-red-100 text-red-800'
-  }`}>
-    {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
-  </span>
-) : null}
+                            <div className="flex items-center">
+                              <HiCheck className="h-4 w-4 text-green-500 mr-1" />
+                              <span className="text-xs text-green-600">Completed</span>
+                            </div>
+                          ) : task.days_left !== null && task.days_left < 3 && task.days_left >= 0 ? (
+                            <span className={`text-xs px-2 py-1 rounded ${task.days_left === 0
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-red-100 text-red-800'
+                              }`}>
+                              {task.days_left === 0 ? 'Today' : `${task.days_left}d left`}
+                            </span>
+                          ) : null}
                         </div>
-                        
+
                         {task.description && (
                           <p className="text-xs text-gray-500 mt-1">
                             {task.description}
                           </p>
                         )}
-                        
+
                         <div className="flex items-center gap-3 mt-2">
                           {task.due_date && task.status !== "Completed" && (
                             <div className="flex items-center text-xs text-gray-500">
@@ -1333,12 +1327,12 @@ const NewHireChecklistSlideOver = ({
                               </span>
                             </div>
                           )}
-                          
-                         {task.status === "completed" && task.completed_at && (
-  <div className="text-xs text-green-600">
-    Completed on {new Date(task.completed_at).toLocaleDateString()}
-  </div>
-)}
+
+                          {task.status === "completed" && task.completed_at && (
+                            <div className="text-xs text-green-600">
+                              Completed on {new Date(task.completed_at).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1395,7 +1389,7 @@ const TemplateFormModal = ({ isOpen, onClose, onSubmit }) => {
       alert("Template name is required");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
@@ -1509,7 +1503,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, applicant }) => {
       alert("Task name is required");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
@@ -1644,7 +1638,7 @@ const ApplyTemplateModal = ({ isOpen, onClose, onSubmit, applicant, templates, t
       alert("Please select a template");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       await onSubmit(selectedTemplateId);

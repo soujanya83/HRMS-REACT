@@ -37,7 +37,7 @@ import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScro
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -99,9 +99,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -115,9 +114,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -164,7 +162,7 @@ const ShiftSwapping = () => {
 
   const fetchDropdownEmployees = async (page = 1, search = "", append = false) => {
     if (!selectedOrganization?.id) return;
-    
+
     try {
       setDropdownLoading(true);
       const response = await shiftSwapService.getEmployees({
@@ -177,7 +175,7 @@ const ShiftSwapping = () => {
       if (response?.success) {
         const newData = response.data?.data || [];
         const lastPage = response.data?.last_page || 1;
-        
+
         setDropdownEmployees(prev => append ? [...prev, ...newData] : newData);
         setDropdownHasMore(page < lastPage);
         setDropdownPage(page);
@@ -238,20 +236,20 @@ const ShiftSwapping = () => {
   // Calculate net working hours from shift
   const calculateNetWorkingHours = (shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 8; // Default 8 hours
-    
+
     const start = new Date(`2000-01-01T${shift.start_time}`);
     const end = new Date(`2000-01-01T${shift.end_time}`);
-    
+
     let totalDuration = (end - start) / (1000 * 60 * 60);
     if (totalDuration < 0) totalDuration += 24;
-    
+
     // Subtract break duration if available
     if (shift.total_break_minutes) {
       totalDuration -= (parseInt(shift.total_break_minutes) / 60);
     } else if (shift.break_duration) {
       totalDuration -= (shift.break_duration / 60);
     }
-    
+
     return parseFloat(totalDuration.toFixed(2));
   };
 
@@ -264,13 +262,13 @@ const ShiftSwapping = () => {
   const calculateShiftAmount = (rosterId) => {
     const roster = rosters.find(r => r.id == rosterId);
     if (!roster) return 0;
-    
+
     const shift = shifts.find(s => s.id === roster.shift_id);
     if (!shift) return 0;
-    
+
     const hours = calculateNetWorkingHours(shift);
     const rate = getEmployeeRate(roster.employee_id);
-    
+
     return hours * rate;
   };
 
@@ -278,7 +276,7 @@ const ShiftSwapping = () => {
   const calculateSwapDifference = (requesterRosterId, requestedRosterId) => {
     const requesterAmount = calculateShiftAmount(requesterRosterId);
     const requestedAmount = calculateShiftAmount(requestedRosterId);
-    
+
     return requestedAmount - requesterAmount;
   };
 
@@ -364,7 +362,7 @@ const ShiftSwapping = () => {
           hourly_rate: emp.hourly_wage || emp.pay_rate || emp.rate || 25,
         }));
         setEmployees(formattedEmployees);
-        
+
         // Extract and store employee rates
         const rates = {};
         employeesData.forEach(emp => {
@@ -625,7 +623,7 @@ const ShiftSwapping = () => {
       const requesterAmount = calculateShiftAmount(request.requester_roster_id);
       const requestedAmount = calculateShiftAmount(request.requested_roster_id);
       const difference = requestedAmount - requesterAmount;
-      
+
       return [
         request.id || "",
         request.requester
@@ -731,14 +729,14 @@ const ShiftSwapping = () => {
   const filteredRequests = swapRequests.filter((request) => {
     const requesterName = request.requester
       ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`
-          .toLowerCase()
-          .trim()
+        .toLowerCase()
+        .trim()
       : "";
 
     const requestedEmployeeName = request.requested_employee
       ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`
-          .toLowerCase()
-          .trim()
+        .toLowerCase()
+        .trim()
       : "";
 
     const requesterDeptName =
@@ -806,7 +804,7 @@ const ShiftSwapping = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -833,12 +831,12 @@ const ShiftSwapping = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -846,7 +844,7 @@ const ShiftSwapping = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-6 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -928,8 +926,8 @@ const ShiftSwapping = () => {
                   <p className="text-2xl font-bold text-gray-800 mt-1">
                     {employees.length > 0
                       ? formatCurrency(
-                          employees.reduce((sum, emp) => sum + (emp.hourly_rate || 25), 0) / employees.length
-                        )
+                        employees.reduce((sum, emp) => sum + (emp.hourly_rate || 25), 0) / employees.length
+                      )
                       : formatCurrency(25)}
                   </p>
                 </div>
@@ -948,7 +946,7 @@ const ShiftSwapping = () => {
               >
                 <FaSync className={loading ? "animate-spin" : ""} /> Refresh
               </button>
-              <button 
+              <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
               >
@@ -1094,7 +1092,7 @@ const ShiftSwapping = () => {
                       const requestedAmount = calculateShiftAmount(request.requested_roster_id);
                       const difference = requestedAmount - requesterAmount;
                       const differenceColor = difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-gray-600';
-                      
+
                       return (
                         <tr
                           key={request.id}
@@ -1125,7 +1123,7 @@ const ShiftSwapping = () => {
                                 </div>
                               </div>
                             </div>
-                           </td>
+                          </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="space-y-2">
                               <div>
@@ -1151,7 +1149,7 @@ const ShiftSwapping = () => {
                                 </div>
                               </div>
                             </div>
-                           </td>
+                          </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="space-y-2">
                               <div>
@@ -1170,18 +1168,18 @@ const ShiftSwapping = () => {
                                 Diff: {formatCurrency(difference)}
                               </div>
                             </div>
-                           </td>
+                          </td>
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="text-sm text-gray-900 max-w-xs">
                               {request.requester_reason || "No reason provided"}
                             </div>
-                           </td>
+                          </td>
                           <td className="px-4 py-3 w-[12%] min-w-[100px]">
                             {getStatusBadge(request.status)}
                             <div className="text-xs text-gray-500 mt-1">
                               {request.created_at && formatDate(request.created_at)}
                             </div>
-                           </td>
+                          </td>
                           <td className="px-4 py-3 w-[16%] min-w-[150px] text-sm font-medium">
                             <div className="flex gap-2">
                               <button
@@ -1218,13 +1216,13 @@ const ShiftSwapping = () => {
                                 </button>
                               )}
                             </div>
-                           </td>
-                         </tr>
+                          </td>
+                        </tr>
                       );
                     })
                   )}
                 </tbody>
-               </table>
+              </table>
             </div>
           </div>
 
@@ -1388,9 +1386,9 @@ const ShiftSwapping = () => {
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            {swapAmountDifference > 0 
-                              ? "You will earn more after this swap" 
-                              : swapAmountDifference < 0 
+                            {swapAmountDifference > 0
+                              ? "You will earn more after this swap"
+                              : swapAmountDifference < 0
                                 ? "You will earn less after this swap"
                                 : "No change in earnings"}
                           </p>
@@ -1431,9 +1429,8 @@ const ShiftSwapping = () => {
                     >
                       <FaExchangeAlt /> Submit Request
                       {swapAmountDifference !== 0 && (
-                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                          swapAmountDifference > 0 ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
-                        }`}>
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${swapAmountDifference > 0 ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                          }`}>
                           {swapAmountDifference > 0 ? '+' : ''}{formatCurrency(swapAmountDifference)}
                         </span>
                       )}
@@ -1538,8 +1535,8 @@ const ShiftSwapping = () => {
                         <div className="text-sm text-gray-600 mb-1">
                           {selectedRequest.requester_roster?.roster_date
                             ? formatDate(
-                                selectedRequest.requester_roster.roster_date,
-                              )
+                              selectedRequest.requester_roster.roster_date,
+                            )
                             : "N/A"}
                         </div>
                         <div className="text-sm text-gray-500">
@@ -1565,8 +1562,8 @@ const ShiftSwapping = () => {
                         <div className="text-sm text-gray-600 mb-1">
                           {selectedRequest.requested_roster?.roster_date
                             ? formatDate(
-                                selectedRequest.requested_roster.roster_date,
-                              )
+                              selectedRequest.requested_roster.roster_date,
+                            )
                             : "N/A"}
                         </div>
                         <div className="text-sm text-gray-500">
@@ -1581,18 +1578,17 @@ const ShiftSwapping = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Difference Summary */}
                     <div className="mt-4 pt-4 border-t border-blue-200">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">Difference:</span>
-                        <span className={`text-lg font-bold ${
-                          (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) > 0 
-                            ? 'text-green-600' 
-                            : (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) < 0 
-                              ? 'text-red-600' 
+                        <span className={`text-lg font-bold ${(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) > 0
+                            ? 'text-green-600'
+                            : (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) < 0
+                              ? 'text-red-600'
                               : 'text-gray-600'
-                        }`}>
+                          }`}>
                           {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id))}
                         </span>
                       </div>
@@ -1633,8 +1629,8 @@ const ShiftSwapping = () => {
                           <span className="ml-2 font-medium">
                             {selectedRequest.requester_roster?.roster_date
                               ? formatDate(
-                                  selectedRequest.requester_roster.roster_date,
-                                )
+                                selectedRequest.requester_roster.roster_date,
+                              )
                               : "N/A"}
                           </span>
                         </div>
@@ -1701,8 +1697,8 @@ const ShiftSwapping = () => {
                           <span className="ml-2 font-medium">
                             {selectedRequest.requested_roster?.roster_date
                               ? formatDate(
-                                  selectedRequest.requested_roster.roster_date,
-                                )
+                                selectedRequest.requested_roster.roster_date,
+                              )
                               : "N/A"}
                           </span>
                         </div>
@@ -1759,8 +1755,8 @@ const ShiftSwapping = () => {
                             Approved at:{" "}
                             {selectedRequest.manager_approved_at
                               ? formatDateTime(
-                                  selectedRequest.manager_approved_at,
-                                )
+                                selectedRequest.manager_approved_at,
+                              )
                               : "N/A"}
                           </p>
                         </div>

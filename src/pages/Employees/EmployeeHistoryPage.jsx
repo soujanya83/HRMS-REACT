@@ -38,7 +38,7 @@ import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScro
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -100,9 +100,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -116,9 +115,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -313,16 +311,16 @@ const HistoryEvent = ({ event, onEdit, onDelete, onView, canEdit = true, canDele
 };
 
 // Event Form Modal Component
-const EventFormModal = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  event, 
-  employees, 
-  onLoadMoreEmployees, 
-  hasMoreEmployees, 
-  isEmployeesLoading, 
-  onSearchEmployees 
+const EventFormModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  event,
+  employees,
+  onLoadMoreEmployees,
+  hasMoreEmployees,
+  isEmployeesLoading,
+  onSearchEmployees
 }) => {
   const [formData, setFormData] = useState({
     employee_id: "",
@@ -562,9 +560,8 @@ const EventFormModal = ({
                 value={formData.start_date}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.start_date ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.start_date ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.start_date && (
                 <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
@@ -639,9 +636,8 @@ const EventFormModal = ({
               onChange={handleChange}
               required
               rows="3"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.reason_for_change ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.reason_for_change ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder="Describe the reason for this employment change..."
             />
             {errors.reason_for_change && (
@@ -763,13 +759,13 @@ const EmploymentHistory = () => {
     setApiError("");
 
     try {
-      console.log("🔄 Fetching employment history data...");
+      //console.log("🔄 Fetching employment history data...");
 
       // 1. Fetch employment history
       const historyResponse = await getEmploymentHistory({
         organization_id: selectedOrganization.id
       });
-      console.log("Employment History response:", historyResponse);
+      //console.log("Employment History response:", historyResponse);
 
       let historyData = [];
       if (historyResponse.data?.data?.data) {
@@ -790,8 +786,7 @@ const EmploymentHistory = () => {
     } catch (error) {
       console.error("❌ Error fetching data:", error);
       setApiError(
-        `Failed to load data: ${
-          error.response?.data?.message || error.message || "Unknown error"
+        `Failed to load data: ${error.response?.data?.message || error.message || "Unknown error"
         }`
       );
 
@@ -807,7 +802,7 @@ const EmploymentHistory = () => {
   // Fetch employees with pagination
   const fetchEmployees = async (page = 1, search = "", reset = false) => {
     if (!selectedOrganization?.id || isEmployeesLoading) return;
-    
+
     setIsEmployeesLoading(true);
     try {
       const response = await getEmployees({
@@ -850,8 +845,7 @@ const EmploymentHistory = () => {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((event) => {
         const employeeName = event.employee
-          ? `${event.employee.first_name || ""} ${
-              event.employee.last_name || ""
+          ? `${event.employee.first_name || ""} ${event.employee.last_name || ""
             }`.toLowerCase()
           : "";
 
@@ -907,7 +901,7 @@ const EmploymentHistory = () => {
 
   const handleSubmit = async (formData) => {
     try {
-      console.log("📝 Submitting form data:", formData);
+      //console.log("📝 Submitting form data:", formData);
 
       // Add organization_id if available
       const submitData = {
@@ -956,10 +950,8 @@ const EmploymentHistory = () => {
   const handleDelete = async (event) => {
     if (
       !window.confirm(
-        `Are you sure you want to delete this employment record?\n\nEmployee: ${
-          event.employee?.first_name || "Unknown"
-        } ${event.employee?.last_name || ""}\nReason: ${
-          event.reason_for_change
+        `Are you sure you want to delete this employment record?\n\nEmployee: ${event.employee?.first_name || "Unknown"
+        } ${event.employee?.last_name || ""}\nReason: ${event.reason_for_change
         }`
       )
     )
@@ -973,7 +965,7 @@ const EmploymentHistory = () => {
       console.error("❌ Error deleting event:", error);
       alert(
         "Failed to delete employment record: " +
-          (error.response?.data?.message || error.message || "Unknown error")
+        (error.response?.data?.message || error.message || "Unknown error")
       );
     }
   };
@@ -987,9 +979,8 @@ const EmploymentHistory = () => {
     const modalContent = `
       📋 Employment History Details:
       
-      👤 Employee: ${event.employee?.first_name || "Unknown"} ${
-      event.employee?.last_name || ""
-    }
+      👤 Employee: ${event.employee?.first_name || "Unknown"} ${event.employee?.last_name || ""
+      }
       📅 Start Date: ${event.start_date || "Not specified"}
       ${event.end_date ? `📅 End Date: ${event.end_date}` : "⏳ Ongoing"}
       
@@ -997,10 +988,9 @@ const EmploymentHistory = () => {
       📋 Designation ID: ${event.designation_id || "N/A"}
       📝 Employment Type: ${event.employment_type || "N/A"}
       📍 Location: ${event.location || "N/A"}
-      ${
-        event.salary
-          ? `💰 Salary: $${parseFloat(event.salary).toLocaleString()}`
-          : "💰 Salary: N/A"
+      ${event.salary
+        ? `💰 Salary: $${parseFloat(event.salary).toLocaleString()}`
+        : "💰 Salary: N/A"
       }
       
       📝 Reason for Change: ${event.reason_for_change || "Not specified"}
@@ -1047,7 +1037,7 @@ const EmploymentHistory = () => {
 
   if (orgLoading) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1074,12 +1064,12 @@ const EmploymentHistory = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1102,7 +1092,7 @@ const EmploymentHistory = () => {
         onSearchEmployees={handleSearchEmployees}
       />
 
-      <div 
+      <div
         className="p-4 sm:p-6 lg:p-8 min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1300,17 +1290,17 @@ const EmploymentHistory = () => {
                 </div>
                 <h3 className="text-lg font-medium text-gray-700 mb-2">
                   {searchTerm ||
-                  eventTypeFilter !== "all" ||
-                  dateRange.start ||
-                  dateRange.end
+                    eventTypeFilter !== "all" ||
+                    dateRange.start ||
+                    dateRange.end
                     ? "No matching records found"
                     : "No employment history recorded yet"}
                 </h3>
                 <p className="text-gray-500 mb-6 max-w-md mx-auto">
                   {searchTerm ||
-                  eventTypeFilter !== "all" ||
-                  dateRange.start ||
-                  dateRange.end
+                    eventTypeFilter !== "all" ||
+                    dateRange.start ||
+                    dateRange.end
                     ? "Try adjusting your search or filters to find what you're looking for."
                     : "Start tracking employee employment history by adding your first record."}
                 </p>
@@ -1326,13 +1316,13 @@ const EmploymentHistory = () => {
                     eventTypeFilter !== "all" ||
                     dateRange.start ||
                     dateRange.end) && (
-                    <button
-                      onClick={clearFilters}
-                      className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-                    >
-                      Clear Filters
-                    </button>
-                  )}
+                      <button
+                        onClick={clearFilters}
+                        className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
                 </div>
               </div>
             ) : (
@@ -1367,9 +1357,8 @@ const EmploymentHistory = () => {
                     onClick={() => {
                       // Export functionality
                       const exportData = filteredEvents.map((event) => ({
-                        Employee: `${event.employee?.first_name || ""} ${
-                          event.employee?.last_name || ""
-                        }`,
+                        Employee: `${event.employee?.first_name || ""} ${event.employee?.last_name || ""
+                          }`,
                         "Employee ID": event.employee_id,
                         "Start Date": event.start_date,
                         "End Date": event.end_date || "Ongoing",
@@ -1400,9 +1389,8 @@ const EmploymentHistory = () => {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `employment-history-${
-                        new Date().toISOString().split("T")[0]
-                      }.csv`;
+                      a.download = `employment-history-${new Date().toISOString().split("T")[0]
+                        }.csv`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);

@@ -34,7 +34,7 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -96,9 +96,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -112,9 +111,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -360,7 +358,7 @@ const ReviewFormModal = ({
   const safeEmployees = useMemo(() => {
     const employeesArray = ensureArray(employees);
 
-    console.log("Employees array before deduplication:", employeesArray);
+    //console.log("Employees array before deduplication:", employeesArray);
 
     // Remove duplicates based on id
     const uniqueEmployees = [];
@@ -381,10 +379,10 @@ const ReviewFormModal = ({
       }
     }
 
-    console.log(
-      "Unique employees after deduplication:",
-      uniqueEmployees.length,
-    );
+    // console.log(
+    //   "Unique employees after deduplication:",
+    //   uniqueEmployees.length,
+    // );
     return uniqueEmployees;
   }, [employees]);
 
@@ -506,9 +504,8 @@ const ReviewFormModal = ({
               onChange={handleInputChange}
               required
               disabled={loading || safeReviewCycles.length === 0}
-              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.review_cycle_id ? "border-red-300" : "border-gray-300"
-              }`}
+              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.review_cycle_id ? "border-red-300" : "border-gray-300"
+                }`}
             >
               <option value="">
                 {safeReviewCycles.length === 0
@@ -539,9 +536,8 @@ const ReviewFormModal = ({
               onChange={handleInputChange}
               required
               disabled={loading || safeEmployees.length === 0}
-              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.employee_id ? "border-red-300" : "border-gray-300"
-              }`}
+              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.employee_id ? "border-red-300" : "border-gray-300"
+                }`}
             >
               <option value="">
                 {safeEmployees.length === 0
@@ -575,9 +571,8 @@ const ReviewFormModal = ({
               onChange={handleInputChange}
               required
               disabled={loading || safeEmployees.length === 0}
-              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.manager_id ? "border-red-300" : "border-gray-300"
-              }`}
+              className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.manager_id ? "border-red-300" : "border-gray-300"
+                }`}
             >
               <option value="">
                 {safeEmployees.length === 0
@@ -1018,7 +1013,7 @@ const PerformanceReviews = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -1080,14 +1075,14 @@ const PerformanceReviews = () => {
       setReviewCycles(cyclesArray);
       setEmployees(employeesArray);
 
-      console.log("Fetched data:", {
-        reviewsCount: reviewsArray.length,
-        cyclesCount: cyclesArray.length,
-        employeesCount: employeesArray.length,
-        reviewsSample: reviewsArray.slice(0, 2),
-        cyclesSample: cyclesArray.slice(0, 2),
-        employeesSample: employeesArray.slice(0, 2),
-      });
+      // console.log("Fetched data:", {
+      //   reviewsCount: reviewsArray.length,
+      //   cyclesCount: cyclesArray.length,
+      //   employeesCount: employeesArray.length,
+      //   reviewsSample: reviewsArray.slice(0, 2),
+      //   cyclesSample: cyclesArray.slice(0, 2),
+      //   employeesSample: employeesArray.slice(0, 2),
+      // });
     } catch (err) {
       console.error("Failed to fetch data:", err);
       setError("Failed to load data. Please try again.");
@@ -1176,11 +1171,11 @@ const PerformanceReviews = () => {
         status: formData.status || "Draft",
       };
 
-      console.log("Creating review with data:", reviewData);
+      //console.log("Creating review with data:", reviewData);
 
       const response =
         await performanceService.createPerformanceReview(reviewData);
-      console.log("Create review response:", response);
+      //console.log("Create review response:", response);
 
       // Add the new review to state
       const newReview = {
@@ -1201,8 +1196,8 @@ const PerformanceReviews = () => {
       console.error("Error creating review:", err);
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to create review. Please try again.",
+        err.message ||
+        "Failed to create review. Please try again.",
       );
       throw err;
     } finally {
@@ -1228,27 +1223,27 @@ const PerformanceReviews = () => {
         id,
         formData,
       );
-      console.log("Update review response:", response);
+      //console.log("Update review response:", response);
 
       // Update review in state
       setReviews((prev) =>
         prev.map((review) =>
           review.id === id
             ? {
-                ...review,
-                ...formData,
-                updated_at: new Date().toISOString(),
-                review_cycle:
-                  ensureArray(reviewCycles).find(
-                    (c) => c.id === reviewCycleId,
-                  ) || review.review_cycle,
-                employee:
-                  ensureArray(employees).find((e) => e.id === employeeId) ||
-                  review.employee,
-                manager:
-                  ensureArray(employees).find((e) => e.id === managerId) ||
-                  review.manager,
-              }
+              ...review,
+              ...formData,
+              updated_at: new Date().toISOString(),
+              review_cycle:
+                ensureArray(reviewCycles).find(
+                  (c) => c.id === reviewCycleId,
+                ) || review.review_cycle,
+              employee:
+                ensureArray(employees).find((e) => e.id === employeeId) ||
+                review.employee,
+              manager:
+                ensureArray(employees).find((e) => e.id === managerId) ||
+                review.manager,
+            }
             : review,
         ),
       );
@@ -1263,8 +1258,8 @@ const PerformanceReviews = () => {
       console.error("Error updating review:", err);
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to update review. Please try again.",
+        err.message ||
+        "Failed to update review. Please try again.",
       );
       throw err;
     } finally {
@@ -1290,7 +1285,7 @@ const PerformanceReviews = () => {
       console.error("Error deleting review:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to delete review. Please try again.",
+        "Failed to delete review. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -1305,19 +1300,19 @@ const PerformanceReviews = () => {
     try {
       const response =
         await performanceService.acknowledgePerformanceReview(id);
-      console.log("Acknowledge review response:", response);
+      //console.log("Acknowledge review response:", response);
 
       // Update review in state
       setReviews((prev) =>
         prev.map((review) =>
           review.id === id
             ? {
-                ...review,
-                status: "acknowledged",
-                acknowledged_at:
-                  response.data?.acknowledged_at || new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }
+              ...review,
+              status: "acknowledged",
+              acknowledged_at:
+                response.data?.acknowledged_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
             : review,
         ),
       );
@@ -1332,7 +1327,7 @@ const PerformanceReviews = () => {
       console.error("Error acknowledging review:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to acknowledge review. Please try again.",
+        "Failed to acknowledge review. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -1375,7 +1370,7 @@ const PerformanceReviews = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1390,7 +1385,7 @@ const PerformanceReviews = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1418,12 +1413,12 @@ const PerformanceReviews = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1431,7 +1426,7 @@ const PerformanceReviews = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1738,14 +1733,14 @@ const PerformanceReviews = () => {
                           {!["acknowledged"].includes(
                             review.status?.toLowerCase(),
                           ) && (
-                            <button
-                              onClick={() => handleEditReview(review)}
-                              className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
-                              title="Edit Review"
-                            >
-                              <FaEdit />
-                            </button>
-                          )}
+                              <button
+                                onClick={() => handleEditReview(review)}
+                                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                                title="Edit Review"
+                              >
+                                <FaEdit />
+                              </button>
+                            )}
                           <button
                             onClick={() => handleOpenConfirm(review, "delete")}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
@@ -1766,15 +1761,15 @@ const PerformanceReviews = () => {
                 <FaChartBar className="mx-auto text-4xl text-gray-300 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">
                   {filters.search ||
-                  filters.status !== "all" ||
-                  filters.cycle !== "all"
+                    filters.status !== "all" ||
+                    filters.cycle !== "all"
                     ? "No matching performance reviews found"
                     : "No performance reviews yet"}
                 </h3>
                 <p className="text-gray-500">
                   {filters.search ||
-                  filters.status !== "all" ||
-                  filters.cycle !== "all"
+                    filters.status !== "all" ||
+                    filters.cycle !== "all"
                     ? "Try adjusting your filters or search terms"
                     : "Create your first performance review to get started"}
                 </p>
@@ -1783,15 +1778,15 @@ const PerformanceReviews = () => {
                   filters.status !== "all" ||
                   filters.cycle !== "all"
                 ) && (
-                  <button
-                    onClick={() =>
-                      setModalState((prev) => ({ ...prev, showForm: true }))
-                    }
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Create First Review
-                  </button>
-                )}
+                    <button
+                      onClick={() =>
+                        setModalState((prev) => ({ ...prev, showForm: true }))
+                      }
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Create First Review
+                    </button>
+                  )}
               </div>
             )}
           </div>

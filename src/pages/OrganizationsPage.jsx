@@ -32,7 +32,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -94,9 +94,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -110,9 +109,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -471,9 +469,8 @@ const FormInput = ({ label, name, error, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${
-        error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     />
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -488,9 +485,8 @@ const FormSelect = ({ label, name, error, children, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${
-        error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     >
       {children}
     </select>
@@ -507,9 +503,8 @@ const FormTextarea = ({ label, name, error, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${
-        error ? "border-red-500" : "border-gray-300"
-      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     ></textarea>
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -542,9 +537,8 @@ const ColorPicker = ({ label, name, value, onChange, error }) => {
             name={name}
             value={currentCode}
             onChange={handleColorChange}
-            className={`block w-full px-3 py-2 bg-white border ${
-              error ? "border-red-500" : "border-gray-300"
-            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+            className={`block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
+              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
           >
             {COLOR_OPTIONS.map((color) => (
               <option key={color.code} value={color.code}>
@@ -670,9 +664,9 @@ function OrganizationsPage() {
 
       alert(
         apiResponse.message ||
-          (editingOrg
-            ? "Organization updated successfully!"
-            : "Organization created successfully!"),
+        (editingOrg
+          ? "Organization updated successfully!"
+          : "Organization created successfully!"),
       );
     } catch (err) {
       console.error("Error in handleSave:", err);
@@ -689,11 +683,11 @@ function OrganizationsPage() {
           "Validation errors:\n" +
           (errors
             ? Object.entries(errors)
-                .map(
-                  ([field, msgs]) =>
-                    `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`,
-                )
-                .join("\n")
+              .map(
+                ([field, msgs]) =>
+                  `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`,
+              )
+              .join("\n")
             : "Invalid data provided.");
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -748,7 +742,7 @@ function OrganizationsPage() {
   const handleSaveRoom = async (roomData) => {
     setIsSubmitting(true);
     try {
-      console.log("Saving room with data:", roomData);
+      // console.log("Saving room with data:", roomData);
 
       const apiData = {
         name: roomData.name,
@@ -762,7 +756,7 @@ function OrganizationsPage() {
         response = await createDepartment(currentOrgId, apiData);
       }
 
-      console.log("Save room response:", response);
+      // console.log("Save room response:", response);
 
       if (response && response.success === true) {
         if (editingRoom) {
@@ -842,8 +836,8 @@ function OrganizationsPage() {
       console.error("Failed to save designation:", err);
       alert(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to save designation",
+        err.message ||
+        "Failed to save designation",
       );
     } finally {
       setIsSubmitting(false);
@@ -896,12 +890,12 @@ function OrganizationsPage() {
           isOpen={isColorPaletteOpen}
           onClose={() => setIsColorPaletteOpen(false)}
           onSidebarColorSelect={(color) => {
-            console.log('Setting sidebar color to:', color);
+            //console.log('Setting sidebar color to:', color);
             setSidebarColor(color);
             localStorage.setItem('sidebarColor', color);
           }}
           onBackgroundColorSelect={(color) => {
-            console.log('Setting background color to:', color);
+            // console.log('Setting background color to:', color);
             setBackgroundColor(color);
             localStorage.setItem('backgroundColor', color);
           }}
@@ -1236,21 +1230,19 @@ function OrganizationDetailView({
         <nav className="flex gap-8">
           <button
             onClick={() => onTabChange("rooms")}
-            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
-              activeTab === "rooms"
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${activeTab === "rooms"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
+              }`}
           >
             Rooms
           </button>
           <button
             onClick={() => onTabChange("designations")}
-            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
-              activeTab === "designations"
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${activeTab === "designations"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
+              }`}
           >
             Designations
           </button>
@@ -1302,7 +1294,7 @@ function RoomsList({ orgId }) {
 
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      console.log("Rooms API response:", response);
+      //console.log("Rooms API response:", response);
 
       let roomsData = [];
 
@@ -1316,7 +1308,7 @@ function RoomsList({ orgId }) {
         roomsData = response;
       }
 
-      console.log("Processed rooms data:", roomsData);
+      // console.log("Processed rooms data:", roomsData);
       setRooms(roomsData);
     } catch (error) {
       console.error("Failed to fetch rooms", error);
@@ -1390,21 +1382,19 @@ function RoomsList({ orgId }) {
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              viewMode === "list"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
-            }`}
+              }`}
           >
             <HiViewList className="inline mr-1" /> List
           </button>
           <button
             onClick={() => setViewMode("grid")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              viewMode === "grid"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "grid"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
-            }`}
+              }`}
           >
             <HiViewGrid className="inline mr-1" /> Grid
           </button>
@@ -2097,8 +2087,8 @@ function DesignationModal({
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to save designation",
+        err.message ||
+        "Failed to save designation",
       );
     }
   };

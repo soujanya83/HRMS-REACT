@@ -1,9 +1,9 @@
 // HolidaysCalendars.jsx
 import React, { useState, useEffect } from 'react';
 import usePermissions from '../../hooks/usePermissions';
-import { 
-  FaCalendarAlt, 
-  FaSearch, 
+import {
+  FaCalendarAlt,
+  FaSearch,
   FaDownload,
   FaPlus,
   FaEdit,
@@ -28,7 +28,7 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -90,9 +90,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -106,9 +105,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -131,7 +129,7 @@ const HolidaysCalendars = () => {
   const [view, setView] = useState('list');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  
+
   // Color palette state
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -140,7 +138,7 @@ const HolidaysCalendars = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   const [filters, setFilters] = useState({
     type: 'all',
     year: new Date().getFullYear(),
@@ -203,15 +201,15 @@ const HolidaysCalendars = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use organization ID from context
       const response = await holidayService.getHolidays(selectedOrganization?.id);
-      
-      console.log('API Response:', response.data);
-      
+
+      //console.log('API Response:', response.data);
+
       // Handle different response formats
       let holidaysData = [];
-      
+
       if (response.data && response.data.success === true) {
         holidaysData = response.data.data || [];
       } else if (response.data && Array.isArray(response.data)) {
@@ -219,18 +217,18 @@ const HolidaysCalendars = () => {
       } else if (response.data && response.data.data) {
         holidaysData = response.data.data;
       }
-      
+
       setHolidays(holidaysData);
       calculateStats(holidaysData);
-      
+
     } catch (err) {
       console.error('Error fetching holidays:', err);
-      
+
       if (err.response?.status === 401) {
         setError('Your session has expired. Please login again.');
         return;
       }
-      
+
       if (err.response?.status === 404) {
         setError('No holidays found. You can add your first holiday.');
         setHolidays([]);
@@ -355,15 +353,15 @@ const HolidaysCalendars = () => {
       const type = holiday.type?.toLowerCase() || '';
       return type.includes('public') || type === 'public holiday';
     }).length;
-    
+
     const companyEvents = data.filter(holiday => {
       const type = holiday.type?.toLowerCase() || '';
       return type.includes('company') || type.includes('event');
     }).length;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const upcomingHolidays = data.filter(holiday => {
       try {
         const holidayDate = new Date(holiday.date);
@@ -399,16 +397,16 @@ const HolidaysCalendars = () => {
       const departments = prev.applicable_departments.includes(department)
         ? prev.applicable_departments.filter(d => d !== department)
         : [...prev.applicable_departments, department];
-      
+
       if (department === 'All') {
         return { ...prev, applicable_departments: ['All'] };
       }
-      
+
       const filteredDepartments = departments.filter(d => d !== 'All');
-      
-      return { 
-        ...prev, 
-        applicable_departments: filteredDepartments.length > 0 ? filteredDepartments : ['All'] 
+
+      return {
+        ...prev,
+        applicable_departments: filteredDepartments.length > 0 ? filteredDepartments : ['All']
       };
     });
   };
@@ -417,7 +415,7 @@ const HolidaysCalendars = () => {
     e.preventDefault();
     try {
       setError(null);
-      
+
       const holidayData = {
         name: newHoliday.name,
         date: newHoliday.date,
@@ -429,14 +427,14 @@ const HolidaysCalendars = () => {
         applicable_departments: newHoliday.applicable_departments,
         organization_id: selectedOrganization?.id
       };
-      
+
       let result;
       if (editingHoliday) {
         result = await holidayService.updateHoliday(editingHoliday.id, holidayData);
       } else {
         result = await holidayService.createHoliday(holidayData);
       }
-      
+
       if (result.data && result.data.success) {
         alert(result.data.message || 'Holiday saved successfully!');
         await fetchHolidays();
@@ -446,7 +444,7 @@ const HolidaysCalendars = () => {
       } else {
         throw new Error(result.data?.message || 'Failed to save holiday');
       }
-      
+
     } catch (err) {
       console.error('Error saving holiday:', err);
       setError(err.response?.data?.message || err.message || 'Failed to save holiday. Please try again.');
@@ -470,11 +468,11 @@ const HolidaysCalendars = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this holiday?')) return;
-    
+
     try {
       setError(null);
       const result = await holidayService.deleteHoliday(id);
-      
+
       if (result.data && result.data.success) {
         alert(result.data.message || 'Holiday deleted successfully!');
         await fetchHolidays();
@@ -503,7 +501,7 @@ const HolidaysCalendars = () => {
 
   const convertToCSV = (data) => {
     if (!data || !data.length) return '';
-    
+
     const headers = ['Name', 'Date', 'Type', 'Location', 'Description', 'Recurring', 'Half Day', 'Departments'];
     const rows = data.map(holiday => [
       holiday.name || '',
@@ -515,8 +513,8 @@ const HolidaysCalendars = () => {
       holiday.half_day ? 'Yes' : 'No',
       (holiday.applicable_departments || []).join('; ')
     ]);
-    
-    return [headers, ...rows].map(row => 
+
+    return [headers, ...rows].map(row =>
       row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
     ).join('\n');
   };
@@ -556,7 +554,7 @@ const HolidaysCalendars = () => {
       case 'regional holiday':
       case 'regional_holiday':
         return <FaMapMarkerAlt className="text-green-500" />;
-      default: 
+      default:
         return <FaCalendarAlt className="text-gray-500" />;
     }
   };
@@ -584,9 +582,9 @@ const HolidaysCalendars = () => {
       const dayHolidays = holidays.filter(holiday => {
         try {
           const holidayDate = new Date(holiday.date);
-          return holidayDate.getDate() === day && 
-                 holidayDate.getMonth() === currentMonth && 
-                 holidayDate.getFullYear() === currentYear;
+          return holidayDate.getDate() === day &&
+            holidayDate.getMonth() === currentMonth &&
+            holidayDate.getFullYear() === currentYear;
         } catch {
           return false;
         }
@@ -595,11 +593,10 @@ const HolidaysCalendars = () => {
       days.push(
         <div key={day} className="h-20 border border-gray-200 p-1 overflow-hidden hover:bg-gray-50 transition-colors">
           <div className="flex justify-between items-start">
-            <span className={`text-xs font-medium ${
-              currentDate.getDay() === 0 || currentDate.getDay() === 6 
-                ? 'text-red-500' 
+            <span className={`text-xs font-medium ${currentDate.getDay() === 0 || currentDate.getDay() === 6
+                ? 'text-red-500'
                 : 'text-gray-700'
-            }`}>
+              }`}>
               {day}
             </span>
             {dayHolidays.length > 0 && (
@@ -612,11 +609,10 @@ const HolidaysCalendars = () => {
             {dayHolidays.slice(0, 1).map(holiday => (
               <div
                 key={holiday.id}
-                className={`text-xs p-0.5 rounded truncate ${
-                  holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                  holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                  'bg-green-100 text-green-800 border border-green-200'
-                }`}
+                className={`text-xs p-0.5 rounded truncate ${holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                    holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      'bg-green-100 text-green-800 border border-green-200'
+                  }`}
                 title={holiday.name}
               >
                 {holiday.name}
@@ -655,17 +651,17 @@ const HolidaysCalendars = () => {
 
   // Filter holidays based on current filters
   const filteredHolidays = holidays.filter(holiday => {
-    const matchesSearch = !filters.search || 
+    const matchesSearch = !filters.search ||
       holiday.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
       holiday.description?.toLowerCase().includes(filters.search.toLowerCase());
-    
-    const matchesType = filters.type === 'all' || 
+
+    const matchesType = filters.type === 'all' ||
       holiday.type === filters.type;
-    
-    const matchesYear = !filters.year || 
+
+    const matchesYear = !filters.year ||
       (holiday.date && new Date(holiday.date).getFullYear().toString() === filters.year.toString());
 
-    const matchesMonth = filters.month === 'all' || 
+    const matchesMonth = filters.month === 'all' ||
       (holiday.date && new Date(holiday.date).getMonth().toString() === filters.month);
 
     return matchesSearch && matchesType && matchesYear && matchesMonth;
@@ -674,7 +670,7 @@ const HolidaysCalendars = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -689,7 +685,7 @@ const HolidaysCalendars = () => {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="min-h-screen p-6 flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -717,12 +713,12 @@ const HolidaysCalendars = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          // console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -730,12 +726,12 @@ const HolidaysCalendars = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="max-w-7xl mx-auto">
-          
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Holidays & Calendars</h1>
@@ -753,7 +749,7 @@ const HolidaysCalendars = () => {
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
               <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
               <span className="text-red-700 flex-1">{error}</span>
-              <button 
+              <button
                 onClick={() => setError(null)}
                 className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
               >
@@ -773,7 +769,7 @@ const HolidaysCalendars = () => {
                 <FaCalendarAlt className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -783,7 +779,7 @@ const HolidaysCalendars = () => {
                 <FaFlag className="text-red-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -793,7 +789,7 @@ const HolidaysCalendars = () => {
                 <FaUsers className="text-green-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -810,21 +806,19 @@ const HolidaysCalendars = () => {
             <div className="flex gap-1 p-1 bg-white rounded-lg shadow-sm">
               <button
                 onClick={() => setView('list')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  view === 'list' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === 'list'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 List View
               </button>
               <button
                 onClick={() => setView('calendar')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  view === 'calendar' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === 'calendar'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Calendar View
               </button>
@@ -837,7 +831,7 @@ const HolidaysCalendars = () => {
                   disabled={loading}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FaSync className={loading ? 'animate-spin' : ''} /> 
+                  <FaSync className={loading ? 'animate-spin' : ''} />
                   {loading ? 'Refreshing...' : 'Refresh'}
                 </button>
               )}
@@ -865,7 +859,7 @@ const HolidaysCalendars = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="relative">
                 <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="text"
                   placeholder="Search holidays..."
                   value={filters.search}
@@ -873,8 +867,8 @@ const HolidaysCalendars = () => {
                   className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 />
               </div>
-              
-              <select 
+
+              <select
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
                 className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
@@ -885,7 +879,7 @@ const HolidaysCalendars = () => {
                 ))}
               </select>
 
-              <select 
+              <select
                 value={filters.year}
                 onChange={(e) => handleFilterChange('year', parseInt(e.target.value))}
                 className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
@@ -895,7 +889,7 @@ const HolidaysCalendars = () => {
                 <option value={2025}>2025</option>
               </select>
 
-              <select 
+              <select
                 value={filters.month}
                 onChange={(e) => handleFilterChange('month', e.target.value)}
                 className="border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white"
@@ -943,7 +937,7 @@ const HolidaysCalendars = () => {
                         placeholder="Enter holiday name"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Date *
@@ -1074,118 +1068,116 @@ const HolidaysCalendars = () => {
 
           {/* List View */}
           {/* List View */}
-{view === 'list' && (
-  <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Holiday</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Departments</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recurring</th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {filteredHolidays.length === 0 ? (
-            <tr>
-              <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                <div className="flex flex-col items-center">
-                  <FaCalendarAlt className="text-4xl text-gray-300 mb-3" />
-                  <p className="text-lg font-medium text-gray-900 mb-1">No holidays found</p>
-                  <p className="text-gray-500">Try adjusting your filters or add a new holiday</p>
-                </div>
-              </td>
-            </tr>
-          ) : (
-            filteredHolidays.map((holiday) => (
-              <tr key={holiday.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    {getHolidayIcon(holiday.type)}
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {holiday.name}
-                      </div>
-                      <div className="text-sm text-gray-500 max-w-xs truncate">
-                        {holiday.description}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {new Date(holiday.date).toLocaleDateString('en-AU', {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  {holiday.half_day && (
-                    <div className="text-xs text-orange-600 font-medium">Half Day</div>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                    holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                    holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                    'bg-green-100 text-green-800 border border-green-200'
-                  }`}>
-                    {holiday.type}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  <div className="flex items-center gap-2">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    {holiday.location}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {(holiday.applicable_departments || ['All']).join(', ')}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                    holiday.is_recurring 
-                      ? 'bg-green-100 text-green-800 border border-green-200' 
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}>
-                    {holiday.is_recurring ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    {canEdit && (
-                      <button
-                        onClick={() => handleEdit(holiday)}
-                        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                        title="Edit"
-                      >
-                        <FaEdit className="text-sm" />
-                      </button>
+          {view === 'list' && (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Holiday</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Departments</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recurring</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredHolidays.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                          <div className="flex flex-col items-center">
+                            <FaCalendarAlt className="text-4xl text-gray-300 mb-3" />
+                            <p className="text-lg font-medium text-gray-900 mb-1">No holidays found</p>
+                            <p className="text-gray-500">Try adjusting your filters or add a new holiday</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredHolidays.map((holiday) => (
+                        <tr key={holiday.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {getHolidayIcon(holiday.type)}
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {holiday.name}
+                                </div>
+                                <div className="text-sm text-gray-500 max-w-xs truncate">
+                                  {holiday.description}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              {new Date(holiday.date).toLocaleDateString('en-AU', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                            {holiday.half_day && (
+                              <div className="text-xs text-orange-600 font-medium">Half Day</div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                  'bg-green-100 text-green-800 border border-green-200'
+                              }`}>
+                              {holiday.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <FaMapMarkerAlt className="text-gray-400" />
+                              {holiday.location}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            {(holiday.applicable_departments || ['All']).join(', ')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${holiday.is_recurring
+                                ? 'bg-green-100 text-green-800 border border-green-200'
+                                : 'bg-gray-100 text-gray-800 border border-gray-200'
+                              }`}>
+                              {holiday.is_recurring ? 'Yes' : 'No'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleEdit(holiday)}
+                                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                  title="Edit"
+                                >
+                                  <FaEdit className="text-sm" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(holiday.id)}
+                                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                                  title="Delete"
+                                >
+                                  <FaTrash className="text-sm" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
-                    {canDelete && (
-                      <button
-                        onClick={() => handleDelete(holiday.id)}
-                        className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
-                        title="Delete"
-                      >
-                        <FaTrash className="text-sm" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
 
           {/* Calendar View */}
           {view === 'calendar' && (
@@ -1200,11 +1192,11 @@ const HolidaysCalendars = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
-                  
+
                   <h2 className="text-xl font-semibold text-gray-800">
                     {months[currentMonth]} {currentYear}
                   </h2>
-                  
+
                   <button
                     onClick={() => navigateMonth('next')}
                     className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors shadow-sm"
@@ -1221,7 +1213,7 @@ const HolidaysCalendars = () => {
                       {day}
                     </div>
                   ))}
-                  
+
                   {renderCalendar()}
                 </div>
               </div>
@@ -1256,11 +1248,10 @@ const HolidaysCalendars = () => {
                         {getHolidayIcon(holiday.type)}
                         <h4 className="font-semibold text-gray-800 text-sm">{holiday.name}</h4>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                        holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
-                        holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                        'bg-green-100 text-green-800 border border-green-200'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded ${holiday.type === 'Public Holiday' ? 'bg-red-100 text-red-800 border border-red-200' :
+                          holiday.type === 'Company Event' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                            'bg-green-100 text-green-800 border border-green-200'
+                        }`}>
                         {holiday.type}
                       </span>
                     </div>

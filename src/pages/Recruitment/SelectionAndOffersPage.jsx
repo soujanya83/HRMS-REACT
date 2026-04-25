@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import usePermissions from '../../hooks/usePermissions';
 import { createPortal } from 'react-dom';
-import { 
-  HiPlus, HiOutlineBriefcase, HiOutlineUser, HiOutlineCalendar, 
-  HiOutlineCurrencyDollar, HiOutlineCheckCircle, HiOutlineXCircle, 
+import {
+  HiPlus, HiOutlineBriefcase, HiOutlineUser, HiOutlineCalendar,
+  HiOutlineCurrencyDollar, HiOutlineCheckCircle, HiOutlineXCircle,
   HiOutlinePencil, HiX, HiDownload, HiEye
 } from 'react-icons/hi';
 import { useOrganizations } from '../../contexts/OrganizationContext';
@@ -24,7 +24,7 @@ import {
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -86,9 +86,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -102,9 +101,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -133,7 +131,7 @@ const SelectionAndOffersPage = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
   const { canAdd, canEdit } = usePermissions('recruitment.selection_offers');
@@ -157,15 +155,15 @@ const SelectionAndOffersPage = () => {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const [offersRes, jobOpeningsRes] = await Promise.all([
         getJobOffers({ organization_id: organizationId }),
         getJobOpenings({ organization_id: organizationId })
       ]);
 
-      console.log('📦 Offers response:', offersRes.data);
-      console.log('📦 Job openings response:', jobOpeningsRes.data);
+      //console.log('📦 Offers response:', offersRes.data);
+      //console.log('📦 Job openings response:', jobOpeningsRes.data);
 
       setOffers(offersRes.data?.data || []);
       setJobOpenings(jobOpeningsRes.data?.data || []);
@@ -189,11 +187,11 @@ const SelectionAndOffersPage = () => {
   const fetchCandidatesForJob = async (jobId) => {
     try {
       let candidatesRes;
-      
+
       // Try to get final candidates first
       try {
         candidatesRes = await getFinalCandidates(jobId);
-        console.log('🎯 Final candidates:', candidatesRes.data);
+        //console.log('🎯 Final candidates:', candidatesRes.data);
       } catch (finalCandidatesError) {
         console.log('🔄 Final candidates endpoint not available, using applicants fallback', finalCandidatesError);
         // Fallback to regular applicants with interview status
@@ -201,10 +199,10 @@ const SelectionAndOffersPage = () => {
           status: 'interview_completed'
         });
       }
-      
+
       const candidatesData = candidatesRes.data?.data || [];
-      console.log('📊 Candidates for job:', candidatesData);
-      
+      //console.log('📊 Candidates for job:', candidatesData);
+
       // Transform API data to match component expectations
       const transformedCandidates = candidatesData.map(candidate => ({
         id: candidate.id,
@@ -213,7 +211,7 @@ const SelectionAndOffersPage = () => {
         status: candidate.status,
         feedback_score: 4.5 // Default score, you can calculate from interviews if available
       }));
-      
+
       setCandidates(transformedCandidates);
 
     } catch (err) {
@@ -252,19 +250,19 @@ const SelectionAndOffersPage = () => {
   const handleJobChange = async (e) => {
     const jobId = e.target.value;
     setSelectedJobId(jobId);
-    
+
     if (jobId) {
       await fetchCandidatesForJob(jobId);
-      
+
       // Also fetch offers for this specific job
       try {
         const offersRes = await getJobOffersByJobOpening(jobId);
-        console.log('📋 Job-specific offers:', offersRes.data);
+        //console.log('📋 Job-specific offers:', offersRes.data);
         setOffers(offersRes.data?.data || []);
       } catch (err) {
         console.error('❌ Error fetching job-specific offers:', err);
         // Fallback to filtering existing offers
-        const filteredOffers = offers.filter(offer => 
+        const filteredOffers = offers.filter(offer =>
           offer.job_opening_id === parseInt(jobId)
         );
         setOffers(filteredOffers);
@@ -282,8 +280,8 @@ const SelectionAndOffersPage = () => {
 
   const handleCreateOffer = async (offerData) => {
     try {
-      console.log('🎯 Creating offer for candidate:', selectedCandidate);
-      console.log('📝 Offer data:', offerData);
+      //console.log('🎯 Creating offer for candidate:', selectedCandidate);
+      //console.log('📝 Offer data:', offerData);
 
       if (!selectedCandidate?.id || !selectedJobId) {
         alert('Missing candidate or job information');
@@ -306,10 +304,10 @@ const SelectionAndOffersPage = () => {
         status: 'sent'
       };
 
-      console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+      // console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
 
       const response = await createJobOffer(payload);
-      console.log('✅ Success! Response:', response.data);
+      //console.log('✅ Success! Response:', response.data);
 
       await fetchData();
       setOfferModalOpen(false);
@@ -318,10 +316,10 @@ const SelectionAndOffersPage = () => {
 
     } catch (err) {
       console.error('❌ Full error:', err);
-      
+
       if (err.response?.data) {
         console.error('🚨 Server error details:', err.response.data);
-        
+
         if (err.response.data.errors) {
           const errorMessages = Object.entries(err.response.data.errors)
             .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -338,45 +336,45 @@ const SelectionAndOffersPage = () => {
 
   const handleUpdateOfferStatus = async (offerId, newStatus) => {
     try {
-      console.log('🔄 Updating applicant status:', { offerId, newStatus });
-      
+      // console.log('🔄 Updating applicant status:', { offerId, newStatus });
+
       const currentOfferRes = await getJobOfferById(offerId);
       const offerData = currentOfferRes.data?.data;
-      
+
       if (!offerData || !offerData.applicant_id) {
         alert('Could not find applicant information for this offer.');
         return;
       }
-      
+
       const applicantId = offerData.applicant_id;
-      console.log('📋 Found applicant ID:', applicantId);
-      
+      //console.log('📋 Found applicant ID:', applicantId);
+
       const validApplicantStatuses = ['applied', 'interview_schedule', 'shortlisted', 'hired'];
-      
+
       if (!validApplicantStatuses.includes(newStatus)) {
         alert(`Invalid status. Please use one of: ${validApplicantStatuses.join(', ')}`);
         return;
       }
-      
-      console.log('📤 Updating applicant status:', {
-        applicantId,
-        currentStatus: offerData.applicant?.status,
-        newStatus: newStatus
-      });
-      
+
+      //console.log('📤 Updating applicant status:', {
+      //   applicantId,
+      //   currentStatus: offerData.applicant?.status,
+      //   newStatus: newStatus
+      // });
+
       const response = await updateApplicantStatus(applicantId, newStatus);
-      console.log('✅ Applicant status updated:', response.data);
-      
+      // console.log('✅ Applicant status updated:', response.data);
+
       await fetchData();
-      
+
       alert(`Applicant status updated to ${newStatus}`);
-      
+
     } catch (err) {
       console.error('❌ Error updating applicant status:', err);
-      
+
       if (err.response?.data) {
         console.error('Server error details:', err.response.data);
-        
+
         if (err.response.data.errors) {
           const errorMessages = Object.entries(err.response.data.errors)
             .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -393,9 +391,9 @@ const SelectionAndOffersPage = () => {
 
   const handleDownloadOfferLetter = async (offerId) => {
     try {
-      console.log('📥 Downloading offer letter for:', offerId);
+      //console.log('📥 Downloading offer letter for:', offerId);
       const response = await downloadOfferLetter(offerId);
-      
+
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -405,9 +403,9 @@ const SelectionAndOffersPage = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
-      console.log('✅ Offer letter downloaded successfully');
-      
+
+      //console.log('✅ Offer letter downloaded successfully');
+
     } catch (err) {
       console.error('❌ Error downloading offer letter:', err);
       alert('Failed to download offer letter. The file may not be available yet.');
@@ -450,7 +448,7 @@ const SelectionAndOffersPage = () => {
 
   if (isLoading) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -464,13 +462,13 @@ const SelectionAndOffersPage = () => {
 
   if (error) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <div className="text-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
-          <button 
+          <button
             onClick={fetchData}
             className="bg-brand-blue text-white px-6 py-2 rounded-md hover:opacity-90 transition-opacity"
           >
@@ -496,12 +494,12 @@ const SelectionAndOffersPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -509,7 +507,7 @@ const SelectionAndOffersPage = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 sm:p-6 lg:p-8 font-sans min-h-full transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -546,13 +544,13 @@ const SelectionAndOffersPage = () => {
                 {candidates.length} candidate{candidates.length !== 1 ? 's' : ''}
               </span>
             </div>
-            
+
             {candidates.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {candidates.map(candidate => (
-                  <CandidateCard 
-                    key={candidate.id} 
-                    candidate={candidate} 
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
                     onMakeOffer={handleMakeOffer}
                     canAdd={canAdd}
                   />
@@ -563,8 +561,8 @@ const SelectionAndOffersPage = () => {
                 <HiOutlineUser className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No candidates</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  {selectedJobId 
-                    ? 'No final candidates found for this job opening.' 
+                  {selectedJobId
+                    ? 'No final candidates found for this job opening.'
                     : 'Select a job opening to view candidates.'}
                 </p>
               </div>
@@ -579,7 +577,7 @@ const SelectionAndOffersPage = () => {
                 {offers.length} offer{offers.length !== 1 ? 's' : ''} total
               </div>
             </div>
-            
+
             {offers.length > 0 ? (
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
@@ -597,7 +595,7 @@ const SelectionAndOffersPage = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {offers.map(offer => (
-                        <OfferRow 
+                        <OfferRow
                           key={offer.id}
                           offer={offer}
                           onUpdateStatus={handleUpdateOfferStatus}
@@ -622,9 +620,9 @@ const SelectionAndOffersPage = () => {
             )}
           </div>
         </div>
-        
+
         {/* Offer Form Modal */}
-        <OfferFormModal 
+        <OfferFormModal
           isOpen={isOfferModalOpen}
           onClose={() => {
             setOfferModalOpen(false);
@@ -674,14 +672,14 @@ const CandidateCard = ({ candidate, onMakeOffer, canAdd = true }) => {
         </div>
       </div>
       <div className="mt-6 flex gap-2">
-          {canAdd && (
-            <button
-              onClick={() => onMakeOffer(candidate)}
-              className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:opacity-90 transition-opacity"
-            >
-              <HiOutlineCheckCircle className="mr-2 h-5 w-5" /> Make Offer
-            </button>
-          )}
+        {canAdd && (
+          <button
+            onClick={() => onMakeOffer(candidate)}
+            className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:opacity-90 transition-opacity"
+          >
+            <HiOutlineCheckCircle className="mr-2 h-5 w-5" /> Make Offer
+          </button>
+        )}
         <button className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           <HiOutlineXCircle className="mr-2 h-5 w-5" /> Reject
         </button>
@@ -695,7 +693,7 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
   const [showActions, setShowActions] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
-  
+
   const statusBtnRef = useRef(null);
   const actionBtnRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -758,13 +756,13 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
 
   const toggleDropdown = (e, type) => {
     e.stopPropagation();
-    
+
     if (type === 'status') {
       if (!showStatusDropdown) {
         const rect = statusBtnRef.current.getBoundingClientRect();
-        setDropdownPos({ 
-          top: rect.bottom + window.scrollY + 5, 
-          left: rect.left + window.scrollX 
+        setDropdownPos({
+          top: rect.bottom + window.scrollY + 5,
+          left: rect.left + window.scrollX
         });
         setShowStatusDropdown(true);
         setShowActions(false);
@@ -775,7 +773,7 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
       if (!showActions) {
         const rect = actionBtnRef.current.getBoundingClientRect();
         setDropdownPos({ top: rect.bottom + 5, left: rect.right - 250 });
-        
+
         setShowActions(true);
         setShowStatusDropdown(false);
       } else {
@@ -816,22 +814,21 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
           <button
             ref={statusBtnRef}
             onClick={(e) => toggleDropdown(e, 'status')}
-            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-              statusClasses[displayStatus] || 'bg-gray-100 text-gray-800'
-            } hover:opacity-90 transition-opacity flex items-center gap-1`}
+            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClasses[displayStatus] || 'bg-gray-100 text-gray-800'
+              } hover:opacity-90 transition-opacity flex items-center gap-1`}
           >
             {displayStatus}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          
+
           {showStatusDropdown && createPortal(
-            <div 
+            <div
               ref={dropdownRef}
               className="absolute w-56 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
-              style={{ 
-                top: dropdownPos.top, 
+              style={{
+                top: dropdownPos.top,
                 left: dropdownPos.left,
                 maxHeight: '240px',
                 overflowY: 'auto'
@@ -845,11 +842,10 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
                       onUpdateStatus(offer.id, option.value);
                       setShowStatusDropdown(false);
                     }}
-                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                      applicantStatus === option.value 
-                        ? 'bg-brand-blue text-white hover:bg-brand-blue' 
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${applicantStatus === option.value
+                        ? 'bg-brand-blue text-white hover:bg-brand-blue'
                         : 'text-gray-700'
-                    }`}
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -882,13 +878,13 @@ const OfferRow = ({ offer, onUpdateStatus, onDownloadLetter, getApplicantStatus,
               4
             </span>
           </button>
-          
+
           {showActions && createPortal(
-            <div 
+            <div
               ref={dropdownRef}
               className="absolute w-64 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
-              style={{ 
-                top: dropdownPos.top, 
+              style={{
+                top: dropdownPos.top,
                 left: dropdownPos.left,
                 maxHeight: '280px',
                 overflowY: 'auto'
@@ -964,10 +960,10 @@ const OfferFormModal = ({ isOpen, onClose, candidate, jobOpening, onCreateOffer 
     if (isOpen) {
       const defaultExpiry = new Date();
       defaultExpiry.setDate(defaultExpiry.getDate() + 14);
-      
+
       const defaultStart = new Date();
       defaultStart.setDate(defaultStart.getDate() + 21);
-      
+
       setFormData({
         salary: jobOpening?.salary_range?.split('-')[0]?.trim() || '75000',
         start_date: defaultStart.toISOString().split('T')[0],
@@ -996,8 +992,8 @@ const OfferFormModal = ({ isOpen, onClose, candidate, jobOpening, onCreateOffer 
           <h2 className="text-xl font-bold text-gray-800">
             Create Job Offer for {candidate?.name}
           </h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 transition-colors"
           >
             <HiX size={24} />
@@ -1017,32 +1013,32 @@ const OfferFormModal = ({ isOpen, onClose, candidate, jobOpening, onCreateOffer 
               </p>
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormInput 
-              label="Salary / Compensation ($)" 
-              name="salary" 
-              type="number" 
-              placeholder="e.g., 80000" 
+            <FormInput
+              label="Salary / Compensation ($)"
+              name="salary"
+              type="number"
+              placeholder="e.g., 80000"
               value={formData.salary}
               onChange={handleChange}
               required
               min="0"
               step="1000"
             />
-            <FormInput 
-              label="Proposed Start Date" 
-              name="start_date" 
-              type="date" 
+            <FormInput
+              label="Proposed Start Date"
+              name="start_date"
+              type="date"
               value={formData.start_date}
               onChange={handleChange}
               required
             />
           </div>
-          <FormInput 
-            label="Offer Expiration Date" 
-            name="expiration_date" 
-            type="date" 
+          <FormInput
+            label="Offer Expiration Date"
+            name="expiration_date"
+            type="date"
             value={formData.expiration_date}
             onChange={handleChange}
             required
@@ -1051,9 +1047,9 @@ const OfferFormModal = ({ isOpen, onClose, candidate, jobOpening, onCreateOffer 
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes / Custom Message
             </label>
-            <textarea 
+            <textarea
               name="notes"
-              rows="4" 
+              rows="4"
               value={formData.notes}
               onChange={handleChange}
               className="block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-brand-blue focus:border-brand-blue resize-none"
@@ -1061,15 +1057,15 @@ const OfferFormModal = ({ isOpen, onClose, candidate, jobOpening, onCreateOffer 
             />
           </div>
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
-            <button 
-              type="button" 
-              onClick={onClose} 
+            <button
+              type="button"
+              onClick={onClose}
               className="py-2 px-6 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="py-2 px-6 bg-brand-blue text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
             >
               Send Offer
@@ -1087,13 +1083,13 @@ const FormInput = ({ label, name, value, onChange, ...props }) => (
     <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
-    <input 
-      id={name} 
-      name={name} 
+    <input
+      id={name}
+      name={name}
       value={value}
       onChange={onChange}
-      {...props} 
-      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm" 
+      {...props}
+      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
     />
   </div>
 );

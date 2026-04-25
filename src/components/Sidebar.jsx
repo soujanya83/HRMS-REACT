@@ -74,7 +74,7 @@ const Sidebar = ({
 
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log("USER PERMISSIONS ", parsed);
+        //console.log("USER PERMISSIONS ", parsed);
 
         if (Array.isArray(parsed)) return parsed;
       }
@@ -102,7 +102,7 @@ const Sidebar = ({
     const handleColorUpdate = (event) => {
       try {
         if (event.detail && event.detail.color && event.detail.color !== 'undefined' && event.detail.color !== 'null') {
-          console.log('🎨 Sidebar received color update:', event.detail.color);
+          // console.log('🎨 Sidebar received color update:', event.detail.color);
           setCurrentColor(event.detail.color);
           localStorage.setItem('sidebarColor', event.detail.color);
         }
@@ -118,7 +118,7 @@ const Sidebar = ({
   // Listen for organization change events
   useEffect(() => {
     const handleOrganizationChange = (event) => {
-      console.log('🏢 Organization changed event received:', event.detail);
+      //console.log('🏢 Organization changed event received:', event.detail);
       if (event.detail && event.detail.role) {
         setCurrentUserRole(event.detail.role);
         localStorage.setItem('CURRENT_USER_ROLE', event.detail.role);
@@ -132,7 +132,7 @@ const Sidebar = ({
     // Also listen for storage events (when localStorage changes from another tab)
     const handleStorageChange = (event) => {
       if (event.key === 'CURRENT_USER_ROLE') {
-        console.log('🔄 Storage event - CURRENT_USER_ROLE changed to:', event.newValue);
+        // console.log('🔄 Storage event - CURRENT_USER_ROLE changed to:', event.newValue);
         setCurrentUserRole(event.newValue);
       }
     };
@@ -295,7 +295,7 @@ const Sidebar = ({
     return result;
   }, [navLinks, permissions, isAdmin]);
 
-  console.log("🧭 SIDEBAR:", { permCount: permissions.length, links: filteredNavLinks.map(l => l.name) });
+  //console.log("🧭 SIDEBAR:", { permCount: permissions.length, links: filteredNavLinks.map(l => l.name) });
 
   // Find active parent menu
   const findActiveParent = useCallback(() => {
@@ -335,7 +335,7 @@ const Sidebar = ({
 
   const buttonBorderColor = getButtonBorderColor();
 
-  console.log('🎨 Sidebar rendering - isAdmin:', isAdmin, 'role:', currentUserRole, 'dashboardLink:', dashboardLink);
+  //console.log('🎨 Sidebar rendering - isAdmin:', isAdmin, 'role:', currentUserRole, 'dashboardLink:', dashboardLink);
 
   return (
     <>

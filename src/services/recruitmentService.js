@@ -39,13 +39,13 @@ export const deleteApplicant = (id) => {
 // Add this function to your recruitmentService.js
 // FIXED: Status update endpoint - Follows the same pattern as updateApplicant
 export const updateApplicantStatus = async (applicantId, status) => {
-  console.log('🚀 DEBUG - updateApplicantStatus called:', { applicantId, status });
+  // console.log('🚀 DEBUG - updateApplicantStatus called:', { applicantId, status });
   
   try {
     // First, get the current applicant data
-    console.log('📡 Fetching current applicant data...');
+    // console.log('📡 Fetching current applicant data...');
     const currentApplicant = await axiosClient.get(`/recruitment/applicants/${applicantId}`);
-    console.log('✅ Current applicant data:', currentApplicant.data);
+    // console.log('✅ Current applicant data:', currentApplicant.data);
     
     // Extract applicant data
     const applicantData = currentApplicant.data.data || currentApplicant.data;
@@ -68,17 +68,17 @@ export const updateApplicantStatus = async (applicantId, status) => {
     data.append('_method', 'PUT');
     
     // Log what we're sending
-    console.log('📤 Sending FormData:');
-    for (let [key, value] of data.entries()) {
-      console.log(`${key}: ${value}`);
-    }
+    // console.log('📤 Sending FormData:');
+    // for (let [key, value] of data.entries()) {
+    //   console.log(`${key}: ${value}`);
+    // }
     
-    console.log('🚀 Making API call...');
+    // console.log('🚀 Making API call...');
     const response = await axiosClient.post(`/recruitment/applicants/${applicantId}`, data, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     
-    console.log('✅ Success response:', response.data);
+    // console.log('✅ Success response:', response.data);
     return response;
     
   } catch (error) {

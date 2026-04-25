@@ -263,7 +263,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
         permission_ids: role?.permission_ids || [],
       });
       setErrors({});
-      
+
       const expanded = {};
       modules.forEach(module => {
         expanded[module] = true;
@@ -315,7 +315,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
       return parsed && parsed.module === moduleName && parsed.page === pageSlug;
     });
     const pagePermissionIds = pagePermissions.map(p => p.id);
-    
+
     setFormData(prev => {
       const allSelected = pagePermissionIds.every(id => prev.permission_ids.includes(id));
       return {
@@ -333,7 +333,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
       return parsed && parsed.module === moduleName;
     });
     const modulePermissionIds = modulePermissions.map(p => p.id);
-    
+
     setFormData(prev => {
       const allSelected = modulePermissionIds.every(id => prev.permission_ids.includes(id));
       return {
@@ -361,7 +361,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setErrors({ name: "Role name is required" });
       return;
@@ -421,9 +421,8 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.name ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="e.g., HR Manager"
                     required
                   />
@@ -469,7 +468,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                       const pages = Object.keys(groupedPermissions[module] || {}).sort();
                       let totalSelectedInModule = 0;
                       let totalPermissionsInModule = 0;
-                      
+
                       pages.forEach(page => {
                         const pagePerms = groupedPermissions[module][page];
                         totalPermissionsInModule += pagePerms.length;
@@ -479,7 +478,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                           }
                         });
                       });
-                      
+
                       const isModuleFullySelected = totalSelectedInModule === totalPermissionsInModule && totalPermissionsInModule > 0;
                       const isModulePartiallySelected = totalSelectedInModule > 0 && totalSelectedInModule < totalPermissionsInModule;
                       const moduleDisplayName = getModuleDisplayName(module);
@@ -487,14 +486,13 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                       return (
                         <div key={module} className="border border-gray-200 rounded-lg overflow-hidden">
                           {/* Module Header */}
-                          <div 
-                            className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                              isModuleFullySelected 
-                                ? 'bg-green-50 border-b border-green-200' 
-                                : isModulePartiallySelected 
-                                ? 'bg-yellow-50 border-b border-yellow-200'
-                                : 'bg-gray-50 border-b border-gray-200'
-                            }`}
+                          <div
+                            className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${isModuleFullySelected
+                                ? 'bg-green-50 border-b border-green-200'
+                                : isModulePartiallySelected
+                                  ? 'bg-yellow-50 border-b border-yellow-200'
+                                  : 'bg-gray-50 border-b border-gray-200'
+                              }`}
                           >
                             <div className="flex items-center gap-3" onClick={() => toggleModule(module)}>
                               <div className="p-2 rounded-lg bg-white shadow-sm">
@@ -503,13 +501,12 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                               <div>
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold text-gray-800 text-lg">{moduleDisplayName}</h3>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    isModuleFullySelected 
-                                      ? 'bg-green-100 text-green-700' 
-                                      : isModulePartiallySelected 
-                                      ? 'bg-yellow-100 text-yellow-700'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${isModuleFullySelected
+                                      ? 'bg-green-100 text-green-700'
+                                      : isModulePartiallySelected
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : 'bg-gray-100 text-gray-600'
+                                    }`}>
                                     {totalSelectedInModule}/{totalPermissionsInModule}
                                   </span>
                                 </div>
@@ -550,9 +547,8 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                                   return (
                                     <div key={page} className="border border-gray-200 rounded-lg overflow-hidden">
                                       {/* Page Header */}
-                                      <div className={`px-4 py-2 flex items-center justify-between ${
-                                        allSelected ? 'bg-green-50' : someSelected ? 'bg-blue-50' : 'bg-gray-50'
-                                      }`}>
+                                      <div className={`px-4 py-2 flex items-center justify-between ${allSelected ? 'bg-green-50' : someSelected ? 'bg-blue-50' : 'bg-gray-50'
+                                        }`}>
                                         <div className="flex items-center gap-3">
                                           <input
                                             type="checkbox"
@@ -567,7 +563,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                                           {selectedCount}/{pagePermissions.length} selected
                                         </div>
                                       </div>
-                                      
+
                                       {/* Page Actions */}
                                       <div className="p-3 bg-white">
                                         <div className="flex flex-wrap gap-3">
@@ -575,7 +571,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                                             const parsed = parsePermission(permission.name);
                                             const action = parsed?.action || 'unknown';
                                             const isChecked = formData.permission_ids.includes(permission.id);
-                                            
+
                                             const actionLabels = {
                                               view: { label: "View", color: "blue", icon: <FaEye className="h-3 w-3" /> },
                                               add: { label: "Add", color: "green", icon: <FaPlus className="h-3 w-3" /> },
@@ -587,21 +583,20 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                                               approve: { label: "Approve", color: "green", icon: <FaCheck className="h-3 w-3" /> },
                                               reject: { label: "Reject", color: "red", icon: <HiX className="h-3 w-3" /> },
                                             };
-                                            
-                                            const actionInfo = actionLabels[action] || { 
-                                              label: action.charAt(0).toUpperCase() + action.slice(1), 
-                                              color: "gray", 
-                                              icon: <FaLock className="h-3 w-3" /> 
+
+                                            const actionInfo = actionLabels[action] || {
+                                              label: action.charAt(0).toUpperCase() + action.slice(1),
+                                              color: "gray",
+                                              icon: <FaLock className="h-3 w-3" />
                                             };
-                                            
+
                                             return (
                                               <label
                                                 key={permission.id}
-                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
-                                                  isChecked
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${isChecked
                                                     ? `bg-${actionInfo.color}-50 border-${actionInfo.color}-300 shadow-sm`
                                                     : "bg-white border-gray-200 hover:bg-gray-50"
-                                                }`}
+                                                  }`}
                                               >
                                                 <input
                                                   type="checkbox"
@@ -644,7 +639,7 @@ const RoleFormModal = ({ isOpen, onClose, role, onSave, loading, selectedOrganiz
                         </div>
                       </div>
                       <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-blue-500 rounded-full transition-all duration-300"
                           style={{ width: `${(getTotalSelected() / getTotalPermissions()) * 100}%` }}
                         />
@@ -824,7 +819,7 @@ export default function RoleManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  
+
   const [modalState, setModalState] = useState({
     form: false,
     details: false,
@@ -850,7 +845,7 @@ export default function RoleManagementPage() {
       } else if (Array.isArray(response)) {
         permissionsArray = response;
       }
-      
+
       // Filter permissions for current organization
       const filteredPermissions = permissionsArray.filter(p => p.organization_id === selectedOrganization?.id);
       return filteredPermissions;
@@ -868,7 +863,7 @@ export default function RoleManagementPage() {
         roleService.getRoles(),
         fetchPermissions(),
       ]);
-      
+
       let rolesArray = [];
       if (rolesData && rolesData.data && Array.isArray(rolesData.data)) {
         rolesArray = rolesData.data;
@@ -877,7 +872,7 @@ export default function RoleManagementPage() {
       } else if (rolesData && rolesData.success && rolesData.data && Array.isArray(rolesData.data)) {
         rolesArray = rolesData.data;
       }
-      
+
       setRoles(rolesArray);
       setPermissions(permissionsData);
     } catch (err) {
@@ -896,17 +891,17 @@ export default function RoleManagementPage() {
       // First get the permission names from the IDs
       const selectedPermissions = permissions.filter(p => permissionIds.includes(p.id));
       const permissionNames = selectedPermissions.map(p => p.name);
-      
-      console.log('🔄 Syncing permissions for role:', roleId);
-      console.log('📋 Permission IDs:', permissionIds);
-      console.log('📋 Permission Names:', permissionNames);
-      
+
+      // console.log('🔄 Syncing permissions for role:', roleId);
+      // console.log('📋 Permission IDs:', permissionIds);
+      // console.log('📋 Permission Names:', permissionNames);
+
       // Call the sync permissions API
       const response = await axiosClient.post(`/roles/${roleId}/permissions`, {
         permissions: permissionNames
       });
-      
-      console.log('✅ Permissions synced successfully:', response.data);
+
+      //console.log('✅ Permissions synced successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Error syncing permissions:', error);
@@ -921,19 +916,19 @@ export default function RoleManagementPage() {
 
     try {
       let savedRole;
-      
+
       if (modalState.role) {
         // Update existing role
         savedRole = await roleService.updateRole(modalState.role.id, {
           name: formData.name,
           guard_name: 'web',
         });
-        
+
         // Sync permissions after update
         if (formData.permission_ids && formData.permission_ids.length > 0) {
           await syncRolePermissions(savedRole.id, formData.permission_ids);
         }
-        
+
         setRoles(prev => prev.map(role => role.id === modalState.role.id ? savedRole : role));
         setSuccessMessage(`Role "${savedRole.name}" updated successfully with ${formData.permission_ids.length} permissions!`);
       } else {
@@ -943,18 +938,18 @@ export default function RoleManagementPage() {
           guard_name: 'web',
           organization_id: selectedOrganization?.id,
         });
-        
+
         savedRole = newRole;
-        
+
         // Then sync permissions to the newly created role
         if (formData.permission_ids && formData.permission_ids.length > 0) {
           await syncRolePermissions(savedRole.id, formData.permission_ids);
         }
-        
+
         setRoles(prev => [...prev, savedRole]);
         setSuccessMessage(`Role "${savedRole.name}" created successfully with ${formData.permission_ids.length} permissions!`);
       }
-      
+
       setTimeout(() => setSuccessMessage(null), 3000);
       fetchData(); // Refresh the data
       handleCloseForm();
@@ -969,7 +964,7 @@ export default function RoleManagementPage() {
 
   const handleDeleteRole = useCallback(async () => {
     if (!modalState.role) return;
-    
+
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -997,19 +992,19 @@ export default function RoleManagementPage() {
       // First fetch the permissions of the original role to ensure we have them all
       const permResponse = await roleService.getRolePermissions(role.id);
       const permissionIds = (permResponse.permissions || []).map(p => p.id);
-      
+
       // Create a new role with copy name
       const newRole = await roleService.createRole({
         name: `${role.name} (Copy)`,
         guard_name: 'web',
         organization_id: selectedOrganization?.id,
       });
-      
+
       // Copy permissions from original role
       if (permissionIds.length > 0) {
         await syncRolePermissions(newRole.id, permissionIds);
       }
-      
+
       setRoles(prev => [...prev, newRole]);
       setSuccessMessage(`Role "${newRole.name}" cloned successfully with ${permissionIds.length} permissions!`);
       setTimeout(() => setSuccessMessage(null), 3000);

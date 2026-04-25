@@ -86,12 +86,12 @@ const isAdminUser = (roleName) => {
 // --- Route Protectors ---
 const ProtectedRoute = ({ isLoggedIn, user, children, isChangePasswordPage = false }) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
-  
+
   // If user has a temporary password and is NOT on the change password page, redirect them there
   if (user?.temp_pass_status === 0 && !isChangePasswordPage) {
     return <Navigate to="/change-password" replace />;
   }
-  
+
   return children;
 };
 
@@ -121,13 +121,13 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // This hook is now safe because it's inside OrganizationProvider
   const { selectedOrganization, currentUserRole, userPermissions, isLoading } = useOrganizations();
 
-  console.log("🔍 DashboardRouter Debug:", {
-    isLoading,
-    currentUserRole,
-    selectedOrganizationName: selectedOrganization?.name,
-    selectedOrganizationId: selectedOrganization?.id,
-    permissionsCount: userPermissions?.length,
-  });
+  // console.log("🔍 DashboardRouter Debug:", {
+  //   isLoading,
+  //   currentUserRole,
+  //   selectedOrganizationName: selectedOrganization?.name,
+  //   selectedOrganizationId: selectedOrganization?.id,
+  //   permissionsCount: userPermissions?.length,
+  // });
 
   if (isLoading) {
     return (
@@ -142,7 +142,7 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
 
   // Check if user is admin BY ROLE or BY PERMISSIONS
   const isAdmin = isAdminUser(currentUserRole);
-  
+
   // If user has ANY permissions, they should see the admin layout
   // (the sidebar will filter what's visible based on permissions)
   const hasPermissions = Array.isArray(userPermissions) && userPermissions.length > 0;
@@ -150,7 +150,7 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // Use admin layout if user is admin OR has any module permissions
   const useAdminLayout = isAdmin || hasPermissions;
 
-  console.log("🎯 isAdmin:", isAdmin, "hasPermissions:", hasPermissions, "useAdminLayout:", useAdminLayout);
+  //console.log("🎯 isAdmin:", isAdmin, "hasPermissions:", hasPermissions, "useAdminLayout:", useAdminLayout);
 
   // Choose layout based on role + permissions
   const Layout = useAdminLayout ? DashboardLayout : EmployeeDashboardLayout;
@@ -179,7 +179,7 @@ const RootRedirect = () => {
   const isAdmin = isAdminUser(currentUserRole);
   const redirectPath = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
 
-  console.log("🎯 RootRedirect - isAdmin:", isAdmin, "role:", currentUserRole, "→", redirectPath);
+  //console.log("🎯 RootRedirect - isAdmin:", isAdmin, "role:", currentUserRole, "→", redirectPath);
 
   return <Navigate to={redirectPath} replace />;
 };

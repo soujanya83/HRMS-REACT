@@ -1,11 +1,11 @@
 // FeedbackAppraisals.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    FaComments, 
-    FaSearch, 
-    FaPlus, 
-    FaEdit, 
-    FaTrash, 
+import {
+    FaComments,
+    FaSearch,
+    FaPlus,
+    FaEdit,
+    FaTrash,
     FaDownload,
     FaEye,
     FaUser,
@@ -32,97 +32,95 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // COLOR PALETTE ICON (Same as Dashboard)
 // ============================================
 const ColorPaletteIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
-    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
+        <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+    </svg>
 );
 
 // ============================================
 // COLOR PALETTE MODAL (Same as Dashboard)
 // ============================================
 const ColorPaletteModal = ({
-  isOpen,
-  onClose,
-  onSidebarColorSelect,
-  onBackgroundColorSelect,
-  currentSidebarColor,
-  currentBgColor
+    isOpen,
+    onClose,
+    onSidebarColorSelect,
+    onBackgroundColorSelect,
+    currentSidebarColor,
+    currentBgColor
 }) => {
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
-  const sidebarColors = [
-    { name: 'Dark Navy', value: '#0B1A2E' },
-    { name: 'Charcoal', value: '#2C2C2C' },
-    { name: 'Teal', value: '#008080' },
-    { name: 'Deep Purple', value: '#4B0082' },
-    { name: 'Forest Green', value: '#228B22' },
-    { name: 'Slate Blue', value: '#5B7B9A' },
-  ];
+    const sidebarColors = [
+        { name: 'Dark Navy', value: '#0B1A2E' },
+        { name: 'Charcoal', value: '#2C2C2C' },
+        { name: 'Teal', value: '#008080' },
+        { name: 'Deep Purple', value: '#4B0082' },
+        { name: 'Forest Green', value: '#228B22' },
+        { name: 'Slate Blue', value: '#5B7B9A' },
+    ];
 
-  const backgroundColors = [
-    { name: 'Pure White', value: '#FFFFFF' },
-    { name: 'Snow', value: '#FFFAFA' },
-    { name: 'Ivory', value: '#FFFFF0' },
-    { name: 'Pearl', value: '#F8F6F0' },
-    { name: 'Whisper', value: '#F5F5F5' },
-    { name: 'Silver Mist', value: '#E5E7EB' },
-    { name: 'Ash', value: '#D1D5DB' },
-    { name: 'Pewter', value: '#9CA3AF' },
-    { name: 'Stone', value: '#6B7280' },
-    { name: 'Graphite', value: '#4B5563' },
-    { name: 'Slate', value: '#374151' },
-    { name: 'Charcoal', value: '#1F2937' },
-  ];
+    const backgroundColors = [
+        { name: 'Pure White', value: '#FFFFFF' },
+        { name: 'Snow', value: '#FFFAFA' },
+        { name: 'Ivory', value: '#FFFFF0' },
+        { name: 'Pearl', value: '#F8F6F0' },
+        { name: 'Whisper', value: '#F5F5F5' },
+        { name: 'Silver Mist', value: '#E5E7EB' },
+        { name: 'Ash', value: '#D1D5DB' },
+        { name: 'Pewter', value: '#9CA3AF' },
+        { name: 'Stone', value: '#6B7280' },
+        { name: 'Graphite', value: '#4B5563' },
+        { name: 'Slate', value: '#374151' },
+        { name: 'Charcoal', value: '#1F2937' },
+    ];
 
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
-      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            ✕
-          </button>
-        </div>
+    return (
+        <>
+            <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+            <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        ✕
+                    </button>
+                </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {sidebarColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
+                <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                    {sidebarColors.map((c) => (
+                        <button
+                            key={c.name}
+                            onClick={() => onSidebarColorSelect(c.value)}
+                            className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                                }`}
+                            style={{ backgroundColor: c.value }}
+                        >
+                            {c.name}
+                        </button>
+                    ))}
+                </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {backgroundColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
-  );
+                <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+                <div className="grid grid-cols-3 gap-3">
+                    {backgroundColors.map((c) => (
+                        <button
+                            key={c.name}
+                            onClick={() => onBackgroundColorSelect(c.value)}
+                            className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                                }`}
+                            style={{ backgroundColor: c.value }}
+                        >
+                            {c.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
 };
 
 // Utility functions
@@ -150,33 +148,33 @@ const formatDateTime = (dateString) => {
 
 const getEmployeeName = (employee) => {
     if (!employee) return 'Unknown';
-    return `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 
-           employee.employee_code || 
-           employee.name || 
-           'Unknown Employee';
+    return `${employee.first_name || ''} ${employee.last_name || ''}`.trim() ||
+        employee.employee_code ||
+        employee.name ||
+        'Unknown Employee';
 };
 
 const getEmployeeDepartment = (employee) => {
-    return employee?.department?.name || 
-           employee?.employee_department || 
-           employee?.department || 
-           'Not specified';
+    return employee?.department?.name ||
+        employee?.employee_department ||
+        employee?.department ||
+        'Not specified';
 };
 
 // Helper function to safely convert to array
 const ensureArray = (data) => {
     if (!data) return [];
-    
+
     // If it's an Axios response object
     if (data && data.data && data.status === 200) {
         return ensureArray(data.data);
     }
-    
+
     // If it's an object with success and data properties
     if (data && data.success && data.data) {
         return ensureArray(data.data);
     }
-    
+
     if (Array.isArray(data)) return data;
     if (data && data.data && Array.isArray(data.data)) return data.data;
     if (data && typeof data === 'object') {
@@ -208,17 +206,17 @@ const FeedbackFormModal = ({
         performance_review_id: null,
         performance_goal_id: null
     });
-    
+
     const [errors, setErrors] = useState({});
-    
+
     // Safely handle employees
     const safeEmployees = useMemo(() => {
         const employeesArray = ensureArray(employees);
-        
+
         // Remove duplicates based on id
         const uniqueEmployees = [];
         const seenIds = new Set();
-        
+
         for (const emp of employeesArray) {
             if (emp && typeof emp === 'object') {
                 if (emp.id && !seenIds.has(emp.id)) {
@@ -229,7 +227,7 @@ const FeedbackFormModal = ({
                 }
             }
         }
-        
+
         return uniqueEmployees;
     }, [employees]);
 
@@ -270,7 +268,7 @@ const FeedbackFormModal = ({
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         if (!formData.feedback_content.trim()) {
             newErrors.feedback_content = 'Feedback content is required';
         }
@@ -283,19 +281,19 @@ const FeedbackFormModal = ({
         if (formData.giver_employee_id === formData.receiver_employee_id) {
             newErrors.giver_employee_id = 'Giver and receiver cannot be the same person';
         }
-        
+
         return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const validationErrors = validateForm();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-        
+
         try {
             // Prepare payload
             const payload = {
@@ -306,7 +304,7 @@ const FeedbackFormModal = ({
                 performance_review_id: formData.performance_review_id || null,
                 performance_goal_id: formData.performance_goal_id || null
             };
-            
+
             await onSubmit(payload);
             onClose();
         } catch (error) {
@@ -315,9 +313,9 @@ const FeedbackFormModal = ({
                 setErrors(error.response.data.errors);
             } else {
                 setErrors({
-                    general: error.response?.data?.message || 
-                           error.message || 
-                           'Failed to save feedback. Please try again.'
+                    general: error.response?.data?.message ||
+                        error.message ||
+                        'Failed to save feedback. Please try again.'
                 });
             }
         }
@@ -367,9 +365,8 @@ const FeedbackFormModal = ({
                             required
                             disabled={loading}
                             rows={4}
-                            className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors.feedback_content ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.feedback_content ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder="Provide constructive, specific feedback..."
                         />
                         {errors.feedback_content && (
@@ -388,9 +385,8 @@ const FeedbackFormModal = ({
                                 onChange={handleInputChange}
                                 required
                                 disabled={loading || safeEmployees.length === 0}
-                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    errors.receiver_employee_id ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.receiver_employee_id ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                             >
                                 <option value="">
                                     {safeEmployees.length === 0 ? 'No employees available' : 'Select Receiver'}
@@ -416,9 +412,8 @@ const FeedbackFormModal = ({
                                 onChange={handleInputChange}
                                 required
                                 disabled={loading || safeEmployees.length === 0}
-                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    errors.giver_employee_id ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.giver_employee_id ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                             >
                                 <option value="">
                                     {safeEmployees.length === 0 ? 'No employees available' : 'Select Giver'}
@@ -584,9 +579,8 @@ const FeedbackDetailModal = ({
 
     const getStatusBadge = (isRead) => {
         return (
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                isRead ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
-            }`}>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${isRead ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
+                }`}>
                 {isRead ? 'Read' : 'Unread'}
             </span>
         );
@@ -778,7 +772,7 @@ const FeedbackAppraisals = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
-    
+
     // Color palette state
     const [sidebarColor, setSidebarColor] = useState(() => {
         return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -787,7 +781,7 @@ const FeedbackAppraisals = () => {
         return localStorage.getItem('backgroundColor') || '#f9fafb';
     });
     const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-    
+
     const [filters, setFilters] = useState({
         type: 'all',
         visibility: 'all',
@@ -833,12 +827,12 @@ const FeedbackAppraisals = () => {
             const feedbacksArray = ensureArray(feedbacksData);
             const employeesArray = ensureArray(employeesData);
 
-            console.log('Fetched data:', {
-                feedbacksCount: feedbacksArray.length,
-                employeesCount: employeesArray.length,
-                feedbacksSample: feedbacksArray.slice(0, 2),
-                employeesSample: employeesArray.slice(0, 2)
-            });
+            // console.log('Fetched data:', {
+            //     feedbacksCount: feedbacksArray.length,
+            //     employeesCount: employeesArray.length,
+            //     feedbacksSample: feedbacksArray.slice(0, 2),
+            //     employeesSample: employeesArray.slice(0, 2)
+            // });
 
             setFeedbacks(feedbacksArray);
             setEmployees(employeesArray);
@@ -860,12 +854,12 @@ const FeedbackAppraisals = () => {
     const filteredFeedbacks = feedbacks.filter(feedback => {
         const matchesType = filters.type === 'all' || feedback.type === filters.type;
         const matchesVisibility = filters.visibility === 'all' || feedback.visibility === filters.visibility;
-        const matchesStatus = filters.status === 'all' || 
+        const matchesStatus = filters.status === 'all' ||
             (filters.status === 'read' && feedback.read_at) ||
             (filters.status === 'unread' && !feedback.read_at);
-        
+
         const searchLower = filters.search.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
             filters.search === '' ||
             (feedback.feedback_content || '').toLowerCase().includes(searchLower) ||
             (getEmployeeName(feedback.giver) || '').toLowerCase().includes(searchLower) ||
@@ -891,7 +885,7 @@ const FeedbackAppraisals = () => {
 
         try {
             const response = await feedbackService.createFeedback(formData);
-            console.log('Create feedback response:', response);
+            //console.log('Create feedback response:', response);
 
             // Add the new feedback to state
             const newFeedback = {
@@ -927,7 +921,7 @@ const FeedbackAppraisals = () => {
 
         try {
             const response = await feedbackService.updateFeedback(id, formData);
-            console.log('Update feedback response:', response);
+            //console.log('Update feedback response:', response);
 
             // Update feedback in state
             setFeedbacks(prev =>
@@ -995,7 +989,7 @@ const FeedbackAppraisals = () => {
 
         try {
             const response = await feedbackService.markAsRead(id);
-            console.log('Mark as read response:', response);
+            //console.log('Mark as read response:', response);
 
             // Update feedback in state
             setFeedbacks(prev =>
@@ -1074,9 +1068,8 @@ const FeedbackAppraisals = () => {
 
     const getStatusBadge = (readAt) => {
         return (
-            <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
-                readAt ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
-            }`}>
+            <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${readAt ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
+                }`}>
                 {readAt ? 'Read' : 'Unread'}
             </span>
         );
@@ -1093,7 +1086,7 @@ const FeedbackAppraisals = () => {
     // No organization selected
     if (!selectedOrganization?.id) {
         return (
-            <div 
+            <div
                 className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
                 style={{ backgroundColor }}
             >
@@ -1108,7 +1101,7 @@ const FeedbackAppraisals = () => {
 
     if (loading) {
         return (
-            <div 
+            <div
                 className="min-h-screen flex items-center justify-center transition-colors duration-300"
                 style={{ backgroundColor }}
             >
@@ -1149,7 +1142,7 @@ const FeedbackAppraisals = () => {
                 currentBgColor={backgroundColor}
             />
 
-            <div 
+            <div
                 className="min-h-screen p-4 md:p-6 transition-colors duration-300"
                 style={{ backgroundColor }}
             >

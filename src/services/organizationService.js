@@ -3,11 +3,11 @@ import axiosClient from "../axiosClient";
 
 // Helper function to extract data from your API's nested structure
 const extractData = (response) => {
-  console.log('Service Response:', {
-    url: response.config.url,
-    status: response.status,
-    fullData: response.data
-  });
+  // console.log('Service Response:', {
+  //   url: response.config.url,
+  //   status: response.status,
+  //   fullData: response.data
+  // });
 
   if (response.data && response.data.success === true) {
     return response.data;
@@ -21,7 +21,7 @@ const extractData = (response) => {
 export const getOrganizations = () => {
   return axiosClient.get("/organizations")
     .then(response => {
-      console.log('✅ GET organizations response:', response.data);
+      // console.log('✅ GET organizations response:', response.data);
       return response.data;
     })
     .catch(error => {
@@ -105,7 +105,7 @@ export const deleteDesignation = (desigId) =>
 // ============ ADD THIS: Get designations by department ID (for backward compatibility) ============
 // This function will first get the organization ID from the department, then fetch designations
 export const getDesignationsByDeptId = async (deptId) => {
-  console.log(`🔍 Fetching designations for department ${deptId}...`);
+  // console.log(`🔍 Fetching designations for department ${deptId}...`);
   
   try {
     // First, get the department details to find its organization_id
@@ -117,7 +117,7 @@ export const getDesignationsByDeptId = async (deptId) => {
       // Then get all designations for that organization
       const desigResponse = await getDesignationsByOrgId(orgId);
       
-      console.log(`✅ Found designations for department ${deptId} via organization ${orgId}:`, desigResponse);
+      // console.log(`✅ Found designations for department ${deptId} via organization ${orgId}:`, desigResponse);
       return desigResponse;
     } else {
       console.warn(`⚠️ Could not find organization for department ${deptId}`);

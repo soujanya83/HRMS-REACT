@@ -1,11 +1,11 @@
 // KPIOKRTracking.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    FaChartLine, 
-    FaSearch, 
-    FaPlus, 
-    FaEdit, 
-    FaTrash, 
+import {
+    FaChartLine,
+    FaSearch,
+    FaPlus,
+    FaEdit,
+    FaTrash,
     FaDownload,
     FaUpload,
     FaCopy,
@@ -34,97 +34,95 @@ import { useOrganizations } from "../../contexts/OrganizationContext";
 // COLOR PALETTE ICON (Same as Dashboard)
 // ============================================
 const ColorPaletteIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
-    <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
-    <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
+        <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
+        <circle cx="16.5" cy="11.5" r="1.5" fill="#2D7BE5" />
+    </svg>
 );
 
 // ============================================
 // COLOR PALETTE MODAL (Same as Dashboard)
 // ============================================
 const ColorPaletteModal = ({
-  isOpen,
-  onClose,
-  onSidebarColorSelect,
-  onBackgroundColorSelect,
-  currentSidebarColor,
-  currentBgColor
+    isOpen,
+    onClose,
+    onSidebarColorSelect,
+    onBackgroundColorSelect,
+    currentSidebarColor,
+    currentBgColor
 }) => {
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
-  const sidebarColors = [
-    { name: 'Dark Navy', value: '#0B1A2E' },
-    { name: 'Charcoal', value: '#2C2C2C' },
-    { name: 'Teal', value: '#008080' },
-    { name: 'Deep Purple', value: '#4B0082' },
-    { name: 'Forest Green', value: '#228B22' },
-    { name: 'Slate Blue', value: '#5B7B9A' },
-  ];
+    const sidebarColors = [
+        { name: 'Dark Navy', value: '#0B1A2E' },
+        { name: 'Charcoal', value: '#2C2C2C' },
+        { name: 'Teal', value: '#008080' },
+        { name: 'Deep Purple', value: '#4B0082' },
+        { name: 'Forest Green', value: '#228B22' },
+        { name: 'Slate Blue', value: '#5B7B9A' },
+    ];
 
-  const backgroundColors = [
-    { name: 'Pure White', value: '#FFFFFF' },
-    { name: 'Snow', value: '#FFFAFA' },
-    { name: 'Ivory', value: '#FFFFF0' },
-    { name: 'Pearl', value: '#F8F6F0' },
-    { name: 'Whisper', value: '#F5F5F5' },
-    { name: 'Silver Mist', value: '#E5E7EB' },
-    { name: 'Ash', value: '#D1D5DB' },
-    { name: 'Pewter', value: '#9CA3AF' },
-    { name: 'Stone', value: '#6B7280' },
-    { name: 'Graphite', value: '#4B5563' },
-    { name: 'Slate', value: '#374151' },
-    { name: 'Charcoal', value: '#1F2937' },
-  ];
+    const backgroundColors = [
+        { name: 'Pure White', value: '#FFFFFF' },
+        { name: 'Snow', value: '#FFFAFA' },
+        { name: 'Ivory', value: '#FFFFF0' },
+        { name: 'Pearl', value: '#F8F6F0' },
+        { name: 'Whisper', value: '#F5F5F5' },
+        { name: 'Silver Mist', value: '#E5E7EB' },
+        { name: 'Ash', value: '#D1D5DB' },
+        { name: 'Pewter', value: '#9CA3AF' },
+        { name: 'Stone', value: '#6B7280' },
+        { name: 'Graphite', value: '#4B5563' },
+        { name: 'Slate', value: '#374151' },
+        { name: 'Charcoal', value: '#1F2937' },
+    ];
 
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
-      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            ✕
-          </button>
-        </div>
+    return (
+        <>
+            <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
+            <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        ✕
+                    </button>
+                </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {sidebarColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
+                <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                    {sidebarColors.map((c) => (
+                        <button
+                            key={c.name}
+                            onClick={() => onSidebarColorSelect(c.value)}
+                            className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                                }`}
+                            style={{ backgroundColor: c.value }}
+                        >
+                            {c.name}
+                        </button>
+                    ))}
+                </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {backgroundColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
-  );
+                <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+                <div className="grid grid-cols-3 gap-3">
+                    {backgroundColors.map((c) => (
+                        <button
+                            key={c.name}
+                            onClick={() => onBackgroundColorSelect(c.value)}
+                            className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                                }`}
+                            style={{ backgroundColor: c.value }}
+                        >
+                            {c.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
 };
 
 // Utility functions
@@ -146,14 +144,14 @@ const formatDate = (dateString) => {
 
 const formatNumber = (value, type = 'number') => {
     if (value === null || value === undefined || value === '') return '0';
-    
+
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return 'Invalid';
-    
+
     if (type === 'percentage') {
         return `${numValue.toFixed(1)}%`;
     }
-    
+
     if (type === 'currency') {
         if (numValue >= 10000000) {
             return `₹${(numValue / 10000000).toFixed(1)} Cr`;
@@ -166,14 +164,14 @@ const formatNumber = (value, type = 'number') => {
         }
         return `₹${numValue.toFixed(0)}`;
     }
-    
+
     if (numValue >= 1000000) {
         return `${(numValue / 1000000).toFixed(1)}M`;
     }
     if (numValue >= 1000) {
         return `${(numValue / 1000).toFixed(1)}K`;
     }
-    
+
     return numValue.toFixed(1);
 };
 
@@ -221,17 +219,17 @@ const getTrendColor = (trend) => {
 // Helper function to safely convert to array
 const ensureArray = (data) => {
     if (!data) return [];
-    
+
     // If it's an Axios response object
     if (data && data.data && data.status === 200) {
         return ensureArray(data.data);
     }
-    
+
     // If it's an object with success and data properties
     if (data && data.success && data.data) {
         return ensureArray(data.data);
     }
-    
+
     if (Array.isArray(data)) return data;
     if (data && data.data && Array.isArray(data.data)) return data.data;
     if (data && typeof data === 'object') {
@@ -271,22 +269,22 @@ const KPIFormModal = ({
         threshold_max: 0,
         status: 'active'
     });
-    
+
     const [errors, setErrors] = useState({});
-    
+
     // Safely handle departments and employees
     const safeDepartments = useMemo(() => {
         const deptArray = ensureArray(departments);
         return deptArray.filter(dept => dept && typeof dept === 'object');
     }, [departments]);
-    
+
     const safeEmployees = useMemo(() => {
         const empArray = ensureArray(employees);
-        
+
         // Remove duplicates based on id
         const uniqueEmployees = [];
         const seenIds = new Set();
-        
+
         for (const emp of empArray) {
             if (emp && typeof emp === 'object') {
                 if (emp.id && !seenIds.has(emp.id)) {
@@ -297,7 +295,7 @@ const KPIFormModal = ({
                 }
             }
         }
-        
+
         return uniqueEmployees;
     }, [employees]);
 
@@ -357,7 +355,7 @@ const KPIFormModal = ({
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         if (!formData.name.trim()) {
             newErrors.name = 'KPI name is required';
         }
@@ -370,19 +368,19 @@ const KPIFormModal = ({
         if (!formData.owner_employee_id) {
             newErrors.owner_employee_id = 'Owner is required';
         }
-        
+
         return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const validationErrors = validateForm();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-        
+
         try {
             // Prepare payload
             const payload = {
@@ -395,7 +393,7 @@ const KPIFormModal = ({
                 department_id: formData.department_id ? parseInt(formData.department_id) : null,
                 owner_employee_id: formData.owner_employee_id ? parseInt(formData.owner_employee_id) : null
             };
-            
+
             await onSubmit(payload);
             onClose();
         } catch (error) {
@@ -404,9 +402,9 @@ const KPIFormModal = ({
                 setErrors(error.response.data.errors);
             } else {
                 setErrors({
-                    general: error.response?.data?.message || 
-                           error.message || 
-                           'Failed to save KPI. Please try again.'
+                    general: error.response?.data?.message ||
+                        error.message ||
+                        'Failed to save KPI. Please try again.'
                 });
             }
         }
@@ -456,16 +454,15 @@ const KPIFormModal = ({
                             onChange={handleInputChange}
                             required
                             disabled={loading}
-                            className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                errors.name ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.name ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder="Enter KPI/OKR name"
                         />
                         {errors.name && (
                             <p className="mt-1 text-xs text-red-600">{errors.name}</p>
                         )}
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Description
@@ -556,18 +553,17 @@ const KPIFormModal = ({
                                 onChange={handleInputChange}
                                 required
                                 disabled={loading || safeEmployees.length === 0}
-                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                    errors.owner_employee_id ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.owner_employee_id ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                             >
                                 <option value="">
                                     {safeEmployees.length === 0 ? 'No employees available' : 'Select Owner'}
                                 </option>
                                 {safeEmployees.map((emp, index) => {
-                                    const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 
-                                                        emp.employee_code || 
-                                                        emp.name || 
-                                                        `Employee ${emp.id}`;
+                                    const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() ||
+                                        emp.employee_code ||
+                                        emp.name ||
+                                        `Employee ${emp.id}`;
                                     return (
                                         <option key={`owner-${emp.id || index}`} value={emp.id}>
                                             {employeeName}
@@ -594,9 +590,8 @@ const KPIFormModal = ({
                                 required
                                 disabled={loading}
                                 step="0.1"
-                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                    errors.target_value ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.target_value ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                                 placeholder="Target value"
                             />
                             {errors.target_value && (
@@ -649,9 +644,8 @@ const KPIFormModal = ({
                                 onChange={handleInputChange}
                                 disabled={loading}
                                 step="0.1"
-                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                    errors.threshold_max ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${errors.threshold_max ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                                 placeholder="Maximum threshold"
                             />
                             {errors.threshold_max && (
@@ -1057,7 +1051,7 @@ const KPIOKRTracking = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
-    
+
     // Color palette state
     const [sidebarColor, setSidebarColor] = useState(() => {
         return localStorage.getItem('sidebarColor') || '#1a4d4d';
@@ -1066,7 +1060,7 @@ const KPIOKRTracking = () => {
         return localStorage.getItem('backgroundColor') || '#f9fafb';
     });
     const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-    
+
     const [filters, setFilters] = useState({
         category: 'all',
         type: 'all',
@@ -1183,11 +1177,11 @@ const KPIOKRTracking = () => {
     const filteredKpis = kpis.filter(kpi => {
         const matchesCategory = filters.category === 'all' || kpi.category === filters.category;
         const matchesType = filters.type === 'all' || kpi.type === filters.type;
-        const matchesDepartment = filters.department === 'all' || 
+        const matchesDepartment = filters.department === 'all' ||
             (kpi.department && kpi.department.id === parseInt(filters.department));
-        
+
         const searchLower = filters.search.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
             filters.search === '' ||
             (kpi.name || '').toLowerCase().includes(searchLower) ||
             (kpi.description || '').toLowerCase().includes(searchLower) ||
@@ -1230,7 +1224,7 @@ const KPIOKRTracking = () => {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             const newKpi = {
                 id: kpis.length + 1,
                 ...formData,
@@ -1265,7 +1259,7 @@ const KPIOKRTracking = () => {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             setKpis(prev =>
                 prev.map(kpi =>
                     kpi.id === id
@@ -1307,7 +1301,7 @@ const KPIOKRTracking = () => {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             setKpis(prev => prev.filter(kpi => kpi.id !== id));
             setSuccessMessage('KPI/OKR deleted successfully!');
             setModalState(prev => ({
@@ -1334,7 +1328,7 @@ const KPIOKRTracking = () => {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             const duplicated = {
                 ...kpi,
                 id: kpis.length + 1,
@@ -1360,7 +1354,7 @@ const KPIOKRTracking = () => {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             setKpis(prev =>
                 prev.map(kpi =>
                     kpi.id === id
@@ -1408,7 +1402,7 @@ const KPIOKRTracking = () => {
     // No organization selected
     if (!selectedOrganization?.id) {
         return (
-            <div 
+            <div
                 className="min-h-screen p-4 md:p-6 lg:p-8 font-sans flex items-center justify-center transition-colors duration-300"
                 style={{ backgroundColor }}
             >
@@ -1423,7 +1417,7 @@ const KPIOKRTracking = () => {
 
     if (loading) {
         return (
-            <div 
+            <div
                 className="min-h-screen flex items-center justify-center transition-colors duration-300"
                 style={{ backgroundColor }}
             >
@@ -1451,12 +1445,12 @@ const KPIOKRTracking = () => {
                 isOpen={isColorPaletteOpen}
                 onClose={() => setIsColorPaletteOpen(false)}
                 onSidebarColorSelect={(color) => {
-                    console.log('Setting sidebar color to:', color);
+                    //console.log('Setting sidebar color to:', color);
                     setSidebarColor(color);
                     localStorage.setItem('sidebarColor', color);
                 }}
                 onBackgroundColorSelect={(color) => {
-                    console.log('Setting background color to:', color);
+                    //console.log('Setting background color to:', color);
                     setBackgroundColor(color);
                     localStorage.setItem('backgroundColor', color);
                 }}
@@ -1464,7 +1458,7 @@ const KPIOKRTracking = () => {
                 currentBgColor={backgroundColor}
             />
 
-            <div 
+            <div
                 className="min-h-screen p-4 md:p-6 transition-colors duration-300"
                 style={{ backgroundColor }}
             >

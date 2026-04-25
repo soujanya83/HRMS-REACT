@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import usePermissions from '../../hooks/usePermissions';
 import axiosClient from '../../axiosClient';
-import { 
-  FaSearch, 
-  FaFilter, 
+import {
+  FaSearch,
+  FaFilter,
   FaClock,
   FaCheckCircle,
   FaTimesCircle,
@@ -38,7 +38,7 @@ import InfiniteScrollEmployeeDropdown from "../../components/common/InfiniteScro
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -100,9 +100,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -116,9 +115,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -171,7 +169,7 @@ const ManualAdjustments = () => {
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [matchedEmpId, setMatchedEmpId] = useState('');
   const [attendanceSearchMessage, setAttendanceSearchMessage] = useState(null);
-  
+
   // Filters state
   const [filters, setFilters] = useState({
     status: 'all',
@@ -271,19 +269,19 @@ const ManualAdjustments = () => {
             organization_id: selectedOrganization.id,
             search: currentUser.email
           });
-          
+
           let matchList = [];
           if (searchRes?.success && searchRes?.data?.data) {
             matchList = searchRes.data.data;
           } else if (searchRes?.data?.success && searchRes?.data?.data?.data) {
             matchList = searchRes.data.data.data;
           }
-          
+
           const match = matchList.find(
             emp => emp.email?.toLowerCase() === currentUser.email?.toLowerCase() ||
-                   emp.user_id === currentUser.id
+              emp.user_id === currentUser.id
           );
-          
+
           if (match) {
             const empId = String(match.employee_id || match.id);
             setMatchedEmpId(empId);
@@ -293,7 +291,7 @@ const ManualAdjustments = () => {
               const exists = prev.some(e => String(e.employee_id || e.id) === empId);
               return exists ? prev : [match, ...prev];
             });
-            console.log('👤 Auto-selected employee:', match.name, empId);
+            //console.log('👤 Auto-selected employee:', match.name, empId);
           }
         } catch (err) {
           console.error('Error auto-selecting employee:', err);
@@ -313,10 +311,10 @@ const ManualAdjustments = () => {
       toast.error('Please select an organization');
       return;
     }
-    
+
     try {
       const params = {};
-      
+
       // Apply filters to API params
       if (filters.status !== 'all') params.status = filters.status;
       if (filters.date) params.date = filters.date;
@@ -326,10 +324,10 @@ const ManualAdjustments = () => {
       if (filters.employee_id !== 'all') params.employee_id = filters.employee_id;
 
       const response = await manualAdjustmentService.getAdjustmentsList(
-        selectedOrganization.id, 
+        selectedOrganization.id,
         params
       );
-      
+
       if (response.data?.status === true && Array.isArray(response.data.data)) {
         const transformedData = transformAdjustmentsData(response.data.data);
         setAdjustments(transformedData);
@@ -337,7 +335,7 @@ const ManualAdjustments = () => {
       } else {
         setAdjustments([]);
       }
-      
+
     } catch (error) {
       console.error('Failed to fetch adjustments:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch adjustments');
@@ -348,7 +346,7 @@ const ManualAdjustments = () => {
   // Transform API data to component format - UPDATED with break times
   const transformAdjustmentsData = (apiData) => {
     if (!Array.isArray(apiData)) return [];
-    
+
     return apiData.map(item => {
       // Extract department name from employee data
       let departmentName = 'N/A';
@@ -356,13 +354,13 @@ const ManualAdjustments = () => {
         const dept = departments.find(d => d.id === item.employee.department_id);
         departmentName = dept ? dept.name : `Dept ${item.employee.department_id}`;
       }
-      
+
       return {
         id: item.id,
         employee_id: item.employee?.employee_code || `EMP${item.employee_id}`,
         raw_employee_id: item.employee_id,
-        employee_name: item.employee ? 
-          `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() : 
+        employee_name: item.employee ?
+          `${item.employee.first_name || ''} ${item.employee.last_name || ''}`.trim() :
           `Employee ${item.employee_id}`,
         department: departmentName,
         department_id: item.employee?.department_id || null,
@@ -401,17 +399,17 @@ const ManualAdjustments = () => {
   const fetchEmployees = async (page = 1, search = '', append = false) => {
     if (!selectedOrganization?.id) return;
     if (employeesLoading) return;
-    
+
     setEmployeesLoading(true);
     try {
-      const params = { 
+      const params = {
         organization_id: selectedOrganization.id,
         page
       };
       if (search) params.search = search;
 
       const response = await employeeService.getAllEmployees(params);
-      
+
       // The API returns: { success: true, data: { current_page, data: [...], last_page } }
       let pageData = [];
       let lastPage = 1;
@@ -430,17 +428,17 @@ const ManualAdjustments = () => {
           pageData = response.data.data;
         }
       }
-      
+
       setEmployeeLastPage(lastPage);
       setEmployeePage(page);
-      
+
       if (append) {
         setEmployees(prev => [...prev, ...pageData]);
       } else {
         setEmployees(pageData);
       }
-      
-      console.log(`Employees page ${page}/${lastPage} loaded: ${pageData.length} items`);
+
+      //console.log(`Employees page ${page}/${lastPage} loaded: ${pageData.length} items`);
     } catch (error) {
       console.error('Error fetching employees:', error);
       if (page === 1) {
@@ -462,10 +460,10 @@ const ManualAdjustments = () => {
   // Fetch departments for dropdown
   const fetchDepartments = async () => {
     if (!selectedOrganization?.id) return;
-    
+
     try {
       const response = await axiosClient.get(`/organizations/${selectedOrganization.id}/departments`);
-      
+
       let departmentsData = [];
       if (response?.data?.success === true && Array.isArray(response.data.data)) {
         departmentsData = response.data.data;
@@ -474,7 +472,7 @@ const ManualAdjustments = () => {
       } else if (response?.data?.data && Array.isArray(response.data.data)) {
         departmentsData = response.data.data;
       }
-      
+
       setDepartments(departmentsData);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -484,14 +482,14 @@ const ManualAdjustments = () => {
 
   const loadExistingAttendance = useCallback(async () => {
     if (!newAdjustment.employee_id || !newAdjustment.date) return;
-    
+
     setAttendanceSearchMessage(null);
     try {
       const response = await manualAdjustmentService.getAttendanceByEmployeeDate(
         newAdjustment.employee_id,
         newAdjustment.date
       );
-      
+
       if (response.data?.success === true && response.data.data) {
         const attendance = response.data.data;
         setNewAdjustment(prev => ({
@@ -512,7 +510,7 @@ const ManualAdjustments = () => {
         // No existing attendance found - keep default times
         const msg = response.data?.message || "No attendance record found for the specified employee and date.";
         setAttendanceSearchMessage({ type: 'info', text: msg });
-        
+
         setNewAdjustment(prev => ({
           ...prev,
           attendance_id: '',
@@ -527,7 +525,7 @@ const ManualAdjustments = () => {
         }));
       }
     } catch (error) {
-      console.log('No existing attendance found for this date', error);
+      //console.log('No existing attendance found for this date', error);
       const msg = error.response?.data?.message || "No attendance record found for this date.";
       setAttendanceSearchMessage({ type: 'warning', text: msg });
 
@@ -594,8 +592,8 @@ const ManualAdjustments = () => {
         return;
       }
 
-      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out && 
-          !newAdjustment.adjusted_break_start && !newAdjustment.adjusted_break_end) {
+      if (!newAdjustment.adjusted_check_in && !newAdjustment.adjusted_check_out &&
+        !newAdjustment.adjusted_break_start && !newAdjustment.adjusted_break_end) {
         toast.error('Please adjust at least one time (check-in, check-out, or break time)');
         setSubmitting(false);
         return;
@@ -627,7 +625,7 @@ const ManualAdjustments = () => {
       });
 
       const response = await manualAdjustmentService.createAdjustment(adjustmentData);
-      
+
       if (response.data?.status === true) {
         toast.success('Adjustment request submitted successfully!');
         setShowAdjustmentForm(false);
@@ -636,10 +634,10 @@ const ManualAdjustments = () => {
       } else {
         toast.error(response.data?.message || 'Failed to submit adjustment request');
       }
-      
+
     } catch (error) {
       console.error('Submission error:', error);
-      
+
       // Show detailed validation errors
       if (error.response?.status === 422) {
         const errors = error.response.data.errors;
@@ -650,9 +648,9 @@ const ManualAdjustments = () => {
           toast.error(error.response.data?.message || 'Validation error occurred');
         }
       } else {
-        const errorMessage = error.response?.data?.message || 
-                           error.response?.data?.error || 
-                           'Failed to submit adjustment request';
+        const errorMessage = error.response?.data?.message ||
+          error.response?.data?.error ||
+          'Failed to submit adjustment request';
         toast.error(errorMessage);
       }
     } finally {
@@ -692,7 +690,7 @@ const ManualAdjustments = () => {
   const handleViewAdjustment = async (adjustmentId) => {
     try {
       const response = await manualAdjustmentService.getAdjustmentById(adjustmentId);
-      
+
       if (response.data) {
         setSelectedAdjustment(response.data);
         setShowViewModal(true);
@@ -718,7 +716,7 @@ const ManualAdjustments = () => {
   // Submit edit form - UPDATED with break times
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const editData = {
         adjusted_check_in: formatTimeForAPI(editForm.adjusted_check_in),
@@ -728,7 +726,7 @@ const ManualAdjustments = () => {
       };
 
       const response = await manualAdjustmentService.updateAdjustment(editingAdjustment.id, editData);
-      
+
       if (response.data?.status === true) {
         toast.success('Adjustment updated successfully!');
         setShowEditModal(false);
@@ -745,17 +743,17 @@ const ManualAdjustments = () => {
   // Approve adjustment
   const handleApprove = async (adjustmentId) => {
     if (!window.confirm('Are you sure you want to approve this adjustment?')) return;
-    
+
     try {
       const response = await manualAdjustmentService.approveAdjustment(adjustmentId, userId);
-      
+
       if (response.data?.status === true) {
         toast.success('Adjustment approved successfully!');
         fetchAdjustments();
       } else {
         toast.error(response.data?.message || 'Failed to approve adjustment');
       }
-      
+
     } catch (error) {
       console.error('Approval error:', error);
       toast.error('Failed to approve adjustment');
@@ -765,17 +763,17 @@ const ManualAdjustments = () => {
   // Reject adjustment
   const handleReject = async (adjustmentId) => {
     if (!window.confirm('Are you sure you want to reject this adjustment?')) return;
-    
+
     try {
       const response = await manualAdjustmentService.rejectAdjustment(adjustmentId, userId);
-      
+
       if (response.data?.status === true) {
         toast.success('Adjustment rejected successfully!');
         fetchAdjustments();
       } else {
         toast.error(response.data?.message || 'Failed to reject adjustment');
       }
-      
+
     } catch (error) {
       console.error('Rejection error:', error);
       toast.error('Failed to reject adjustment');
@@ -785,17 +783,17 @@ const ManualAdjustments = () => {
   // Delete adjustment
   const handleDelete = async (adjustmentId) => {
     if (!window.confirm('Are you sure you want to delete this adjustment? This action cannot be undone.')) return;
-    
+
     try {
       const response = await manualAdjustmentService.deleteAdjustment(adjustmentId);
-      
+
       if (response.status === 200 || response.status === 204) {
         toast.success('Adjustment deleted successfully!');
         fetchAdjustments();
       } else {
         toast.error('Failed to delete adjustment');
       }
-      
+
     } catch (error) {
       console.error('Deletion error:', error);
       toast.error('Failed to delete adjustment');
@@ -844,7 +842,7 @@ const ManualAdjustments = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success(`Exported ${exportData.length} adjustments`);
   };
 
@@ -853,7 +851,7 @@ const ManualAdjustments = () => {
     if (!timeString || timeString === '00:00:00' || timeString === '--:--' || timeString === null || timeString === 'null') {
       return '--:--';
     }
-    
+
     try {
       let timeToFormat = timeString;
       if (timeString.includes(':')) {
@@ -862,16 +860,16 @@ const ManualAdjustments = () => {
           timeToFormat = `${parts[0]}:${parts[1]}`;
         }
       }
-      
+
       const [hours, minutes] = timeToFormat.split(':').map(Number);
-      
+
       if (isNaN(hours) || isNaN(minutes)) {
         return timeString;
       }
-      
+
       const period = hours >= 12 ? 'PM' : 'AM';
       const displayHour = hours % 12 || 12;
-      
+
       return `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
       error
@@ -884,40 +882,40 @@ const ManualAdjustments = () => {
     if (!timeString || timeString === '--:--' || timeString === '') {
       return null;
     }
-    
+
     if (!timeString.trim()) {
       return null;
     }
-    
+
     // If time is in format "09:30 AM", convert to "09:30:00"
     if (timeString.includes(' ')) {
       const [time, period] = timeString.split(' ');
       let [hours, minutes] = time.split(':');
-      
+
       hours = parseInt(hours);
       if (period === 'PM' && hours < 12) hours += 12;
       if (period === 'AM' && hours === 12) hours = 0;
-      
+
       return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
     }
-    
+
     // If already in HH:MM format, add seconds
     if (timeString.length === 5 && timeString.includes(':')) {
       return `${timeString}:00`;
     }
-    
+
     // If already in HH:MM:SS format, return as is
     if (timeString.length === 8 && timeString.includes(':')) {
       return timeString;
     }
-    
+
     return timeString;
   };
 
   // Format date-time for display
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
-    
+
     try {
       let date;
       if (dateTimeString.includes('T')) {
@@ -925,11 +923,11 @@ const ManualAdjustments = () => {
       } else {
         date = new Date(dateTimeString.replace(' ', 'T'));
       }
-      
+
       if (isNaN(date.getTime())) {
         return dateTimeString;
       }
-      
+
       return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -947,11 +945,11 @@ const ManualAdjustments = () => {
   const calculateTimeDifference = (origIn, origOut, adjIn, adjOut, origBreakStart, origBreakEnd, adjBreakStart, adjBreakEnd) => {
     const toMinutes = (timeStr) => {
       if (!timeStr || timeStr === '--:--' || timeStr === '00:00:00' || timeStr === null) return 0;
-      
+
       try {
         const parts = timeStr.split(':');
         const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;5
+        const minutes = parseInt(parts[1]) || 0; 5
         return (hours || 0) * 60 + (minutes || 0);
       } catch {
         return 0;
@@ -962,7 +960,7 @@ const ManualAdjustments = () => {
     const origOutMin = toMinutes(origOut);
     const adjInMin = toMinutes(adjIn);
     const adjOutMin = toMinutes(adjOut);
-    
+
     const origBreakStartMin = toMinutes(origBreakStart);
     const origBreakEndMin = toMinutes(origBreakEnd);
     const adjBreakStartMin = toMinutes(adjBreakStart);
@@ -973,29 +971,29 @@ const ManualAdjustments = () => {
 
     const origNetDuration = Math.max(0, origOutMin - origInMin) - origBreakDuration;
     const adjNetDuration = Math.max(0, adjOutMin - adjInMin) - adjBreakDuration;
-    
+
     const diff = adjNetDuration - origNetDuration;
-    
+
     if (Math.abs(diff) < 1) return '±0h 00m';
-    
+
     const hours = Math.floor(Math.abs(diff) / 60);
     const minutes = Math.abs(diff) % 60;
     const sign = diff > 0 ? '+' : '-';
-    
+
     return `${sign}${hours}h ${minutes.toString().padStart(2, '0')}m`;
   };
 
   // Calculate statistics from adjustments data
   const calculateStats = (data) => {
     const dataArray = Array.isArray(data) ? data : [];
-    
-    const approved = dataArray.filter(adj => 
+
+    const approved = dataArray.filter(adj =>
       adj.status === 'approved'
     ).length;
-    const pending = dataArray.filter(adj => 
+    const pending = dataArray.filter(adj =>
       adj.status === 'pending'
     ).length;
-    const rejected = dataArray.filter(adj => 
+    const rejected = dataArray.filter(adj =>
       adj.status === 'rejected'
     ).length;
 
@@ -1035,26 +1033,26 @@ const ManualAdjustments = () => {
     if (filters.status !== 'all' && adj.status !== filters.status) {
       return false;
     }
-    
+
     // Employee filter
     if (filters.employee_id !== 'all' && String(adj.raw_employee_id) !== String(filters.employee_id)) {
       return false;
     }
-    
+
     // Date filter
     if (filters.date && adj.adjustment_date !== filters.date) {
       return false;
     }
-    
+
     // Date range filter
     if (filters.startDate && new Date(adj.adjustment_date) < new Date(filters.startDate)) {
       return false;
     }
-    
+
     if (filters.endDate && new Date(adj.adjustment_date) > new Date(filters.endDate)) {
       return false;
     }
-    
+
     // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
@@ -1065,14 +1063,14 @@ const ManualAdjustments = () => {
         adj.department?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return true;
   });
 
   // Loading state
   if (loading && adjustments.length === 0) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1088,7 +1086,7 @@ const ManualAdjustments = () => {
   // No organization selected
   if (!selectedOrganization?.id) {
     return (
-      <div 
+      <div
         className="p-6 min-h-screen flex items-center justify-center transition-colors duration-300"
         style={{ backgroundColor }}
       >
@@ -1116,12 +1114,12 @@ const ManualAdjustments = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -1129,12 +1127,12 @@ const ManualAdjustments = () => {
         currentBgColor={backgroundColor}
       />
 
-      <div 
+      <div
         className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
         style={{ backgroundColor }}
       >
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusDraggable pauseOnHover />
-        
+
         {/* View Adjustment Modal - UPDATED with break times display */}
         {showViewModal && selectedAdjustment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
@@ -1148,7 +1146,7 @@ const ManualAdjustments = () => {
                   ×
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* Employee Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -1178,7 +1176,7 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Adjustment Details */}
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -1212,7 +1210,7 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Time Comparison - UPDATED with break times */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Time Comparison</h3>
@@ -1238,7 +1236,7 @@ const ManualAdjustments = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="border rounded-lg p-4 bg-blue-50">
                       <h4 className="font-medium text-blue-700 mb-3 text-center">Adjusted Times</h4>
                       <div className="space-y-3">
@@ -1261,36 +1259,35 @@ const ManualAdjustments = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Time Difference */}
                   <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total Time Change:</span>
-                      <span className={`text-lg font-bold ${
-                        calculateTimeDifference(
-                          selectedAdjustment.original_check_in,
-                          selectedAdjustment.original_check_out,
-                          selectedAdjustment.adjusted_check_in,
-                          selectedAdjustment.adjusted_check_out,
-                          selectedAdjustment.original_break_start,
-                          selectedAdjustment.original_break_end,
-                          selectedAdjustment.adjusted_break_start,
-                          selectedAdjustment.adjusted_break_end
-                        ).includes('+') 
-                          ? 'text-green-600' 
+                      <span className={`text-lg font-bold ${calculateTimeDifference(
+                        selectedAdjustment.original_check_in,
+                        selectedAdjustment.original_check_out,
+                        selectedAdjustment.adjusted_check_in,
+                        selectedAdjustment.adjusted_check_out,
+                        selectedAdjustment.original_break_start,
+                        selectedAdjustment.original_break_end,
+                        selectedAdjustment.adjusted_break_start,
+                        selectedAdjustment.adjusted_break_end
+                      ).includes('+')
+                          ? 'text-green-600'
                           : calculateTimeDifference(
-                              selectedAdjustment.original_check_in,
-                              selectedAdjustment.original_check_out,
-                              selectedAdjustment.adjusted_check_in,
-                              selectedAdjustment.adjusted_check_out,
-                              selectedAdjustment.original_break_start,
-                              selectedAdjustment.original_break_end,
-                              selectedAdjustment.adjusted_break_start,
-                              selectedAdjustment.adjusted_break_end
-                            ).includes('-')
-                          ? 'text-red-600'
-                          : 'text-gray-600'
-                      }`}>
+                            selectedAdjustment.original_check_in,
+                            selectedAdjustment.original_check_out,
+                            selectedAdjustment.adjusted_check_in,
+                            selectedAdjustment.adjusted_check_out,
+                            selectedAdjustment.original_break_start,
+                            selectedAdjustment.original_break_end,
+                            selectedAdjustment.adjusted_break_start,
+                            selectedAdjustment.adjusted_break_end
+                          ).includes('-')
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                        }`}>
                         {calculateTimeDifference(
                           selectedAdjustment.original_check_in,
                           selectedAdjustment.original_check_out,
@@ -1305,7 +1302,7 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Reason */}
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Reason for Adjustment</h3>
@@ -1313,7 +1310,7 @@ const ManualAdjustments = () => {
                     <p className="whitespace-pre-wrap">{selectedAdjustment.reason}</p>
                   </div>
                 </div>
-                
+
                 {/* Approval Information */}
                 {selectedAdjustment.approved_by && (
                   <div className="bg-green-50 p-4 rounded-lg">
@@ -1333,7 +1330,7 @@ const ManualAdjustments = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
                 <button
                   onClick={() => setShowViewModal(false)}
@@ -1345,7 +1342,7 @@ const ManualAdjustments = () => {
             </div>
           </div>
         )}
-        
+
         {/* Edit Adjustment Modal - UPDATED with break times */}
         {showEditModal && editingAdjustment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
@@ -1359,7 +1356,7 @@ const ManualAdjustments = () => {
                   ×
                 </button>
               </div>
-              
+
               <form onSubmit={handleSubmitEdit}>
                 <div className="space-y-4">
                   <div>
@@ -1375,7 +1372,7 @@ const ManualAdjustments = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Adjusted Check-out *
@@ -1389,7 +1386,7 @@ const ManualAdjustments = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="border-t pt-4 mt-2">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                       <FaCoffee className="text-purple-500" /> Break Time Adjustments
@@ -1422,7 +1419,7 @@ const ManualAdjustments = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-4 mt-6 pt-4 border-t">
                   <button
                     type="button"
@@ -1442,7 +1439,7 @@ const ManualAdjustments = () => {
             </div>
           </div>
         )}
-        
+
         {/* New Adjustment Modal - UPDATED with break times */}
         {showAdjustmentForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[80] p-4">
@@ -1459,7 +1456,7 @@ const ManualAdjustments = () => {
                   ×
                 </button>
               </div>
-              
+
               <form onSubmit={handleSubmitAdjustment}>
                 <div className="space-y-6">
                   {/* Basic Information */}
@@ -1486,7 +1483,7 @@ const ManualAdjustments = () => {
                         disabled={isEmployee}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Adjustment Date *
@@ -1507,9 +1504,8 @@ const ManualAdjustments = () => {
 
                   {/* Attendance Search Message */}
                   {attendanceSearchMessage && (
-                    <div className={`p-3 rounded-lg flex items-center gap-3 ${
-                      attendanceSearchMessage.type === 'warning' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
-                    }`}>
+                    <div className={`p-3 rounded-lg flex items-center gap-3 ${attendanceSearchMessage.type === 'warning' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
+                      }`}>
                       <FaInfoCircle className={attendanceSearchMessage.type === 'warning' ? 'text-amber-500' : 'text-blue-500'} />
                       <p className="text-sm font-medium">{attendanceSearchMessage.text}</p>
                     </div>
@@ -1518,7 +1514,7 @@ const ManualAdjustments = () => {
                   {/* Time Adjustments - UPDATED with break times */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-800 mb-3">Time Adjustments</h3>
-                    
+
                     {/* Check In/Out Section */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
                       <div>
@@ -1630,7 +1626,7 @@ const ManualAdjustments = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <p className="text-sm text-gray-500 mt-2">
                       * Note: Adjust at least one time (check-in, check-out, or break time). Original times will be auto-loaded if attendance exists for this date.
                     </p>
@@ -1719,7 +1715,7 @@ const ManualAdjustments = () => {
                 <FaHistory className="text-blue-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -1729,7 +1725,7 @@ const ManualAdjustments = () => {
                 <FaCheckCircle className="text-green-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-yellow-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -1739,7 +1735,7 @@ const ManualAdjustments = () => {
                 <FaClock className="text-yellow-500 text-xl" />
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg shadow-lg border-l-4 border-red-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -1772,11 +1768,11 @@ const ManualAdjustments = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="relative">
                 <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="text"
                   placeholder="Search by name, ID, or reason..."
                   value={filters.search}
@@ -1785,8 +1781,8 @@ const ManualAdjustments = () => {
                   className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
-              <select 
+
+              <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1815,7 +1811,7 @@ const ManualAdjustments = () => {
 
               <div className="relative">
                 <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="date"
                   value={filters.startDate}
                   onChange={(e) => handleFilterChange('startDate', e.target.value)}
@@ -1827,7 +1823,7 @@ const ManualAdjustments = () => {
 
               <div className="relative">
                 <FaCalendarAlt className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                <input 
+                <input
                   type="date"
                   value={filters.endDate}
                   onChange={(e) => handleFilterChange('endDate', e.target.value)}
@@ -1890,8 +1886,8 @@ const ManualAdjustments = () => {
                       <FaExclamationTriangle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
                       <p className="text-lg font-medium">No adjustments found</p>
                       <p className="text-sm text-gray-400 mt-1">
-                        {adjustments.length === 0 
-                          ? 'No adjustment requests in the system. Click "New Adjustment" to create one.' 
+                        {adjustments.length === 0
+                          ? 'No adjustment requests in the system. Click "New Adjustment" to create one.'
                           : 'No adjustments match your current filters. Try adjusting your filter criteria.'
                         }
                       </p>
@@ -1908,24 +1904,24 @@ const ManualAdjustments = () => {
                 ) : (
                   filteredAdjustments.map((adjustment) => (
                     <tr key={adjustment.id} className="hover:bg-gray-50 transition-colors">
-                    {!isEmployee && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <FaUsers className="text-blue-600" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {adjustment.employee_name}
+                      {!isEmployee && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              <FaUsers className="text-blue-600" />
                             </div>
-                            <div className="text-sm text-gray-500">{adjustment.employee_id}</div>
-                            <div className="text-xs text-gray-400 flex items-center gap-1">
-                              <FaBuilding /> {adjustment.department}
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {adjustment.employee_name}
+                              </div>
+                              <div className="text-sm text-gray-500">{adjustment.employee_id}</div>
+                              <div className="text-xs text-gray-400 flex items-center gap-1">
+                                <FaBuilding /> {adjustment.department}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                       </td>
-                    )}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="font-medium">
@@ -1939,7 +1935,7 @@ const ManualAdjustments = () => {
                             {formatDateTime(adjustment.requested_date)}
                           </div>
                         </div>
-                       </td>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
                           <div className="mb-1">
@@ -1950,7 +1946,7 @@ const ManualAdjustments = () => {
                             <span className="text-gray-500 text-xs">Adjusted: </span>
                             <span className="font-medium text-blue-600">{adjustment.adjusted_check_in} - {adjustment.adjusted_check_out}</span>
                           </div>
-                          
+
                           {/* Break Time Display - NEW */}
                           {(adjustment.original_break_start !== '--:--' || adjustment.adjusted_break_start !== '--:--') && (
                             <div className="mt-2 pt-1 border-t border-gray-200">
@@ -1965,26 +1961,25 @@ const ManualAdjustments = () => {
                               </div>
                             </div>
                           )}
-                          
-                          <div className={`text-xs font-medium mt-2 ${
-                            adjustment.total_hours_change.includes('+') 
-                              ? 'text-green-600' 
+
+                          <div className={`text-xs font-medium mt-2 ${adjustment.total_hours_change.includes('+')
+                              ? 'text-green-600'
                               : adjustment.total_hours_change.includes('-')
-                              ? 'text-red-600'
-                              : 'text-gray-600'
-                          }`}>
+                                ? 'text-red-600'
+                                : 'text-gray-600'
+                            }`}>
                             Net Change: {adjustment.total_hours_change}
                           </div>
                         </div>
-                       </td>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-700 max-w-xs">
-                          {adjustment.reason.length > 100 ? 
-                            `${adjustment.reason.substring(0, 100)}...` : 
+                          {adjustment.reason.length > 100 ?
+                            `${adjustment.reason.substring(0, 100)}...` :
                             adjustment.reason
                           }
                         </div>
-                       </td>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(adjustment.status)}
@@ -1997,7 +1992,7 @@ const ManualAdjustments = () => {
                             By: {adjustment.approved_by_name}
                           </div>
                         )}
-                       </td>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex gap-2">
                           <button
@@ -2007,7 +2002,7 @@ const ManualAdjustments = () => {
                           >
                             <FaEye />
                           </button>
-                          
+
                           {adjustment.status === 'pending' && canEdit && (
                             <>
                               <button
@@ -2026,7 +2021,7 @@ const ManualAdjustments = () => {
                               </button>
                             </>
                           )}
-                          
+
                           {canEdit && (
                             <button
                               onClick={() => handleEditAdjustment(adjustment)}
@@ -2036,7 +2031,7 @@ const ManualAdjustments = () => {
                               <FaEdit />
                             </button>
                           )}
-                          
+
                           {/* Show delete button only for rejected adjustments */}
                           {adjustment.status === 'rejected' && canDelete && (
                             <button
@@ -2048,14 +2043,14 @@ const ManualAdjustments = () => {
                             </button>
                           )}
                         </div>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   ))
                 )}
               </tbody>
-             </table>
+            </table>
           </div>
-          
+
           {/* Pagination */}
           {filteredAdjustments.length > 0 && (
             <div className="mt-6 flex justify-between items-center">

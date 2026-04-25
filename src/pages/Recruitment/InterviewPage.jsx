@@ -37,7 +37,7 @@ import { getApplicants } from '../../services/recruitmentService';
 // ============================================
 const ColorPaletteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -99,9 +99,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -115,9 +114,8 @@ const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -160,14 +158,14 @@ const getDisplayName = (applicant) => {
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) => {
   const [hoverRating, setHoverRating] = useState(0);
-  
+
   const sizes = {
     sm: "text-xs",
     md: "text-base",
     lg: "text-xl",
     xl: "text-2xl"
   };
-  
+
   const getStarIcon = (index) => {
     const starValue = index + 1;
     if (hoverRating >= starValue && !readonly) {
@@ -202,7 +200,7 @@ const StarRating = ({ rating, onRatingChange, size = "md", readonly = false }) =
 // Question Card Component
 const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, onSave, index, saving, savingId, canSave = true }) => {
   const isSavingThis = saving && savingId === question.id;
-  
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
@@ -217,8 +215,8 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, on
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Rating:</span>
-            <StarRating 
-              rating={answerData?.rating || 0} 
+            <StarRating
+              rating={answerData?.rating || 0}
               onRatingChange={(rating) => onRatingChange(question.id, rating)}
               size="md"
               readonly={isSavingThis}
@@ -226,7 +224,7 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, on
           </div>
         </div>
       </div>
-      
+
       <div className="p-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Candidate's Response
@@ -239,7 +237,7 @@ const QuestionCard = ({ question, answerData, onAnswerChange, onRatingChange, on
           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 hover:bg-white transition-colors"
           disabled={isSavingThis}
         />
-        
+
         <div className="mt-3 flex justify-end">
           <button
             type="button"
@@ -269,24 +267,22 @@ const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
   return (
     <div
       onClick={() => onSelect(applicant)}
-      className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50/50 shadow-md' 
+      className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${isSelected
+          ? 'border-blue-500 bg-blue-50/50 shadow-md'
           : 'border-gray-200 hover:border-blue-300'
-      }`}
+        }`}
     >
       <div className="flex items-start gap-3">
         {/* Avatar with Initials */}
         <div className="flex-shrink-0">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm ${
-            isSelected 
-              ? 'bg-gradient-to-br from-blue-600 to-blue-800' 
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm ${isSelected
+              ? 'bg-gradient-to-br from-blue-600 to-blue-800'
               : 'bg-gradient-to-br from-purple-500 to-pink-500'
-          }`}>
+            }`}>
             {initials}
           </div>
         </div>
-        
+
         <div className="flex-1 min-w-0">
           {/* Applicant Name and Rating in same row */}
           <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
@@ -301,12 +297,12 @@ const ApplicantCard = ({ applicant, isSelected, onSelect, averageRating }) => {
               </span>
             </div>
           </div>
-          
+
           {/* Position/Status */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="text-xs font-medium text-gray-500">{position}</span>
           </div>
-          
+
           {/* Email and Phone */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1 truncate max-w-[150px]">
@@ -327,7 +323,7 @@ const InterviewPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { canAdd, canEdit } = usePermissions('recruitment.interview');
-  
+
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1a4d4d';
   });
@@ -335,7 +331,7 @@ const InterviewPage = () => {
     return localStorage.getItem('backgroundColor') || '#f3f4f6';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingQuestionId, setSavingQuestionId] = useState(null);
@@ -375,7 +371,7 @@ const InterviewPage = () => {
       const response = await getApplicants({});
       const applicantsData = response.data?.data || [];
       setApplicants(applicantsData);
-      
+
       for (const applicant of applicantsData) {
         try {
           const ratingResponse = await interviewService.getAverageRatingByApplicant(applicant.id);
@@ -399,7 +395,7 @@ const InterviewPage = () => {
     try {
       const response = await interviewService.getAnswersByApplicant(applicantId);
       const answersData = response.data?.data || [];
-      
+
       const answersMap = {};
       answersData.forEach(answer => {
         answersMap[answer.question_id] = {
@@ -408,15 +404,15 @@ const InterviewPage = () => {
           rating: answer.rating || 0
         };
       });
-      
+
       setAnswers(answersMap);
-      
+
       const ratingResponse = await interviewService.getAverageRatingByApplicant(applicantId);
       setAverageRatings(prev => ({
         ...prev,
         [applicantId]: ratingResponse.data?.average_rating || 0
       }));
-      
+
     } catch (error) {
       console.error('Error fetching answers:', error);
       setAnswers({});
@@ -475,16 +471,16 @@ const InterviewPage = () => {
 
   const handleSaveAnswer = async (questionId) => {
     if (!selectedApplicant) return;
-    
+
     const answerData = answers[questionId];
     if (!answerData?.answer?.trim() && !answerData?.rating) {
       toast.warning('Please add an answer or rating before saving');
       return;
     }
-    
+
     setSaving(true);
     setSavingQuestionId(questionId);
-    
+
     try {
       if (answerData?.answer_id) {
         if (answerData.rating > 0) {
@@ -498,16 +494,16 @@ const InterviewPage = () => {
             applicant_id: selectedApplicant.id,
             answer: answerData.answer
           });
-          
+
           if (answerData.rating > 0 && submitResponse.data?.data?.id) {
             await interviewService.rateAnswer(submitResponse.data.data.id, answerData.rating);
           }
           toast.success('Answer saved successfully!');
         }
       }
-      
+
       await fetchAnswersForApplicant(selectedApplicant.id);
-      
+
     } catch (error) {
       console.error('Error saving answer:', error);
       toast.error(error.response?.data?.message || 'Failed to save answer');
@@ -520,7 +516,7 @@ const InterviewPage = () => {
   const filteredApplicants = applicants.filter(applicant => {
     const displayName = getDisplayName(applicant);
     const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (applicant.email && applicant.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      (applicant.email && applicant.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filterStatus === 'all' || applicant.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -556,12 +552,12 @@ const InterviewPage = () => {
         isOpen={isColorPaletteOpen}
         onClose={() => setIsColorPaletteOpen(false)}
         onSidebarColorSelect={(color) => {
-          console.log('Setting sidebar color to:', color);
+          //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
           localStorage.setItem('sidebarColor', color);
         }}
         onBackgroundColorSelect={(color) => {
-          console.log('Setting background color to:', color);
+          //console.log('Setting background color to:', color);
           setBackgroundColor(color);
           localStorage.setItem('backgroundColor', color);
         }}
@@ -571,7 +567,7 @@ const InterviewPage = () => {
 
       <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor }}>
         <ToastContainer position="top-right" autoClose={3000} />
-        
+
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
           <div className="px-6 py-4">
@@ -588,7 +584,7 @@ const InterviewPage = () => {
                   <p className="text-sm text-gray-500">Conduct and manage phone screening interviews for candidates</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
                   <FaPrint size={14} /> Print
@@ -616,24 +612,23 @@ const InterviewPage = () => {
                   className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
-              
+
               <div className="flex gap-2 flex-wrap">
                 {['all', 'new', 'scheduled', 'in_progress', 'completed'].map(status => (
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status)}
-                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      filterStatus === status
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${filterStatus === status
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                    }`}
+                      }`}
                   >
                     {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             {/* Applicants List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {filteredApplicants.map(applicant => (
@@ -645,7 +640,7 @@ const InterviewPage = () => {
                   averageRating={averageRatings[applicant.id] || 0}
                 />
               ))}
-              
+
               {filteredApplicants.length === 0 && (
                 <div className="text-center py-12">
                   <FaUsers className="text-5xl text-gray-300 mx-auto mb-3" />
@@ -653,7 +648,7 @@ const InterviewPage = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Footer Stats */}
             <div className="p-4 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between text-sm">
@@ -691,7 +686,7 @@ const InterviewPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-right bg-white/10 rounded-xl px-4 py-2 backdrop-blur-sm">
                       <div className="text-sm opacity-90">Overall Rating</div>
                       <div className="flex items-center gap-2">
@@ -718,7 +713,7 @@ const InterviewPage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
@@ -730,7 +725,7 @@ const InterviewPage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
@@ -742,13 +737,13 @@ const InterviewPage = () => {
                       </div>
                     </div>
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
+                      <div
                         className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${completionPercentage}%` }}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
@@ -770,7 +765,7 @@ const InterviewPage = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800">Interview Questions</h3>
                   </div>
-                  
+
                   {questions.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-xl">
                       <p className="text-gray-500">No questions available. Please add questions first.</p>
