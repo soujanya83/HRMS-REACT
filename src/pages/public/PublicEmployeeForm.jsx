@@ -103,7 +103,7 @@ const MANDATORY_CERTIFICATES_LIST = [
     hasExpiry: false,
     description: "Flu and Pertussis recommended for childcare workers",
     icon: "💉"
-  },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  },
   {
     id: "code_of_conduct",
     name: "Signed Code of Conduct",
@@ -171,8 +171,8 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
   const handleDocumentTypeChange = (e) => {
     const value = e.target.value;
     setShowDocumentNameInput(value === 'Other Document');
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       document_type: value,
       custom_document_name: '' // Reset custom name when changing selection
     });
@@ -180,7 +180,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.file) {
       setError('Please select a file to upload');
       return;
@@ -188,7 +188,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 
     // Determine the document_type value to send
     let documentTypeToSend = formData.document_type;
-    
+
     // If "Other Document" is selected and custom name is provided, use that as document_type
     if (formData.document_type === 'Other Document' && formData.custom_document_name.trim()) {
       documentTypeToSend = formData.custom_document_name.trim();
@@ -207,11 +207,11 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       actualFormData.append('file', formData.file);
 
       const response = await uploadEmployeeDocument(actualFormData);
-      
+
       const extractedIssueDate = response.data?.issue_date;
       const extractedExpiryDate = response.data?.expiry_date;
       const documentId = response.data?.document_id || response.data?.id;
-      
+
       if ((extractedIssueDate || extractedExpiryDate) && documentId) {
         await updateDocumentDates(documentId, {
           issue_date: extractedIssueDate || '',
@@ -221,7 +221,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       } else {
         toast.success('Document uploaded successfully! You can add issue/expiry dates by clicking Edit.');
       }
-      
+
       onUploadSuccess();
       onClose();
     } catch (err) {
@@ -495,7 +495,7 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
     const ext = fileName.split('.').pop()?.toLowerCase();
-    
+
     if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
     if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
@@ -564,9 +564,9 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
 // ============================================
 const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEdit }) => {
   const [showDocuments, setShowDocuments] = useState(false);
-  
-  const itemDocuments = documents.filter(doc => 
-    doc.document_type === item.type || 
+
+  const itemDocuments = documents.filter(doc =>
+    doc.document_type === item.type ||
     doc.document_type?.includes(item.type.split(' ')[0])
   );
 
@@ -589,7 +589,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
               {item.hasExpiry && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Expires every {item.expiryYears} years</span>}
             </div>
             <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-            
+
             {itemDocuments.length > 0 && (
               <div className="mt-3">
                 <button
@@ -616,7 +616,7 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
             )}
           </div>
         </div>
-        
+
         <button
           onClick={() => onUpload(item.type)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 whitespace-nowrap ml-3"
@@ -633,8 +633,8 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
 // ============================================
 const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const otherDocs = documents.filter(doc => 
-    !MANDATORY_CERTIFICATES_LIST.some(m => 
+  const otherDocs = documents.filter(doc =>
+    !MANDATORY_CERTIFICATES_LIST.some(m =>
       doc.document_type === m.type || doc.document_type?.includes(m.type.split(' ')[0])
     )
   );
@@ -654,7 +654,7 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }
         </div>
         {isExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
       </button>
-      
+
       {isExpanded && (
         <div className="p-4">
           <div className="flex justify-end mb-4">
@@ -665,7 +665,7 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }
               <FaPlus size={12} /> Add Other Document
             </button>
           </div>
-          
+
           {otherDocs.length > 0 ? (
             <div className="grid grid-cols-1 gap-3">
               {otherDocs.map(doc => (
@@ -815,12 +815,12 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
         }
         return;
       }
-      
+
       const employee = JSON.parse(employeeStr);
-      
+
       // Use the employeedata endpoint with employee.id
       const response = await axiosClient.get(`/employeedata/${employee.id}`);
-      
+
       if (response.data?.success && response.data?.data) {
         const employee = response.data.data;
         populateFormData(employee);
@@ -839,7 +839,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
     setLoading(true);
     try {
       const response = await axiosClient.get(`/employeedata/${organizationId}`);
-      
+
       if (response.data?.success && response.data?.data) {
         const employee = response.data.data;
         populateFormData(employee);
@@ -857,7 +857,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   const populateFormData = (employee) => {
     setEmployeeData(employee);
     setEmployeeId(employee.id);
-    
+
     setFormData({
       employee_id: employee.id || '',
       first_name: employee.first_name || '',
@@ -885,7 +885,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
       employment_type: employee.employment_type || 'Full-time',
       hourly_wage: employee.hourly_wage || '',
     });
-    
+
     if (employee.organization_id) {
       fetchDepartments(employee.organization_id);
       fetchDesignations(employee.organization_id);
@@ -939,7 +939,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -947,7 +947,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
 
   const handleViewDocument = (document) => {
     if (document.file_url) {
-      window.open(`https://api.chrispp.com${document.file_url}`, '_blank');
+      window.open(`https://api.chrispp.au${document.file_url}`, '_blank');
     }
   };
 
@@ -969,7 +969,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.phone_number?.trim()) newErrors.phone_number = 'Phone number is required';
     if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
     if (!formData.gender) newErrors.gender = 'Gender is required';
@@ -978,21 +978,21 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
     if (!formData.emergency_contact_phone?.trim()) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
     if (!formData.emergency_contact_relationship?.trim()) newErrors.emergency_contact_relationship = 'Emergency contact relationship is required';
     if (!formData.tax_file_number?.trim()) newErrors.tax_file_number = 'Tax File Number is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fill all required fields');
       return;
     }
-    
+
     setSubmitting(true);
-    
+
     try {
       const payload = {
         employee_id: formData.employee_id,
@@ -1021,9 +1021,9 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
         employment_type: formData.employment_type,
         hourly_wage: formData.hourly_wage,
       };
-      
+
       const response = await axiosClient.post('/employee/update-profile', payload);
-      
+
       if (response.data?.status) {
         setSubmitted(true);
         toast.success('Profile updated successfully!');
@@ -1053,15 +1053,15 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   };
 
   const isCertificateUploaded = (certType) => {
-    return documents.some(doc => 
-      doc.document_type === certType || 
+    return documents.some(doc =>
+      doc.document_type === certType ||
       doc.document_type?.includes(certType.split(' ')[0])
     );
   };
 
   const getDocumentsForCertificate = (certType) => {
-    return documents.filter(doc => 
-      doc.document_type === certType || 
+    return documents.filter(doc =>
+      doc.document_type === certType ||
       doc.document_type?.includes(certType.split(' ')[0])
     );
   };
@@ -1083,7 +1083,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <DocumentUploadModal
         isOpen={uploadModalOpen}
         onClose={() => {
@@ -1104,7 +1104,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
         document={selectedDocument}
         onUpdateSuccess={fetchDocuments}
       />
-      
+
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Complete Your Profile</h1>
@@ -1156,7 +1156,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaUser className="text-blue-600" /> Personal Information
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1173,7 +1173,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                 />
                 {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date of Birth <span className="text-red-500">*</span>
@@ -1188,7 +1188,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                 />
                 {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Gender <span className="text-red-500">*</span>
@@ -1208,7 +1208,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                 </select>
                 {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Address <span className="text-red-500">*</span>
@@ -1231,7 +1231,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaHeart className="text-red-500" /> Emergency Contact
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1285,7 +1285,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
               <FaShieldAlt className="text-green-600" /> Tax & Financial Information
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <EncryptedInput
                 label="Tax File Number (TFN)"
@@ -1296,7 +1296,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                 placeholder="XXX XXX XXX"
                 error={errors.tax_file_number}
               />
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Superannuation Fund Name
@@ -1310,7 +1310,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Superannuation Member Number
@@ -1324,7 +1324,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bank BSB
@@ -1338,7 +1338,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
-              
+
               <EncryptedInput
                 label="Bank Account Number"
                 name="bank_account_number"
@@ -1377,14 +1377,14 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-xs text-gray-500">Completed</p>
                 </div>
               </div>
-              
+
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div 
+                <div
                   className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
-              
+
               <p className="text-sm text-gray-600">
                 {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory documents uploaded
               </p>

@@ -1046,7 +1046,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
     return <FaFileAlt className="text-gray-500" />;
   };
 
-  const baseUrl = "https://api.chrispp.com";
+  const baseUrl = "https://api.chrispp.au";
 
   const findCertType = () => {
     for (const category of Object.values(MANDATORY_CERTIFICATES)) {
@@ -1129,10 +1129,10 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className={`h-2 rounded-full ${daysRemaining <= 30
-                  ? "bg-red-500"
-                  : daysRemaining <= 60
-                    ? "bg-orange-500"
-                    : "bg-yellow-500"
+                ? "bg-red-500"
+                : daysRemaining <= 60
+                  ? "bg-orange-500"
+                  : "bg-yellow-500"
                 }`}
               style={{ width: `${Math.min(100, (daysRemaining / 90) * 100)}%` }}
             ></div>
@@ -1265,10 +1265,10 @@ const ComplianceChecklist = ({ certificates = [] }) => {
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
                 className={`h-3 rounded-full ${compliancePercentage >= 80
-                    ? "bg-green-500"
-                    : compliancePercentage >= 50
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
+                  ? "bg-green-500"
+                  : compliancePercentage >= 50
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
                   }`}
                 style={{ width: `${compliancePercentage}%` }}
               ></div>
@@ -1412,9 +1412,9 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                                     <span className="text-gray-400">|</span>
                                     <span
                                       className={`${new Date(uploadedDoc.expiry_date) <
-                                          new Date()
-                                          ? "text-red-600"
-                                          : "text-green-600"
+                                        new Date()
+                                        ? "text-red-600"
+                                        : "text-green-600"
                                         }`}
                                     >
                                       Exp:{" "}
@@ -1490,8 +1490,8 @@ const InputField = ({
       disabled={disabled}
       placeholder={placeholder}
       className={`w-full px-4 py-2.5 rounded-lg border ${error
-          ? "border-red-500 bg-red-50"
-          : "border-gray-300 hover:border-gray-400"
+        ? "border-red-500 bg-red-50"
+        : "border-gray-300 hover:border-gray-400"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
     />
     {error && (
@@ -1531,8 +1531,8 @@ const SelectField = ({
       required={required}
       disabled={disabled}
       className={`w-full px-4 py-2.5 rounded-lg border ${error
-          ? "border-red-500 bg-red-50"
-          : "border-gray-300 hover:border-gray-400"
+        ? "border-red-500 bg-red-50"
+        : "border-gray-300 hover:border-gray-400"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
     >
       <option value="">{placeholder}</option>
@@ -1579,8 +1579,8 @@ const TextAreaField = ({
       placeholder={placeholder}
       rows={rows}
       className={`w-full px-4 py-2.5 rounded-lg border ${error
-          ? "border-red-500 bg-red-50"
-          : "border-gray-300 hover:border-gray-400"
+        ? "border-red-500 bg-red-50"
+        : "border-gray-300 hover:border-gray-400"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
     />
     {error && (
@@ -1598,16 +1598,16 @@ const TabButton = ({ active, onClick, icon, label, step, completed }) => (
     type="button"
     onClick={onClick}
     className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${active
-        ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
-        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+      ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
+      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
       }`}
   >
     <div
       className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${active
-          ? "bg-blue-100 text-blue-600"
-          : completed
-            ? "bg-green-100 text-green-600"
-            : "bg-gray-100 text-gray-400"
+        ? "bg-blue-100 text-blue-600"
+        : completed
+          ? "bg-green-100 text-green-600"
+          : "bg-gray-100 text-gray-400"
         }`}
     >
       {completed && !active ? <FaCheck className="text-sm" /> : icon}
@@ -2499,8 +2499,8 @@ export default function EmployeeForm() {
                       <button
                         onClick={() => setViewMode("list")}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list"
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-800"
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-800"
                           }`}
                       >
                         List View
@@ -2508,8 +2508,8 @@ export default function EmployeeForm() {
                       <button
                         onClick={() => setViewMode("checklist")}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "checklist"
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-800"
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-800"
                           }`}
                       >
                         Compliance Checklist

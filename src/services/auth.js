@@ -1,19 +1,4 @@
-import axios from "axios";
-
-const axiosClient = axios.create({
-  baseURL: 'https://api.chrispp.com/api/v1',
-  headers: {
-    'Accept': 'application/json'
-  }
-});
-
-axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ACCESS_TOKEN');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import axiosClient from "../axiosClient";
 
 // Login function
 export const login = (email, password) => {
@@ -32,19 +17,19 @@ export const verifyOtp = (email, otp) => {
 
 // Reset Password
 export const resetPassword = (email, otp, password, password_confirmation) => {
-  return axiosClient.post("/reset-password", { 
-    email, 
-    otp, 
-    password, 
-    password_confirmation 
+  return axiosClient.post("/reset-password", {
+    email,
+    otp,
+    password,
+    password_confirmation
   });
 };
 
 // Change Password (for temporary password users)
 export const changePassword = (new_password, new_password_confirmation) => {
-  return axiosClient.post("/change-password", { 
-    new_password, 
-    new_password_confirmation 
+  return axiosClient.post("/change-password", {
+    new_password,
+    new_password_confirmation
   });
 };
 

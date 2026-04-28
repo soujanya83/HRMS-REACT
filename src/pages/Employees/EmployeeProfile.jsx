@@ -137,7 +137,7 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
         </span>
         {document.file_url && (
           <a
-            href={`https://api.chrispp.com${document.file_url}`}
+            href={`https://api.chrispp.au${document.file_url}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -520,7 +520,7 @@ export default function EmployeeProfile() {
   // Handle view document
   const handleViewDocument = (document) => {
     if (document.file_url) {
-      window.open(`https://api.chrispp.com${document.file_url}`, '_blank');
+      window.open(`https://api.chrispp.au${document.file_url}`, '_blank');
     }
   };
 
@@ -652,10 +652,10 @@ export default function EmployeeProfile() {
                   {employee.first_name?.[0]}{employee.last_name?.[0]}
                 </div>
                 <span className={`absolute bottom-0 right-0 px-3 py-1 rounded-full text-xs font-bold ${employee.status === 'Active'
-                    ? 'bg-green-500 text-white'
-                    : employee.status === 'On Leave'
-                      ? 'bg-yellow-500 text-white'
-                      : 'bg-red-500 text-white'
+                  ? 'bg-green-500 text-white'
+                  : employee.status === 'On Leave'
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-red-500 text-white'
                   }`}>
                   {employee.status}
                 </span>
@@ -725,8 +725,8 @@ export default function EmployeeProfile() {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-6 py-4 font-medium border-b-2 whitespace-nowrap transition-colors ${activeTab === tab
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}

@@ -347,7 +347,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
     return <FaFileAlt className="text-gray-500 text-2xl" />;
   };
 
-  const baseUrl = 'https://api.chrispp.com';
+  const baseUrl = 'https://api.chrispp.au';
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200">
