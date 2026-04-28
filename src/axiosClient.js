@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'https://api.chrispp.com/api/v1',
+  baseURL: 'https://api.chrispp.au/api/v1',
 });
 
 // Request interceptor
