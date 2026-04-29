@@ -30,6 +30,7 @@ import { HiX } from "react-icons/hi";
 import { rosterPeriodService } from "../../services/rosterPeriodService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import axios from "axios";
+import axiosClient from "../../axiosClient";
 
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
@@ -351,14 +352,7 @@ const RosterPeriods = () => {
 
     try {
       setEmployeesLoading(true);
-
-      const token = localStorage.getItem('ACCESS_TOKEN');
-      const response = await axios.get('https://api.chrispp.com/api/v1/employees', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
+      const response = await axiosClient.get('/employees', {
         params: {
           organization_id: selectedOrganization.id
         },
@@ -399,14 +393,7 @@ const RosterPeriods = () => {
 
     try {
       setShiftsLoading(true);
-
-      const token = localStorage.getItem('ACCESS_TOKEN');
-      const response = await axios.get('https://api.chrispp.com/api/v1/shifts', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
+      const response = await axiosClient.get('/shifts', {
         params: {
           organization_id: selectedOrganization.id
         },
@@ -1399,8 +1386,8 @@ const RosterPeriods = () => {
                             <div
                               key={period.id}
                               className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${formData.start_date === period.start_date?.split('T')[0]
-                                  ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
-                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
                               onClick={() => {
                                 if (period.start_date) {
@@ -1539,8 +1526,8 @@ const RosterPeriods = () => {
                     onClick={handleCreatePeriod}
                     disabled={isSubmitting || !selectedOrganization || !formData.start_date}
                     className={`px-5 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 ${selectedOrganization && formData.start_date && !isSubmitting
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                   >
                     {isSubmitting ? (
@@ -1601,8 +1588,8 @@ const RosterPeriods = () => {
                 <form onSubmit={handleBulkAssign}>
                   <div className="space-y-6">
                     <div className={`p-4 rounded-lg border ${selectedPeriod.status === 'draft'
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-red-50 border-red-200'
+                      ? 'bg-blue-50 border-blue-200'
+                      : 'bg-red-50 border-red-200'
                       }`}>
                       <h4 className="font-medium text-gray-900 mb-3">Selected Period Details</h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1724,8 +1711,8 @@ const RosterPeriods = () => {
                                             </div>
                                             <div className="flex items-center gap-2">
                                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${employee.status === "Active"
-                                                  ? "bg-green-100 text-green-800"
-                                                  : "bg-yellow-100 text-yellow-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-yellow-100 text-yellow-800"
                                                 }`}>
                                                 {employee.status}
                                               </span>
@@ -1790,8 +1777,8 @@ const RosterPeriods = () => {
                               <label
                                 htmlFor={`shift-${shift.id}`}
                                 className={`block p-4 border rounded-lg cursor-pointer transition-all ${bulkAssignForm.shift_id === shift.id.toString()
-                                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                                  ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                                   }`}
                               >
                                 <div className="flex items-start">
