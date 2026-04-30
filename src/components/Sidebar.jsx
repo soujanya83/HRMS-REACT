@@ -49,6 +49,24 @@ import { useOrganizations } from "../contexts/OrganizationContext";
 // DEFAULT COLOR - Dark Navy
 const DEFAULT_COLOR = '#0B1A2E';
 
+// Helper: darken a hex color by a percentage (0-100)
+function darkenColor(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, Math.floor((num >> 16) * (1 - percent / 100)));
+  const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - percent / 100)));
+  const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - percent / 100)));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
+// Helper: lighten a hex color by a percentage (0-100)
+function lightenColor(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * percent / 100));
+  const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * percent / 100));
+  const b = Math.min(255, Math.floor((num & 0x0000FF) + (255 - (num & 0x0000FF)) * percent / 100));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
 const Sidebar = ({
   isSidebarOpen,
   setSidebarOpen,
@@ -335,6 +353,11 @@ const Sidebar = ({
 
   const buttonBorderColor = getButtonBorderColor();
 
+  // Sidebar background is darkened, active tab uses original/lighter color
+  const sidebarBg = darkenColor(currentColor, 30);
+  const activeBg = lightenColor(currentColor, 15);
+  const hoverBg = lightenColor(currentColor, 8);
+
   //console.log('🎨 Sidebar rendering - isAdmin:', isAdmin, 'role:', currentUserRole, 'dashboardLink:', dashboardLink);
 
   return (
@@ -361,9 +384,9 @@ const Sidebar = ({
       >
         {/* Sidebar inner */}
         <div
-          className="h-full w-full flex flex-col relative overflow-visible"
+          className="h-full w-full flex flex-col relative overflow-visible antialiased"
           style={{
-            backgroundColor: currentColor,
+            backgroundColor: sidebarBg,
             borderRadius: "16px 0 0 16px",
             boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
           }}
@@ -374,16 +397,16 @@ const Sidebar = ({
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="flex items-center justify-center w-7 h-7 rounded-full shadow-md transition-all duration-200 hover:scale-105 hover:brightness-110"
               style={{
-                backgroundColor: currentColor,
+                backgroundColor: sidebarBg,
                 border: `1px solid ${buttonBorderColor}`,
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
               }}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
-                <HiChevronDoubleRight size={14} className="text-gray-300" />
+                <HiChevronDoubleRight size={14} className="text-white" />
               ) : (
-                <HiChevronDoubleLeft size={14} className="text-gray-300" />
+                <HiChevronDoubleLeft size={14} className="text-white" />
               )}
             </button>
           </div>
@@ -417,10 +440,11 @@ const Sidebar = ({
                       end
                       className={({ isActive }) =>
                         `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${isActive
-                          ? "text-white font-semibold bg-white/15"
-                          : "text-gray-300 font-medium hover:bg-white/10 hover:text-white"
+                          ? "text-white font-semibold shadow-sm"
+                          : "text-white/90 font-medium hover:text-white"
                         }`
                       }
+                      style={({ isActive }) => (isActive ? { backgroundColor: activeBg } : {})}
                       onClick={() => setSidebarOpen(false)}
                       title={isCollapsed ? link.name : ""}
                     >
@@ -431,7 +455,10 @@ const Sidebar = ({
                     <>
                       <button
                         onClick={() => handleMenuClick(link.name)}
-                        className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2.5 text-base text-gray-300 font-medium transition-all duration-200 rounded-lg hover:bg-white/10 hover:text-white`}
+                        className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2.5 text-base text-white font-medium transition-all duration-200 rounded-lg hover:text-white`}
+                        style={{ ':hover': { backgroundColor: hoverBg } }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hoverBg}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         title={isCollapsed ? link.name : ""}
                       >
                         <div className="flex items-center">
@@ -457,10 +484,11 @@ const Sidebar = ({
                               to={child.path}
                               className={({ isActive }) =>
                                 `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${isActive
-                                  ? "text-white font-medium bg-white/15"
-                                  : "text-gray-400 hover:bg-white/10 hover:text-white"
+                                  ? "text-white font-semibold shadow-sm"
+                                  : "text-white/80 hover:text-white"
                                 }`
                               }
+                              style={({ isActive }) => (isActive ? { backgroundColor: activeBg } : {})}
                               onClick={() => setSidebarOpen(false)}
                               end={child.exact || false}
                             >
@@ -481,8 +509,10 @@ const Sidebar = ({
           <div className="p-3 border-t flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <button
               onClick={onLogout}
-              className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 text-base font-medium transition-all duration-200 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white`}
+              className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 text-base font-medium transition-all duration-200 rounded-lg text-white hover:text-white`}
               title={isCollapsed ? "Logout" : ""}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <HiOutlineLogout size={20} className="flex-shrink-0" />
               <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
