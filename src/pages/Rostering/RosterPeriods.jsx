@@ -154,6 +154,9 @@ const RosterPeriods = () => {
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [availableShifts, setAvailableShifts] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeesPage, setEmployeesPage] = useState(1);
+  const [hasMoreEmployees, setHasMoreEmployees] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [shiftsLoading, setShiftsLoading] = useState(false);
 
   // State for rate calculations
@@ -280,8 +283,24 @@ const RosterPeriods = () => {
         organization_id: selectedOrganization.id
       });
 
-      if (response.data?.success === true) {
-        const fortnightPeriods = response.data.data.filter(period =>
+      if (response.data) {
+        let periodsList = [];
+        const resData = response.data.data || response.data;
+
+        if (Array.isArray(resData)) {
+          periodsList = resData;
+        } else if (resData && typeof resData === 'object') {
+          if (Array.isArray(resData.data)) {
+            periodsList = resData.data;
+          } else if (Array.isArray(resData)) {
+            periodsList = resData;
+          } else {
+            const foundArray = Object.values(resData).find(val => Array.isArray(val));
+            if (foundArray) periodsList = foundArray;
+          }
+        }
+
+        const fortnightPeriods = periodsList.filter(period =>
           period.type === "fortnightly"
         );
         setRosterPeriods(fortnightPeriods || []);
@@ -344,33 +363,72 @@ const RosterPeriods = () => {
     }
   }, [selectedOrganization]);
 
-  const fetchAvailableEmployees = useCallback(async () => {
+  const fetchAvailableEmployees = useCallback(async (page = 1, shouldAppend = false) => {
     if (!selectedOrganization?.id) {
       setAvailableEmployees([]);
+      setHasMoreEmployees(false);
       return;
     }
 
     try {
-      setEmployeesLoading(true);
+      if (shouldAppend) {
+        setIsFetchingMore(true);
+      } else {
+        setEmployeesLoading(true);
+        setEmployeesPage(1);
+      }
+
       const response = await axiosClient.get('/employees', {
         params: {
-          organization_id: selectedOrganization.id
+          organization_id: selectedOrganization.id,
+          page: page,
+          per_page: 50 // Fetch more at once to reduce requests
         },
         timeout: 10000
       });
 
-      if (response.data?.success === true) {
-        // Handle both paginated and flat array responses
-        const employeesList = Array.isArray(response.data.data)
-          ? response.data.data
-          : (response.data.data?.data || []);
+      if (response.data) {
+        // Handle multiple response shapes: flat array, paginated, or nested
+        let employeesList = [];
+        let lastPage = 1;
+        const resData = response.data.data || response.data;
 
+        if (Array.isArray(resData)) {
+          employeesList = resData;
+          setHasMoreEmployees(false);
+        } else if (resData && typeof resData === 'object') {
+          // If paginated response
+          if (Array.isArray(resData.data)) {
+            employeesList = resData.data;
+            lastPage = resData.last_page || 1;
+            setHasMoreEmployees(page < lastPage);
+          } else if (Array.isArray(resData)) {
+            employeesList = resData;
+            setHasMoreEmployees(false);
+          } else {
+            // Try to find any array value in the response
+            const foundArray = Object.values(resData).find(val => Array.isArray(val));
+            if (foundArray) {
+              employeesList = foundArray;
+              setHasMoreEmployees(false);
+            }
+          }
+        }
+
+        // Filter for active employees (case-insensitive), but if none match, show all
         const activeEmployees = employeesList.filter(emp =>
-          emp.status === "Active" || emp.status === "active"
+          (emp.status || '').toString().toLowerCase() === 'active'
         );
-        setAvailableEmployees(activeEmployees || []);
+        const filteredList = activeEmployees.length > 0 ? activeEmployees : employeesList;
+
+        if (shouldAppend) {
+          setAvailableEmployees(prev => [...prev, ...filteredList]);
+        } else {
+          setAvailableEmployees(filteredList);
+        }
       } else {
-        setAvailableEmployees([]);
+        if (!shouldAppend) setAvailableEmployees([]);
+        setHasMoreEmployees(false);
       }
     } catch (err) {
       console.error("[RosterPeriods] Error fetching employees:", err);
@@ -379,11 +437,21 @@ const RosterPeriods = () => {
       } else {
         setError("Failed to load employees. Please try again.");
       }
-      setAvailableEmployees([]);
+      if (!shouldAppend) setAvailableEmployees([]);
+      setHasMoreEmployees(false);
     } finally {
       setEmployeesLoading(false);
+      setIsFetchingMore(false);
     }
   }, [selectedOrganization]);
+
+  const handleLoadMoreEmployees = useCallback(() => {
+    if (hasMoreEmployees && !isFetchingMore) {
+      const nextPage = employeesPage + 1;
+      setEmployeesPage(nextPage);
+      fetchAvailableEmployees(nextPage, true);
+    }
+  }, [hasMoreEmployees, isFetchingMore, employeesPage, fetchAvailableEmployees]);
 
   const fetchAvailableShifts = useCallback(async () => {
     if (!selectedOrganization?.id) {
@@ -400,8 +468,23 @@ const RosterPeriods = () => {
         timeout: 10000
       });
 
-      if (response.data?.success === true) {
-        setAvailableShifts(response.data.data || []);
+      if (response.data) {
+        let shiftsList = [];
+        const resData = response.data.data || response.data;
+
+        if (Array.isArray(resData)) {
+          shiftsList = resData;
+        } else if (resData && typeof resData === 'object') {
+          if (Array.isArray(resData.data)) {
+            shiftsList = resData.data;
+          } else if (Array.isArray(resData)) {
+            shiftsList = resData;
+          } else {
+            const foundArray = Object.values(resData).find(val => Array.isArray(val));
+            if (foundArray) shiftsList = foundArray;
+          }
+        }
+        setAvailableShifts(shiftsList || []);
       } else {
         setAvailableShifts([]);
       }
@@ -1676,7 +1759,15 @@ const RosterPeriods = () => {
                             </div>
                           </div>
 
-                          <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
+                          <div 
+                            className="max-h-60 overflow-y-auto p-2 custom-scrollbar"
+                            onScroll={(e) => {
+                              const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                              if (scrollHeight - scrollTop <= clientHeight + 10) {
+                                handleLoadMoreEmployees();
+                              }
+                            }}
+                          >
                             <div className="space-y-1">
                               {availableEmployees.map((employee) => {
                                 const rate = getEmployeeRate(employee);
@@ -1703,7 +1794,7 @@ const RosterPeriods = () => {
                                           <div className="flex justify-between items-start">
                                             <div>
                                               <div className="text-sm font-medium text-gray-900">
-                                                {employee.first_name} {employee.last_name}
+                                                {employee.name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || `Employee #${employee.id}`}
                                               </div>
                                               <div className="text-xs text-gray-500">
                                                 ID: {employee.id} | Code: {employee.employee_code}
@@ -1733,6 +1824,11 @@ const RosterPeriods = () => {
                                 );
                               })}
                             </div>
+                            {isFetchingMore && (
+                              <div className="py-2 text-center">
+                                <FaSpinner className="h-5 w-5 text-blue-600 animate-spin mx-auto" />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -1782,7 +1878,10 @@ const RosterPeriods = () => {
                                   }`}
                               >
                                 <div className="flex items-start">
-                                  <div className="h-10 w-10 rounded-lg bg-blue-500 mr-3 flex items-center justify-center mt-1">
+                                  <div 
+                                    className="h-10 w-10 rounded-lg mr-3 flex items-center justify-center mt-1"
+                                    style={{ backgroundColor: shift.color_code || '#3B82F6' }}
+                                  >
                                     <FaClock className="h-5 w-5 text-white" />
                                   </div>
                                   <div className="flex-1">
