@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaEnvelope, FaKey } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import bgImage from "../assets/image1.png";
 import { login, forgotPassword, verifyOtp, resetPassword } from "../services/auth";
 
@@ -390,6 +390,11 @@ const LoginPage = ({ onLogin }) => {
               &copy; {new Date().getFullYear()} Your Fraxxra Tech. All Rights
               Reserved.
             </p>
+            <div className="flex gap-4 mt-2">
+              <Link to="/terms-and-conditions" className="hover:text-white transition-colors">Terms & Conditions</Link>
+              <span className="text-blue-500">|</span>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            </div>
           </div>
         </div>
 

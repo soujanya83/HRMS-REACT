@@ -12,6 +12,8 @@ import roleService from "./services/roleService";
 import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
 import InterviewPage from "./pages/Recruitment/InterviewPage";
 import ApplicationSuccess from './pages/public/ApplicationSuccess';
+import PrivacyPolicy from './pages/public/PrivacyPolicy';
+import TermsAndConditions from './pages/public/TermsAndConditions';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -230,6 +232,14 @@ function App() {
     {
       path: "/apply-success",
       element: <ApplicationSuccess />,
+    },
+    {
+      path: "/privacy-policy",
+      element: <PrivacyPolicy />,
+    },
+    {
+      path: "/terms-and-conditions",
+      element: <TermsAndConditions />,
     },
     {
       path: "/login",
