@@ -190,18 +190,7 @@ const Sidebar = ({
       icon: HiOutlineOfficeBuilding,
       adminOnly: true,
     },
-    {
-      name: "Recruitment",
-      icon: HiOutlineDocumentSearch,
-      children: [
-        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase, permission: "recruitment.job_openings.view" },
-        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification, permission: "recruitment.applicants.view" },
-        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar, permission: "recruitment.interview_scheduling.view" },
-        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone, permission: "recruitment.interview.view" },
-        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText, permission: "recruitment.selection_offers.view" },
-        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd, permission: "recruitment.onboarding.view" },
-      ],
-    },
+
     {
       name: "Employee",
       icon: HiOutlineUsers,
@@ -245,6 +234,18 @@ const Sidebar = ({
       name: "Payroll",
       icon: HiOutlineCreditCard,
       children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash, permission: "payroll.payroll.view" }],
+    },
+    {
+      name: "Recruitment",
+      icon: HiOutlineDocumentSearch,
+      children: [
+        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase, permission: "recruitment.job_openings.view" },
+        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification, permission: "recruitment.applicants.view" },
+        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar, permission: "recruitment.interview_scheduling.view" },
+        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone, permission: "recruitment.interview.view" },
+        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText, permission: "recruitment.selection_offers.view" },
+        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd, permission: "recruitment.onboarding.view" },
+      ],
     },
     {
       name: "Performance",
