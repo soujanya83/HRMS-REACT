@@ -406,10 +406,9 @@ const ApplicantsPage = () => {
       "job_opening_id",
       formData.job_opening_id.toString()
     );
-    formDataInstance.append(
-      "cover_letter",
-      formData.cover_letter?.trim() || ""
-    );
+    if (formData.cover_letter?.trim()) {
+      formDataInstance.append("cover_letter", formData.cover_letter.trim());
+    }
     formDataInstance.append("source", formData.source);
     formDataInstance.append("status", formData.status);
     formDataInstance.append("organization_id", organizationId.toString());
@@ -1233,7 +1232,7 @@ const ApplicantsPage = () => {
                           htmlFor="cover_letter"
                           className="block text-sm font-medium text-gray-700 mb-1"
                         >
-                          Cover Letter
+                          Cover Letter (Optional)
                         </label>
                         <textarea
                           name="cover_letter"

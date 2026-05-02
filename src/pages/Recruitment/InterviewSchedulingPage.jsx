@@ -278,7 +278,8 @@ const InterviewFormSlideOver = ({
   interview,
   applicants,
   formErrors,
-  interviewers
+  interviewers,
+  initialDate
 }) => {
   const [formData, setFormData] = useState({
     applicant_id: '',
@@ -312,7 +313,7 @@ const InterviewFormSlideOver = ({
       setFormData({
         applicant_id: '',
         interview_type: 'phone_screen',
-        scheduled_at: '',
+        scheduled_at: initialDate ? new Date(initialDate.getTime() - (initialDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '',
         location: '',
         notes: '',
         feedback: '',
@@ -320,7 +321,7 @@ const InterviewFormSlideOver = ({
         interviewer_ids: []
       });
     }
-  }, [interview, isOpen]);
+  }, [interview, isOpen, initialDate]);
 
   const handleChange = (e) => {
     const { name, value, type, options } = e.target;
@@ -520,6 +521,7 @@ const InterviewSchedulingPage = () => {
     return localStorage.getItem('backgroundColor') || '#f9fafb';
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
+  const [initialDate, setInitialDate] = useState(null);
 
   const { selectedOrganization } = useOrganizations();
   const organizationId = selectedOrganization?.id;
@@ -800,6 +802,15 @@ const InterviewSchedulingPage = () => {
     setEditingInterview(interview);
     setSlideOverOpen(true);
   };
+ 
+  const handleAddAtDate = (date) => {
+    const d = new Date(date);
+    d.setHours(9, 0, 0, 0); // Default to 9 AM
+    setInitialDate(d);
+    setEditingInterview(null);
+    setFormErrors({});
+    setSlideOverOpen(true);
+  };
 
   const handleDeleteInterview = async (id) => {
     if (window.confirm('Are you sure you want to delete this interview?')) {
@@ -939,6 +950,7 @@ const InterviewSchedulingPage = () => {
                 <button
                   onClick={() => {
                     setEditingInterview(null);
+                    setInitialDate(null);
                     setFormErrors({});
                     setSlideOverOpen(true);
                   }}
@@ -1007,9 +1019,23 @@ const InterviewSchedulingPage = () => {
 
                     return (
                       <div key={date} className="border rounded-lg p-2 h-24 flex flex-col hover:bg-gray-50">
-                        <span className={`font-semibold ${fullDate.toDateString() === new Date().toDateString() ? 'text-brand-blue' : ''}`}>
-                          {date}
-                        </span>
+                        <div className="flex justify-between items-start">
+                          <span className={`font-semibold ${fullDate.toDateString() === new Date().toDateString() ? 'text-brand-blue' : ''}`}>
+                            {date}
+                          </span>
+                          {canAdd && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddAtDate(fullDate);
+                              }}
+                              className="p-1 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-full transition-colors"
+                              title="Schedule Interview"
+                            >
+                              <HiPlus className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                         <div className="mt-1 overflow-y-auto text-xs space-y-1 flex-1">
                           {interviewsForDay.map(interview => (
                             <div
@@ -1191,6 +1217,7 @@ const InterviewSchedulingPage = () => {
           applicants={applicants}
           formErrors={formErrors}
           interviewers={interviewers}
+          initialDate={initialDate}
         />
 
         <DateFilter

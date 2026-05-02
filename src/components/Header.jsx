@@ -45,6 +45,16 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         // For other pages, get the most relevant segment
         let title = pathName.length > 2 ? pathName[pathName.length - 1] : (pathName.length > 1 ? pathName[1] : pathName[0] || 'Dashboard');
         
+        // Handle edit routes with IDs
+        if (/^\d+$/.test(title) && pathName.includes('edit')) {
+            return 'Edit';
+        }
+
+        // If the last segment is a number (e.g. an ID), use route state title if available
+        if (/^\d+$/.test(title) && location.state?.jobTitle) {
+            return location.state.jobTitle;
+        }
+        
         // Convert 'organizations' to 'Centers'
         if (title.toLowerCase() === 'organizations') {
             return 'Centers';

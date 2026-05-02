@@ -1471,6 +1471,7 @@ const InputField = ({
   required = false,
   placeholder = "",
   disabled = false,
+  prefix = "",
 }) => (
   <div className="w-full">
     <label
@@ -1480,20 +1481,27 @@ const InputField = ({
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value || ""}
-      onChange={onChange}
-      required={required}
-      disabled={disabled}
-      placeholder={placeholder}
-      className={`w-full px-4 py-2.5 rounded-lg border ${error
-        ? "border-red-500 bg-red-50"
-        : "border-gray-300 hover:border-gray-400"
-        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-    />
+    <div className={`flex items-center rounded-lg border ${error
+      ? "border-red-500 bg-red-50"
+      : "border-gray-300 hover:border-gray-400"
+      } focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200`}>
+      {prefix && (
+        <span className="pl-4 pr-1 py-2.5 text-gray-500 font-medium select-none whitespace-nowrap">
+          {prefix}
+        </span>
+      )}
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        required={required}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={`w-full ${prefix ? "pl-1" : "px-4"} py-2.5 rounded-lg border-none focus:outline-none bg-transparent`}
+      />
+    </div>
     {error && (
       <div className="mt-1 flex items-center text-red-600 text-sm">
         <FaTimes className="mr-1 text-xs" />
@@ -1660,6 +1668,7 @@ export default function EmployeeForm() {
 
   const [formData, setFormData] = useState({
     first_name: "",
+    middle_name: "",
     last_name: "",
     personal_email: "",
     date_of_birth: "",
@@ -1906,11 +1915,20 @@ export default function EmployeeForm() {
     fetchDesignations();
   }, [organizationId]); // Only depend on organizationId
 
+  const capitalizeFirstLetter = (str) => {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     //console.log(`Field changed: ${name} = ${value}`);
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Auto-capitalize first letter for name fields
+    const nameFields = ['first_name', 'middle_name', 'last_name'];
+    const finalValue = nameFields.includes(name) ? capitalizeFirstLetter(value) : value;
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
 
     // Clear error when user starts typing
     if (formErrors[name]) {
@@ -2032,6 +2050,7 @@ export default function EmployeeForm() {
     const basicEmployeeData = {
       organization_id: organizationId,
       first_name: formData.first_name,
+      middle_name: formData.middle_name || "",
       last_name: formData.last_name,
       personal_email: formData.personal_email,
       phone_number: formData.phone_number,
@@ -2369,6 +2388,15 @@ export default function EmployeeForm() {
                   />
 
                   <InputField
+                    label="Middle Name"
+                    name="middle_name"
+                    id="middle_name"
+                    value={formData.middle_name}
+                    onChange={handleChange}
+                    placeholder="Enter middle name (optional)"
+                  />
+
+                  <InputField
                     label="Last Name"
                     name="last_name"
                     id="last_name"
@@ -2399,7 +2427,8 @@ export default function EmployeeForm() {
                     onChange={handleChange}
                     error={formErrors.phone_number}
                     required
-                    placeholder="+61 123 456 789"
+                    prefix="+61"
+                    placeholder="412 345 678"
                   />
 
                   <InputField
@@ -2471,7 +2500,8 @@ export default function EmployeeForm() {
                     value={formData.emergency_contact_phone}
                     onChange={handleChange}
                     error={formErrors.emergency_contact_phone}
-                    placeholder="Enter contact phone"
+                    prefix="+61"
+                    placeholder="412 345 678"
                   />
 
                   <InputField

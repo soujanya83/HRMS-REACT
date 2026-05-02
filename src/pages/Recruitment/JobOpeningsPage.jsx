@@ -408,6 +408,7 @@ function JobCard({ job, onEdit, onDelete, canEdit = true, canDelete = true }) {
           <div className="flex-1">
             <Link
               to={`${job.id}`}
+              state={{ jobTitle: job.title }}
               className="block"
             >
               <h2 className="text-xl font-bold text-gray-900 hover:text-brand-blue transition truncate">
@@ -643,6 +644,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const { selectedOrganization } = useOrganizations();
+  console.log("SELECTED ORGANIZATION IS ", selectedOrganization)
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
@@ -666,7 +668,7 @@ function JobOpeningModal({ isOpen, onClose, onSave, job, errors }) {
       employment_type: job.employment_type?.toLowerCase() || "full-time"
     } : {
       title: "",
-      location: "",
+      location: selectedOrganization?.address,
       employment_type: "full-time",
       status: "open",
       description: "",
