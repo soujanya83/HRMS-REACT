@@ -563,7 +563,6 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
 // MANDATORY CHECKLIST ITEM COMPONENT
 // ============================================
 const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEdit }) => {
-  const [showDocuments, setShowDocuments] = useState(false);
 
   const itemDocuments = documents.filter(doc =>
     doc.document_type === item.type ||
@@ -591,27 +590,16 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
             <p className="text-xs text-gray-500 mt-1">{item.description}</p>
 
             {itemDocuments.length > 0 && (
-              <div className="mt-3">
-                <button
-                  onClick={() => setShowDocuments(!showDocuments)}
-                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  {showDocuments ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
-                  {itemDocuments.length} document(s) uploaded
-                </button>
-                {showDocuments && (
-                  <div className="mt-2 space-y-2">
-                    {itemDocuments.map(doc => (
-                      <DocumentCard
-                        key={doc.id}
-                        document={doc}
-                        onDelete={onDelete}
-                        onView={onView}
-                        onEdit={onEdit}
-                      />
-                    ))}
-                  </div>
-                )}
+              <div className="mt-3 space-y-2">
+                {itemDocuments.map(doc => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    onDelete={onDelete}
+                    onView={onView}
+                    onEdit={onEdit}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -619,9 +607,9 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
 
         <button
           onClick={() => onUpload(item.type)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 whitespace-nowrap ml-3"
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? 'bg-amber-600 hover:bg-amber-700' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-lg whitespace-nowrap ml-3`}
         >
-          <FaUpload size={12} /> Upload
+          {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />} {isUploaded ? 'Replace' : 'Upload'}
         </button>
       </div>
     </div>
@@ -748,6 +736,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [activeTab, setActiveTab] = useState('personal');
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -1027,6 +1016,8 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
       if (response.data?.status) {
         setSubmitted(true);
         toast.success('Profile updated successfully!');
+        // Automatically switch to documents tab on success
+        setActiveTab('documents');
       } else {
         toast.error(response.data?.message || 'Failed to update profile');
       }
@@ -1116,6 +1107,38 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
           )}
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 border border-gray-100">
+          <button
+            type="button"
+            onClick={() => setActiveTab('personal')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+              activeTab === 'personal'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <FaUser /> Personal Information
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (employeeId) {
+                setActiveTab('documents');
+              } else {
+                toast.warning('Please save your personal information first');
+              }
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+              activeTab === 'documents'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-500 hover:bg-gray-50'
+            } ${!employeeId ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <FaFileAlt /> Documents & Certificates
+          </button>
+        </div>
+
         {submitted && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-3">
@@ -1130,7 +1153,8 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        {activeTab === 'personal' && (
+          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
               <FaUser /> Employee Information (Read Only)
@@ -1364,8 +1388,9 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
             </div>
           )}
         </form>
+        )}
 
-        {submitted && employeeId && (
+        {activeTab === 'documents' && employeeId && (
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
