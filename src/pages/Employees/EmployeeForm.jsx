@@ -12,6 +12,7 @@ import {
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
   searchSuperFunds,
+  verifyEmployeeDocument
 } from "../../services/employeeService.js";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
@@ -44,9 +45,10 @@ import {
   FaShieldAlt,
   FaMedkit,
   FaGavel,
-  FaUserShield,
   FaClipboardList,
   FaSearch,
+  FaClock,
+  FaCheckCircle
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
@@ -999,7 +1001,29 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Document Card Component
-const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
+const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete, onVerify }) => {
+  const getStatusBadge = (verify) => {
+    if (verify === 'approved') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold border border-green-200">
+          <FaCheckCircle size={10} /> Approved
+        </span>
+      );
+    }
+    if (verify === 'rejected') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-bold border border-red-200">
+          <FaTimes size={10} /> Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold border border-amber-200">
+        <FaClock size={10} /> Pending
+      </span>
+    );
+  };
+
   const today = new Date();
   const expiryDate = document.expiry_date
     ? new Date(document.expiry_date)
@@ -1068,9 +1092,11 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         <div className="flex items-center gap-3">
           <div className="text-xl">{getFileIcon(document.file_name)}</div>
           <div>
-            <h4 className="font-semibold text-gray-900">
-              {document.document_type || "Document"}
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold text-gray-900">
+                {document.document_type || "Document"}
+              </h4>
+            </div>
             <p className="text-sm text-gray-500">{document.file_name}</p>
             {certType?.includes && (
               <div className="flex gap-1 mt-1">
@@ -1091,13 +1117,26 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
             )}
           </div>
         </div>
-        {expiryDate && (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}
-          >
-            {statusText}
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-2 ml-4">
+          {onVerify ? (
+            <select
+              value={document.verify || "pending"}
+              onChange={(e) => onVerify(document.id, e.target.value)}
+              className={`text-[11px] font-bold py-1 px-2.5 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer shadow-sm ${document.verify === 'approved'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : document.verify === 'rejected'
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+            >
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          ) : (
+            getStatusBadge(document.verify)
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -1111,7 +1150,16 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         )}
         {document.expiry_date && (
           <div>
-            <p className="text-xs text-gray-500">Expiry Date</p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-xs text-gray-500">Expiry Date</p>
+              {expiryDate && (
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${statusColor}`}
+                >
+                  {statusText}
+                </span>
+              )}
+            </div>
             <p className="text-sm font-medium">
               {formatDate(document.expiry_date)}
             </p>
@@ -1140,7 +1188,7 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         </div>
       )}
 
-      <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
+      <div className="pt-4 border-t border-gray-100 flex justify-end gap-2 items-center">
         {document.file_url && (
           <>
             <a
@@ -1190,7 +1238,29 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
 };
 
 // Compliance Checklist Component with Colors
-const ComplianceChecklist = ({ certificates = [] }) => {
+const ComplianceChecklist = ({ certificates = [], onVerify }) => {
+  const getStatusBadge = (verify) => {
+    if (verify === 'approved') {
+      return (
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[9px] font-bold ml-2">
+          Approved
+        </span>
+      );
+    }
+    if (verify === 'rejected') {
+      return (
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[9px] font-bold ml-2">
+          Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-bold ml-2">
+        Pending
+      </span>
+    );
+  };
+
   const [expandedCategories, setExpandedCategories] = useState(
     Object.keys(MANDATORY_CERTIFICATES).reduce(
       (acc, key) => ({ ...acc, [key]: true }),
@@ -1407,6 +1477,22 @@ const ComplianceChecklist = ({ certificates = [] }) => {
                                 <span className="font-medium text-gray-700">
                                   {uploadedDoc.file_name}
                                 </span>
+                                {onVerify && (
+                                  <select
+                                    value={uploadedDoc.verify || "pending"}
+                                    onChange={(e) => onVerify(uploadedDoc.id, e.target.value)}
+                                    className={`ml-2 text-[10px] font-bold py-0.5 px-1.5 rounded border outline-none cursor-pointer ${uploadedDoc.verify === 'approved'
+                                      ? 'bg-green-50 text-green-700 border-green-200'
+                                      : uploadedDoc.verify === 'rejected'
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                      }`}
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                  </select>
+                                )}
                                 {uploadedDoc.expiry_date && (
                                   <>
                                     <span className="text-gray-400">|</span>
@@ -1832,8 +1918,9 @@ export default function EmployeeForm() {
 
       getEmployees({ organization_id: organizationId })
         .then((response) => {
+          console.log("Employee response ", response.data);
           if (response.data && response.data.success === true) {
-            const employeesData = response.data.data || [];
+            const employeesData = response.data.data.data || [];
             setManagers(
               employeesData.map((e) => ({
                 value: e.id,
@@ -1945,6 +2032,29 @@ export default function EmployeeForm() {
 
   const handleSuperFundSelect = (value) => {
     setFormData((prev) => ({ ...prev, superannuation_fund_name: value }));
+  };
+
+  const handleVerifyDocument = async (docId, status) => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      if (!user) {
+        alert('Session expired. Please login again.');
+        return;
+      }
+
+      await verifyEmployeeDocument(docId, {
+        verify: status,
+        verified_by: user.id
+      });
+
+      alert(`Document ${status === 'approved' ? 'Approved' : 'Rejected'} successfully`);
+      await fetchCertificates();
+    } catch (err) {
+      console.error('Error verifying document:', err);
+      alert(err.response?.data?.message || 'Failed to update document status');
+    }
   };
 
   const handleUploadDocument = async (empId, formData, isEdit = false) => {
@@ -2625,6 +2735,7 @@ export default function EmployeeForm() {
                             }}
                             canEdit={canEdit}
                             canDelete={canDelete}
+                            onVerify={handleVerifyDocument}
                           />
                         ))}
                       </div>
@@ -2654,7 +2765,10 @@ export default function EmployeeForm() {
                     </div>
                   )
                 ) : (
-                  <ComplianceChecklist certificates={certificates} />
+                  <ComplianceChecklist
+                    certificates={certificates}
+                    onVerify={handleVerifyDocument}
+                  />
                 )}
               </div>
             )}

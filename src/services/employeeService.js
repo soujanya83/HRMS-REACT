@@ -221,6 +221,16 @@ export const deleteEmployeeDocument = (documentId) => {
   return axiosClient.delete(`/employee/document/${documentId}`);
 };
 
+/**
+ * Verify an employee document (approve/reject)
+ * @param {number|string} documentId - The document ID
+ * @param {Object} verifyData - Object containing verify (status) and verified_by (user ID)
+ * @returns {Promise} - API response
+ */
+export const verifyEmployeeDocument = (documentId, verifyData) => {
+  return axiosClient.post(`/documents/${documentId}/verify`, verifyData);
+};
+
 // ============================================
 // DEPARTMENTS & ORGANIZATIONS
 // ============================================
@@ -401,6 +411,7 @@ export const employeeService = {
   deleteEmployeeDocument,
   getDocumentDetails,
   updateDocumentDates,
+  verifyEmployeeDocument,
 
   // Departments
   getDepartmentsByOrganization,

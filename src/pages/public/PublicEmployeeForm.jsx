@@ -49,7 +49,8 @@ import {
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   getEmployeeDocuments,
-  updateDocumentDates  // ✅ USE THIS INSTEAD
+  updateDocumentDates,  // ✅ USE THIS INSTEAD
+  verifyEmployeeDocument
 } from '../../services/employeeService';
 
 // ============================================
@@ -502,20 +503,53 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
     return <FaFileAlt className="text-gray-500" />;
   };
 
+  const isApproved = (verify) => verify === 'approved';
+  const isRejected = (verify) => verify === 'rejected';
+
+  const getStatusBadge = (verify) => {
+    if (verify === 'approved') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">
+          <FaCheckCircle size={10} /> Approved
+        </span>
+      );
+    }
+    if (verify === 'rejected') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-semibold">
+          <FaTimes size={10} /> Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold">
+        <FaClock size={10} /> Pending
+      </span>
+    );
+  };
+
   const isExpired = (expiryDate) => {
     if (!expiryDate) return false;
     return new Date(expiryDate) < new Date();
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className={`bg-white border ${document.verify === 'approved' ? 'border-green-200 shadow-sm' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}>
+      {document.verify === 'approved' && (
+        <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-10">
+           <FaCheckCircle size={60} className="text-green-500 -mr-4 -mt-4" />
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
           <div className="mt-1">
             {getFileIcon(document.file_name)}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">{document.file_name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-gray-800">{document.file_name || document.document_type}</p>
+              {getStatusBadge(document.verify)}
+            </div>
             <div className="flex flex-wrap gap-3 mt-2 text-xs">
               <span className="text-gray-500">
                 <FaCalendarAlt className="inline mr-1 text-gray-400" size={10} />
@@ -530,13 +564,15 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
           </div>
         </div>
         <div className="flex gap-1 ml-2">
-          <button
-            onClick={() => onEdit(document)}
-            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
-            title="Edit Dates"
-          >
-            <FaEdit size={12} />
-          </button>
+          {document.verify !== 'approved' && (
+            <button
+              onClick={() => onEdit(document)}
+              className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
+              title="Edit Dates"
+            >
+              <FaEdit size={12} />
+            </button>
+          )}
           {document.file_url && (
             <button
               onClick={() => onView(document)}
@@ -546,13 +582,15 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
               <FaEye size={12} />
             </button>
           )}
-          <button
-            onClick={() => onDelete(document.id)}
-            className="p-1.5 text-red-600 hover:bg-red-100 rounded"
-            title="Delete"
-          >
-            <FaTrash size={12} />
-          </button>
+          {document.verify !== 'approved' && (
+            <button
+              onClick={() => onDelete(document.id)}
+              className="p-1.5 text-red-600 hover:bg-red-100 rounded"
+              title="Delete"
+            >
+              <FaTrash size={12} />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -568,6 +606,8 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
     doc.document_type === item.type ||
     doc.document_type?.includes(item.type.split(' ')[0])
   );
+
+  const hasApprovedDoc = itemDocuments.some(doc => doc.verify === 'approved');
 
   return (
     <div className={`border rounded-lg p-4 transition-all ${isUploaded ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
@@ -605,12 +645,18 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
           </div>
         </div>
 
-        <button
-          onClick={() => onUpload(item.type)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? 'bg-amber-600 hover:bg-amber-700' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-lg whitespace-nowrap ml-3`}
-        >
-          {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />} {isUploaded ? 'Replace' : 'Upload'}
-        </button>
+        {!hasApprovedDoc ? (
+          <button
+            onClick={() => onUpload(item.type)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? 'bg-amber-600 hover:bg-amber-700' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-lg whitespace-nowrap ml-3`}
+          >
+            {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />} {isUploaded ? 'Replace' : 'Upload'}
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg whitespace-nowrap ml-3 font-medium">
+            <FaCheckCircle size={12} /> Verified
+          </div>
+        )}
       </div>
     </div>
   );
@@ -912,14 +958,20 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   const fetchDocuments = async () => {
     if (!employeeId) return;
     try {
-      const res = await getEmployeeDocuments(employeeId);
-      let docs = [];
-      if (res.data?.success && res.data.data) docs = res.data.data;
-      else if (Array.isArray(res.data)) docs = res.data;
-      setDocuments(docs);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
+      const response = await getEmployeeDocuments(employeeId);
+      if (response.data && response.data.success) {
+        setDocuments(response.data.data || []);
+      } else {
+        setDocuments(Array.isArray(response.data) ? response.data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching documents:', err);
     }
+  };
+
+  const handleVerifyDocument = async (docId, status) => {
+    // Verification is not allowed on the public form
+    return;
   };
 
   const handleChange = (e) => {
@@ -1426,6 +1478,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   onDelete={handleDeleteDocument}
                   onView={handleViewDocument}
                   onEdit={handleEditDocument}
+                  isDashboard={isDashboard}
                 />
               ))}
             </div>
@@ -1436,6 +1489,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
               onDelete={handleDeleteDocument}
               onView={handleViewDocument}
               onEdit={handleEditDocument}
+              isDashboard={isDashboard}
             />
           </div>
         )}
