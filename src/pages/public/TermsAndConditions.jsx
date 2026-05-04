@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaGavel, FaArrowLeft, FaRegHandshake, FaUserShield, FaExclamationTriangle, FaBan, FaCheckCircle, FaGlobe, FaBalanceScale, FaClock, FaHandshake, FaRegHandshake as FaHandshakeIcon } from "react-icons/fa";
+import { FaGavel, FaArrowLeft, FaRegHandshake, FaUserShield, FaExclamationTriangle, FaBan, FaCheckCircle, FaGlobe, FaBalanceScale, FaClock, FaHandshake, FaRegHandshake as FaHandshakeIcon, FaMapMarkerAlt, FaEnvelope, FaUserSecret } from "react-icons/fa";
 import logo1 from "../../assets/logo1.png";
 import logoText from "../../assets/logotext.png";
 
@@ -177,7 +177,7 @@ const TermsAndConditions = () => {
            </div>
            <div className="flex-1 p-8 bg-white border border-slate-100 rounded-3xl text-center">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Jurisdiction</p>
-              <p className="text-xl font-black text-slate-900">Courts of Hyderabad</p>
+              <p className="text-xl font-black text-slate-900">Courts of Noida</p>
            </div>
         </div>
       )
@@ -187,6 +187,40 @@ const TermsAndConditions = () => {
       title: "11. Changes to Terms",
       icon: <FaClock />,
       content: "We may update Terms anytime. Continued use means acceptance."
+    },
+    {
+      id: "contact",
+      title: "12. Contact Information",
+      icon: <FaUserSecret />,
+      content: (
+        <div className="bg-slate-900 rounded-[40px] p-10 md:p-16 text-white shadow-2xl">
+          <h4 className="text-3xl font-black mb-8">Get in Touch</h4>
+          <div className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl text-white">
+                <FaMapMarkerAlt />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Office</p>
+                <p className="text-xl font-bold">Noida, U.P, India</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl text-white">
+                <FaEnvelope />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Support</p>
+                <p className="text-xl font-bold underline underline-offset-4 decoration-2">info@chrispp.au</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-white/10 flex items-center gap-4 opacity-60">
+            <img src={logo1} alt="Logo" className="h-8 brightness-0 invert" />
+            <span className="font-black text-sm tracking-tighter">CHRISPP HRMS</span>
+          </div>
+        </div>
+      )
     }
   ];
 

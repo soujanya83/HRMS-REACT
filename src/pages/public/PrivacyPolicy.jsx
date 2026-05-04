@@ -230,8 +230,36 @@ const PrivacyPolicy = () => {
       content: "This policy evolves with legal standards. Users will be notified of significant updates."
     },
     {
+      id: "camera",
+      title: "13. Camera Usage Policy",
+      icon: <FaShieldAlt />,
+      content: (
+        <div className="space-y-6">
+          <h4 className="text-xl font-bold text-slate-900">Purpose of Camera Access</h4>
+          <p className="text-slate-600 leading-relaxed">
+            Our app requests access to your device’s camera solely to enable core features such as:
+          </p>
+          <ul className="space-y-3">
+            {[
+              "Capturing photos or videos within the app",
+              "Scanning codes, documents, or images (if applicable)",
+              "Supporting user-initiated actions that require camera functionality"
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3 text-slate-600">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-slate-600 font-medium italic p-4 bg-blue-50 rounded-2xl border border-blue-100">
+            "The camera is only activated when you explicitly choose to use these features."
+          </p>
+        </div>
+      )
+    },
+    {
       id: "contact",
-      title: "13. Contact Information",
+      title: "14. Contact Information",
       icon: <FaUserSecret />,
       content: (
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[40px] p-10 md:p-16 text-white shadow-2xl shadow-blue-500/20">
@@ -243,7 +271,7 @@ const PrivacyPolicy = () => {
               </div>
               <div>
                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Office</p>
-                <p className="text-xl font-bold">Hyderabad, Telangana, India</p>
+                <p className="text-xl font-bold">Noida, U.P, India</p>
               </div>
             </div>
             <div className="flex items-center gap-6">
@@ -252,7 +280,7 @@ const PrivacyPolicy = () => {
               </div>
               <div>
                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Support</p>
-                <p className="text-xl font-bold underline underline-offset-4 decoration-2">support@chrispp.au</p>
+                <p className="text-xl font-bold underline underline-offset-4 decoration-2">info@chrispp.au</p>
               </div>
             </div>
           </div>
