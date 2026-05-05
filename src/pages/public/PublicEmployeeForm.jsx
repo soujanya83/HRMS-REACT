@@ -50,7 +50,8 @@ import {
   deleteEmployeeDocument,
   getEmployeeDocuments,
   updateDocumentDates,  // ✅ USE THIS INSTEAD
-  verifyEmployeeDocument
+  verifyEmployeeDocument,
+  searchSuperFunds
 } from '../../services/employeeService';
 
 // ============================================
@@ -123,6 +124,7 @@ const MANDATORY_CERTIFICATES_LIST = [
     description: "Emergency procedures, supervision, child protection",
     icon: "📋"
   },
+
   {
     id: "right_to_work",
     name: "Right to Work in Australia",
@@ -537,7 +539,7 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
     <div className={`bg-white border ${document.verify === 'approved' ? 'border-green-200 shadow-sm' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}>
       {document.verify === 'approved' && (
         <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-10">
-           <FaCheckCircle size={60} className="text-green-500 -mr-4 -mt-4" />
+          <FaCheckCircle size={60} className="text-green-500 -mr-4 -mt-4" />
         </div>
       )}
       <div className="flex items-start justify-between">
@@ -784,6 +786,9 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [errors, setErrors] = useState({});
+  const [superFundSuggestions, setSuperFundSuggestions] = useState([]);
+  const [isSearchingSuperFund, setIsSearchingSuperFund] = useState(false);
+  const [showSuperFundSuggestions, setShowSuperFundSuggestions] = useState(false);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -829,6 +834,31 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
       fetchDocuments();
     }
   }, [employeeId]);
+
+  // Super Fund Search logic
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      const query = formData.superannuation_fund_name;
+      // Only search if there's a query and we haven't just selected a value
+      // (Checking if query matches a selected suggestion could be complex, 
+      // so we rely on showSuperFundSuggestions being true which happens on focus/typing)
+      if (query && query.length >= 1 && showSuperFundSuggestions) {
+        setIsSearchingSuperFund(true);
+        try {
+          const suggestions = await searchSuperFunds(query);
+          setSuperFundSuggestions(suggestions);
+        } catch (error) {
+          console.error("Error fetching super funds:", error);
+        } finally {
+          setIsSearchingSuperFund(false);
+        }
+      } else {
+        setSuperFundSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [formData.superannuation_fund_name, showSuperFundSuggestions]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -1164,11 +1194,10 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
           <button
             type="button"
             onClick={() => setActiveTab('personal')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-              activeTab === 'personal'
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'personal'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-gray-500 hover:bg-gray-50'
-            }`}
+              }`}
           >
             <FaUser /> Personal Information
           </button>
@@ -1181,11 +1210,10 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                 toast.warning('Please save your personal information first');
               }
             }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-              activeTab === 'documents'
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'documents'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-gray-500 hover:bg-gray-50'
-            } ${!employeeId ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${!employeeId ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <FaFileAlt /> Documents & Certificates
           </button>
@@ -1207,239 +1235,274 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
 
         {activeTab === 'personal' && (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
-              <FaUser /> Employee Information (Read Only)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-blue-700">Full Name</label>
-                <p className="text-sm text-gray-800 font-medium">
-                  {formData.first_name} {formData.middle_name} {formData.last_name}
-                </p>
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                <FaUser /> Employee Information (Read Only)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-blue-700">Full Name</label>
+                  <p className="text-sm text-gray-800 font-medium">
+                    {formData.first_name} {formData.middle_name} {formData.last_name}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-blue-700">Email</label>
+                  <p className="text-sm text-gray-800 font-medium">{formData.email || '-'}</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-blue-700">Email</label>
-                <p className="text-sm text-gray-800 font-medium">{formData.email || '-'}</p>
+              <p className="text-xs text-blue-600 mt-3">
+                <FaExclamationTriangle className="inline mr-1" /> These details cannot be edited. Contact HR for changes.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+                <FaUser className="text-blue-600" /> Personal Information
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-2 border ${errors.phone_number ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                    placeholder="+61 123 456 789"
+                  />
+                  {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="date_of_birth"
+                    value={formData.date_of_birth}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  />
+                  {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                  {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    required
+                    rows="2"
+                    className={`w-full px-4 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                    placeholder="Enter your full address"
+                  />
+                  {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+                </div>
               </div>
             </div>
-            <p className="text-xs text-blue-600 mt-3">
-              <FaExclamationTriangle className="inline mr-1" /> These details cannot be edited. Contact HR for changes.
-            </p>
-          </div>
 
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaUser className="text-blue-600" /> Personal Information
-            </h2>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+                <FaHeart className="text-red-500" /> Emergency Contact
+              </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border ${errors.phone_number ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                  placeholder="+61 123 456 789"
-                />
-                {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="emergency_contact_name"
+                    value={formData.emergency_contact_name}
+                    onChange={handleChange}
+                    required
+                    placeholder="Contact Name"
+                    className={`w-full px-4 py-2 border ${errors.emergency_contact_name ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                  />
+                  {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="emergency_contact_phone"
+                    value={formData.emergency_contact_phone}
+                    onChange={handleChange}
+                    required
+                    placeholder="Contact Phone"
+                    className={`w-full px-4 py-2 border ${errors.emergency_contact_phone ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                  />
+                  {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Relationship <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="emergency_contact_relationship"
+                    value={formData.emergency_contact_relationship}
+                    onChange={handleChange}
+                    required
+                    placeholder="Relationship"
+                    className={`w-full px-4 py-2 border ${errors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                  />
+                  {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="date_of_birth"
-                  value={formData.date_of_birth}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+                <FaShieldAlt className="text-green-600" /> Tax & Financial Information
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <EncryptedInput
+                  label="Tax File Number (TFN)"
+                  name="tax_file_number"
+                  value={formData.tax_file_number}
                   onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  required={true}
+                  placeholder="XXX XXX XXX"
+                  error={errors.tax_file_number}
                 />
-                {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Superannuation Fund Name
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="superannuation_fund_name"
+                      value={formData.superannuation_fund_name}
+                      onChange={handleChange}
+                      onFocus={() => setShowSuperFundSuggestions(true)}
+                      onBlur={() => {
+                        // Small delay to allow clicking on a suggestion
+                        setTimeout(() => setShowSuperFundSuggestions(false), 200);
+                      }}
+                      placeholder="e.g., AustralianSuper, REST, Hostplus"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      autoComplete="off"
+                    />
+                    {isSearchingSuperFund && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <FaSpinner className="animate-spin text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {showSuperFundSuggestions && superFundSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {superFundSuggestions.map((fund, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              superannuation_fund_name: fund
+                            }));
+                            setSuperFundSuggestions([]);
+                            setShowSuperFundSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm border-b last:border-b-0"
+                        >
+                          {fund}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Superannuation Member Number
+                  </label>
+                  <input
+                    type="text"
+                    name="superannuation_member_number"
+                    value={formData.superannuation_member_number}
+                    onChange={handleChange}
+                    placeholder="Your superannuation member number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bank BSB
+                  </label>
+                  <input
+                    type="text"
+                    name="bank_bsb"
+                    value={formData.bank_bsb}
+                    onChange={handleChange}
+                    placeholder="XXX XXX"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <EncryptedInput
+                  label="Bank Account Number"
+                  name="bank_account_number"
+                  value={formData.bank_account_number}
                   onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  required={false}
+                  placeholder="Your bank account number"
+                  error={errors.bank_account_number}
+                />
+              </div>
+            </div>
+
+            {!submitted && (
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                 >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-                {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
+                  {submitting ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                  {submitting ? 'Saving...' : 'Save & Continue'}
+                </button>
               </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  rows="2"
-                  className={`w-full px-4 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Enter your full address"
-                />
-                {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaHeart className="text-red-500" /> Emergency Contact
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact_name"
-                  value={formData.emergency_contact_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Contact Name"
-                  className={`w-full px-4 py-2 border ${errors.emergency_contact_name ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
-                />
-                {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="emergency_contact_phone"
-                  value={formData.emergency_contact_phone}
-                  onChange={handleChange}
-                  required
-                  placeholder="Contact Phone"
-                  className={`w-full px-4 py-2 border ${errors.emergency_contact_phone ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
-                />
-                {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Relationship <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact_relationship"
-                  value={formData.emergency_contact_relationship}
-                  onChange={handleChange}
-                  required
-                  placeholder="Relationship"
-                  className={`w-full px-4 py-2 border ${errors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
-                />
-                {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaShieldAlt className="text-green-600" /> Tax & Financial Information
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <EncryptedInput
-                label="Tax File Number (TFN)"
-                name="tax_file_number"
-                value={formData.tax_file_number}
-                onChange={handleChange}
-                required={true}
-                placeholder="XXX XXX XXX"
-                error={errors.tax_file_number}
-              />
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Superannuation Fund Name
-                </label>
-                <input
-                  type="text"
-                  name="superannuation_fund_name"
-                  value={formData.superannuation_fund_name}
-                  onChange={handleChange}
-                  placeholder="e.g., AustralianSuper, REST, Hostplus"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Superannuation Member Number
-                </label>
-                <input
-                  type="text"
-                  name="superannuation_member_number"
-                  value={formData.superannuation_member_number}
-                  onChange={handleChange}
-                  placeholder="Your superannuation member number"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank BSB
-                </label>
-                <input
-                  type="text"
-                  name="bank_bsb"
-                  value={formData.bank_bsb}
-                  onChange={handleChange}
-                  placeholder="XXX XXX"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <EncryptedInput
-                label="Bank Account Number"
-                name="bank_account_number"
-                value={formData.bank_account_number}
-                onChange={handleChange}
-                required={false}
-                placeholder="Your bank account number"
-                error={errors.bank_account_number}
-              />
-            </div>
-          </div>
-
-          {!submitted && (
-            <div className="flex justify-end pt-4 border-t border-gray-200">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {submitting ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                {submitting ? 'Saving...' : 'Save & Continue'}
-              </button>
-            </div>
-          )}
-        </form>
+            )}
+          </form>
         )}
 
         {activeTab === 'documents' && employeeId && (
