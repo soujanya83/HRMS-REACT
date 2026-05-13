@@ -6,9 +6,9 @@ export default {
   ],
   theme: {
     extend: {
-      
+
       colors: {
-        'brand-blue': '#00A9FF', 
+        'brand-blue': '#00A9FF',
       }
     },
   },

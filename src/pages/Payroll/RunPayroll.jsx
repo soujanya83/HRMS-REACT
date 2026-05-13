@@ -296,7 +296,7 @@ const RunPayroll = () => {
       setLoading(prev => ({ ...prev, allPayRuns: true }));
       setError(null);
 
-      console.log('📡 Fetching ALL pay runs for organization:', organizationId);
+      //console.log('📡 Fetching ALL pay runs for organization:', organizationId);
       const response = await payrollService.getAllPayRunsByOrganization(organizationId);
 
       if (response.data && response.data.status) {

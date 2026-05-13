@@ -14,6 +14,7 @@ import InterviewPage from "./pages/Recruitment/InterviewPage";
 import ApplicationSuccess from './pages/public/ApplicationSuccess';
 import PrivacyPolicy from './pages/public/PrivacyPolicy';
 import TermsAndConditions from './pages/public/TermsAndConditions';
+import ContactUs from './pages/public/ContactUs';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -240,6 +241,10 @@ function App() {
     {
       path: "/terms-and-conditions",
       element: <TermsAndConditions />,
+    },
+    {
+      path: "/contact-us",
+      element: <ContactUs />,
     },
     {
       path: "/login",

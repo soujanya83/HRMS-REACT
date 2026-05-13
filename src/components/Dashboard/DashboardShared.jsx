@@ -4,7 +4,7 @@ import React from 'react';
 export const Icons = {
   Palette: () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white"/>
+      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
       <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
       <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
       <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -176,9 +176,8 @@ export const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -192,9 +191,8 @@ export const ColorPaletteModal = ({
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+                }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useOrganizations } from '../contexts/OrganizationContext';
+import { rosterService } from '../services/rosterService';
 import {
   Icons,
   DashCard,
@@ -107,11 +109,45 @@ const quickActions = [
 
 const DashboardContent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [todayRosters, setTodayRosters] = useState([]);
+  const [isLoadingRosters, setIsLoadingRosters] = useState(true);
+  const { selectedOrganization } = useOrganizations();
   const context = useOutletContext();
   const user = context?.user || null;
 
   // Use the theme context instead of outlet context
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
+
+  // Fetch today's rosters
+  useEffect(() => {
+    const fetchTodayRosters = async () => {
+      if (!selectedOrganization?.id) return;
+
+      setIsLoadingRosters(true);
+      try {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+
+        const response = await rosterService.getRosters({
+          organization_id: selectedOrganization.id,
+          roster_date: formattedDate
+        });
+
+        if (response.data && response.data.success) {
+          setTodayRosters(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching today\'s rosters:', error);
+      } finally {
+        setIsLoadingRosters(false);
+      }
+    };
+
+    fetchTodayRosters();
+  }, [selectedOrganization]);
 
   // Calendar grid
   const calendarCells = [];
@@ -177,32 +213,53 @@ const DashboardContent = () => {
 
             <DashCard accentColor="#FF6B6B">
               <CardTitle icon={<Icons.Clock />}>Today's Roster</CardTitle>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-400 text-xs uppercase">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Dept</th>
-                      <th className="pb-2">Shift</th>
-                      <th className="pb-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roster.map(r => (
-                      <tr key={r.name} className="border-t border-gray-100">
-                        <td className="py-2 font-medium text-gray-700">{r.name}</td>
-                        <td className="py-2 text-gray-500">{r.dept}</td>
-                        <td className="py-2 text-gray-500">{r.shift}</td>
-                        <td className="py-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'On Duty' ? 'bg-green-100 text-green-700' :
-                              r.status === 'Leave' ? 'bg-amber-100 text-amber-700' :
-                                'bg-gray-100 text-gray-500'
-                            }`}>{r.status}</span>
-                        </td>
+              <div className="overflow-x-auto min-h-[200px]">
+                {isLoadingRosters ? (
+                  <div className="flex items-center justify-center h-40">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                  </div>
+                ) : todayRosters.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-400 text-xs uppercase">
+                        <th className="pb-2">Name</th>
+                        <th className="pb-2">Dept</th>
+                        <th className="pb-2">Shift</th>
+                        <th className="pb-2">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {todayRosters.map((r, idx) => (
+                        <tr key={r.id || idx} className="border-t border-gray-100">
+                          <td className="py-2 font-medium text-gray-700">
+                            {r.employee?.name || `Employee #${r.employee_id}`}
+                          </td>
+                          <td className="py-2 text-gray-500">{r.department_name || 'N/A'}</td>
+                          <td className="py-2">
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-semibold text-white shadow-sm inline-block"
+                              style={{ backgroundColor: r.shift?.color_code || '#6B7280' }}
+                            >
+                              {r.shift?.name || (r.shift?.start_time && r.shift?.end_time ? `${r.shift.start_time} - ${r.shift.end_time}` : 'N/A')}
+                            </span>
+                          </td>
+                          <td className="py-2">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${r.attendance_status === 'present' ? 'bg-green-100 text-green-700' :
+                              r.attendance_status === 'absent' ? 'bg-red-100 text-red-700' :
+                                r.attendance_status === 'late' ? 'bg-amber-100 text-amber-700' :
+                                  'bg-gray-100 text-gray-500'
+                              }`}>{r.attendance_status || 'Scheduled'}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                    <Icons.Clock className="w-8 h-8 mb-2 opacity-20" />
+                    <p>No rosters scheduled for today</p>
+                  </div>
+                )}
               </div>
             </DashCard>
           </div>
@@ -221,9 +278,9 @@ const DashboardContent = () => {
                   const isEvent = events.includes(day);
                   return (
                     <span key={i} className={`py-1 rounded-full font-medium transition-colors ${isToday ? 'bg-blue-200 text-blue-800 font-bold' :
-                        isHoliday ? 'bg-red-100 text-red-600' :
-                          isEvent ? 'bg-blue-100 text-blue-600' :
-                            'text-gray-600 hover:bg-gray-100'
+                      isHoliday ? 'bg-red-100 text-red-600' :
+                        isEvent ? 'bg-blue-100 text-blue-600' :
+                          'text-gray-600 hover:bg-gray-100'
                       }`}>{day}</span>
                   );
                 })}

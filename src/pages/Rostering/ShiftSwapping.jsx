@@ -1584,10 +1584,10 @@ const ShiftSwapping = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">Difference:</span>
                         <span className={`text-lg font-bold ${(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) > 0
-                            ? 'text-green-600'
-                            : (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) < 0
-                              ? 'text-red-600'
-                              : 'text-gray-600'
+                          ? 'text-green-600'
+                          : (calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) < 0
+                            ? 'text-red-600'
+                            : 'text-gray-600'
                           }`}>
                           {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id))}
                         </span>

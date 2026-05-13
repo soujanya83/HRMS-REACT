@@ -126,6 +126,70 @@ const ColorPaletteModal = ({
   );
 };
 
+const EmployeeRow = ({
+  employee,
+  weeklyTotals,
+  getDesignationTitle,
+  weekDates,
+  getRostersForEmployeeAndDate,
+  shifts,
+  getShiftColor,
+  canAdd,
+  handleAddRoster,
+  handleEditRoster
+}) => {
+  const employeeTotal = weeklyTotals.byEmployee[employee.id] || { hours: 0, amount: 0 };
+  const position = getDesignationTitle(employee.designation_id);
+  const isTBC = (employee.first_name || '').toUpperCase() === 'TBC' || (employee.last_name || '').toUpperCase() === 'TBC';
+
+  return (
+    <div className="border-b transition-colors hover:bg-gray-50" style={{ display: 'grid', gridTemplateColumns: '150px 180px repeat(5, 1fr)' }}>
+      {/* Position Column */}
+      <div className="p-2 border-r bg-white sticky left-0 z-10 flex items-center font-medium text-gray-700 text-sm h-12">
+        {position}
+      </div>
+
+      {/* Staff Name Column */}
+      <div className={`p-2 border-r sticky left-[150px] z-10 flex items-center justify-center h-12 ${isTBC ? 'bg-[#FFFF00]' : 'bg-white'}`}>
+        <div className="font-bold text-gray-900 text-center text-sm">
+          {employee.first_name || ''} {employee.last_name || ''}
+        </div>
+      </div>
+
+      {weekDates.map(day => {
+        const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
+        return (
+          <div key={day.toString()} className={`p-1 border-r flex flex-col justify-center items-center h-12 ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50/30' : ''
+            }`}>
+            {dayRosters.map(roster => {
+              const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
+              return (
+                <div
+                  key={roster.id}
+                  className="w-full text-center cursor-pointer group"
+                  onClick={() => handleEditRoster(roster)}
+                >
+                  <div className="font-bold text-[13px] text-gray-900">
+                    {shift?.start_time ? shift.start_time.substring(0, 5).replace(':', '.') : "NA"} - {shift?.end_time ? shift.end_time.substring(0, 5).replace(':', '.') : "NA"}
+                  </div>
+                </div>
+              );
+            })}
+            {dayRosters.length === 0 && canAdd && (
+              <button
+                onClick={() => handleAddRoster(day, employee.id, employee)}
+                className="w-full h-full flex items-center justify-center text-transparent hover:text-blue-300 transition-colors"
+              >
+                <FaPlus className="text-[10px]" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const RostersPage = () => {
   const { selectedOrganization } = useOrganizations();
   const { canAdd, canEdit, canDelete } = usePermissions('rostering.weekly_monthly_rosters');
@@ -141,16 +205,45 @@ const RostersPage = () => {
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [filters, setFilters] = useState({
-    department: "all",
+    room: "all",
     shiftType: "all",
     search: "",
   });
+  const [footerBaseDate, setFooterBaseDate] = useState(new Date());
 
-  // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
-    localStorage.setItem('sidebarColor', sidebarColor);
-    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+    if (sidebarColor) {
+      localStorage.setItem("sidebarColor", sidebarColor);
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("sidebarColorChange", { detail: sidebarColor }));
+    }
   }, [sidebarColor]);
+
+  // Date helpers moved to the top for consistent access
+  const getWeekDates = useCallback(() => {
+    const date = new Date(currentDate);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
+  }, [currentDate]);
+
+  const weekDates = useMemo(() => getWeekDates(), [getWeekDates]);
+
+  const getMonthDates = useCallback(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: lastDay }, (_, i) => new Date(year, month, i + 1));
+  }, [currentDate]);
+
+  const monthDates = useMemo(() => getMonthDates(), [getMonthDates]);
 
   useEffect(() => {
     localStorage.setItem('backgroundColor', backgroundColor);
@@ -175,6 +268,7 @@ const RostersPage = () => {
   const [rosters, setRosters] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
   const [shifts, setShifts] = useState([]);
 
   // State for rate calculations
@@ -194,7 +288,18 @@ const RostersPage = () => {
   });
 
   // Calculate net working hours
-  const calculateNetWorkingHours = useCallback((shift) => {
+  const MOCK_ROOMS = [
+  { id: 101, name: "Babies", age_group: "6 - 12 months" },
+  { id: 102, name: "Junior Toddlers", age_group: "12 - 24 Months" },
+  { id: 103, name: "Toddlers", age_group: "2 - 3 Years" },
+  { id: 104, name: "3 - 5 Non Kinder Room", age_group: "" },
+  { id: 105, name: "3 Years Kinder", age_group: "" },
+  { id: 106, name: "4 Years Kinder", age_group: "" },
+  { id: 107, name: "Kitchen", age_group: "" },
+  { id: 108, name: "Management", age_group: "" }
+];
+
+const calculateNetWorkingHours = useCallback((shift) => {
     if (!shift || !shift.start_time || !shift.end_time) return 0;
 
     const start = new Date(`2000-01-01T${shift.start_time}`);
@@ -354,12 +459,21 @@ const RostersPage = () => {
         return [];
       };
 
+      // Calculate start and end dates for the current week (Mon-Fri)
+      const startDate = weekDates[0].toISOString().split('T')[0];
+      const endDate = weekDates[weekDates.length - 1].toISOString().split('T')[0];
+
       // Fetch all data in parallel
-      const [rostersRes, employeesRes, shiftsRes, departmentsRes] = await Promise.allSettled([
-        rosterService.getRosters({ organization_id: selectedOrganization.id }),
+      const [rostersRes, employeesRes, shiftsRes, departmentsRes, designationsRes] = await Promise.allSettled([
+        rosterService.getRosters({ 
+          organization_id: selectedOrganization.id,
+          start_date: startDate,
+          end_date: endDate
+        }),
         rosterService.getEmployees({ organization_id: selectedOrganization.id }),
         rosterService.getShifts({ organization_id: selectedOrganization.id }),
-        rosterService.getDepartments(selectedOrganization.id)
+        rosterService.getDepartments(selectedOrganization.id),
+        employeeService.getDesignationsByDeptId(selectedOrganization.id)
       ]);
 
       // Process rosters
@@ -369,12 +483,32 @@ const RostersPage = () => {
         //console.log("Rosters loaded:", rostersData.length);
       }
 
+      // Process departments (Use mock if backend is empty)
+      let departmentsData = [];
+      if (departmentsRes.status === "fulfilled") {
+        departmentsData = extractData(departmentsRes.value);
+      }
+      if (departmentsData.length === 0) {
+        departmentsData = MOCK_ROOMS;
+      }
+
       // Process employees and their rates
       let employeesData = [];
       if (employeesRes.status === "fulfilled") {
         employeesData = extractData(employeesRes.value);
-        //console.log("Employees loaded:", employeesData.length);
 
+        // Fallback: Assign employees to mock rooms if backend department is null
+        if (departmentsData.length > 0) {
+          employeesData = employeesData.map((emp, index) => {
+            if (!emp.department_id) {
+              // Cycle through mock rooms for a balanced UI design
+              const mockDept = departmentsData[index % departmentsData.length];
+              return { ...emp, department_id: mockDept.id };
+            }
+            return emp;
+          });
+        }
+        
         // Extract and store employee rates
         const rates = {};
         employeesData.forEach(emp => {
@@ -390,11 +524,10 @@ const RostersPage = () => {
         //console.log("Shifts loaded:", shiftsData.length);
       }
 
-      // Process departments
-      let departmentsData = [];
-      if (departmentsRes.status === "fulfilled") {
-        departmentsData = extractData(departmentsRes.value);
-        //console.log("Departments loaded:", departmentsData.length);
+      // Process designations
+      let designationsData = [];
+      if (designationsRes.status === "fulfilled") {
+        designationsData = extractData(designationsRes.value);
       }
 
       // Update all states
@@ -402,6 +535,7 @@ const RostersPage = () => {
       setEmployees(employeesData);
       setShifts(shiftsData);
       setDepartments(departmentsData);
+      setDesignations(designationsData);
 
       // Show success message if we have data
       if (rostersData.length > 0) {
@@ -431,7 +565,7 @@ const RostersPage = () => {
       return;
     }
 
-    const weekDates = getWeekDates();
+    // Using top-level weekDates
     const weekStart = weekDates[0].toISOString().split('T')[0];
     const weekEnd = weekDates[weekDates.length - 1].toISOString().split('T')[0];
 
@@ -551,30 +685,9 @@ const RostersPage = () => {
     if (selectedOrganization?.id) {
       fetchData();
     }
-  }, [selectedOrganization]);
+  }, [selectedOrganization, currentDate]);
 
-  const getWeekDates = useCallback(() => {
-    const start = new Date(currentDate);
-    start.setHours(0, 0, 0, 0);
-
-    // Adjust to get Monday as first day
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-    start.setDate(diff);
-
-    return Array.from({ length: 5 }, (_, i) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      return date;
-    });
-  }, [currentDate]);
-
-  const getMonthDates = useCallback(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: lastDay }, (_, i) => new Date(year, month, i + 1));
-  }, [currentDate]);
+  // Moved to top
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
@@ -584,6 +697,8 @@ const RostersPage = () => {
       newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
     }
     setCurrentDate(newDate);
+    // Also update footer base date so tabs follow the main navigation
+    setFooterBaseDate(newDate);
   };
 
   const getRostersForEmployeeAndDate = useCallback((employeeId, date) => {
@@ -609,20 +724,61 @@ const RostersPage = () => {
     });
   }, [rosters]);
 
-  // Filter employees based on search and department
+  // Filter employees based on search and room
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
-      const matchesDepartment = filters.department === "all" ||
-        employee.department_id?.toString() === filters.department;
+      const matchesRoom = filters.room === "all" ||
+        employee.department_id?.toString() === filters.room;
 
       const matchesSearch = filters.search === "" ||
         (employee.first_name && employee.first_name.toLowerCase().includes(filters.search.toLowerCase())) ||
         (employee.last_name && employee.last_name.toLowerCase().includes(filters.search.toLowerCase())) ||
         (employee.employee_code && employee.employee_code.toLowerCase().includes(filters.search.toLowerCase()));
 
-      return matchesDepartment && matchesSearch;
+      return matchesRoom && matchesSearch;
     });
   }, [employees, filters]);
+
+  // Group filtered employees by room
+  const groupedEmployees = useMemo(() => {
+    const groups = {};
+    filteredEmployees.forEach(employee => {
+      const deptId = employee.department_id || 'unassigned';
+      if (!groups[deptId]) {
+        groups[deptId] = [];
+      }
+      groups[deptId].push(employee);
+    });
+    return groups;
+  }, [filteredEmployees]);
+
+  const getDepartmentColor = useCallback((deptName) => {
+    const name = (deptName || "").toLowerCase();
+    
+    // Muted, professional palette based on template
+    if (name.includes('babies')) return '#8183B0'; // Muted Purple
+    if (name.includes('junior toddlers')) return '#C599B8'; // Muted Lilac
+    if (name.includes('toddlers')) return '#D37B8B'; // Muted Rose
+    if (name.includes('non kinder')) return '#3598DB'; // Professional Blue
+    if (name.includes('3 years kinder')) return '#7BB082'; // Sage Green
+    if (name.includes('4 years kinder')) return '#E59A7D'; // Muted Orange
+    if (name.includes('kitchen')) return '#BDB16D'; // Muted Olive
+    if (name.includes('management')) return '#95A5A6'; // Slate Gray
+    
+    // Fallback for API rooms - using muted saturation
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash % 360);
+    return `hsl(${h}, 35%, 50%)`; // Lower saturation for more "grounded" feel
+  }, []);
+
+  const getDesignationTitle = useCallback((designationId) => {
+    if (!designationId) return "Staff";
+    const designation = designations.find(d => d.id === designationId);
+    return designation ? (designation.title || designation.name) : "Staff";
+  }, [designations]);
 
   const formatTime = useCallback((timeString) => {
     if (!timeString) return "N/A";
@@ -647,7 +803,7 @@ const RostersPage = () => {
   };
 
   const handleExport = () => {
-    const weekDates = getWeekDates();
+    // Using top-level weekDates
     const weekRange = `${weekDates[0].toLocaleDateString()} - ${weekDates[weekDates.length - 1].toLocaleDateString()}`;
 
     const csvContent = [
@@ -657,7 +813,7 @@ const RostersPage = () => {
       [`Total Amount: ${formatCurrency(weeklyTotals.totalAmount)}`],
       [`Average Rate: ${formatCurrency(weeklyTotals.averageRate)}/hr`],
       [],
-      ["Employee", "Department", "Shift", "Date", "Hours", "Rate", "Amount"],
+      ["Employee", "Room", "Shift", "Date", "Hours", "Rate", "Amount"],
       ...rosters
         .filter(roster => {
           if (!roster.roster_date) return false;
@@ -694,8 +850,8 @@ const RostersPage = () => {
       ["Average Rate", formatCurrency(weeklyTotals.averageRate)],
       ["Unique Employees", weeklyTotals.uniqueEmployees || 0],
       [],
-      ["TOTALS BY DEPARTMENT"],
-      ["Department", "Hours", "Amount", "Employees"],
+      ["TOTALS BY ROOM"],
+      ["Room", "Hours", "Amount", "Employees"],
       ...Object.entries(weeklyTotals.byDepartment).map(([id, data]) => [
         data.name,
         data.hours.toFixed(2),
@@ -704,7 +860,7 @@ const RostersPage = () => {
       ]),
       [],
       ["TOTALS BY EMPLOYEE"],
-      ["Employee", "Hours", "Amount", "Rate", "Department"],
+      ["Employee", "Hours", "Amount", "Rate", "Room"],
       ...Object.entries(weeklyTotals.byEmployee).map(([id, data]) => {
         const dept = departments.find(d => d.id === data.department);
         return [
@@ -885,8 +1041,7 @@ const RostersPage = () => {
     );
   }
 
-  const weekDates = getWeekDates();
-  const monthDates = getMonthDates();
+  // Using top-level weekDates and monthDates
 
   return (
     <>
@@ -1194,26 +1349,26 @@ const RostersPage = () => {
 
           {/* Filters */}
           <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-wrap gap-4 items-center">
               <div className="relative">
-                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search employees..."
+                  placeholder="Search staff..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full border border-gray-300 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                 />
               </div>
 
               <select
-                value={filters.department}
-                onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+                value={filters.room}
+                onChange={(e) => setFilters(prev => ({ ...prev, room: e.target.value }))}
                 className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Rooms</option>
-                {departments.map(dept => (
-                  <option key={dept.id} value={dept.id}>{dept.name}</option>
+                {departments.map(room => (
+                  <option key={room.id} value={room.id}>{room.name}</option>
                 ))}
               </select>
 
@@ -1232,114 +1387,187 @@ const RostersPage = () => {
 
           {/* Weekly View */}
           {view === "week" && (
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="border-b" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
-                <div className="p-4 font-semibold bg-gray-50 sticky left-0">Employee</div>
+            <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-gray-300 relative">
+              {/* Dark Green Header - Sticky at top */}
+              <div
+                className="border-b border-gray-300 sticky top-0 z-30 shadow-md"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '150px 180px repeat(5, 1fr)',
+                  height: '56px' // Fixed height for accurate sticky offset
+                }}
+              >
+                <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">Position</div>
+                <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">Staff Name</div>
                 {weekDates.map((day, index) => (
-                  <div key={day.toString()} className={`p-4 text-center font-semibold border-l bg-gray-50 ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
-                    }`}>
-                    <div className="text-sm">{["Mon", "Tue", "Wed", "Thu", "Fri"][index]}</div>
-                    <div className="text-xs text-gray-500">{day.getDate()}/{day.getMonth() + 1}</div>
+                  <div key={day.toString()} className="text-center font-bold border-r border-gray-300 bg-[#1a4d4d] text-white flex flex-col justify-center py-1">
+                    <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][index]}</div>
+                    <div className="text-sm pt-0.5">
+                      {day.getDate()}{day.getDate() === 1 || day.getDate() === 21 || day.getDate() === 31 ? 'st' : day.getDate() === 2 || day.getDate() === 22 ? 'nd' : day.getDate() === 3 || day.getDate() === 23 ? 'rd' : 'th'}
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="overflow-y-auto max-h-[600px]">
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map(employee => {
-                    const employeeTotal = weeklyTotals.byEmployee[employee.id] || { hours: 0, amount: 0 };
-                    const employeeRate = getEmployeeRate(employee);
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 56px)' }}>
+                {Object.keys(groupedEmployees).length > 0 ? (
+                  <>
+                    {/* Render existing departments */}
+                    {departments
+                      .filter(dept => groupedEmployees[dept.id])
+                      .map(dept => (
+                        <React.Fragment key={dept.id}>
+                          {/* Room Header - Sticky at the top of the scrollable container */}
+                          <div
+                            className="text-white font-bold text-center py-1.5 text-base tracking-wide sticky top-0 z-20 shadow-sm border-b border-white/20"
+                            style={{
+                              backgroundColor: getDepartmentColor(dept.name),
+                              width: '100%'
+                            }}
+                          >
+                            {(() => {
+                              const name = dept.name;
+                              let ageRange = dept.age_group || "";
+                              if (!ageRange) {
+                                if (name.toLowerCase().includes('babies')) ageRange = "6 - 12 months";
+                                else if (name.toLowerCase().includes('junior toddlers')) ageRange = "12 - 24 Months";
+                                else if (name.toLowerCase().includes('toddlers')) ageRange = "2 - 3 Years";
+                                else if (name.toLowerCase().includes('kinder')) ageRange = name.toLowerCase().includes('3') ? "3 Years" : "4 Years";
+                              }
+                              return ageRange ? `${name} : ${ageRange}` : name;
+                            })()}
+                          </div>
 
-                    return (
-                      <div key={employee.id} className="border-b hover:bg-gray-50" style={{ display: 'grid', gridTemplateColumns: '220px repeat(5, 1fr)' }}>
-                        <div className="p-4 border-r bg-gray-50 sticky left-0 z-10">
-                          <div className="font-medium">
-                            {employee.first_name || ''} {employee.last_name || ''}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {employee.employee_code || ''}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {departments.find(d => d.id === employee.department_id)?.name || ""}
-                          </div>
-                          <div className="mt-2 pt-2 border-t border-gray-200">
-                            <div className="text-xs font-semibold text-green-600">
-                              Rate: {formatCurrency(employeeRate)}/hr
-                            </div>
-                            <div className="text-xs font-semibold text-blue-600 mt-1">
-                              Week Total: {employeeTotal.hours.toFixed(1)}h
-                            </div>
-                            <div className="text-xs font-bold text-purple-600">
-                              {formatCurrency(employeeTotal.amount)}
-                            </div>
-                          </div>
+                          {groupedEmployees[dept.id].map(employee => (
+                            <EmployeeRow
+                              key={employee.id}
+                              employee={employee}
+                              weeklyTotals={weeklyTotals}
+                              getDesignationTitle={getDesignationTitle}
+                              weekDates={weekDates}
+                              getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
+                              shifts={shifts}
+                              getShiftColor={getShiftColor}
+                              canAdd={canAdd}
+                              handleAddRoster={handleAddRoster}
+                              handleEditRoster={handleEditRoster}
+                            />
+                          ))}
+                        </React.Fragment>
+                      ))}
+
+                    {/* Render Unassigned/Other employees */}
+                    {groupedEmployees['unassigned'] && (
+                      <React.Fragment key="unassigned">
+                        <div
+                          className="text-white font-bold text-center py-1.5 text-base tracking-wide sticky top-0 z-20 shadow-sm border-b border-white/20"
+                          style={{
+                            backgroundColor: '#95A5A6', // Gray for unassigned
+                            width: '100%'
+                          }}
+                        >
+                          Other Staff / Unassigned
                         </div>
-                        {weekDates.map(day => {
-                          const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
-                          return (
-                            <div key={day.toString()} className={`p-2 border-l min-h-32 relative ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''
-                              }`}>
-                              {dayRosters.map(roster => {
-                                const shift = roster.shift || shifts.find(s => s.id === roster.shift_id);
-                                const shiftColor = getShiftColor(roster.shift_id);
-                                const hours = calculateNetWorkingHours(shift);
-                                const amount = calculateRosterAmount(roster);
-
-                                return (
-                                  <div
-                                    key={roster.id}
-                                    className="p-2 mb-1 rounded text-xs relative group cursor-pointer"
-                                    style={{
-                                      backgroundColor: shiftColor.backgroundColor,
-                                      color: shiftColor.color,
-                                      border: `1px solid ${shiftColor.borderColor}`
-                                    }}
-                                    onClick={() => handleEditRoster(roster)}
-                                  >
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1 z-10">
-                                      {canEdit && (
-                                        <button onClick={(e) => { e.stopPropagation(); handleEditRoster(roster); }}
-                                          className="p-1 bg-white rounded hover:bg-gray-100 shadow">
-                                          <FaEdit className="text-xs" />
-                                        </button>
-                                      )}
-                                      {canDelete && (
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRoster(roster.id); }}
-                                          className="p-1 bg-white rounded hover:bg-gray-100 shadow">
-                                          <FaTrash className="text-xs text-red-500" />
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div className="font-medium truncate">{shift?.name || "No Shift"}</div>
-                                    <div className="truncate text-[10px]">
-                                      {shift?.start_time ? formatTime(shift.start_time) : "N/A"} - {shift?.end_time ? formatTime(shift.end_time) : "N/A"}
-                                    </div>
-                                    <div className="flex justify-between mt-1 text-[10px]">
-                                      <span>{hours.toFixed(1)}h</span>
-                                      <span className="font-bold">{formatCurrency(amount)}</span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                              {dayRosters.length === 0 && canAdd && (
-                                <button
-                                  onClick={() => handleAddRoster(day, employee.id, employee)}
-                                  className="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded min-h-[80px]"
-                                >
-                                  <FaRegCalendarPlus className="text-lg" />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })
+                        {groupedEmployees['unassigned'].map(employee => (
+                          <EmployeeRow
+                            key={employee.id}
+                            employee={employee}
+                            weeklyTotals={weeklyTotals}
+                            getDesignationTitle={getDesignationTitle}
+                            weekDates={weekDates}
+                            getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
+                            shifts={shifts}
+                            getShiftColor={getShiftColor}
+                            canAdd={canAdd}
+                            handleAddRoster={handleAddRoster}
+                            handleEditRoster={handleEditRoster}
+                          />
+                        ))}
+                      </React.Fragment>
+                    )}
+                  </>
                 ) : (
-                  <div className="p-8 text-center text-gray-500 col-span-6">
-                    No employees found. Try adjusting your filters.
+                  <div className="p-12 text-center text-gray-400 bg-gray-50">
+                    <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
+                    <p className="text-lg">No staff members found in the selected period.</p>
                   </div>
                 )}
+              </div>
+
+              {/* Week Switcher Footer - Exact Template Design with Working Navigation */}
+              <div className="bg-[#4a5568] p-1 flex items-center overflow-hidden border-t border-gray-500 shadow-inner">
+                {/* Left Arrow */}
+                <button
+                  onClick={() => {
+                    const newBase = new Date(footerBaseDate);
+                    newBase.setDate(newBase.getDate() - 42); // Back 6 weeks
+                    setFooterBaseDate(newBase);
+                  }}
+                  className="px-4 text-white opacity-70 hover:opacity-100 transition-opacity border-r border-gray-600 h-10"
+                >
+                  <FaChevronLeft />
+                </button>
+
+                <div className="flex flex-1 overflow-x-auto no-scrollbar">
+                  {(() => {
+                    const weeks = [];
+                    // Use a range that includes the currentDate to keep them in sync
+                    const startBase = new Date(footerBaseDate);
+                    // Adjust startBase to the Monday of that week
+                    startBase.setDate(footerBaseDate.getDate() - ((footerBaseDate.getDay() + 6) % 7));
+                    
+                    // Show 3 weeks before and 3 weeks after to keep it centered and functional
+                    const offsetStart = new Date(startBase);
+                    offsetStart.setDate(startBase.getDate() - 14); // Start 2 weeks back
+                    
+                    for (let i = 0; i < 6; i++) {
+                      const wStart = new Date(offsetStart);
+                      wStart.setDate(offsetStart.getDate() + (i * 7));
+                      const wEnd = new Date(wStart);
+                      wEnd.setDate(wStart.getDate() + 4);
+                      
+                      const isActive = currentDate.toDateString() === wStart.toDateString();
+                      
+                      const formatDay = (d) => {
+                        const day = d.getDate();
+                        if (day === 1 || day === 21 || day === 31) return day + 'st';
+                        if (day === 2 || day === 22) return day + 'nd';
+                        if (day === 3 || day === 23) return day + 'rd';
+                        return day + 'th';
+                      };
+
+                      const monthName = ` ${wStart.toLocaleString('default', { month: 'short' })}`;
+                      const label = `${formatDay(wStart)} - ${formatDay(wEnd)}${monthName}`;
+
+                      weeks.push(
+                        <button
+                          key={i}
+                          onClick={() => setCurrentDate(new Date(wStart))}
+                          className={`px-4 py-2 text-xs font-bold border-r border-gray-600 transition-all whitespace-nowrap h-10 ${
+                            isActive 
+                              ? 'bg-[#6a7a91] text-white shadow-inner' 
+                              : 'bg-[#4a5568] text-gray-300 hover:bg-[#5a6a7e] hover:text-white'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    }
+                    return weeks;
+                  })()}
+                </div>
+
+                {/* Right Arrow */}
+                <button
+                  onClick={() => {
+                    const newBase = new Date(footerBaseDate);
+                    newBase.setDate(newBase.getDate() + 42); // Forward 6 weeks
+                    setFooterBaseDate(newBase);
+                  }}
+                  className="px-4 text-white opacity-70 hover:opacity-100 transition-opacity border-l border-gray-600 h-10"
+                >
+                  <FaChevronRight />
+                </button>
               </div>
             </div>
           )}
