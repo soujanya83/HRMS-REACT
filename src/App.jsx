@@ -15,6 +15,7 @@ import ApplicationSuccess from './pages/public/ApplicationSuccess';
 import PrivacyPolicy from './pages/public/PrivacyPolicy';
 import TermsAndConditions from './pages/public/TermsAndConditions';
 import ContactUs from './pages/public/ContactUs';
+import SuperannuationPage from './pages/Superannuation/SuperannuationPage';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -245,6 +246,10 @@ function App() {
     {
       path: "/contact-us",
       element: <ContactUs />,
+    },
+    {
+      path: "/superannuation",
+      element: <SuperannuationPage />,
     },
     {
       path: "/login",
