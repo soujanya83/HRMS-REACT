@@ -1,5 +1,6 @@
 import React from "react";
 import FormHeader from "./FormHeader";
+import AtoLink from "../../../components/common/AtoLink";
 import {
   InputField,
   SegmentedInput,
@@ -168,7 +169,7 @@ const SectionA = ({
                   <p className="text-[11px] text-gray-700">
                     Additional information about super is located at the end of
                     this form. You can also visit{" "}
-                    <strong>ato.gov.au/individuals/super</strong>
+                    <AtoLink href="ato.gov.au/individuals/super" />
                   </p>
                 </div>
                 <div>
@@ -184,7 +185,7 @@ const SectionA = ({
                   <p className="text-[11px] text-gray-700 mt-1">
                     For more information on super, offering an employee a choice
                     of fund or paying super contributions, visit{" "}
-                    <strong>ato.gov.au/employersuper</strong>
+                    <AtoLink href="ato.gov.au/employersuper" />
                   </p>
                 </div>
               </div>

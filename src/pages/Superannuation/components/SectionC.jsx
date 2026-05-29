@@ -8,6 +8,7 @@ import {
   FormCheckbox,
   PageFooter,
 } from "./SharedComponents";
+import AtoLink from "../../../components/common/AtoLink";
 
 const SectionC = ({
   businessName,
@@ -153,7 +154,7 @@ const SectionC = ({
                   If the ATO advises the employee does not have a stapled super
                   fund, you can make the payment to your nominated default super
                   fund. For more information, visit{" "}
-                  <strong>ato.gov.au/stapledsuperfund</strong>
+                  <AtoLink href="ato.gov.au/stapledsuperfund" />
                 </p>
               </div>
               <div>
@@ -164,7 +165,7 @@ const SectionC = ({
                   For more information on your super choice obligations,
                   including when you need to offer choice and setting up a
                   default super fund, visit{" "}
-                  <strong>ato.gov.au/employersuper</strong>
+                  <AtoLink href="ato.gov.au/employersuper" />
                 </p>
                 <p className="text-[12px] font-bold text-[#1B7A6E] mb-1">
                   Help for employers

@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/public/PrivacyPolicy';
 import TermsAndConditions from './pages/public/TermsAndConditions';
 import ContactUs from './pages/public/ContactUs';
 import SuperannuationPage from './pages/Superannuation/SuperannuationPage';
+import TfnDeclarationPage from './pages/TfnDeclaration/TfnDeclarationPage';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -250,6 +251,10 @@ function App() {
     {
       path: "/superannuation",
       element: <SuperannuationPage />,
+    },
+    {
+      path: "/tfn-declaration",
+      element: <TfnDeclarationPage />,
     },
     {
       path: "/login",

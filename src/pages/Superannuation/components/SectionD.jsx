@@ -8,6 +8,7 @@ import {
   FormCheckbox,
   PageFooter,
 } from "./SharedComponents";
+import AtoLink from "../../../components/common/AtoLink";
 
 
 const SectionD = ({
@@ -129,7 +130,7 @@ const SectionD = ({
             You need to{" "}
             <strong>attach a document</strong> confirming the SMSF is an ATO
             regulated super fund. You can find a copy of the compliance status
-            for your SMSF at <strong>superfundlookup.gov.au</strong>
+            for your SMSF at <AtoLink href="superfundlookup.gov.au" />
           </p>
           <FormCheckbox
             label="I have provided evidence from the ATO this is a regulated SMSF"
