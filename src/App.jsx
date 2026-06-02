@@ -17,6 +17,9 @@ import TermsAndConditions from './pages/public/TermsAndConditions';
 import ContactUs from './pages/public/ContactUs';
 import SuperannuationPage from './pages/Superannuation/SuperannuationPage';
 import TfnDeclarationPage from './pages/TfnDeclaration/TfnDeclarationPage';
+import StaffRecordForm from './pages/StaffRecord/StaffRecordForm';
+import PersonInDayToDayChargeForm from './pages/PersonInDayToDayCharge/PersonInDayToDayChargeForm';
+import ProhibitionNoticeDeclarationForm from './pages/ProhibitionNoticeDeclaration/ProhibitionNoticeDeclarationForm';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -255,6 +258,18 @@ function App() {
     {
       path: "/tfn-declaration",
       element: <TfnDeclarationPage />,
+    },
+    {
+      path: "/staff-record-form",
+      element: <StaffRecordForm />,
+    },
+    {
+      path: "/person-in-day-to-day-charge-form",
+      element: <PersonInDayToDayChargeForm />,
+    },
+    {
+      path: "/prohibition-notice-declaration-form",
+      element: <ProhibitionNoticeDeclarationForm />,
     },
     {
       path: "/login",
