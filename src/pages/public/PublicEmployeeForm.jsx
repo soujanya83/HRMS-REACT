@@ -39,6 +39,8 @@ import {
   FaHeart,
   FaFolder,
   FaCheckCircle,
+  FaUniversity,
+  FaExternalLinkAlt,
   FaClock,
   FaEdit
 } from 'react-icons/fa';
@@ -1217,6 +1219,16 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
           >
             <FaFileAlt /> Documents & Certificates
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('forms')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'forms'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-500 hover:bg-gray-50'
+              }`}
+          >
+            <FaClipboardList /> Forms
+          </button>
         </div>
 
         {submitted && (
@@ -1554,6 +1566,91 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
               onEdit={handleEditDocument}
               isDashboard={isDashboard}
             />
+          </div>
+        )}
+
+        {activeTab === 'forms' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+              <FaClipboardList className="text-purple-600" /> Employee Forms
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Superannuation Form */}
+              <button
+                onClick={() => window.open('/superannuation', '_blank')}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+              >
+                <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                  <FaUniversity className="text-blue-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-800">Superannuation Form</h3>
+                  <p className="text-sm text-gray-500">Complete superannuation details</p>
+                </div>
+                <FaExternalLinkAlt className="text-gray-400 group-hover:text-blue-600 ml-auto" />
+              </button>
+
+              {/* TFN Declaration Form */}
+              <button
+                onClick={() => window.open('/tfn-declaration', '_blank')}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+              >
+                <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                  <FaFileAlt className="text-green-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-800">TFN Declaration</h3>
+                  <p className="text-sm text-gray-500">Tax File Number declaration</p>
+                </div>
+                <FaExternalLinkAlt className="text-gray-400 group-hover:text-green-600 ml-auto" />
+              </button>
+
+              {/* Prohibition Notice Declaration Form */}
+              <button
+                onClick={() => window.open('/prohibition-notice-declaration-form', '_blank')}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group"
+              >
+                <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+                  <FaGavel className="text-red-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-800">Prohibition Notice</h3>
+                  <p className="text-sm text-gray-500">Prohibition notice declaration</p>
+                </div>
+                <FaExternalLinkAlt className="text-gray-400 group-hover:text-red-600 ml-auto" />
+              </button>
+
+              {/* Person In Day To Day Charge Form */}
+              <button
+                onClick={() => window.open('/person-in-day-to-day-charge-form', '_blank')}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
+              >
+                <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                  <FaUser className="text-purple-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-800">Person In Day To Day</h3>
+                  <p className="text-sm text-gray-500">Day to day charge declaration</p>
+                </div>
+                <FaExternalLinkAlt className="text-gray-400 group-hover:text-purple-600 ml-auto" />
+              </button>
+
+              {/* Staff Record Form */}
+              <button
+                onClick={() => window.open('/staff-record-form', '_blank')}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group"
+              >
+                <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                  <FaIdCard className="text-orange-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-800">Staff Record</h3>
+                  <p className="text-sm text-gray-500">Staff record form</p>
+                </div>
+                <FaExternalLinkAlt className="text-gray-400 group-hover:text-orange-600 ml-auto" />
+              </button>
+            </div>
           </div>
         )}
 
