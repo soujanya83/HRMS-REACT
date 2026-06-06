@@ -60,6 +60,7 @@ const EmployeeSidebar = ({
     { name: "Leave Management", path: "/dashboard/attendance/requests", icon: HiOutlineLeave },
     { name: "Holidays & Calendar", path: "/dashboard/attendance/holidays", icon: HiOutlineSun },
     { name: "Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCreditCard },
+    { name: "Employee Onboarding", path: "/dashboard/employee-onboarding/personal-details", icon: HiOutlineUser },
     { name: "Profile Settings", path: "/dashboard/profile", icon: HiOutlineUser },
   ], []);
 

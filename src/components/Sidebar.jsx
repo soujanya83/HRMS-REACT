@@ -8,6 +8,7 @@ import {
   HiOutlineOfficeBuilding,
   HiOutlineDocumentSearch,
   HiOutlineUsers,
+  HiOutlineUser,
   HiOutlineClipboardList,
   HiOutlineClock,
   HiOutlineCalendar,
@@ -236,6 +237,15 @@ const Sidebar = ({
       children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash, permission: "payroll.payroll.view" }],
     },
     {
+      name: "Employee Onboarding",
+      icon: HiOutlineUsers,
+      children: [
+        { name: "Personal Details", path: "/dashboard/employee-onboarding/personal-details", icon: HiOutlineUser, permission: "*" },
+        { name: "Documents", path: "/dashboard/employee-onboarding/documents", icon: HiOutlineDocumentText, permission: "*" },
+        { name: "Forms", path: "/dashboard/employee-onboarding/forms", icon: HiOutlineClipboardList, permission: "*" },
+      ],
+    },
+    {
       name: "Recruitment",
       icon: HiOutlineDocumentSearch,
       children: [
@@ -292,6 +302,14 @@ const Sidebar = ({
 
     for (const link of navLinks) {
       if (link.children) {
+        // Employee Onboarding - only visible to users with role_name === 'Employee'
+        if (link.name === "Employee Onboarding") {
+          if (currentUserRole === 'Employee') {
+            result.push({ ...link, visibleChildren: link.children, isDropdown: true });
+          }
+          continue;
+        }
+
         // Filter children by permission
         const allowed = link.children.filter(child => {
           if (isSuperadmin) return true;             // superadmin sees all
@@ -312,7 +330,7 @@ const Sidebar = ({
     }
 
     return result;
-  }, [navLinks, permissions, isAdmin]);
+  }, [navLinks, permissions, isAdmin, currentUserRole]);
 
   //console.log("🧭 SIDEBAR:", { permCount: permissions.length, links: filteredNavLinks.map(l => l.name) });
 
@@ -464,7 +482,7 @@ const Sidebar = ({
                       >
                         <div className="flex items-center">
                           <link.icon size={20} className="flex-shrink-0" />
-                          <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                          <span className={`text-base ml-2 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
                         </div>
                         {!isCollapsed && (
                           <HiChevronDown

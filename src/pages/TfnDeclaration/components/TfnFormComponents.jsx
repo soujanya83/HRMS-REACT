@@ -16,26 +16,35 @@ export const TfnSignatureBox = ({
   onSignatureChange,
   dateValues = [],
   onDateChange,
+  readOnly = false,
 }) => (
   <div className="flex gap-2 items-end">
     <div className="flex-[1.35] min-w-0">
-      <p className="text-[9px] text-gray-700 mb-[2px] font-semibold">Signature</p>
+      <p className="text-[9px] text-gray-700 mb-[2px] font-semibold">Signature *</p>
       <div className="relative border border-[#666] bg-white">
         {!signature && (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] text-gray-400 text-center px-2">
             You MUST SIGN here
           </p>
         )}
-        <SignaturePad
-          value={signature}
-          onChange={onSignatureChange}
-          height={64}
-          className="[&_canvas]:border-0"
-        />
+        {readOnly && signature && signature.startsWith('http') ? (
+          <img
+            src={signature}
+            alt="Signature"
+            className="h-[64px] w-full object-contain"
+          />
+        ) : (
+          <SignaturePad
+            value={signature}
+            onChange={onSignatureChange}
+            height={64}
+            className="[&_canvas]:border-0"
+          />
+        )}
       </div>
     </div>
     <div className="flex-shrink-0 pb-[1px]">
-      <TfnFormDateInput values={dateValues} onChange={onDateChange} />
+      <TfnFormDateInput values={dateValues} onChange={onDateChange} readOnly={readOnly} />
     </div>
   </div>
 );
@@ -134,6 +143,7 @@ export const TfnFormDateInput = ({
   values = [],
   onChange,
   className = "",
+  readOnly = false,
 }) => {
   const box = "w-[13px] h-[18px] border border-[#666] text-center text-[10px] font-mono bg-white focus:outline-none focus:border-[#009FDA]";
   const inputRefs = useRef([]);
@@ -174,7 +184,8 @@ export const TfnFormDateInput = ({
           value={values[idx] ?? ""}
           onChange={(e) => handleChange(idx, e.target.value)}
           onFocus={(e) => e.target.select()}
-          className={box}
+          readOnly={readOnly}
+          className={`${box} ${readOnly ? "bg-gray-100" : ""}`}
         />
       );
     });
@@ -316,6 +327,7 @@ export const TfnDeclarationBlock = ({
   onSignatureChange,
   dateValues,
   onDateChange,
+  readOnly = false,
 }) => (
   <div className="border border-[#666] bg-white p-[6px]">
     <p className="text-[10px] font-bold text-gray-900 uppercase tracking-wide">
@@ -329,23 +341,24 @@ export const TfnDeclarationBlock = ({
       onSignatureChange={onSignatureChange}
       dateValues={dateValues}
       onDateChange={onDateChange}
+      readOnly={readOnly}
     />
   </div>
 );
 
-export const TfnFormFooterActions = ({ onPrint, onReset }) => (
+export const TfnFormFooterActions = ({ onPrint, onReset, onSave }) => (
   <div className="relative px-4 pb-3 pt-2 border-t border-[#555]">
     <FormCornerMark corner="bl" />
     <FormCornerMark corner="br" />
     <div className="flex justify-center gap-2 my-2">
       {[
         { label: "Print form", onClick: onPrint },
-        { label: "Save form", onClick: undefined },
+        { label: "Save form", onClick: onSave, type: "submit" },
         { label: "Reset form", onClick: onReset },
-      ].map(({ label, onClick }) => (
+      ].map(({ label, onClick, type }) => (
         <button
           key={label}
-          type="button"
+          type={type || "button"}
           onClick={onClick}
           className="px-5 py-[3px] text-[11px] font-semibold text-gray-900 border border-[#666] bg-gradient-to-b from-[#f5f5f5] to-[#d0d0d0] shadow-[1px_1px_0_#333] hover:from-[#fafafa] hover:to-[#ddd]"
           style={{ borderTopColor: "#fff", borderLeftColor: "#fff" }}
@@ -460,7 +473,7 @@ export const CompactSegmentedInput = ({
                       onChange={(e) => handleChange(charIdx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(charIdx, e)}
                       onFocus={(e) => e.target.select()}
-                      className={`${boxClass} border border-[#666] text-center text-[10px] font-mono uppercase focus:outline-none focus:border-[#009FDA] bg-white text-gray-900`}
+                      className={`${boxClass} border border-[#666] text-center text-[10px] font-mono  focus:outline-none focus:border-[#009FDA] bg-white text-gray-900`}
                     />
                   );
                 })}
@@ -510,12 +523,18 @@ export const TfnRadioGroup = ({ options, value, onChange, className = "" }) => (
 );
 
 // ─── Question block wrapper ───────────────────────────────────────────────────
-export const QuestionBlock = ({ number, title, children, className = "" }) => (
-  <div className={`${className}`}>
-    <p className="text-[10px] font-bold text-gray-900 mb-[4px] leading-[1.3]">
-      {number != null && <span>Question {number}: </span>}
-      {title}
-    </p>
-    {children}
-  </div>
-);
+export const QuestionBlock = ({ number, title, children, className = "" }) => {
+  const hasAsterisk = title.includes('*');
+  const displayTitle = hasAsterisk ? title.replace('*', '') : title;
+
+  return (
+    <div className={`${className}`}>
+      <p className="text-[10px] font-bold text-gray-900 mb-[4px] leading-[1.3]">
+        {number != null && <span>Question {number}: </span>}
+        {displayTitle}
+        {hasAsterisk && <span className="text-red-600 ml-1">*</span>}
+      </p>
+      {children}
+    </div>
+  );
+};

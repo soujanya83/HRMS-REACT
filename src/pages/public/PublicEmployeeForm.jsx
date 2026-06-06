@@ -1577,9 +1577,11 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Superannuation Form */}
-              <button
-                onClick={() => window.open('/superannuation', '_blank')}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+              <a
+                href="/superannuation"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group cursor-pointer"
               >
                 <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
                   <FaUniversity className="text-blue-600 text-xl" />
@@ -1589,12 +1591,14 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-sm text-gray-500">Complete superannuation details</p>
                 </div>
                 <FaExternalLinkAlt className="text-gray-400 group-hover:text-blue-600 ml-auto" />
-              </button>
+              </a>
 
               {/* TFN Declaration Form */}
-              <button
-                onClick={() => window.open('/tfn-declaration', '_blank')}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+              <a
+                href="/tfn-declaration"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group cursor-pointer"
               >
                 <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
                   <FaFileAlt className="text-green-600 text-xl" />
@@ -1604,12 +1608,14 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-sm text-gray-500">Tax File Number declaration</p>
                 </div>
                 <FaExternalLinkAlt className="text-gray-400 group-hover:text-green-600 ml-auto" />
-              </button>
+              </a>
 
               {/* Prohibition Notice Declaration Form */}
-              <button
-                onClick={() => window.open('/prohibition-notice-declaration-form', '_blank')}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group"
+              <a
+                href="/prohibition-notice-declaration-form"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group cursor-pointer"
               >
                 <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
                   <FaGavel className="text-red-600 text-xl" />
@@ -1619,12 +1625,14 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-sm text-gray-500">Prohibition notice declaration</p>
                 </div>
                 <FaExternalLinkAlt className="text-gray-400 group-hover:text-red-600 ml-auto" />
-              </button>
+              </a>
 
               {/* Person In Day To Day Charge Form */}
-              <button
-                onClick={() => window.open('/person-in-day-to-day-charge-form', '_blank')}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
+              <a
+                href="/person-in-day-to-day-charge-form"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group cursor-pointer"
               >
                 <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
                   <FaUser className="text-purple-600 text-xl" />
@@ -1634,12 +1642,14 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-sm text-gray-500">Day to day charge declaration</p>
                 </div>
                 <FaExternalLinkAlt className="text-gray-400 group-hover:text-purple-600 ml-auto" />
-              </button>
+              </a>
 
               {/* Staff Record Form */}
-              <button
-                onClick={() => window.open('/staff-record-form', '_blank')}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group"
+              <a
+                href="/staff-record-form"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group cursor-pointer"
               >
                 <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
                   <FaIdCard className="text-orange-600 text-xl" />
@@ -1649,7 +1659,7 @@ const PublicEmployeeForm = ({ isDashboard = false }) => {
                   <p className="text-sm text-gray-500">Staff record form</p>
                 </div>
                 <FaExternalLinkAlt className="text-gray-400 group-hover:text-orange-600 ml-auto" />
-              </button>
+              </a>
             </div>
           </div>
         )}

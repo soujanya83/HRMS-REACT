@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import "./index.css";
 
@@ -43,6 +44,10 @@ import ManageProfiles from "./pages/Employees/ManageProfiles";
 import ProbationConfirmation from "./pages/Employees/ProbationConfirmation";
 import ExitOffboarding from "./pages/Employees/ExitOffboarding";
 import EmployeeDocumentsPage from "./pages/Employees/EmployeeDocumentsPage";
+import EmployeeOnboardingLayout from "./pages/EmployeeOnboarding/EmployeeOnboardingLayout";
+import PersonalDetails from "./pages/EmployeeOnboarding/PersonalDetails";
+import Documents from "./pages/EmployeeOnboarding/Documents";
+import Forms from "./pages/EmployeeOnboarding/Forms";
 
 // --- Import Attendance Pages ---
 import AttendanceTracking from "./pages/Attendance/AttendanceTracking";
@@ -383,7 +388,13 @@ function App() {
             { index: true, element: <Navigate to="goals" replace /> }
           ]
         },
-        { path: "profile", element: <RoleGuard allowedRoles={['employee']}><PublicEmployeeForm isDashboard={true} /></RoleGuard> },
+        { path: "employee-onboarding", element: <Outlet />, children: [
+          { path: "personal-details", element: <PersonalDetails /> },
+          { path: "documents", element: <Documents /> },
+          { path: "forms", element: <Forms /> },
+          { index: true, element: <Navigate to="personal-details" replace /> }
+        ] },
+        { path: "profile", element: <Navigate to="employee-onboarding/personal-details" replace /> },
       ],
     },
     // Default redirects

@@ -28,7 +28,7 @@ const ROW_LONG = 19;
 const ROW_SHORT = 15;
 const EMAIL_LEN = 19;
 
-const TfnPage5Form = ({ form, onUpdate }) => {
+const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = null }) => {
   const a = form.sectionA;
   const b = form.sectionB;
 
@@ -62,7 +62,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
 
   const sectionALeft = (
     <>
-      <QuestionBlock number="1" title="What is your tax file number (TFN)?">
+      <QuestionBlock number="1" title="What is your tax file number (TFN)? *">
         <div className="flex gap-1.5 items-start mb-1">
           <CompactSegmentedInput
             segments={[3, 3, 3]}
@@ -75,6 +75,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             For more information, see question 1 on page 2 of the instructions.
           </TfnQ1InfoBox>
         </div>
+        {errors.tfn_number && <p className="text-red-500 text-xs mt-1">{errors.tfn_number}</p>}
         <div className="space-y-[3px]">
           <TfnCheckOption
             label="OR I have made a separate application/enquiry to the ATO for a new or existing TFN."
@@ -94,7 +95,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         </div>
       </QuestionBlock>
 
-      <QuestionBlock number="2" title="What is your name?">
+      <QuestionBlock number="2" title="What is your name? *">
         <div className="flex gap-4 mb-1.5 flex-wrap">
           {["Mr", "Mrs", "Miss", "Ms"].map((t) => (
             <TfnCheckOption
@@ -106,6 +107,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             />
           ))}
         </div>
+        {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
         <CompactSegmentedInput
           label="Surname or family name"
           segments={[ROW_LONG]}
@@ -114,6 +116,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mb-[3px]"
         />
+        {errors.surname && <p className="text-red-500 text-xs mt-1">{errors.surname}</p>}
         <CompactSegmentedInput
           segments={[ROW_LONG]}
           values={a.surnameLine2}
@@ -129,6 +132,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mb-[3px]"
         />
+        {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
         <CompactSegmentedInput
           label="Other given names"
           segments={[ROW_SHORT]}
@@ -137,6 +141,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mb-[3px]"
         />
+        {errors.other_names && <p className="text-red-500 text-xs mt-1">{errors.other_names}</p>}
         <CompactSegmentedInput
           segments={[ROW_SHORT]}
           values={a.otherNamesLine2}
@@ -145,7 +150,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         />
       </QuestionBlock>
 
-      <QuestionBlock number="3" title="What is your home address in Australia?">
+      <QuestionBlock number="3" title="What is your home address in Australia? *">
         <CompactSegmentedInput
           segments={[ROW_LONG]}
           values={a.addressLine1}
@@ -212,7 +217,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         />
       </QuestionBlock>
 
-      <QuestionBlock number="6" title="What is your date of birth?">
+      <QuestionBlock number="6" title="What is your date of birth? *">
         <TfnFormDateInput
           label=""
           values={a.dob}
@@ -220,16 +225,17 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             setAChars("dob", idx, val.replace(/\D/g, "").slice(-1))
           }
         />
+        {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob}</p>}
       </QuestionBlock>
 
-      <QuestionBlock number="7" title="On what basis are you paid? (select only one)">
+      <QuestionBlock number="7" title="On what basis are you paid? (select only one) *">
         <TfnRadioGroup
           value={a.paymentBasis}
           onChange={(v) => setA("paymentBasis", v)}
           options={[
-            { value: "full-time", label: "Full-time employment" },
-            { value: "part-time", label: "Part-time employment" },
-            { value: "labour-hire", label: "Labour hire" },
+            { value: "full_time", label: "Full-time employment" },
+            { value: "part_time", label: "Part-time employment" },
+            { value: "labour_hire", label: "Labour hire" },
             {
               value: "superannuation",
               label: "Superannuation or annuity income stream",
@@ -237,9 +243,10 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             { value: "casual", label: "Casual employment" },
           ]}
         />
+        {errors.employment_basis && <p className="text-red-500 text-xs mt-1">{errors.employment_basis}</p>}
       </QuestionBlock>
 
-      <QuestionBlock number="8" title="Are you: (select only one)">
+      <QuestionBlock number="8" title="Are you: (select only one) *">
         <TfnRadioGroup
           value={a.residency}
           onChange={(v) => setA("residency", v)}
@@ -249,11 +256,12 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             { value: "whm", label: "A working holiday maker" },
           ]}
         />
+        {errors.residency_status && <p className="text-red-500 text-xs mt-1">{errors.residency_status}</p>}
       </QuestionBlock>
 
       <QuestionBlock
         number="9"
-        title="Do you want to claim the tax-free threshold from this payer?"
+        title="Do you want to claim the tax-free threshold from this payer? *"
       >
         <p className="text-[9px] text-gray-900 mb-1 leading-[1.3]">
           Only claim the tax-free threshold from one payer at a time, unless your
@@ -272,6 +280,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             onChange={() => setA("taxFreeThreshold", "no")}
           />
         </div>
+        {errors.claim_tax_free_threshold && <p className="text-red-500 text-xs mt-1">{errors.claim_tax_free_threshold}</p>}
         <p className="text-[8px] text-gray-800 leading-[1.3]">
           Answer no here if you are a foreign resident or working holiday maker,
           except if you are a foreign resident in receipt of an Australian
@@ -281,7 +290,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
 
       <QuestionBlock
         number="10"
-        title="Do you have a Higher Education Loan Program (HELP), VET Student Loan (VSL), Financial Supplement (FS), Student Start-up Loan (SSL) or Trade Support Loan (TSL) debt?"
+        title="Do you have a Higher Education Loan Program (HELP), VET Student Loan (VSL), Financial Supplement (FS), Student Start-up Loan (SSL) or Trade Support Loan (TSL) debt? *"
       >
         <div className="flex gap-5 mb-[2px]">
           <TfnCheckOption
@@ -295,6 +304,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
             onChange={() => setA("studentLoan", "no")}
           />
         </div>
+        {errors.has_help_debt && <p className="text-red-500 text-xs mt-1">{errors.has_help_debt}</p>}
         <p className="text-[8px] text-gray-800 leading-[1.3]">
           Your payer will withhold additional amounts to cover any compulsory
           repayment that may be raised on your notice of assessment.
@@ -309,7 +319,10 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         onDateChange={(idx, val) =>
           setAChars("signatureDate", idx, val.replace(/\D/g, "").slice(-1))
         }
+        readOnly={!!declarationId}
       />
+      {errors.payee_signature_base64 && <p className="text-red-500 text-xs mt-1">{errors.payee_signature_base64}</p>}
+      {errors.payee_declaration_date && <p className="text-red-500 text-xs mt-1">{errors.payee_declaration_date}</p>}
 
       <TfnPenaltyBar>
         There are penalties for deliberately making a false or misleading statement.
@@ -321,7 +334,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
     <>
       <QuestionBlock
         number="1"
-        title="What is your Australian business number (ABN) or withholding payer number?"
+        title="What is your Australian business number (ABN) or withholding payer number? *"
       >
         <CompactSegmentedInput
           segments={[2, 3, 3, 3]}
@@ -330,6 +343,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           groupSeparator
         />
+        {errors.payer_abn && <p className="text-red-500 text-xs mt-1">{errors.payer_abn}</p>}
         <CompactSegmentedInput
           label="Branch number (if applicable)"
           segments={[3]}
@@ -338,6 +352,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mt-[3px]"
         />
+        {errors.payer_branch_number && <p className="text-red-500 text-xs mt-1">{errors.payer_branch_number}</p>}
       </QuestionBlock>
 
       <QuestionBlock
@@ -358,7 +373,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         </div>
       </QuestionBlock>
 
-      <QuestionBlock number="3" title="What is your legal name or registered business name?">
+      <QuestionBlock number="3" title="What is your legal name or registered business name? *">
         <CompactSegmentedInput
           segments={[ROW_LONG]}
           values={b.legalName1}
@@ -366,6 +381,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mb-[3px]"
         />
+        {errors.payer_legal_name && <p className="text-red-500 text-xs mt-1">{errors.payer_legal_name}</p>}
         <CompactSegmentedInput
           segments={[ROW_LONG]}
           values={b.legalName2}
@@ -436,7 +452,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         />
       </QuestionBlock>
 
-      <QuestionBlock number="6" title="Who is your contact person regarding this form?">
+      <QuestionBlock number="6" title="Who is your contact person regarding this form? *">
         <CompactSegmentedInput
           label="Contact person"
           segments={[ROW_SHORT]}
@@ -445,6 +461,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           className="mb-[3px]"
         />
+        {errors.payer_contact_person && <p className="text-red-500 text-xs mt-1">{errors.payer_contact_person}</p>}
         <CompactSegmentedInput
           label="Business phone number"
           segments={[2, 4, 4]}
@@ -453,6 +470,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
           boxClass={BOX}
           groupSeparator
         />
+        {errors.payer_phone && <p className="text-red-500 text-xs mt-1">{errors.payer_phone}</p>}
       </QuestionBlock>
 
       <QuestionBlock
@@ -474,7 +492,10 @@ const TfnPage5Form = ({ form, onUpdate }) => {
         onDateChange={(idx, val) =>
           setBChars("signatureDate", idx, val.replace(/\D/g, "").slice(-1))
         }
+        readOnly={!!declarationId}
       />
+      {errors.payer_signature_base64 && <p className="text-red-500 text-xs mt-1">{errors.payer_signature_base64}</p>}
+      {errors.payer_declaration_date && <p className="text-red-500 text-xs mt-1">{errors.payer_declaration_date}</p>}
 
       <TfnPenaltyBar>
         There are penalties for deliberately making a false or misleading statement.
@@ -593,6 +614,7 @@ const TfnPage5Form = ({ form, onUpdate }) => {
       <TfnFormFooterActions
         onPrint={() => window.print()}
         onReset={() => onUpdate(initialFormState())}
+        onSave={onSave}
       />
     </TfnPage>
   );

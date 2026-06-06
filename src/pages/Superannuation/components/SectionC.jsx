@@ -27,6 +27,7 @@ const SectionC = ({
   onSignatureChange,
   date,
   onDateChange,
+  readOnly = false,
 }) => {
   return (
     <div className="w-[794px] min-h-[1123px] bg-white mx-auto shadow-lg flex flex-col">
@@ -116,6 +117,7 @@ const SectionC = ({
               onSignatureChange={onSignatureChange}
               dateValues={date}
               onDateChange={onDateChange}
+              readOnly={readOnly}
             />
           </div>
         </div>

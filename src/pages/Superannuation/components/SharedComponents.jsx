@@ -466,23 +466,33 @@ export const SignatureBox = ({
   onSignatureChange,
   dateValues = [],
   onDateChange,
+  readOnly = false,
 }) => (
   <div className={`flex items-end gap-4 ${className}`}>
     <div className="flex-1">
       <label className="block text-[11px] text-gray-700 mb-[3px]">
         {label}
       </label>
-      <SignaturePad
-        value={signature}
-        onChange={onSignatureChange}
-        height={70}
-      />
+      {readOnly && signature && signature.startsWith('http') ? (
+        <img
+          src={signature}
+          alt="Signature"
+          className="h-[70px] border border-gray-300 bg-white"
+        />
+      ) : (
+        <SignaturePad
+          value={signature}
+          onChange={onSignatureChange}
+          height={70}
+        />
+      )}
     </div>
     {withDate && (
       <DateInputLabeled
         label="Date"
         values={dateValues}
         onChange={onDateChange}
+        readOnly={readOnly}
       />
     )}
   </div>
