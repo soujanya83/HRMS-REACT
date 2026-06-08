@@ -1,6 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axiosClient from '../../axiosClient';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { FaSave, FaSpinner } from 'react-icons/fa';
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
+import { SignaturePad } from "../Superannuation/components/SharedComponents";
 
 const checklistItems = [
   "Alarm system operation and troubleshooting",
@@ -36,32 +41,35 @@ const checklistItems = [
 export const initialPersonInDayToDayChargeState = {
   appointeeName: "",
   appointeeSignature: "",
-  appointeeDate: "",
+  appointeeSignatureDate: "",
   nominatedSupervisorName: "",
   nominatedSupervisorConfirmName: "",
-  supervisorSignature: "",
-  supervisorDate: "",
+  nominatedSupervisorSignature: "",
+  nominatedSupervisorSignatureDate: "",
   complianceActionsDetails: "",
-  supervisorCertificateStatus: "",
-  supervisorCertificateDetails: "",
-  prohibitionNoticeStatus: "",
+  hasSuspendedCertificate: false,
+  suspendedCertificateDetails: "",
+  hasProhibitionNotice: false,
   prohibitionNoticeDetails: "",
-  authorisationRefusedStatus: "",
-  authorisationRefusedDetails: "",
+  hasRefusedLicence: false,
+  refusedLicenceDetails: "",
   declarantFullName: "",
   declarantAddress: "",
   declarantDateOfBirth: "",
   declarantSignature: "",
-  declarantDate: "",
-  witnessNameAndSignature: "",
+  declarantSignatureDate: "",
+  witnessName: "",
+  witnessSignature: "",
   employeeName: "",
   checklistDates: checklistItems.reduce((acc, item) => {
     acc[item] = "";
     return acc;
   }, {}),
   comments: "",
-  nominatedSupervisorSignatureDate: "",
-  responsiblePersonSignatureDate: "",
+  checklistNsSignature: "",
+  checklistNsSignatureDate: "",
+  checklistRpSignature: "",
+  checklistRpSignatureDate: "",
 };
 
 const textClass = "text-[14px] leading-[1.42] text-black";
@@ -72,7 +80,7 @@ const checkboxClass =
   "h-[13px] w-[13px] shrink-0 appearance-none border border-black bg-white checked:bg-gray-700";
 
 const Page = ({ children }) => (
-  <section className="relative h-[1123px] w-[794px] overflow-hidden bg-white shadow-lg print:shadow-none">
+  <section className="relative h-[1250px] w-[794px] overflow-hidden bg-white shadow-lg print:shadow-none">
     <img
       src={topImage}
       alt=""
@@ -123,6 +131,135 @@ const Choice = ({ label, checked, onChange }) => (
 
 const PersonInDayToDayChargeForm = () => {
   const [formData, setFormData] = useState(initialPersonInDayToDayChargeState);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [formId, setFormId] = useState(null);
+  const [employeeId, setEmployeeId] = useState(null);
+  const [organizationId, setOrganizationId] = useState(null);
+
+  // Fetch employee data from localStorage
+  useEffect(() => {
+    const employeeStr = localStorage.getItem('employee');
+    const userStr = localStorage.getItem('user');
+
+    if (employeeStr) {
+      const employee = JSON.parse(employeeStr);
+      setEmployeeId(employee.id);
+      if (employee.organization_id) {
+        setOrganizationId(employee.organization_id);
+      }
+    } else if (userStr) {
+      const user = JSON.parse(userStr);
+      setEmployeeId(user.id);
+      if (user.organization_id) setOrganizationId(user.organization_id);
+    }
+  }, []);
+
+  // Fetch existing PIDTDC form on load
+  useEffect(() => {
+    if (employeeId) {
+      fetchPidtdcForm();
+    }
+  }, [employeeId]);
+
+  const fetchPidtdcForm = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosClient.get(`/pidtdc-forms/employee/${employeeId}`);
+      if (response.data) {
+        const data = response.data;
+        setFormId(data.id);
+
+        // Map API response to form state
+        // Reverse map checklist data from API keys to form item names
+        const checklistDataMap = {
+          "alarm_system_operation": "Alarm system operation and troubleshooting",
+          "responsible_person_nametag": "Responsible Person name tag placement on the wall at the reception",
+          "logbook_signing": "Sign in the Responsible Person's logbook next to the staff sign in tablet",
+          "heating_cooling": "Ensuring all heating/cooling systems are on / off",
+          "medication_folder_location": "Location of medication folder for any medication to be administered",
+          "visitors_book_location": "Visitor's book location",
+          "checking_wwcc": "Checking WWCC and storing photocopies",
+          "id_photocopying": "ID photocopying and storage procedures",
+          "professional_phone_answering": "Professional phone answering protocol",
+          "opening_closing_procedures": "Opening and closing procedures",
+          "medical_conditions_protocols": "Medical conditions and daily medication protocols for staff and children",
+          "administering_medication": "Administering medication procedures",
+          "location_epipen_panadol_ventolin": "Location of Epi-Pen, Panadol, and Ventolin",
+          "icheckin_system": "iCheckIn system for signing in and out children",
+          "court_orders_protocols": "Court order's location and breach protocols",
+          "educator_ratio_awareness": "Educator-to-child ratio awareness",
+          "familiarity_supply_areas": "Familiarity with supply areas (kitchen, staff room, laundry, toilets)",
+          "morning_educator_absence": "Morning educator absence protocol",
+          "procedures_emergencies": "Procedures during local emergencies or serious incidents",
+          "handling_shopping_deliveries": "Handling shopping deliveries",
+          "uv_level_monitoring": "UV level monitoring and hallway display",
+          "knowledge_policies": "Knowledge of policies and procedures and its location",
+          "location_of_national_law": "Location of National Law, Regulations, and NQS documentation",
+          "understanding_complaints": "Understanding the complaints and grievance process",
+          "emergency_contact_numbers": "Emergency contact numbers awareness",
+          "emergency_evacuation_lockdown": "Emergency evacuation and lockdown procedures",
+          "understanding_child_safe_standards": "Understanding of Child Safe Standards and child protection processes",
+          "procedure_det_officers": "Procedure when DET officers conduct a spot check",
+        };
+
+        const checklistDates = checklistItems.reduce((acc, item) => {
+          acc[item] = "";
+          return acc;
+        }, {});
+
+        // Map API checklist data back to form format
+        if (data.checklist_data) {
+          Object.keys(data.checklist_data).forEach((apiKey) => {
+            const formItemName = checklistDataMap[apiKey];
+            if (formItemName && data.checklist_data[apiKey]) {
+              checklistDates[formItemName] = data.checklist_data[apiKey];
+            }
+          });
+        }
+
+        const updatedForm = {
+          appointeeName: data.appointee_name || '',
+          appointeeSignature: data.appointee_signature_url || '',
+          appointeeSignatureDate: data.appointee_signature_date ? data.appointee_signature_date.split('T')[0] : '',
+          nominatedSupervisorName: data.nominated_supervisor_name || '',
+          nominatedSupervisorConfirmName: data.nominated_supervisor_name || '',
+          nominatedSupervisorSignature: data.nominated_supervisor_signature_url || '',
+          nominatedSupervisorSignatureDate: data.nominated_supervisor_signature_date ? data.nominated_supervisor_signature_date.split('T')[0] : '',
+          complianceActionsDetails: data.compliance_actions_details || '',
+          hasSuspendedCertificate: data.has_suspended_certificate || false,
+          suspendedCertificateDetails: data.suspended_certificate_details || '',
+          hasProhibitionNotice: data.has_prohibition_notice || false,
+          prohibitionNoticeDetails: data.prohibition_notice_details || '',
+          hasRefusedLicence: data.has_refused_licence || false,
+          refusedLicenceDetails: data.refused_licence_details || '',
+          declarantFullName: data.declarant_full_name || '',
+          declarantAddress: data.declarant_address || '',
+          declarantDateOfBirth: data.declarant_dob ? data.declarant_dob.split('T')[0] : '',
+          declarantSignature: data.declarant_signature_url || '',
+          declarantSignatureDate: data.declarant_signature_date ? data.declarant_signature_date.split('T')[0] : '',
+          witnessName: data.witness_name || '',
+          witnessSignature: data.witness_signature_url || '',
+          employeeName: data.checklist_employee_name || '',
+          checklistDates: checklistDates,
+          comments: data.checklist_comments || '',
+          checklistNsSignature: data.checklist_ns_signature_url || '',
+          checklistNsSignatureDate: data.checklist_ns_signature_date ? data.checklist_ns_signature_date.split('T')[0] : '',
+          checklistRpSignature: data.checklist_rp_signature_url || '',
+          checklistRpSignatureDate: data.checklist_rp_signature_date ? data.checklist_rp_signature_date.split('T')[0] : '',
+        };
+        setFormData(updatedForm);
+      }
+    } catch (error) {
+      console.error('Error fetching PIDTDC form:', error);
+      if (error.response?.status !== 404) {
+        toast.error('Failed to load PIDTDC form data');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateField = (field, value) => {
     setFormData((prev) => ({
@@ -148,9 +285,201 @@ const PersonInDayToDayChargeForm = () => {
     }));
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.appointeeName) {
+      newErrors.appointee_name = 'Appointee name is required';
+    }
+    if (!formData.appointeeSignature) {
+      newErrors.appointee_signature_base64 = 'Appointee signature is required';
+    }
+    if (!formData.appointeeSignatureDate) {
+      newErrors.appointee_signature_date = 'Appointee signature date is required';
+    }
+    if (!formData.nominatedSupervisorName) {
+      newErrors.nominated_supervisor_name = 'Nominated supervisor name is required';
+    }
+    if (!formData.nominatedSupervisorSignature) {
+      newErrors.nominated_supervisor_signature_base64 = 'Nominated supervisor signature is required';
+    }
+    if (!formData.nominatedSupervisorSignatureDate) {
+      newErrors.nominated_supervisor_signature_date = 'Nominated supervisor signature date is required';
+    }
+    if (!formData.declarantFullName) {
+      newErrors.declarant_full_name = 'Declarant full name is required';
+    }
+    if (!formData.declarantAddress) {
+      newErrors.declarant_address = 'Declarant address is required';
+    }
+    if (!formData.declarantDateOfBirth) {
+      newErrors.declarant_dob = 'Declarant date of birth is required';
+    }
+    if (!formData.declarantSignature) {
+      newErrors.declarant_signature_base64 = 'Declarant signature is required';
+    }
+    if (!formData.declarantSignatureDate) {
+      newErrors.declarant_signature_date = 'Declarant signature date is required';
+    }
+    if (!formData.witnessName) {
+      newErrors.witness_name = 'Witness name is required';
+    }
+    if (!formData.witnessSignature) {
+      newErrors.witness_signature_base64 = 'Witness signature is required';
+    }
+    if (!formData.employeeName) {
+      newErrors.checklist_employee_name = 'Employee name is required';
+    }
+    if (!formData.checklistNsSignature) {
+      newErrors.checklist_ns_signature_base64 = 'Nominated supervisor signature is required';
+    }
+    if (!formData.checklistNsSignatureDate) {
+      newErrors.checklist_ns_signature_date = 'Nominated supervisor signature date is required';
+    }
+    if (!formData.checklistRpSignature) {
+      newErrors.checklist_rp_signature_base64 = 'Responsible person signature is required';
+    }
+    if (!formData.checklistRpSignatureDate) {
+      newErrors.checklist_rp_signature_date = 'Responsible person signature date is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!employeeId) {
+      toast.error('Employee ID not found');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // Map checklist items to API format
+      const checklistDataMap = {
+        "Alarm system operation and troubleshooting": "alarm_system_operation",
+        "Responsible Person name tag placement on the wall at the reception": "responsible_person_nametag",
+        "Sign in the Responsible Person's logbook next to the staff sign in tablet": "logbook_signing",
+        "Ensuring all heating/cooling systems are on / off": "heating_cooling",
+        "Location of medication folder for any medication to be administered": "medication_folder_location",
+        "Visitor's book location": "visitors_book_location",
+        "Checking WWCC and storing photocopies": "checking_wwcc",
+        "ID photocopying and storage procedures": "id_photocopying",
+        "Professional phone answering protocol": "professional_phone_answering",
+        "Opening and closing procedures": "opening_closing_procedures",
+        "Medical conditions and daily medication protocols for staff and children": "medical_conditions_protocols",
+        "Administering medication procedures": "administering_medication",
+        "Location of Epi-Pen, Panadol, and Ventolin": "location_epipen_panadol_ventolin",
+        "iCheckIn system for signing in and out children": "icheckin_system",
+        "Court order's location and breach protocols": "court_orders_protocols",
+        "Educator-to-child ratio awareness": "educator_ratio_awareness",
+        "Familiarity with supply areas (kitchen, staff room, laundry, toilets)": "familiarity_supply_areas",
+        "Morning educator absence protocol": "morning_educator_absence",
+        "Procedures during local emergencies or serious incidents": "procedures_emergencies",
+        "Handling shopping deliveries": "handling_shopping_deliveries",
+        "UV level monitoring and hallway display": "uv_level_monitoring",
+        "Knowledge of policies and procedures and its location": "knowledge_policies",
+        "Location of National Law, Regulations, and NQS documentation": "location_of_national_law",
+        "Understanding the complaints and grievance process": "understanding_complaints",
+        "Emergency contact numbers awareness": "emergency_contact_numbers",
+        "Emergency evacuation and lockdown procedures": "emergency_evacuation_lockdown",
+        "Understanding of Child Safe Standards and child protection processes": "understanding_child_safe_standards",
+        "Procedure when DET officers conduct a spot check": "procedure_det_officers",
+      };
+
+      const checklistData = {};
+      Object.keys(formData.checklistDates).forEach((item) => {
+        const apiKey = checklistDataMap[item];
+        if (apiKey) {
+          checklistData[apiKey] = formData.checklistDates[item] || null;
+        }
+      });
+
+      const payload = {
+        employee_id: employeeId,
+        organization_id: organizationId || 15,
+        appointee_name: formData.appointeeName,
+        appointee_signature_base64: formData.appointeeSignature,
+        appointee_signature_date: formData.appointeeSignatureDate,
+        nominated_supervisor_name: formData.nominatedSupervisorName,
+        nominated_supervisor_signature_base64: formData.nominatedSupervisorSignature,
+        nominated_supervisor_signature_date: formData.nominatedSupervisorSignatureDate,
+        compliance_actions_details: formData.complianceActionsDetails,
+        has_suspended_certificate: formData.hasSuspendedCertificate,
+        suspended_certificate_details: formData.suspendedCertificateDetails || null,
+        has_prohibition_notice: formData.hasProhibitionNotice,
+        prohibition_notice_details: formData.prohibitionNoticeDetails || null,
+        has_refused_licence: formData.hasRefusedLicence,
+        refused_licence_details: formData.refusedLicenceDetails || null,
+        declarant_full_name: formData.declarantFullName,
+        declarant_address: formData.declarantAddress,
+        declarant_dob: formData.declarantDateOfBirth,
+        declarant_signature_base64: formData.declarantSignature,
+        declarant_signature_date: formData.declarantSignatureDate,
+        witness_name: formData.witnessName,
+        witness_signature_base64: formData.witnessSignature,
+        checklist_employee_name: formData.employeeName,
+        checklist_data: checklistData,
+        checklist_comments: formData.comments,
+        checklist_ns_signature_base64: formData.checklistNsSignature,
+        checklist_ns_signature_date: formData.checklistNsSignatureDate,
+        checklist_rp_signature_base64: formData.checklistRpSignature,
+        checklist_rp_signature_date: formData.checklistRpSignatureDate,
+      };
+
+      let response;
+      if (formId) {
+        // Update existing form
+        response = await axiosClient.put(`/pidtdc-forms/${formId}`, payload);
+        if (response.data) {
+          toast.success('PIDTDC form updated successfully!');
+        }
+      } else {
+        // Create new form
+        response = await axiosClient.post('/pidtdc-forms', payload);
+        if (response.data) {
+          setFormId(response.data.id);
+          toast.success('PIDTDC form created successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving PIDTDC form:', error);
+      if (error.response?.data?.errors) {
+        const apiErrors = error.response.data.errors;
+        const formattedErrors = {};
+        Object.keys(apiErrors).forEach((key) => {
+          formattedErrors[key] = apiErrors[key][0];
+        });
+        setErrors(formattedErrors);
+        toast.error('Please fix the validation errors');
+      } else {
+        toast.error('Failed to save PIDTDC form');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-200 px-4 py-10 print:bg-white print:py-0">
-      <form className="flex flex-col items-center gap-6 print:gap-0">
+      <ToastContainer position="top-right" />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+            <FaSpinner className="animate-spin text-blue-600" size={24} />
+            <span>Loading...</span>
+          </div>
+        </div>
+      )}
+      <form onSubmit={handleSave} className="flex flex-col items-center gap-6 print:gap-0">
         <Page>
           <h1 className="mb-6 text-center text-[18px] font-bold leading-tight text-black">
             Person in Day-to-Day Charge (PIDTDC) or Nominated Supervisor
@@ -199,21 +528,42 @@ const PersonInDayToDayChargeForm = () => {
               acknowledge and accept the responsibilities and obligations associated with being appointed as a Person in Day-to-Day Charge of the NEXTGEN Montessori Centre and supporting the children under our care.
             </p>
 
-            <div className="flex items-end gap-3">
-              <span>Signature:</span>
-              <InlineInput
-                value={formData.appointeeSignature}
-                onChange={(value) => updateField("appointeeSignature", value)}
-                className="max-w-[300px]"
-                ariaLabel="Appointee signature"
-              />
-              <span>Date:</span>
-              <InlineInput
-                value={formData.appointeeDate}
-                onChange={(value) => updateField("appointeeDate", value)}
-                className="max-w-[170px]"
-                ariaLabel="Appointee date"
-              />
+            <div className="flex flex-col gap-3 mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px]">Signature:</span>
+                {errors.appointee_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  {formData.appointeeSignature && formData.appointeeSignature.startsWith('http') ? (
+                    <img
+                      src={formData.appointeeSignature}
+                      alt="Appointee signature"
+                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                    />
+                  ) : (
+                    <SignaturePad
+                      value={formData.appointeeSignature}
+                      onChange={(value) => updateField("appointeeSignature", value)}
+                      height={64}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px]">Date:</span>
+                    {errors.appointee_signature_date && <span className="text-red-500 text-xs">*</span>}
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.appointeeSignatureDate}
+                    onChange={(e) => updateField("appointeeSignatureDate", e.target.value)}
+                    className="h-[24px] border border-gray-300 bg-white px-2 text-[14px] focus:outline-none focus:border-blue-500"
+                    aria-label="Appointee signature date"
+                  />
+                </div>
+              </div>
             </div>
 
             <p className="flex flex-wrap items-end gap-x-1.5">
@@ -236,23 +586,42 @@ const PersonInDayToDayChargeForm = () => {
               understands and accepts the responsibilities and obligations associated with being appointed as a Person in Day-to-Day Charge in my absence.
             </p>
 
-            <div className="flex items-end gap-3">
-              <span>Signature:</span>
-              <InlineInput
-                value={formData.supervisorSignature}
-                onChange={(value) => updateField("supervisorSignature", value)}
-                className="max-w-[300px]"
-                ariaLabel="Supervisor signature"
-              />
-            </div>
-            <div className="flex items-end gap-3">
-              <span>Date:</span>
-              <InlineInput
-                value={formData.supervisorDate}
-                onChange={(value) => updateField("supervisorDate", value)}
-                className="max-w-[170px]"
-                ariaLabel="Supervisor date"
-              />
+            <div className="flex flex-col gap-3 mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px]">Signature:</span>
+                {errors.nominated_supervisor_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  {formData.nominatedSupervisorSignature && formData.nominatedSupervisorSignature.startsWith('http') ? (
+                    <img
+                      src={formData.nominatedSupervisorSignature}
+                      alt="Nominated supervisor signature"
+                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                    />
+                  ) : (
+                    <SignaturePad
+                      value={formData.nominatedSupervisorSignature}
+                      onChange={(value) => updateField("nominatedSupervisorSignature", value)}
+                      height={64}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px]">Date:</span>
+                    {errors.nominated_supervisor_signature_date && <span className="text-red-500 text-xs">*</span>}
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.nominatedSupervisorSignatureDate}
+                    onChange={(e) => updateField("nominatedSupervisorSignatureDate", e.target.value)}
+                    className="h-[24px] border border-gray-300 bg-white px-2 text-[14px] focus:outline-none focus:border-blue-500"
+                    aria-label="Nominated supervisor signature date"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </Page>
@@ -279,20 +648,22 @@ const PersonInDayToDayChargeForm = () => {
               <div className="mt-4 flex gap-8">
                 <Choice
                   label="Yes - Please provide details below"
-                  checked={formData.supervisorCertificateStatus === "yes"}
-                  onChange={() => setChoice("supervisorCertificateStatus", "yes")}
+                  checked={formData.hasSuspendedCertificate}
+                  onChange={() => updateField("hasSuspendedCertificate", !formData.hasSuspendedCertificate)}
                 />
                 <Choice
                   label="No"
-                  checked={formData.supervisorCertificateStatus === "no"}
-                  onChange={() => setChoice("supervisorCertificateStatus", "no")}
+                  checked={!formData.hasSuspendedCertificate}
+                  onChange={() => updateField("hasSuspendedCertificate", false)}
                 />
               </div>
-              <DetailLine
-                value={formData.supervisorCertificateDetails}
-                onChange={(value) => updateField("supervisorCertificateDetails", value)}
-                ariaLabel="Supervisor certificate details"
-              />
+              {formData.hasSuspendedCertificate && (
+                <DetailLine
+                  value={formData.suspendedCertificateDetails}
+                  onChange={(value) => updateField("suspendedCertificateDetails", value)}
+                  ariaLabel="Supervisor certificate details"
+                />
+              )}
             </div>
 
             <div>
@@ -300,20 +671,22 @@ const PersonInDayToDayChargeForm = () => {
               <div className="mt-4 flex gap-8">
                 <Choice
                   label="Yes - Please provide details below"
-                  checked={formData.prohibitionNoticeStatus === "yes"}
-                  onChange={() => setChoice("prohibitionNoticeStatus", "yes")}
+                  checked={formData.hasProhibitionNotice}
+                  onChange={() => updateField("hasProhibitionNotice", !formData.hasProhibitionNotice)}
                 />
                 <Choice
                   label="No"
-                  checked={formData.prohibitionNoticeStatus === "no"}
-                  onChange={() => setChoice("prohibitionNoticeStatus", "no")}
+                  checked={!formData.hasProhibitionNotice}
+                  onChange={() => updateField("hasProhibitionNotice", false)}
                 />
               </div>
-              <DetailLine
-                value={formData.prohibitionNoticeDetails}
-                onChange={(value) => updateField("prohibitionNoticeDetails", value)}
-                ariaLabel="Prohibition notice details"
-              />
+              {formData.hasProhibitionNotice && (
+                <DetailLine
+                  value={formData.prohibitionNoticeDetails}
+                  onChange={(value) => updateField("prohibitionNoticeDetails", value)}
+                  ariaLabel="Prohibition notice details"
+                />
+              )}
             </div>
 
             <div>
@@ -321,22 +694,22 @@ const PersonInDayToDayChargeForm = () => {
               <div className="mt-4 flex gap-8">
                 <Choice
                   label="Yes - Please provide details below"
-                  checked={formData.authorisationRefusedStatus === "yes"}
-                  onChange={() => setChoice("authorisationRefusedStatus", "yes")}
+                  checked={formData.hasRefusedLicence}
+                  onChange={() => updateField("hasRefusedLicence", !formData.hasRefusedLicence)}
                 />
                 <Choice
                   label="No"
-                  checked={formData.authorisationRefusedStatus === "no"}
-                  onChange={() => setChoice("authorisationRefusedStatus", "no")}
+                  checked={!formData.hasRefusedLicence}
+                  onChange={() => updateField("hasRefusedLicence", false)}
                 />
               </div>
-              <DetailLine
-                value={formData.authorisationRefusedDetails}
-                onChange={(value) =>
-                  updateField("authorisationRefusedDetails", value)
-                }
-                ariaLabel="Authorisation refused details"
-              />
+              {formData.hasRefusedLicence && (
+                <DetailLine
+                  value={formData.refusedLicenceDetails}
+                  onChange={(value) => updateField("refusedLicenceDetails", value)}
+                  ariaLabel="Authorisation refused details"
+                />
+              )}
             </div>
 
             <div className="space-y-4 pt-1">
@@ -360,10 +733,11 @@ const PersonInDayToDayChargeForm = () => {
               </p>
               <p className="flex items-end gap-2">
                 Born on [Date of Birth]
-                <InlineInput
+                <input
+                  type="date"
                   value={formData.declarantDateOfBirth}
-                  onChange={(value) => updateField("declarantDateOfBirth", value)}
-                  className="max-w-[185px]"
+                  onChange={(e) => updateField("declarantDateOfBirth", e.target.value)}
+                  className="h-[24px] border-0 border-b border-black bg-transparent px-1 text-[14px] outline-none focus:bg-blue-50/40 max-w-[185px]"
                   ariaLabel="Declarant date of birth"
                 />
               </p>
@@ -375,33 +749,73 @@ const PersonInDayToDayChargeForm = () => {
               <p>2. I understand that providing false or misleading information may result in penalties under relevant Commonwealth, State, or Territory legislation.</p>
             </div>
 
-            <div className="flex items-end gap-3 pt-1">
-              <span>Signature of Declarant:</span>
-              <InlineInput
-                value={formData.declarantSignature}
-                onChange={(value) => updateField("declarantSignature", value)}
-                className="max-w-[255px]"
-                ariaLabel="Declarant signature"
-              />
-              <span>Date:</span>
-              <InlineInput
-                value={formData.declarantDate}
-                onChange={(value) => updateField("declarantDate", value)}
-                className="max-w-[145px]"
-                ariaLabel="Declarant date"
-              />
+            <div className="flex flex-col gap-3 pt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px]">Signature of Declarant:</span>
+                {errors.declarant_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  {formData.declarantSignature && formData.declarantSignature.startsWith('http') ? (
+                    <img
+                      src={formData.declarantSignature}
+                      alt="Declarant signature"
+                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                    />
+                  ) : (
+                    <SignaturePad
+                      value={formData.declarantSignature}
+                      onChange={(value) => updateField("declarantSignature", value)}
+                      height={64}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px]">Date:</span>
+                    {errors.declarant_signature_date && <span className="text-red-500 text-xs">*</span>}
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.declarantSignatureDate}
+                    onChange={(e) => updateField("declarantSignatureDate", e.target.value)}
+                    className="h-[24px] border border-gray-300 bg-white px-2 text-[14px] focus:outline-none focus:border-blue-500"
+                    aria-label="Declarant signature date"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-end gap-3">
-              <span>Witness Name and Signature:</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px]">Witness Name:</span>
+                {errors.witness_name && <span className="text-red-500 text-xs">*</span>}
+              </div>
               <InlineInput
-                value={formData.witnessNameAndSignature}
-                onChange={(value) =>
-                  updateField("witnessNameAndSignature", value)
-                }
+                value={formData.witnessName}
+                onChange={(value) => updateField("witnessName", value)}
                 className="max-w-[300px]"
-                ariaLabel="Witness name and signature"
+                ariaLabel="Witness name"
               />
+              <div className="flex items-center gap-2">
+                <span className="text-[14px]">Witness Signature:</span>
+                {errors.witness_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              {formData.witnessSignature && formData.witnessSignature.startsWith('http') ? (
+                <img
+                  src={formData.witnessSignature}
+                  alt="Witness signature"
+                  className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                />
+              ) : (
+                <SignaturePad
+                  value={formData.witnessSignature}
+                  onChange={(value) => updateField("witnessSignature", value)}
+                  height={64}
+                  className="w-full"
+                />
+              )}
             </div>
           </div>
         </Page>
@@ -433,7 +847,7 @@ const PersonInDayToDayChargeForm = () => {
                   {item}
                 </div>
                 <input
-                  type="text"
+                  type="date"
                   value={formData.checklistDates[item]}
                   onChange={(event) => updateChecklistDate(item, event.target.value)}
                   className="h-full bg-transparent px-2 text-[13px] outline-none focus:bg-blue-50/40"
@@ -455,30 +869,108 @@ const PersonInDayToDayChargeForm = () => {
           </div>
 
           <div className={`${textClass} mt-7 space-y-5`}>
-            <div className="flex items-end gap-2">
-              <span>Nominated Supervisor Signature &amp; Date:</span>
-              <InlineInput
-                value={formData.nominatedSupervisorSignatureDate}
-                onChange={(value) =>
-                  updateField("nominatedSupervisorSignatureDate", value)
-                }
-                className="max-w-[260px]"
-                ariaLabel="Nominated supervisor signature and date"
-              />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span>Nominated Supervisor Signature:</span>
+                {errors.checklist_ns_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  {formData.checklistNsSignature && formData.checklistNsSignature.startsWith('http') ? (
+                    <img
+                      src={formData.checklistNsSignature}
+                      alt="Nominated supervisor signature"
+                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                    />
+                  ) : (
+                    <SignaturePad
+                      value={formData.checklistNsSignature}
+                      onChange={(value) => updateField("checklistNsSignature", value)}
+                      height={64}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px]">Date:</span>
+                    {errors.checklist_ns_signature_date && <span className="text-red-500 text-xs">*</span>}
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.checklistNsSignatureDate}
+                    onChange={(e) => updateField("checklistNsSignatureDate", e.target.value)}
+                    className="h-[24px] border border-gray-300 bg-white px-2 text-[14px] focus:outline-none focus:border-blue-500"
+                    aria-label="Nominated supervisor signature date"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="flex items-end gap-2">
-              <span>Responsible Person Signature &amp; Date:</span>
-              <InlineInput
-                value={formData.responsiblePersonSignatureDate}
-                onChange={(value) =>
-                  updateField("responsiblePersonSignatureDate", value)
-                }
-                className="max-w-[260px]"
-                ariaLabel="Responsible person signature and date"
-              />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span>Responsible Person Signature:</span>
+                {errors.checklist_rp_signature_base64 && <span className="text-red-500 text-xs">*</span>}
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  {formData.checklistRpSignature && formData.checklistRpSignature.startsWith('http') ? (
+                    <img
+                      src={formData.checklistRpSignature}
+                      alt="Responsible person signature"
+                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
+                    />
+                  ) : (
+                    <SignaturePad
+                      value={formData.checklistRpSignature}
+                      onChange={(value) => updateField("checklistRpSignature", value)}
+                      height={64}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px]">Date:</span>
+                    {errors.checklist_rp_signature_date && <span className="text-red-500 text-xs">*</span>}
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.checklistRpSignatureDate}
+                    onChange={(e) => updateField("checklistRpSignatureDate", e.target.value)}
+                    className="h-[24px] border border-gray-300 bg-white px-2 text-[14px] focus:outline-none focus:border-blue-500"
+                    aria-label="Responsible person signature date"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </Page>
+        <div className="flex justify-center gap-4 py-4 print:hidden">
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <FaSave />
+                <span>Save Form</span>
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            <span>Print Form</span>
+          </button>
+        </div>
       </form>
     </div>
   );
