@@ -7,6 +7,7 @@ import {
   FaUser,
   FaIdCard,
   FaExternalLinkAlt,
+  FaShieldAlt,
 } from 'react-icons/fa';
 
 const Forms = () => {
@@ -102,6 +103,23 @@ const Forms = () => {
               <p className="text-sm text-gray-500">Staff record form</p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-orange-600 ml-auto" />
+          </a>
+
+          {/* Child Safe Code of Policy Form */}
+          <a
+            href="/child-safe-code-of-policy-form"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all group cursor-pointer"
+          >
+            <div className="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors">
+              <FaShieldAlt className="text-teal-600 text-xl" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-800">Child Safe Code of Policy</h3>
+              <p className="text-sm text-gray-500">Child safe code of conduct policy</p>
+            </div>
+            <FaExternalLinkAlt className="text-gray-400 group-hover:text-teal-600 ml-auto" />
           </a>
         </div>
       </div>

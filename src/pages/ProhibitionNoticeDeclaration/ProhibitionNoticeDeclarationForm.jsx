@@ -8,6 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaSave, FaTrash, FaSpinner, FaPrint } from "react-icons/fa";
 import { SignaturePad } from "../Superannuation/components/SharedComponents";
+import { SignatureModal } from "../TfnDeclaration/components/TfnFormComponents";
 
 export const initialProhibitionNoticeDeclarationState = {
   title: "",
@@ -101,6 +102,8 @@ const ProhibitionNoticeDeclarationForm = () => {
   const [declarationId, setDeclarationId] = useState(null);
   const [employeeId, setEmployeeId] = useState(null);
   const [organizationId, setOrganizationId] = useState(null);
+  const [showDeclarationSigModal, setShowDeclarationSigModal] = useState(false);
+  const [showWitnessSigModal, setShowWitnessSigModal] = useState(false);
 
 
 
@@ -111,14 +114,21 @@ const ProhibitionNoticeDeclarationForm = () => {
   };
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    let empId = queryParams.get('employeeId');
+
     const emp = localStorage.getItem("employee");
     const usr = localStorage.getItem("user");
     if (emp) {
       const e = JSON.parse(emp);
-      setEmployeeId(e.id);
+      setEmployeeId(empId || e.id);
       if (e.organization_id) setOrganizationId(e.organization_id);
     } else if (usr) {
-      setEmployeeId(JSON.parse(usr).id);
+      const u = JSON.parse(usr);
+      setEmployeeId(empId || u.id);
+      if (u.organization_id) setOrganizationId(u.organization_id);
+    } else if (empId) {
+      setEmployeeId(empId);
     }
   }, []);
 
@@ -464,29 +474,42 @@ const ProhibitionNoticeDeclarationForm = () => {
           {/* Declaration signature */}
           <label className="mt-5 grid grid-cols-[275px_1fr] items-start">
             <span>Signature of person making the declaration:</span>
-            <div className="w-full border border-gray-400 bg-white relative">
-              {!formData.declarationSignature && (
-                <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] text-gray-400 text-center px-2">
-                  You MUST SIGN here
-                </p>
-              )}
-              {formData.declarationSignature && formData.declarationSignature.startsWith('http') ? (
-                <img
-                  src={formData.declarationSignature}
-                  alt="Declaration signature"
-                  className="h-[64px] w-full object-contain"
-                />
-              ) : (
-                <SignaturePad
-                  value={formData.declarationSignature}
-                  onChange={(v) => updateField("declarationSignature", v)}
-                  height={64}
-                  className="[&_canvas]:border-0"
-                />
+            <div>
+              <div className="w-full border border-gray-400 bg-white relative">
+                {formData.declarationSignature ? (
+                  <img
+                    src={formData.declarationSignature}
+                    alt="Declaration signature"
+                    className="h-[64px] w-full object-contain"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeclarationSigModal(true)}
+                    className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                  >
+                    <span className="text-[14px]">✍️</span> Click to Sign Here
+                  </button>
+                )}
+              </div>
+              {formData.declarationSignature && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeclarationSigModal(true)}
+                  className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                >
+                  ✏️ Update Signature
+                </button>
               )}
             </div>
           </label>
           {errors.declarationSignature && <p className="text-red-500 text-xs ml-[303px]">{errors.declarationSignature}</p>}
+          <SignatureModal
+            isOpen={showDeclarationSigModal}
+            onClose={() => setShowDeclarationSigModal(false)}
+            onSave={(v) => updateField("declarationSignature", v)}
+            existingSignature={formData.declarationSignature}
+          />
 
           <div className="mt-4 grid grid-cols-[68px_1fr_55px_1fr] items-end gap-x-3">
             <span>Signed at:</span>
@@ -517,25 +540,32 @@ const ProhibitionNoticeDeclarationForm = () => {
           {/* Witness signature */}
           <div className="mt-3 grid grid-cols-[135px_1fr_130px_1fr] items-start gap-x-5">
             <span className="mt-2">Signature of witness:</span>
-            <div className="w-full border border-gray-400 bg-white relative">
-              {!formData.witnessSignature && (
-                <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] text-gray-400 text-center px-2">
-                  You MUST SIGN here
-                </p>
-              )}
-              {formData.witnessSignature && formData.witnessSignature.startsWith('http') ? (
-                <img
-                  src={formData.witnessSignature}
-                  alt="Witness signature"
-                  className="h-[64px] w-full object-contain"
-                />
-              ) : (
-                <SignaturePad
-                  value={formData.witnessSignature}
-                  onChange={(v) => updateField("witnessSignature", v)}
-                  height={64}
-                  className="[&_canvas]:border-0"
-                />
+            <div>
+              <div className="w-full border border-gray-400 bg-white relative">
+                {formData.witnessSignature ? (
+                  <img
+                    src={formData.witnessSignature}
+                    alt="Witness signature"
+                    className="h-[64px] w-full object-contain"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowWitnessSigModal(true)}
+                    className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                  >
+                    <span className="text-[14px]">✍️</span> Click to Sign Here
+                  </button>
+                )}
+              </div>
+              {formData.witnessSignature && (
+                <button
+                  type="button"
+                  onClick={() => setShowWitnessSigModal(true)}
+                  className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                >
+                  ✏️ Update Signature
+                </button>
               )}
             </div>
             <span className="mt-2">Name of witness:</span>
@@ -550,6 +580,12 @@ const ProhibitionNoticeDeclarationForm = () => {
             </div>
           </div>
           {errors.witnessSignature && <p className="text-red-500 text-xs ml-[163px]">{errors.witnessSignature}</p>}
+          <SignatureModal
+            isOpen={showWitnessSigModal}
+            onClose={() => setShowWitnessSigModal(false)}
+            onSave={(v) => updateField("witnessSignature", v)}
+            existingSignature={formData.witnessSignature}
+          />
         </div>
 
         {/* Action Buttons */}

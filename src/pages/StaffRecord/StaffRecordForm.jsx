@@ -82,16 +82,21 @@ const StaffRecordForm = () => {
   };
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    let empId = queryParams.get('employeeId');
+
     const employeeStr = localStorage.getItem('employee');
     const userStr = localStorage.getItem('user');
     if (employeeStr) {
       const employee = JSON.parse(employeeStr);
-      setEmployeeId(employee.id);
+      setEmployeeId(empId || employee.id);
       if (employee.organization_id) setOrganizationId(employee.organization_id);
     } else if (userStr) {
       const user = JSON.parse(userStr);
-      setEmployeeId(user.id);
+      setEmployeeId(empId || user.id);
       if (user.organization_id) setOrganizationId(user.organization_id);
+    } else if (empId) {
+      setEmployeeId(empId);
     }
   }, []);
 

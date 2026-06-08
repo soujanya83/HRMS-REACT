@@ -118,17 +118,20 @@ const SuperannuationPage = () => {
   // Fetch existing form data
   useEffect(() => {
     const fetchExistingData = async () => {
-      const employeeStr = localStorage.getItem('employee');
-      const userStr = localStorage.getItem('user');
-      
-      let employeeId = null;
+      const queryParams = new URLSearchParams(window.location.search);
+      let employeeId = queryParams.get('employeeId');
 
-      if (employeeStr) {
-        const employee = JSON.parse(employeeStr);
-        employeeId = employee.id;
-      } else if (userStr) {
-        const user = JSON.parse(userStr);
-        employeeId = user.id;
+      if (!employeeId) {
+        const employeeStr = localStorage.getItem('employee');
+        const userStr = localStorage.getItem('user');
+        
+        if (employeeStr) {
+          const employee = JSON.parse(employeeStr);
+          employeeId = employee.id;
+        } else if (userStr) {
+          const user = JSON.parse(userStr);
+          employeeId = user.id;
+        }
       }
 
       if (employeeId) {
@@ -219,19 +222,20 @@ const SuperannuationPage = () => {
     }
 
     // Get employee and organization data from localStorage
+    const queryParams = new URLSearchParams(window.location.search);
+    let employeeId = queryParams.get('employeeId');
+    let organizationId = null;
+
     const employeeStr = localStorage.getItem('employee');
     const userStr = localStorage.getItem('user');
-    
-    let employeeId = null;
-    let organizationId = null;
 
     if (employeeStr) {
       const employee = JSON.parse(employeeStr);
-      employeeId = employee.id;
+      if (!employeeId) employeeId = employee.id;
       organizationId = employee.organization_id;
     } else if (userStr) {
       const user = JSON.parse(userStr);
-      employeeId = user.id;
+      if (!employeeId) employeeId = user.id;
       organizationId = user.organization_id;
     }
 

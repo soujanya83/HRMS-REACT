@@ -1,4 +1,5 @@
-import React, { useRef, useCallback, useEffect } from "react";
+import React, { useRef, useCallback, useEffect, useState } from "react";
+import { SignatureModal } from "../../TfnDeclaration/components/TfnFormComponents";
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 
@@ -467,36 +468,62 @@ export const SignatureBox = ({
   dateValues = [],
   onDateChange,
   readOnly = false,
-}) => (
-  <div className={`flex items-end gap-4 ${className}`}>
-    <div className="flex-1">
-      <label className="block text-[11px] text-gray-700 mb-[3px]">
-        {label}
-      </label>
-      {readOnly && signature && signature.startsWith('http') ? (
-        <img
-          src={signature}
-          alt="Signature"
-          className="h-[70px] border border-gray-300 bg-white"
-        />
-      ) : (
-        <SignaturePad
-          value={signature}
-          onChange={onSignatureChange}
-          height={70}
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={`flex items-end gap-4 ${className}`}>
+      <div className="flex-1">
+        <label className="block text-[11px] text-gray-700 mb-[3px]">
+          {label}
+        </label>
+        <div className="w-full border border-gray-400 bg-white relative">
+          {signature ? (
+            <img
+              src={signature}
+              alt={label}
+              className="h-[70px] w-full object-contain"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsOpen(true)}
+              className="h-[70px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+            >
+              <span className="text-[14px]">✍️</span> Click to Sign Here
+            </button>
+          )}
+        </div>
+        {signature && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+          >
+            ✏️ Update Signature
+          </button>
+        )}
+      </div>
+      {withDate && (
+        <DateInputLabeled
+          label="Date"
+          values={dateValues}
+          onChange={onDateChange}
+          readOnly={readOnly}
         />
       )}
-    </div>
-    {withDate && (
-      <DateInputLabeled
-        label="Date"
-        values={dateValues}
-        onChange={onDateChange}
-        readOnly={readOnly}
+      <SignatureModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onSave={(v) => {
+          onSignatureChange(v);
+          setIsOpen(false);
+        }}
+        existingSignature={signature}
       />
-    )}
-  </div>
-);
+    </div>
+  );
+};
 
 // ─── Form Checkbox ────────────────────────────────────────────────────────────
 

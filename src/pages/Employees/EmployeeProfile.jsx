@@ -10,10 +10,36 @@ import {
   FaPrint, FaShare, FaQrcode, FaIdCard, FaTasks, FaChartLine,
   FaDownload, FaCopy, FaExternalLinkAlt, FaEllipsisH,
   FaPlus, FaTrash, FaEye, FaFilePdf, FaFileWord, FaFileImage,
-  FaTimes, FaCheck, FaSpinner, FaUpload  // <-- Add FaUpload here
+  FaTimes, FaCheck, FaSpinner, FaUpload, FaGavel, FaCheckCircle, FaClock
 } from 'react-icons/fa';
 import { HiOutlineDocumentReport, HiOutlineUserGroup } from 'react-icons/hi';
 import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument, deleteEmployeeDocument } from '../../services/employeeService';
+
+const REQUIRED_DOCUMENT_TYPES = [
+  'Working With Children Check',
+  'First Aid Certificate',
+  'Police Check',
+  'Qualification Certificate',
+  'Immunisation Record',
+  'Code of Conduct',
+  'Induction',
+  'Right to Work'
+];
+
+const normalizeDocumentType = (value = '') =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const isRequiredDocument = (documentType) => {
+  const normalizedType = normalizeDocumentType(documentType);
+  if (!normalizedType) return false;
+
+  return REQUIRED_DOCUMENT_TYPES.some((requiredType) => {
+    const normalizedRequiredType = normalizeDocumentType(requiredType);
+    return normalizedType === normalizedRequiredType
+      || normalizedType.includes(normalizedRequiredType)
+      || normalizedRequiredType.includes(normalizedType);
+  });
+};
 
 // Detail Field Component
 const DetailField = ({ icon, label, value, className = '' }) => (
@@ -86,25 +112,66 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
     }
   };
 
+  const getStatusBadge = () => {
+    if (document.verify === 'approved') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">
+          <FaCheckCircle size={10} /> Approved
+        </span>
+      );
+    }
+
+    if (document.verify === 'rejected') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-semibold">
+          <FaTimes size={10} /> Rejected
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold">
+        <FaClock size={10} /> Pending
+      </span>
+    );
+  };
+
+  const required = isRequiredDocument(document.document_type);
+  const expired = document.expiry_date && new Date(document.expiry_date) < new Date();
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className={`bg-white border ${document.verify === 'approved' ? 'border-green-200' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}>
+      {document.verify === 'approved' && (
+        <FaCheckCircle
+          size={60}
+          className="absolute -right-3 -top-3 text-green-500 opacity-10 pointer-events-none"
+        />
+      )}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
           <div className="text-xl mt-1">
             {getFileIcon(document.file_name)}
           </div>
-          <div>
-            <h4 className="font-semibold text-gray-800">{document.document_type || 'Document'}</h4>
-            <p className="text-sm text-gray-600">{document.file_name}</p>
-            <div className="flex items-center gap-3 mt-1">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-semibold text-gray-800">{document.file_name || document.document_type || 'Document'}</h4>
+              {getStatusBadge()}
+              {required && (
+                <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-semibold">
+                  Required
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600">{document.document_type}</p>
+            <div className="flex flex-wrap items-center gap-3 mt-1">
               {document.issue_date && (
                 <span className="text-xs text-gray-500">
                   Issued: {formatDate(document.issue_date)}
                 </span>
               )}
               {document.expiry_date && (
-                <span className="text-xs text-gray-500">
-                  Expires: {formatDate(document.expiry_date)}
+                <span className={`text-xs ${expired ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  Expires: {formatDate(document.expiry_date)}{expired ? ' (Expired)' : ''}
                 </span>
               )}
             </div>
@@ -720,7 +787,7 @@ export default function EmployeeProfile() {
             {/* Tabs */}
             <div className="border-b border-gray-200">
               <nav className="flex overflow-x-auto">
-                {['overview', 'employment', 'financial', 'documents'].map((tab) => (
+                {['overview', 'employment', 'financial', 'documents', 'forms'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1000,6 +1067,122 @@ export default function EmployeeProfile() {
                       </button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Forms Tab */}
+              {activeTab === 'forms' && (
+                <div>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800">Employee Onboarding Forms</h3>
+                    <p className="text-gray-600">
+                      View or edit compliance and onboarding forms completed by {employee.first_name} {employee.last_name}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Superannuation Form */}
+                    <a
+                      href={`/superannuation?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                        <FaUniversity className="text-blue-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">Superannuation Form</h3>
+                        <p className="text-sm text-gray-500">View or update superannuation details</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-blue-600 ml-auto" />
+                    </a>
+
+                    {/* TFN Declaration Form */}
+                    <a
+                      href={`/tfn-declaration?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                        <FaFileAlt className="text-green-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">TFN Declaration</h3>
+                        <p className="text-sm text-gray-500">View or update Tax File Number declaration</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-green-600 ml-auto" />
+                    </a>
+
+                    {/* Prohibition Notice Declaration Form */}
+                    <a
+                      href={`/prohibition-notice-declaration-form?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+                        <FaGavel className="text-red-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">Prohibition Notice</h3>
+                        <p className="text-sm text-gray-500">View or update prohibition notice declaration</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-red-600 ml-auto" />
+                    </a>
+
+                    {/* Person In Day To Day Charge Form */}
+                    <a
+                      href={`/person-in-day-to-day-charge-form?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                        <FaUser className="text-purple-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">Person In Day To Day</h3>
+                        <p className="text-sm text-gray-500">View or update day to day charge declaration</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-purple-600 ml-auto" />
+                    </a>
+
+                    {/* Staff Record Form */}
+                    <a
+                      href={`/staff-record-form?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                        <FaIdCard className="text-orange-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">Staff Record</h3>
+                        <p className="text-sm text-gray-500">View or update staff record details</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-orange-600 ml-auto" />
+                    </a>
+
+                    {/* Child Safe Code of Policy Form */}
+                    <a
+                      href={`/child-safe-code-of-policy-form?employeeId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all group cursor-pointer"
+                    >
+                      <div className="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors">
+                        <FaShieldAlt className="text-teal-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-800">Child Safe Code of Policy</h3>
+                        <p className="text-sm text-gray-500">View child safe code of conduct policy</p>
+                      </div>
+                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-teal-600 ml-auto" />
+                    </a>
+                  </div>
                 </div>
               )}
             </div>

@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { FaSave, FaSpinner } from 'react-icons/fa';
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
-import { SignaturePad } from "../Superannuation/components/SharedComponents";
+import { SignatureModal } from "../TfnDeclaration/components/TfnFormComponents";
 
 const checklistItems = [
   "Alarm system operation and troubleshooting",
@@ -137,22 +137,30 @@ const PersonInDayToDayChargeForm = () => {
   const [formId, setFormId] = useState(null);
   const [employeeId, setEmployeeId] = useState(null);
   const [organizationId, setOrganizationId] = useState(null);
+  const [sigModalConfig, setSigModalConfig] = useState({ isOpen: false, field: null, existingValue: null });
 
   // Fetch employee data from localStorage
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    let empId = queryParams.get('employeeId');
+
     const employeeStr = localStorage.getItem('employee');
     const userStr = localStorage.getItem('user');
 
     if (employeeStr) {
       const employee = JSON.parse(employeeStr);
-      setEmployeeId(employee.id);
+      setEmployeeId(empId || employee.id);
       if (employee.organization_id) {
         setOrganizationId(employee.organization_id);
       }
     } else if (userStr) {
       const user = JSON.parse(userStr);
-      setEmployeeId(user.id);
-      if (user.organization_id) setOrganizationId(user.organization_id);
+      setEmployeeId(empId || user.id);
+      if (user.organization_id) {
+        setOrganizationId(user.organization_id);
+      }
+    } else if (empId) {
+      setEmployeeId(empId);
     }
   }, []);
 
@@ -535,19 +543,31 @@ const PersonInDayToDayChargeForm = () => {
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  {formData.appointeeSignature && formData.appointeeSignature.startsWith('http') ? (
-                    <img
-                      src={formData.appointeeSignature}
-                      alt="Appointee signature"
-                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                    />
-                  ) : (
-                    <SignaturePad
-                      value={formData.appointeeSignature}
-                      onChange={(value) => updateField("appointeeSignature", value)}
-                      height={64}
-                      className="w-full"
-                    />
+                  <div className="w-full border border-gray-400 bg-white relative">
+                    {formData.appointeeSignature ? (
+                      <img
+                        src={formData.appointeeSignature}
+                        alt="Appointee signature"
+                        className="h-[64px] w-full object-contain"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalConfig({ isOpen: true, field: 'appointeeSignature', existingValue: formData.appointeeSignature })}
+                        className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                      >
+                        <span className="text-[14px]">✍️</span> Click to Sign Here
+                      </button>
+                    )}
+                  </div>
+                  {formData.appointeeSignature && (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'appointeeSignature', existingValue: formData.appointeeSignature })}
+                      className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                    >
+                      ✏️ Update Signature
+                    </button>
                   )}
                 </div>
                 <div className="flex-shrink-0">
@@ -593,19 +613,31 @@ const PersonInDayToDayChargeForm = () => {
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  {formData.nominatedSupervisorSignature && formData.nominatedSupervisorSignature.startsWith('http') ? (
-                    <img
-                      src={formData.nominatedSupervisorSignature}
-                      alt="Nominated supervisor signature"
-                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                    />
-                  ) : (
-                    <SignaturePad
-                      value={formData.nominatedSupervisorSignature}
-                      onChange={(value) => updateField("nominatedSupervisorSignature", value)}
-                      height={64}
-                      className="w-full"
-                    />
+                  <div className="w-full border border-gray-400 bg-white relative">
+                    {formData.nominatedSupervisorSignature ? (
+                      <img
+                        src={formData.nominatedSupervisorSignature}
+                        alt="Nominated supervisor signature"
+                        className="h-[64px] w-full object-contain"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalConfig({ isOpen: true, field: 'nominatedSupervisorSignature', existingValue: formData.nominatedSupervisorSignature })}
+                        className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                      >
+                        <span className="text-[14px]">✍️</span> Click to Sign Here
+                      </button>
+                    )}
+                  </div>
+                  {formData.nominatedSupervisorSignature && (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'nominatedSupervisorSignature', existingValue: formData.nominatedSupervisorSignature })}
+                      className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                    >
+                      ✏️ Update Signature
+                    </button>
                   )}
                 </div>
                 <div className="flex-shrink-0">
@@ -756,19 +788,31 @@ const PersonInDayToDayChargeForm = () => {
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  {formData.declarantSignature && formData.declarantSignature.startsWith('http') ? (
-                    <img
-                      src={formData.declarantSignature}
-                      alt="Declarant signature"
-                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                    />
-                  ) : (
-                    <SignaturePad
-                      value={formData.declarantSignature}
-                      onChange={(value) => updateField("declarantSignature", value)}
-                      height={64}
-                      className="w-full"
-                    />
+                  <div className="w-full border border-gray-400 bg-white relative">
+                    {formData.declarantSignature ? (
+                      <img
+                        src={formData.declarantSignature}
+                        alt="Declarant signature"
+                        className="h-[64px] w-full object-contain"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalConfig({ isOpen: true, field: 'declarantSignature', existingValue: formData.declarantSignature })}
+                        className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                      >
+                        <span className="text-[14px]">✍️</span> Click to Sign Here
+                      </button>
+                    )}
+                  </div>
+                  {formData.declarantSignature && (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'declarantSignature', existingValue: formData.declarantSignature })}
+                      className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                    >
+                      ✏️ Update Signature
+                    </button>
                   )}
                 </div>
                 <div className="flex-shrink-0">
@@ -802,20 +846,34 @@ const PersonInDayToDayChargeForm = () => {
                 <span className="text-[14px]">Witness Signature:</span>
                 {errors.witness_signature_base64 && <span className="text-red-500 text-xs">*</span>}
               </div>
-              {formData.witnessSignature && formData.witnessSignature.startsWith('http') ? (
-                <img
-                  src={formData.witnessSignature}
-                  alt="Witness signature"
-                  className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                />
-              ) : (
-                <SignaturePad
-                  value={formData.witnessSignature}
-                  onChange={(value) => updateField("witnessSignature", value)}
-                  height={64}
-                  className="w-full"
-                />
-              )}
+              <div>
+                <div className="w-full border border-gray-400 bg-white relative">
+                  {formData.witnessSignature ? (
+                    <img
+                      src={formData.witnessSignature}
+                      alt="Witness signature"
+                      className="h-[64px] w-full object-contain"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'witnessSignature', existingValue: formData.witnessSignature })}
+                      className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                    >
+                      <span className="text-[14px]">✍️</span> Click to Sign Here
+                    </button>
+                  )}
+                </div>
+                {formData.witnessSignature && (
+                  <button
+                    type="button"
+                    onClick={() => setSigModalConfig({ isOpen: true, field: 'witnessSignature', existingValue: formData.witnessSignature })}
+                    className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                  >
+                    ✏️ Update Signature
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </Page>
@@ -876,19 +934,31 @@ const PersonInDayToDayChargeForm = () => {
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  {formData.checklistNsSignature && formData.checklistNsSignature.startsWith('http') ? (
-                    <img
-                      src={formData.checklistNsSignature}
-                      alt="Nominated supervisor signature"
-                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                    />
-                  ) : (
-                    <SignaturePad
-                      value={formData.checklistNsSignature}
-                      onChange={(value) => updateField("checklistNsSignature", value)}
-                      height={64}
-                      className="w-full"
-                    />
+                  <div className="w-full border border-gray-400 bg-white relative">
+                    {formData.checklistNsSignature ? (
+                      <img
+                        src={formData.checklistNsSignature}
+                        alt="Nominated supervisor signature"
+                        className="h-[64px] w-full object-contain"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalConfig({ isOpen: true, field: 'checklistNsSignature', existingValue: formData.checklistNsSignature })}
+                        className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                      >
+                        <span className="text-[14px]">✍️</span> Click to Sign Here
+                      </button>
+                    )}
+                  </div>
+                  {formData.checklistNsSignature && (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'checklistNsSignature', existingValue: formData.checklistNsSignature })}
+                      className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                    >
+                      ✏️ Update Signature
+                    </button>
                   )}
                 </div>
                 <div className="flex-shrink-0">
@@ -913,19 +983,31 @@ const PersonInDayToDayChargeForm = () => {
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  {formData.checklistRpSignature && formData.checklistRpSignature.startsWith('http') ? (
-                    <img
-                      src={formData.checklistRpSignature}
-                      alt="Responsible person signature"
-                      className="h-[64px] w-full object-contain border border-gray-300 bg-white"
-                    />
-                  ) : (
-                    <SignaturePad
-                      value={formData.checklistRpSignature}
-                      onChange={(value) => updateField("checklistRpSignature", value)}
-                      height={64}
-                      className="w-full"
-                    />
+                  <div className="w-full border border-gray-400 bg-white relative">
+                    {formData.checklistRpSignature ? (
+                      <img
+                        src={formData.checklistRpSignature}
+                        alt="Responsible person signature"
+                        className="h-[64px] w-full object-contain"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalConfig({ isOpen: true, field: 'checklistRpSignature', existingValue: formData.checklistRpSignature })}
+                        className="h-[64px] w-full flex items-center justify-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                      >
+                        <span className="text-[14px]">✍️</span> Click to Sign Here
+                      </button>
+                    )}
+                  </div>
+                  {formData.checklistRpSignature && (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalConfig({ isOpen: true, field: 'checklistRpSignature', existingValue: formData.checklistRpSignature })}
+                      className="mt-1 px-3 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                    >
+                      ✏️ Update Signature
+                    </button>
                   )}
                 </div>
                 <div className="flex-shrink-0">
@@ -972,6 +1054,15 @@ const PersonInDayToDayChargeForm = () => {
           </button>
         </div>
       </form>
+      <SignatureModal
+        isOpen={sigModalConfig.isOpen}
+        onClose={() => setSigModalConfig({ isOpen: false, field: null, existingValue: null })}
+        onSave={(val) => {
+          updateField(sigModalConfig.field, val);
+          setSigModalConfig({ isOpen: false, field: null, existingValue: null });
+        }}
+        existingSignature={sigModalConfig.existingValue}
+      />
     </div>
   );
 };
