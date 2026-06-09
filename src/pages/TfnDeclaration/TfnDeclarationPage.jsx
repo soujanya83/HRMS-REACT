@@ -38,6 +38,8 @@ const TfnDeclarationPage = () => {
 
   const [organizationId, setOrganizationId] = useState(null);
 
+  const [isEmployeeUser, setIsEmployeeUser] = useState(false);
+
 
 
   // Fetch employee data from localStorage
@@ -47,6 +49,29 @@ const TfnDeclarationPage = () => {
 
     const employeeStr = localStorage.getItem('employee');
     const userStr = localStorage.getItem('user');
+    const currentRole = localStorage.getItem('CURRENT_USER_ROLE')?.toLowerCase();
+    const storedRoles = localStorage.getItem('USER_ROLES');
+    const roleNames = [];
+
+    if (currentRole) roleNames.push(currentRole);
+    if (storedRoles) {
+      try {
+        const parsedRoles = JSON.parse(storedRoles);
+        if (Array.isArray(parsedRoles)) {
+          parsedRoles.forEach((role) => {
+            if (role?.role_name) roleNames.push(role.role_name.toLowerCase());
+            if (typeof role === 'string') roleNames.push(role.toLowerCase());
+          });
+        }
+      } catch {
+        // Ignore malformed role cache and fall back to employee storage below.
+      }
+    }
+
+    const adminRoles = ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+    const hasAdminRole = roleNames.some((role) => adminRoles.includes(role));
+    const hasEmployeeRole = roleNames.includes('employee');
+    setIsEmployeeUser((hasEmployeeRole && !hasAdminRole) || (!roleNames.length && !!employeeStr));
 
     if (employeeStr) {
       const employee = JSON.parse(employeeStr);
@@ -365,69 +390,68 @@ const TfnDeclarationPage = () => {
 
 
 
-    // Section B validation
-
-    if (!b.abn.join('').trim()) {
+    // Section B is completed by the payer, so employees can save Section A without it.
+    if (!isEmployeeUser && !b.abn.join('').trim()) {
 
       newErrors.payer_abn = 'ABN is required';
 
     }
 
-    if (!b.legalName1.join('').trim()) {
+    if (!isEmployeeUser && !b.legalName1.join('').trim()) {
 
       newErrors.payer_legal_name = 'Legal name is required';
 
     }
 
-    if (!b.addressLine1.join('').trim()) {
+    if (!isEmployeeUser && !b.addressLine1.join('').trim()) {
 
       newErrors.payer_address = 'Payer address is required';
 
     }
 
-    if (!b.suburb.join('').trim()) {
+    if (!isEmployeeUser && !b.suburb.join('').trim()) {
 
       newErrors.payer_suburb = 'Payer suburb is required';
 
     }
 
-    if (!b.state.join('').trim()) {
+    if (!isEmployeeUser && !b.state.join('').trim()) {
 
       newErrors.payer_state = 'Payer state is required';
 
     }
 
-    if (!b.postcode.join('').trim()) {
+    if (!isEmployeeUser && !b.postcode.join('').trim()) {
 
       newErrors.payer_postcode = 'Payer postcode is required';
 
     }
 
-    if (!b.emailLine1.join('').trim()) {
+    if (!isEmployeeUser && !b.emailLine1.join('').trim()) {
 
       newErrors.payer_email = 'Payer email is required';
 
     }
 
-    if (!b.contactName.join('').trim()) {
+    if (!isEmployeeUser && !b.contactName.join('').trim()) {
 
       newErrors.payer_contact_person = 'Contact person is required';
 
     }
 
-    if (!b.phone.join('').trim()) {
+    if (!isEmployeeUser && !b.phone.join('').trim()) {
 
       newErrors.payer_phone = 'Phone number is required';
 
     }
 
-    if (!b.signature) {
+    if (!isEmployeeUser && !b.signature) {
 
       newErrors.payer_signature_base64 = 'Payer signature is required';
 
     }
 
-    if (!b.signatureDate.join('').trim()) {
+    if (!isEmployeeUser && !b.signatureDate.join('').trim()) {
 
       newErrors.payer_declaration_date = 'Payer declaration date is required';
 
@@ -785,7 +809,14 @@ const TfnDeclarationPage = () => {
 
         {/* <TfnPage4MoreInfo /> */}
 
-        <TfnPage5Form form={form} onUpdate={setForm} errors={errors} onSave={handleSave} declarationId={declarationId} />
+        <TfnPage5Form
+          form={form}
+          onUpdate={setForm}
+          errors={errors}
+          onSave={handleSave}
+          declarationId={declarationId}
+          payerReadOnly={isEmployeeUser}
+        />
 
         {/* <TfnPage6PayerInfo /> */}
 

@@ -21,6 +21,7 @@ import TfnDeclarationPage from './pages/TfnDeclaration/TfnDeclarationPage';
 import StaffRecordForm from './pages/StaffRecord/StaffRecordForm';
 import PersonInDayToDayChargeForm from './pages/PersonInDayToDayCharge/PersonInDayToDayChargeForm';
 import ProhibitionNoticeDeclarationForm from './pages/ProhibitionNoticeDeclaration/ProhibitionNoticeDeclarationForm';
+import ChildSafeCodeOfPolicyForm from './pages/ChildSafeCodeOfPolicy/ChildSafeCodeOfPolicyForm';
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -275,6 +276,10 @@ function App() {
     {
       path: "/prohibition-notice-declaration-form",
       element: <ProhibitionNoticeDeclarationForm />,
+    },
+    {
+      path: "/child-safe-code-of-policy-form",
+      element: <ChildSafeCodeOfPolicyForm />,
     },
     {
       path: "/login",

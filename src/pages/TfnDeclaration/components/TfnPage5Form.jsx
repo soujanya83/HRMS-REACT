@@ -58,7 +58,14 @@ const EMAIL_LEN = 19;
 
 
 
-const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = null }) => {
+const TfnPage5Form = ({
+  form,
+  onUpdate,
+  errors = {},
+  onSave,
+  declarationId = null,
+  payerReadOnly = false,
+}) => {
 
   const a = form.sectionA;
 
@@ -686,6 +693,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           groupSeparator
 
+          readOnly={payerReadOnly}
+
         />
 
         {errors.payer_abn && <p className="text-red-500 text-xs mt-1">{errors.payer_abn}</p>}
@@ -703,6 +712,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
           boxClass={BOX}
 
           className="mt-[3px]"
+
+          readOnly={payerReadOnly}
 
         />
 
@@ -730,6 +741,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
             onChange={() => setB("abnApplied", "yes")}
 
+            readOnly={payerReadOnly}
+
           />
 
           <TfnCheckOption
@@ -739,6 +752,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
             checked={b.abnApplied === "no"}
 
             onChange={() => setB("abnApplied", "no")}
+
+            readOnly={payerReadOnly}
 
           />
 
@@ -762,6 +777,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         {errors.payer_legal_name && <p className="text-red-500 text-xs mt-1">{errors.payer_legal_name}</p>}
@@ -778,6 +795,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         <CompactSegmentedInput
@@ -789,6 +808,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
           onChange={(idx, val) => setBChars("legalName3", idx, val)}
 
           boxClass={BOX}
+
+          readOnly={payerReadOnly}
 
         />
 
@@ -810,6 +831,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         <CompactSegmentedInput
@@ -823,6 +846,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
           boxClass={BOX}
 
           className="mb-[3px]"
+
+          readOnly={payerReadOnly}
 
         />
 
@@ -840,11 +865,18 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         <div className="flex gap-4 items-end">
 
-          <TfnStateSelect value={payerStateCode} onChange={setPayerStateCode} boxClass={BOX} />
+          <TfnStateSelect
+            value={payerStateCode}
+            onChange={setPayerStateCode}
+            boxClass={BOX}
+            readOnly={payerReadOnly}
+          />
 
           <CompactSegmentedInput
 
@@ -857,6 +889,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
             onChange={(idx, val) => setBChars("postcode", idx, val)}
 
             boxClass={BOX}
+
+            readOnly={payerReadOnly}
 
           />
 
@@ -888,6 +922,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         <CompactSegmentedInput
@@ -899,6 +935,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
           onChange={(idx, val) => setBChars("emailLine2", idx, val)}
 
           boxClass={EMAIL_BOX}
+
+          readOnly={payerReadOnly}
 
         />
 
@@ -922,6 +960,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           className="mb-[3px]"
 
+          readOnly={payerReadOnly}
+
         />
 
         {errors.payer_contact_person && <p className="text-red-500 text-xs mt-1">{errors.payer_contact_person}</p>}
@@ -939,6 +979,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
           boxClass={BOX}
 
           groupSeparator
+
+          readOnly={payerReadOnly}
 
         />
 
@@ -964,6 +1006,8 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
           onChange={(v) => setB("ceasingPayments", v)}
 
+          readOnly={payerReadOnly}
+
         />
 
       </QuestionBlock>
@@ -986,7 +1030,7 @@ const TfnPage5Form = ({ form, onUpdate, errors = {}, onSave, declarationId = nul
 
         }
 
-        readOnly={!!declarationId}
+        readOnly={payerReadOnly || !!declarationId}
 
       />
 

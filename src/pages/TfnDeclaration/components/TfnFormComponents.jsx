@@ -222,6 +222,10 @@ export const TfnSignatureBox = ({
 
               />
 
+            ) : readOnly ? (
+              <div className="h-[64px] w-full flex items-center justify-center text-[11px] text-gray-500 bg-gray-100">
+                Signature pending
+              </div>
             ) : (
 
               <button
@@ -244,7 +248,7 @@ export const TfnSignatureBox = ({
 
 
 
-          {hasSignature && (
+          {hasSignature && !readOnly && (
 
             <button
 
@@ -658,15 +662,19 @@ export const TfnStateSelect = ({
 
   boxClass = "w-[13px] h-[18px]",
 
+  readOnly = false,
+
 }) => {
 
   const chars = padStateChars(value);
 
-  const inputClass = `${boxClass} border border-[#666] text-center text-[10px] font-mono uppercase bg-white focus:outline-none focus:border-[#009FDA]`;
+  const inputClass = `${boxClass} border border-[#666] text-center text-[10px] font-mono uppercase bg-white focus:outline-none focus:border-[#009FDA] ${readOnly ? "bg-gray-100" : ""}`;
 
 
 
   const setChar = (idx, raw) => {
+
+    if (readOnly) return;
 
     const next = [...chars];
 
@@ -704,6 +712,8 @@ export const TfnStateSelect = ({
 
             onChange={(e) => setChar(idx, e.target.value)}
 
+            readOnly={readOnly}
+
             className={inputClass}
 
             aria-label={`State or territory character ${idx + 1}`}
@@ -714,7 +724,7 @@ export const TfnStateSelect = ({
 
         <div
 
-          className={`relative ${boxClass} border border-[#666] bg-[#d6eaf5] flex items-center justify-center`}
+          className={`relative ${boxClass} border border-[#666] ${readOnly ? "bg-gray-100" : "bg-[#d6eaf5]"} flex items-center justify-center`}
 
         >
 
@@ -724,7 +734,9 @@ export const TfnStateSelect = ({
 
             onChange={(e) => onChange?.(e.target.value)}
 
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={readOnly}
+
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
 
             aria-label="Select state or territory"
 
@@ -988,6 +1000,8 @@ export const CompactSegmentedInput = ({
 
   labelClassName = "block text-[10px] text-gray-800 mb-[2px] font-semibold",
 
+  readOnly = false,
+
 }) => {
 
   const totalLength = segments.reduce((a, b) => a + b, 0);
@@ -1020,6 +1034,8 @@ export const CompactSegmentedInput = ({
 
   const handleChange = (index, rawValue) => {
 
+    if (readOnly) return;
+
     if (!onChange) return;
 
     const cleaned = rawValue.replace(/\s/g, "");
@@ -1047,6 +1063,8 @@ export const CompactSegmentedInput = ({
 
 
   const handleKeyDown = (index, e) => {
+
+    if (readOnly) return;
 
     const current = values[index] ?? "";
 
@@ -1146,7 +1164,9 @@ export const CompactSegmentedInput = ({
 
                       onFocus={(e) => e.target.select()}
 
-                      className={`${boxClass} border border-[#666] text-center text-[10px] font-mono  focus:outline-none focus:border-[#009FDA] bg-white text-gray-900`}
+                      readOnly={readOnly}
+
+                      className={`${boxClass} border border-[#666] text-center text-[10px] font-mono focus:outline-none focus:border-[#009FDA] ${readOnly ? "bg-gray-100" : "bg-white"} text-gray-900`}
 
                     />
 
@@ -1174,9 +1194,9 @@ export const CompactSegmentedInput = ({
 
 // ─── Checkbox option (print X style) ─────────────────────────────────────────
 
-export const TfnCheckOption = ({ label, checked, onChange, className = "" }) => (
+export const TfnCheckOption = ({ label, checked, onChange, className = "", readOnly = false }) => (
 
-  <label className={`flex items-start gap-[5px] cursor-pointer select-none ${className}`}>
+  <label className={`flex items-start gap-[5px] select-none ${readOnly ? "cursor-not-allowed" : "cursor-pointer"} ${className}`}>
 
     <div
 
@@ -1189,6 +1209,8 @@ export const TfnCheckOption = ({ label, checked, onChange, className = "" }) => 
       onClick={(e) => {
 
         e.preventDefault();
+
+        if (readOnly) return;
 
         onChange?.(!checked);
 
@@ -1218,7 +1240,7 @@ export const TfnCheckOption = ({ label, checked, onChange, className = "" }) => 
 
 // ─── Radio-style single choice from options ───────────────────────────────────
 
-export const TfnRadioGroup = ({ options, value, onChange, className = "" }) => (
+export const TfnRadioGroup = ({ options, value, onChange, className = "", readOnly = false }) => (
 
   <div className={`flex flex-col gap-[4px] ${className}`}>
 
@@ -1233,6 +1255,8 @@ export const TfnRadioGroup = ({ options, value, onChange, className = "" }) => (
         checked={value === opt.value}
 
         onChange={() => onChange(opt.value)}
+
+        readOnly={readOnly}
 
       />
 
