@@ -48,24 +48,38 @@ import {
 import { useOrganizations } from "../contexts/OrganizationContext";
 
 // DEFAULT COLOR - Dark Navy
-const DEFAULT_COLOR = '#0B1A2E';
+const DEFAULT_COLOR = "#0B1A2E";
 
 // Helper: darken a hex color by a percentage (0-100)
 function darkenColor(hex, percent) {
-  const num = parseInt(hex.replace('#', ''), 16);
+  const num = parseInt(hex.replace("#", ""), 16);
   const r = Math.max(0, Math.floor((num >> 16) * (1 - percent / 100)));
-  const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - percent / 100)));
-  const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - percent / 100)));
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+  const g = Math.max(
+    0,
+    Math.floor(((num >> 8) & 0x00ff) * (1 - percent / 100)),
+  );
+  const b = Math.max(0, Math.floor((num & 0x0000ff) * (1 - percent / 100)));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
 // Helper: lighten a hex color by a percentage (0-100)
 function lightenColor(hex, percent) {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * percent / 100));
-  const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * percent / 100));
-  const b = Math.min(255, Math.floor((num & 0x0000FF) + (255 - (num & 0x0000FF)) * percent / 100));
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.min(
+    255,
+    Math.floor((num >> 16) + ((255 - (num >> 16)) * percent) / 100),
+  );
+  const g = Math.min(
+    255,
+    Math.floor(
+      ((num >> 8) & 0x00ff) + ((255 - ((num >> 8) & 0x00ff)) * percent) / 100,
+    ),
+  );
+  const b = Math.min(
+    255,
+    Math.floor((num & 0x0000ff) + ((255 - (num & 0x0000ff)) * percent) / 100),
+  );
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
 const Sidebar = ({
@@ -88,8 +102,7 @@ const Sidebar = ({
     }
     // Fallback: read directly from localStorage
     try {
-      const saved = localStorage.getItem('USER_PERMISSIONS');
-
+      const saved = localStorage.getItem("USER_PERMISSIONS");
 
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -97,22 +110,28 @@ const Sidebar = ({
 
         if (Array.isArray(parsed)) return parsed;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
     return [];
   }, [contextPermissions]);
-
 
   // Load color from localStorage ONCE on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('sidebarColor');
-      if (saved && saved !== 'undefined' && saved !== 'null' && saved !== DEFAULT_COLOR) {
+      const saved = localStorage.getItem("sidebarColor");
+      if (
+        saved &&
+        saved !== "undefined" &&
+        saved !== "null" &&
+        saved !== DEFAULT_COLOR
+      ) {
         setCurrentColor(saved);
       } else if (!saved) {
-        localStorage.setItem('sidebarColor', DEFAULT_COLOR);
+        localStorage.setItem("sidebarColor", DEFAULT_COLOR);
       }
     } catch (error) {
-      console.error('Error loading sidebar color:', error);
+      console.error("Error loading sidebar color:", error);
     }
   }, []);
 
@@ -120,18 +139,24 @@ const Sidebar = ({
   useEffect(() => {
     const handleColorUpdate = (event) => {
       try {
-        if (event.detail && event.detail.color && event.detail.color !== 'undefined' && event.detail.color !== 'null') {
+        if (
+          event.detail &&
+          event.detail.color &&
+          event.detail.color !== "undefined" &&
+          event.detail.color !== "null"
+        ) {
           // console.log('🎨 Sidebar received color update:', event.detail.color);
           setCurrentColor(event.detail.color);
-          localStorage.setItem('sidebarColor', event.detail.color);
+          localStorage.setItem("sidebarColor", event.detail.color);
         }
       } catch (error) {
-        console.error('Error updating sidebar color:', error);
+        console.error("Error updating sidebar color:", error);
       }
     };
 
-    window.addEventListener('sidebarColorUpdate', handleColorUpdate);
-    return () => window.removeEventListener('sidebarColorUpdate', handleColorUpdate);
+    window.addEventListener("sidebarColorUpdate", handleColorUpdate);
+    return () =>
+      window.removeEventListener("sidebarColorUpdate", handleColorUpdate);
   }, []);
 
   // Listen for organization change events
@@ -140,180 +165,359 @@ const Sidebar = ({
       //console.log('🏢 Organization changed event received:', event.detail);
       if (event.detail && event.detail.role) {
         setCurrentUserRole(event.detail.role);
-        localStorage.setItem('CURRENT_USER_ROLE', event.detail.role);
+        localStorage.setItem("CURRENT_USER_ROLE", event.detail.role);
       } else {
         // Fallback: read from localStorage
-        const role = localStorage.getItem('CURRENT_USER_ROLE');
+        const role = localStorage.getItem("CURRENT_USER_ROLE");
         setCurrentUserRole(role);
       }
     };
 
     // Also listen for storage events (when localStorage changes from another tab)
     const handleStorageChange = (event) => {
-      if (event.key === 'CURRENT_USER_ROLE') {
+      if (event.key === "CURRENT_USER_ROLE") {
         // console.log('🔄 Storage event - CURRENT_USER_ROLE changed to:', event.newValue);
         setCurrentUserRole(event.newValue);
       }
     };
 
-    window.addEventListener('organizationChanged', handleOrganizationChange);
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener("organizationChanged", handleOrganizationChange);
+    window.addEventListener("storage", handleStorageChange);
 
     // Initial load
-    const role = localStorage.getItem('CURRENT_USER_ROLE');
+    const role = localStorage.getItem("CURRENT_USER_ROLE");
     setCurrentUserRole(role);
 
     return () => {
-      window.removeEventListener('organizationChanged', handleOrganizationChange);
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener(
+        "organizationChanged",
+        handleOrganizationChange,
+      );
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
   // Determine if user is admin based on role
   const isAdmin = useMemo(() => {
-    return currentUserRole === 'superadmin' ||
-      currentUserRole === 'organization_admin' ||
-      currentUserRole === 'hr_manager' ||
-      currentUserRole === 'payroll_manager' ||
-      currentUserRole === 'recruiter';
+    return (
+      currentUserRole === "superadmin" ||
+      currentUserRole === "organization_admin" ||
+      currentUserRole === "hr_manager" ||
+      currentUserRole === "payroll_manager" ||
+      currentUserRole === "recruiter"
+    );
   }, [currentUserRole]);
 
   // Set dashboard link based on role
   const dashboardLink = useMemo(() => {
-    return isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+    return isAdmin
+      ? "/dashboard/admin-dashboard"
+      : "/dashboard/employee-dashboard";
   }, [isAdmin]);
 
   // Define base links
-  const baseLinks = useMemo(() => [
-    {
-      name: "Centers",
-      path: "/dashboard/organizations",
-      icon: HiOutlineOfficeBuilding,
-      adminOnly: true,
-    },
+  const baseLinks = useMemo(
+    () => [
+      {
+        name: "Centers",
+        path: "/dashboard/organizations",
+        icon: HiOutlineOfficeBuilding,
+        adminOnly: true,
+      },
 
-    {
-      name: "Employee",
-      icon: HiOutlineUsers,
-      children: [
-        { name: "Manage Profiles", path: "/dashboard/employees", icon: HiOutlineCollection, exact: true, permission: "employee.add_manage_profiles.view" },
-        { name: "Employment History", path: "/dashboard/employees/history", icon: HiOutlineArchive, permission: "employee.employment_history.view" },
-        { name: "Probation", path: "/dashboard/employees/probation", icon: HiOutlineCheckCircle, permission: "employee.probation_confirmation.view" },
-        { name: "Offboarding", path: "/dashboard/employees/exit", icon: HiOutlineUserRemove, permission: "employee.exit_offboarding.view" },
-      ],
-    },
-    {
-      name: "Rostering",
-      icon: HiOutlineCalendar,
-      children: [
-        { name: "Shift Scheduling", path: "/dashboard/rostering/scheduling", icon: HiOutlineTable, permission: "rostering.shift_scheduling.view" },
-        { name: "Roster Periods", path: "/dashboard/rostering/periods", icon: HiOutlineCalendar, permission: "rostering.roster_periods.view" },
-        { name: "Weekly / Monthly Rosters", path: "/dashboard/rostering/rosters", icon: HiOutlineViewGrid, permission: "rostering.weekly_monthly_rosters.view" },
-        { name: "Shift Swapping Requests", path: "/dashboard/rostering/swapping", icon: HiOutlineSwitchHorizontal, permission: "rostering.shift_swapping_requests.view" },
-      ],
-    },
-    {
-      name: "Attendance",
-      icon: HiOutlineClipboardList,
-      children: [
-        { name: "Attendance Tracking", path: "/dashboard/attendance/tracking", icon: HiOutlineFingerPrint, permission: "attendance.attendance_tracking.view" },
-        { name: "Manual Adjustments", path: "/dashboard/attendance/adjustments", icon: HiOutlinePencilAlt, permission: "attendance.manual_adjustments.view" },
-        { name: "Leave Requests", path: "/dashboard/attendance/requests", icon: HiOutlineDocumentReport, permission: "attendance.leave_requests.view" },
-        { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator, permission: "attendance.leave_balance.view" },
-        { name: "Holidays & Calendars", path: "/dashboard/attendance/holidays", icon: HiOutlineCalendar, permission: "attendance.holidays_calendars.view" },
-      ],
-    },
-    {
-      name: "Timesheet",
-      icon: HiOutlineClock,
-      children: [
-        { name: "Timesheet Entry", path: "/dashboard/timesheet/entry", icon: HiOutlineClock, permission: "timesheet.timesheet_entry.view" },
-        { name: "Approvals", path: "/dashboard/timesheet/approvals", icon: HiOutlineThumbUp, permission: "timesheet.timesheet_approvals.view" },
-      ],
-    },
-    {
-      name: "Payroll",
-      icon: HiOutlineCreditCard,
-      children: [{ name: "Run Payroll", path: "/dashboard/payroll/run", icon: HiOutlineCash, permission: "payroll.payroll.view" }],
-    },
-    {
-      name: "Employee Onboarding",
-      icon: HiOutlineUsers,
-      children: [
-        { name: "Personal Details", path: "/dashboard/employee-onboarding/personal-details", icon: HiOutlineUser, permission: "*" },
-        { name: "Documents", path: "/dashboard/employee-onboarding/documents", icon: HiOutlineDocumentText, permission: "*" },
-        { name: "Forms", path: "/dashboard/employee-onboarding/forms", icon: HiOutlineClipboardList, permission: "*" },
-      ],
-    },
-    {
-      name: "Recruitment",
-      icon: HiOutlineDocumentSearch,
-      children: [
-        { name: "Job Openings", path: "/dashboard/recruitment/jobs", icon: HiOutlineBriefcase, permission: "recruitment.job_openings.view" },
-        { name: "Applicants", path: "/dashboard/recruitment/applicants", icon: HiOutlineIdentification, permission: "recruitment.applicants.view" },
-        { name: "Interview Scheduling", path: "/dashboard/recruitment/interviews", icon: HiOutlineCalendar, permission: "recruitment.interview_scheduling.view" },
-        { name: "Interview", path: "/dashboard/recruitment/interview", icon: HiOutlineMicrophone, permission: "recruitment.interview.view" },
-        { name: "Selection & Offers", path: "/dashboard/recruitment/offers", icon: HiOutlineDocumentText, permission: "recruitment.selection_offers.view" },
-        { name: "Onboarding", path: "/dashboard/recruitment/onboarding", icon: HiOutlineUserAdd, permission: "recruitment.onboarding.view" },
-      ],
-    },
-    {
-      name: "Performance",
-      icon: HiOutlineChartBar,
-      children: [
-        { name: "Goal Setting", path: "/dashboard/performance/goals", icon: HiOutlineFlag },
-        { name: "KPI / OKR Tracking", path: "/dashboard/performance/tracking", icon: HiOutlineChartPie },
-        { name: "Performance Reviews", path: "/dashboard/performance/reviews", icon: HiOutlineAnnotation },
-        { name: "Feedback & Appraisals", path: "/dashboard/performance/appraisals", icon: HiOutlineSpeakerphone },
-      ],
-    },
-    {
-      name: "Settings",
-      icon: HiOutlineCog,
-      children: [
-        { name: "Role Management", path: "/dashboard/settings/roles", icon: HiOutlineShieldCheck, permission: "settings.role_management.view" },
-        { name: "Assign Role to User", path: "/dashboard/settings/assign-role", icon: HiOutlineUserAdd, permission: "settings.assign_roles_to_users.view" },
-        { name: "Permission Management", path: "/dashboard/settings/permissions", icon: HiOutlineKey, permission: "settings.permission_management.view" },
-        { name: "Connect to Xero", path: "/dashboard/settings/xero", icon: HiOutlineSwitchHorizontal },
-      ],
-    },
-  ], []);
+      {
+        name: "Employee",
+        icon: HiOutlineUsers,
+        children: [
+          {
+            name: "Manage Profiles",
+            path: "/dashboard/employees",
+            icon: HiOutlineCollection,
+            exact: true,
+            permission: "employee.add_manage_profiles.view",
+          },
+          {
+            name: "Employment History",
+            path: "/dashboard/employees/history",
+            icon: HiOutlineArchive,
+            permission: "employee.employment_history.view",
+          },
+          {
+            name: "Probation",
+            path: "/dashboard/employees/probation",
+            icon: HiOutlineCheckCircle,
+            permission: "employee.probation_confirmation.view",
+          },
+          {
+            name: "Offboarding",
+            path: "/dashboard/employees/exit",
+            icon: HiOutlineUserRemove,
+            permission: "employee.exit_offboarding.view",
+          },
+        ],
+      },
+      {
+        name: "Rostering",
+        icon: HiOutlineCalendar,
+        children: [
+          {
+            name: "Shift Scheduling",
+            path: "/dashboard/rostering/scheduling",
+            icon: HiOutlineTable,
+            permission: "rostering.shift_scheduling.view",
+          },
+          {
+            name: "Roster Periods",
+            path: "/dashboard/rostering/periods",
+            icon: HiOutlineCalendar,
+            permission: "rostering.roster_periods.view",
+          },
+          {
+            name: "Weekly / Monthly Rosters",
+            path: "/dashboard/rostering/rosters",
+            icon: HiOutlineViewGrid,
+            permission: "rostering.weekly_monthly_rosters.view",
+          },
+          {
+            name: "Shift Swapping Requests",
+            path: "/dashboard/rostering/swapping",
+            icon: HiOutlineSwitchHorizontal,
+            permission: "rostering.shift_swapping_requests.view",
+          },
+        ],
+      },
+      {
+        name: "Attendance",
+        icon: HiOutlineClipboardList,
+        children: [
+          {
+            name: "Attendance Tracking",
+            path: "/dashboard/attendance/tracking",
+            icon: HiOutlineFingerPrint,
+            permission: "attendance.attendance_tracking.view",
+          },
+          {
+            name: "Manual Adjustments",
+            path: "/dashboard/attendance/adjustments",
+            icon: HiOutlinePencilAlt,
+            permission: "attendance.manual_adjustments.view",
+          },
+          {
+            name: "Leave Requests",
+            path: "/dashboard/attendance/requests",
+            icon: HiOutlineDocumentReport,
+            permission: "attendance.leave_requests.view",
+          },
+          // { name: "Leave Balance", path: "/dashboard/attendance/balance", icon: HiOutlineCalculator, permission: "attendance.leave_balance.view" },
+          {
+            name: "Holidays & Calendars",
+            path: "/dashboard/attendance/holidays",
+            icon: HiOutlineCalendar,
+            permission: "attendance.holidays_calendars.view",
+          },
+        ],
+      },
+      {
+        name: "Timesheet",
+        icon: HiOutlineClock,
+        children: [
+          {
+            name: "Timesheet Entry",
+            path: "/dashboard/timesheet/entry",
+            icon: HiOutlineClock,
+            permission: "timesheet.timesheet_entry.view",
+          },
+          {
+            name: "Approvals",
+            path: "/dashboard/timesheet/approvals",
+            icon: HiOutlineThumbUp,
+            permission: "timesheet.timesheet_approvals.view",
+          },
+        ],
+      },
+      {
+        name: "Payroll",
+        icon: HiOutlineCreditCard,
+        children: [
+          {
+            name: "Run Payroll",
+            path: "/dashboard/payroll/run",
+            icon: HiOutlineCash,
+            permission: "payroll.payroll.view",
+          },
+        ],
+      },
+      {
+        name: "Employee Onboarding",
+        icon: HiOutlineUsers,
+        children: [
+          {
+            name: "Personal Details",
+            path: "/dashboard/employee-onboarding/personal-details",
+            icon: HiOutlineUser,
+            permission: "*",
+          },
+          {
+            name: "Documents",
+            path: "/dashboard/employee-onboarding/documents",
+            icon: HiOutlineDocumentText,
+            permission: "*",
+          },
+          {
+            name: "Forms",
+            path: "/dashboard/employee-onboarding/forms",
+            icon: HiOutlineClipboardList,
+            permission: "*",
+          },
+        ],
+      },
+      {
+        name: "Recruitment",
+        icon: HiOutlineDocumentSearch,
+        children: [
+          {
+            name: "Job Openings",
+            path: "/dashboard/recruitment/jobs",
+            icon: HiOutlineBriefcase,
+            permission: "recruitment.job_openings.view",
+          },
+          {
+            name: "Applicants",
+            path: "/dashboard/recruitment/applicants",
+            icon: HiOutlineIdentification,
+            permission: "recruitment.applicants.view",
+          },
+          {
+            name: "Interview Scheduling",
+            path: "/dashboard/recruitment/interviews",
+            icon: HiOutlineCalendar,
+            permission: "recruitment.interview_scheduling.view",
+          },
+          {
+            name: "Interview",
+            path: "/dashboard/recruitment/interview",
+            icon: HiOutlineMicrophone,
+            permission: "recruitment.interview.view",
+          },
+          {
+            name: "Selection & Offers",
+            path: "/dashboard/recruitment/offers",
+            icon: HiOutlineDocumentText,
+            permission: "recruitment.selection_offers.view",
+          },
+          {
+            name: "Onboarding",
+            path: "/dashboard/recruitment/onboarding",
+            icon: HiOutlineUserAdd,
+            permission: "recruitment.onboarding.view",
+          },
+        ],
+      },
+      {
+        name: "Performance",
+        icon: HiOutlineChartBar,
+        children: [
+          {
+            name: "Goal Setting",
+            path: "/dashboard/performance/goals",
+            icon: HiOutlineFlag,
+          },
+          {
+            name: "KPI / OKR Tracking",
+            path: "/dashboard/performance/tracking",
+            icon: HiOutlineChartPie,
+          },
+          {
+            name: "Performance Reviews",
+            path: "/dashboard/performance/reviews",
+            icon: HiOutlineAnnotation,
+          },
+          {
+            name: "Feedback & Appraisals",
+            path: "/dashboard/performance/appraisals",
+            icon: HiOutlineSpeakerphone,
+          },
+        ],
+      },
+      {
+        name: "Settings",
+        icon: HiOutlineCog,
+        children: [
+          {
+            name: "Role Management",
+            path: "/dashboard/settings/roles",
+            icon: HiOutlineShieldCheck,
+            permission: "settings.role_management.view",
+          },
+          {
+            name: "Assign Role to User",
+            path: "/dashboard/settings/assign-role",
+            icon: HiOutlineUserAdd,
+            permission: "settings.assign_roles_to_users.view",
+          },
+          {
+            name: "Permission Management",
+            path: "/dashboard/settings/permissions",
+            icon: HiOutlineKey,
+            permission: "settings.permission_management.view",
+          },
+          {
+            name: "Connect to Xero",
+            path: "/dashboard/settings/xero",
+            icon: HiOutlineSwitchHorizontal,
+          },
+        ],
+      },
+    ],
+    [],
+  );
 
   // Dashboard links
-  const dashboardLinks = useMemo(() => [
-    { name: "Dashboard", path: dashboardLink, icon: LuLayoutDashboard }
-  ], [dashboardLink]);
+  const dashboardLinks = useMemo(
+    () => [{ name: "Dashboard", path: dashboardLink, icon: LuLayoutDashboard }],
+    [dashboardLink],
+  );
 
-  const navLinks = useMemo(() => [...dashboardLinks, ...baseLinks], [dashboardLinks, baseLinks]);
+  const navLinks = useMemo(
+    () => [...dashboardLinks, ...baseLinks],
+    [dashboardLinks, baseLinks],
+  );
 
   // Helper to check permission
-  const hasPermission = useCallback((permission) => {
-    if (!permission) return true;
-    if (permissions.includes('*')) return true;
-    return permissions.includes(permission);
-  }, [permissions]);
+  const hasPermission = useCallback(
+    (permission) => {
+      if (!permission) return true;
+      if (permissions.includes("*")) return true;
+      return permissions.includes(permission);
+    },
+    [permissions],
+  );
 
   // Filter links based on permissions
   // Rule: items with children → filter children, show as dropdown if ≥1 visible, hide if 0
   //       items without children (Dashboard, Centers) → always show
   const filteredNavLinks = useMemo(() => {
-    const isSuperadmin = permissions.includes('*');
+    const isSuperadmin = permissions.includes("*");
     const result = [];
 
     for (const link of navLinks) {
       if (link.children) {
         // Employee Onboarding - only visible to users with role_name === 'Employee'
         if (link.name === "Employee Onboarding") {
-          if (currentUserRole === 'Employee') {
-            result.push({ ...link, visibleChildren: link.children, isDropdown: true });
+          if (currentUserRole === "Employee") {
+            result.push({
+              ...link,
+              visibleChildren: link.children,
+              isDropdown: true,
+            });
           }
           continue;
         }
 
         // Filter children by permission
-        const allowed = link.children.filter(child => {
-          if (isSuperadmin) return true;             // superadmin sees all
-          if (!child.permission) return false;       // no permission key = superadmin only
+        const allowed = link.children.filter((child) => {
+          if (isSuperadmin) return true; // superadmin sees all
+          if (!child.permission) return false; // no permission key = superadmin only
           return permissions.includes(child.permission);
         });
 
@@ -341,7 +545,10 @@ const Sidebar = ({
         const isChildActive = link.children.some((child) => {
           if (child.exact) return location.pathname === child.path;
           if (child.path === "/dashboard/employees/manage") {
-            return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
+            return (
+              location.pathname === child.path ||
+              location.pathname.startsWith(child.path + "/")
+            );
           }
           return location.pathname.startsWith(child.path);
         });
@@ -398,7 +605,7 @@ const Sidebar = ({
           top: "8px",
           left: "6px",
           bottom: "8px",
-          height: "calc(100vh - 16px)"
+          height: "calc(100vh - 16px)",
         }}
       >
         {/* Sidebar inner */}
@@ -407,7 +614,7 @@ const Sidebar = ({
           style={{
             backgroundColor: sidebarBg,
             borderRadius: "16px 0 0 16px",
-            boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)"
+            boxShadow: "4px 0 20px rgba(0, 0, 0, 0.15)",
           }}
         >
           {/* Collapse Toggle Button */}
@@ -418,7 +625,7 @@ const Sidebar = ({
               style={{
                 backgroundColor: sidebarBg,
                 border: `1px solid ${buttonBorderColor}`,
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -431,7 +638,10 @@ const Sidebar = ({
           </div>
 
           {/* Logo Section */}
-          <div className="border-b h-[72px] flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
+          <div
+            className="border-b h-[72px] flex-shrink-0"
+            style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}
+          >
             <div className="flex items-center p-4 h-full">
               <Link to={dashboardLink} className="flex items-center">
                 <img
@@ -458,43 +668,63 @@ const Sidebar = ({
                       to={link.path}
                       end
                       className={({ isActive }) =>
-                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${isActive
-                          ? "text-white font-semibold shadow-sm"
-                          : "text-white/90 font-medium hover:text-white"
+                        `flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 transition-all duration-200 rounded-lg ${
+                          isActive
+                            ? "text-white font-semibold shadow-sm"
+                            : "text-white/90 font-medium hover:text-white"
                         }`
                       }
-                      style={({ isActive }) => (isActive ? { backgroundColor: activeBg } : {})}
+                      style={({ isActive }) =>
+                        isActive ? { backgroundColor: activeBg } : {}
+                      }
                       onClick={() => setSidebarOpen(false)}
                       title={isCollapsed ? link.name : ""}
                     >
                       <link.icon size={20} className="flex-shrink-0" />
-                      <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                      <span
+                        className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}
+                      >
+                        {link.name}
+                      </span>
                     </NavLink>
                   ) : (
                     <>
                       <button
                         onClick={() => handleMenuClick(link.name)}
                         className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3 justify-between"} py-2.5 text-base text-white font-medium transition-all duration-200 rounded-lg hover:text-white`}
-                        style={{ ':hover': { backgroundColor: hoverBg } }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hoverBg}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        style={{ ":hover": { backgroundColor: hoverBg } }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = hoverBg)
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
                         title={isCollapsed ? link.name : ""}
                       >
                         <div className="flex items-center">
                           <link.icon size={20} className="flex-shrink-0" />
-                          <span className={`text-base ml-2 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>{link.name}</span>
+                          <span
+                            className={`text-base ml-2 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}
+                          >
+                            {link.name}
+                          </span>
                         </div>
                         {!isCollapsed && (
                           <HiChevronDown
                             size={16}
-                            className={`transition-transform duration-200 ${openMenu === link.name ? "rotate-180" : ""
-                              }`}
+                            className={`transition-transform duration-200 ${
+                              openMenu === link.name ? "rotate-180" : ""
+                            }`}
                           />
                         )}
                       </button>
                       <div
-                        className={`transition-all duration-200 ease-in-out overflow-hidden ${openMenu === link.name && !isCollapsed ? "max-h-96" : "max-h-0"
-                          }`}
+                        className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                          openMenu === link.name && !isCollapsed
+                            ? "max-h-96"
+                            : "max-h-0"
+                        }`}
                       >
                         <div className="py-1.5 pl-10 space-y-0.5">
                           {(link.visibleChildren || []).map((child) => (
@@ -502,16 +732,22 @@ const Sidebar = ({
                               key={child.name}
                               to={child.path}
                               className={({ isActive }) =>
-                                `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${isActive
-                                  ? "text-white font-semibold shadow-sm"
-                                  : "text-white/80 hover:text-white"
+                                `flex items-center px-3 py-2 transition-all duration-200 rounded-lg ${
+                                  isActive
+                                    ? "text-white font-semibold shadow-sm"
+                                    : "text-white/80 hover:text-white"
                                 }`
                               }
-                              style={({ isActive }) => (isActive ? { backgroundColor: activeBg } : {})}
+                              style={({ isActive }) =>
+                                isActive ? { backgroundColor: activeBg } : {}
+                              }
                               onClick={() => setSidebarOpen(false)}
                               end={child.exact || false}
                             >
-                              <child.icon size={16} className="mr-2 flex-shrink-0" />
+                              <child.icon
+                                size={16}
+                                className="mr-2 flex-shrink-0"
+                              />
                               <span className="text-sm">{child.name}</span>
                             </NavLink>
                           ))}
@@ -525,16 +761,27 @@ const Sidebar = ({
           </div>
 
           {/* Logout Button */}
-          <div className="p-3 border-t flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
+          <div
+            className="p-3 border-t flex-shrink-0"
+            style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}
+          >
             <button
               onClick={onLogout}
               className={`flex items-center w-full ${isCollapsed ? "justify-center px-2" : "px-3"} py-2.5 text-base font-medium transition-all duration-200 rounded-lg text-white hover:text-white`}
               title={isCollapsed ? "Logout" : ""}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hoverBg}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = hoverBg)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
             >
               <HiOutlineLogout size={20} className="flex-shrink-0" />
-              <span className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}>Logout</span>
+              <span
+                className={`text-base ml-3 transition-all duration-200 ${isCollapsed ? "hidden" : "block"}`}
+              >
+                Logout
+              </span>
             </button>
           </div>
         </div>
