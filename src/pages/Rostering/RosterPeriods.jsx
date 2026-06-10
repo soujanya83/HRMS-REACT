@@ -163,6 +163,7 @@ const RosterPeriods = () => {
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const [showRostersModal, setShowRostersModal] = useState(false);
+  const [createModalError, setCreateModalError] = useState(null);
 
   // UI states
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -685,6 +686,7 @@ const RosterPeriods = () => {
     }
 
     resetForm();
+    setCreateModalError(null);
 
     if (payPeriods.length === 0) {
       await fetchPayPeriods();
@@ -718,17 +720,17 @@ const RosterPeriods = () => {
 
   const handleCreatePeriod = useCallback(async () => {
     if (!selectedOrganization?.id) {
-      setError("No organization selected");
+      setCreateModalError("No organization selected");
       return;
     }
 
     if (!formData.start_date) {
-      setError("Please select a fortnightly pay period");
+      setCreateModalError("Please select a fortnightly pay period");
       return;
     }
 
     setIsSubmitting(true);
-    setError(null);
+    setCreateModalError(null);
 
     try {
       const dataToSend = {
@@ -743,16 +745,17 @@ const RosterPeriods = () => {
       if (response.data?.success === true) {
         setSuccessMessage("Fortnightly roster period created successfully!");
         setShowCreateModal(false);
+        setCreateModalError(null);
         resetForm();
         await fetchRosterPeriods();
 
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError(response.data?.message || "Failed to create roster period");
+        setCreateModalError(response.data?.message || "Failed to create roster period");
       }
     } catch (err) {
       console.error("[RosterPeriods] Error creating roster period:", err);
-      setError(err.response?.data?.message || "Failed to create roster period");
+      setCreateModalError(err.response?.data?.message || "Failed to create roster period");
     } finally {
       setIsSubmitting(false);
     }
@@ -1722,6 +1725,27 @@ const RosterPeriods = () => {
                     <FaTimesCircle className="h-6 w-6" />
                   </button>
                 </div>
+
+                {/* Error Message Display */}
+                {createModalError && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start">
+                      <FaExclamationTriangle className="text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-800">
+                          {createModalError}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setCreateModalError(null)}
+                        className="ml-3 text-red-400 hover:text-red-600 transition-colors"
+                        aria-label="Dismiss error"
+                      >
+                        <HiX className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 mb-4">

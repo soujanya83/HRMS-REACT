@@ -283,6 +283,14 @@ const RostersPage = () => {
     });
   }, [currentDate]);
 
+  const formatLocalDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
   const weekDates = useMemo(() => getWeekDates(), [getWeekDates]);
 
   const getMonthDates = useCallback(() => {
@@ -530,10 +538,8 @@ const RostersPage = () => {
       };
 
       // Calculate start and end dates for the current week (Mon-Fri)
-      const startDate = weekDates[0].toISOString().split("T")[0];
-      const endDate = weekDates[weekDates.length - 1]
-        .toISOString()
-        .split("T")[0];
+      const startDate = formatLocalDate(weekDates[0]);
+      const endDate = formatLocalDate(weekDates[weekDates.length - 1]);
 
       // Fetch all data in parallel
       const [
@@ -1279,8 +1285,7 @@ const RostersPage = () => {
                               {employee.employee_code
                                 ? ` (${employee.employee_code})`
                                 : ""}
-                              {" - "}
-                              {formatCurrency(getEmployeeRate(employee))}/hr
+                             
                             </option>
                           ))}
                         </select>
@@ -1292,18 +1297,7 @@ const RostersPage = () => {
                         </label>
                         <div className="p-3 bg-gray-50 rounded-lg">
                           {getEmployeeName(formData.employee_id)}
-                          <div className="text-xs text-green-600 mt-1">
-                            Rate:{" "}
-                            {formatCurrency(
-                              getEmployeeRate(
-                                employees.find(
-                                  (e) =>
-                                    e.id === parseInt(formData.employee_id),
-                                ),
-                              ),
-                            )}
-                            /hr
-                          </div>
+                         
                         </div>
                       </div>
                     )}
@@ -1363,25 +1357,7 @@ const RostersPage = () => {
                       />
                     </div>
 
-                    {/* Show estimated amount */}
-                    {estimatedAmount > 0 && (
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <FaMoneyBillWave className="text-green-600" />
-                            <span className="text-sm font-medium text-gray-700">
-                              Estimated Amount:
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-green-700">
-                            {formatCurrency(estimatedAmount)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Based on employee's hourly rate and shift duration
-                        </p>
-                      </div>
-                    )}
+                   
                   </div>
 
                   <div className="mt-6 flex justify-end space-x-3">
