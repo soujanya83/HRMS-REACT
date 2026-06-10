@@ -110,7 +110,13 @@ const StatusBadge = ({ status, onChange, canEdit }) => {
   );
 };
 
-const ManagerSelect = ({ employeeId, currentManager, managers, onChange, canEdit }) => {
+const ManagerSelect = ({
+  employeeId,
+  currentManager,
+  managers,
+  onChange,
+  canEdit,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedManager, setSelectedManager] = useState(currentManager);
 
@@ -219,12 +225,12 @@ export default function ManageProfiles() {
         managersRes.data.data.map((emp) => ({
           value: emp.id,
           label: `${emp.first_name} ${emp.last_name}`,
-        }))
+        })),
       );
 
       if (filters.department) {
         const designationsRes = await getDesignationsByDeptId(
-          filters.department
+          filters.department,
         );
         setDesignations(designationsRes.data.data);
       }
@@ -247,8 +253,8 @@ export default function ManageProfiles() {
       await updateEmployeeStatus(employeeId, newStatus);
       setEmployees((prev) =>
         prev.map((emp) =>
-          emp.id === employeeId ? { ...emp, status: newStatus } : emp
-        )
+          emp.id === employeeId ? { ...emp, status: newStatus } : emp,
+        ),
       );
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -263,13 +269,13 @@ export default function ManageProfiles() {
         prev.map((emp) =>
           emp.id === employeeId
             ? {
-              ...emp,
-              reporting_manager: managers.find(
-                (m) => m.value === newManagerId
-              ),
-            }
-            : emp
-        )
+                ...emp,
+                reporting_manager: managers.find(
+                  (m) => m.value === newManagerId,
+                ),
+              }
+            : emp,
+        ),
       );
     } catch (error) {
       console.error("Failed to update manager:", error);
@@ -346,7 +352,7 @@ export default function ManageProfiles() {
             <option value="">All Status</option>
             <option value="Active">Active</option>
             <option value="On Probation">On Probation</option>
-            <option value="On Leave">On Leave</option>
+            {/* <option value="On Leave">On Leave</option> */}
             <option value="Inactive">Inactive</option>
             <option value="Terminated">Terminated</option>
           </select>

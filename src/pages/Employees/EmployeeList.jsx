@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import usePermissions from "../../hooks/usePermissions";
 import { Link, useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   FaEdit,
   FaTrash,
@@ -33,10 +33,7 @@ import {
   FaSpinner,
   FaEnvelopeOpenText,
 } from "react-icons/fa";
-import {
-  HiOutlineArchive,
-  HiX,
-} from "react-icons/hi";
+import { HiOutlineArchive, HiX } from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import {
   getEmployees,
@@ -44,6 +41,7 @@ import {
   restoreEmployee,
   forceDeleteEmployee,
   updateEmployeeStatus,
+  getEmployeeStatusCounts,
   syncEmployeeToXero,
 } from "../../services/employeeService";
 import axiosClient from "../../axiosClient";
@@ -53,8 +51,16 @@ import SendInviteModal from "../../components/SendInviteModal";
 // COLOR PALETTE ICON (Same as Dashboard)
 // ============================================
 const ColorPaletteIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    className="w-6 h-6"
+  >
+    <path
+      d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z"
+      fill="white"
+    />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -71,32 +77,32 @@ const ColorPaletteModal = ({
   onSidebarColorSelect,
   onBackgroundColorSelect,
   currentSidebarColor,
-  currentBgColor
+  currentBgColor,
 }) => {
   if (!isOpen) return null;
 
   const sidebarColors = [
-    { name: 'Dark Navy', value: '#0B1A2E' },
-    { name: 'Charcoal', value: '#2C2C2C' },
-    { name: 'Teal', value: '#008080' },
-    { name: 'Deep Purple', value: '#4B0082' },
-    { name: 'Forest Green', value: '#228B22' },
-    { name: 'Slate Blue', value: '#5B7B9A' },
+    { name: "Dark Navy", value: "#0B1A2E" },
+    { name: "Charcoal", value: "#2C2C2C" },
+    { name: "Teal", value: "#008080" },
+    { name: "Deep Purple", value: "#4B0082" },
+    { name: "Forest Green", value: "#228B22" },
+    { name: "Slate Blue", value: "#5B7B9A" },
   ];
 
   const backgroundColors = [
-    { name: 'Pure White', value: '#FFFFFF' },
-    { name: 'Snow', value: '#FFFAFA' },
-    { name: 'Ivory', value: '#FFFFF0' },
-    { name: 'Pearl', value: '#F8F6F0' },
-    { name: 'Whisper', value: '#F5F5F5' },
-    { name: 'Silver Mist', value: '#E5E7EB' },
-    { name: 'Ash', value: '#D1D5DB' },
-    { name: 'Pewter', value: '#9CA3AF' },
-    { name: 'Stone', value: '#6B7280' },
-    { name: 'Graphite', value: '#4B5563' },
-    { name: 'Slate', value: '#374151' },
-    { name: 'Charcoal', value: '#1F2937' },
+    { name: "Pure White", value: "#FFFFFF" },
+    { name: "Snow", value: "#FFFAFA" },
+    { name: "Ivory", value: "#FFFFF0" },
+    { name: "Pearl", value: "#F8F6F0" },
+    { name: "Whisper", value: "#F5F5F5" },
+    { name: "Silver Mist", value: "#E5E7EB" },
+    { name: "Ash", value: "#D1D5DB" },
+    { name: "Pewter", value: "#9CA3AF" },
+    { name: "Stone", value: "#6B7280" },
+    { name: "Graphite", value: "#4B5563" },
+    { name: "Slate", value: "#374151" },
+    { name: "Charcoal", value: "#1F2937" },
   ];
 
   return (
@@ -104,20 +110,28 @@ const ColorPaletteModal = ({
       <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
       <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Customize Colors
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             ✕
           </button>
         </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <h2 className="text-md font-semibold text-gray-800 mb-3">
+          Sidebar Color
+        </h2>
         <div className="grid grid-cols-3 gap-3 mb-5">
           {sidebarColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-                }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -125,14 +139,17 @@ const ColorPaletteModal = ({
           ))}
         </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <h2 className="text-md font-semibold text-gray-800 mb-3">
+          Background Color
+        </h2>
         <div className="grid grid-cols-3 gap-3">
           {backgroundColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-                }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -165,10 +182,11 @@ const ConfirmationModal = ({
       <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center gap-3 mb-4">
           <div
-            className={`p-3 rounded-full ${type === "delete"
-              ? "bg-red-100 text-red-600"
-              : "bg-green-100 text-green-600"
-              }`}
+            className={`p-3 rounded-full ${
+              type === "delete"
+                ? "bg-red-100 text-red-600"
+                : "bg-green-100 text-green-600"
+            }`}
           >
             {type === "delete" ? (
               <FaTrash className="h-6 w-6" />
@@ -214,7 +232,8 @@ const XeroStatusBadge = ({ employee, onClick, syncing }) => {
     );
   }
 
-  const hasXeroConnection = employee.xero_employee_connection || employee.xero_employee_id;
+  const hasXeroConnection =
+    employee.xero_employee_connection || employee.xero_employee_id;
   const xeroStatus = employee.xero_synced_status || employee.xero_status;
 
   if (hasXeroConnection || xeroStatus === "synced" || xeroStatus === "Synced") {
@@ -250,9 +269,10 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
   const xeroEmployeeId =
     employee.xero_employee_connection?.xero_employee_id ||
     employee.xero_employee_id ||
-    'N/A';
+    "N/A";
 
-  const xeroStatus = employee.xero_synced_status || employee.xero_status || 'synced';
+  const xeroStatus =
+    employee.xero_synced_status || employee.xero_status || "synced";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
@@ -263,7 +283,9 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
               <FaLink className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Xero Integration</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                Xero Integration
+              </h2>
               <p className="text-sm text-gray-500">Employee linked with Xero</p>
             </div>
           </div>
@@ -278,12 +300,18 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
         <div className="space-y-4 mb-6">
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Employee</p>
-            <p className="text-gray-900">{employee.first_name} {employee.last_name}</p>
-            <p className="text-sm text-gray-500">{employee.employee_code || 'No Code'}</p>
+            <p className="text-gray-900">
+              {employee.first_name} {employee.last_name}
+            </p>
+            <p className="text-sm text-gray-500">
+              {employee.employee_code || "No Code"}
+            </p>
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Xero Employee ID</p>
+            <p className="text-sm font-medium text-gray-700 mb-1">
+              Xero Employee ID
+            </p>
             <div className="flex items-center gap-2">
               <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono break-all">
                 {xeroEmployeeId}
@@ -291,7 +319,7 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(xeroEmployeeId);
-                  toast.success('Copied to clipboard!');
+                  toast.success("Copied to clipboard!");
                 }}
                 className="text-blue-600 hover:text-blue-800"
                 title="Copy to clipboard"
@@ -302,7 +330,9 @@ const XeroDetailsModal = ({ isOpen, onClose, employee }) => {
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Sync Status</p>
+            <p className="text-sm font-medium text-gray-700 mb-1">
+              Sync Status
+            </p>
             <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
               <FaCheckCircle className="h-3 w-3" />
               {xeroStatus}
@@ -402,7 +432,9 @@ const QuickActionButton = ({
 export default function EmployeeList() {
   const navigate = useNavigate();
   const { selectedOrganization } = useOrganizations();
-  const { canAdd, canEdit, canDelete } = usePermissions('employee.add_manage_profiles');
+  const { canAdd, canEdit, canDelete } = usePermissions(
+    "employee.add_manage_profiles",
+  );
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -415,10 +447,10 @@ export default function EmployeeList() {
   const [departments, setDepartments] = useState([]);
   const [syncingAll, setSyncingAll] = useState(false);
   const [sidebarColor, setSidebarColor] = useState(() => {
-    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+    return localStorage.getItem("sidebarColor") || "#1a4d4d";
   });
   const [backgroundColor, setBackgroundColor] = useState(() => {
-    return localStorage.getItem('backgroundColor') || '#f9fafb';
+    return localStorage.getItem("backgroundColor") || "#f9fafb";
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -427,7 +459,7 @@ export default function EmployeeList() {
     total: 0,
     active: 0,
     inactive: 0,
-    onLeave: 0,
+    onProbation: 0,
     departments: {},
   });
 
@@ -451,12 +483,16 @@ export default function EmployeeList() {
 
   // Save sidebar color to localStorage and dispatch event
   useEffect(() => {
-    localStorage.setItem('sidebarColor', sidebarColor);
-    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+    localStorage.setItem("sidebarColor", sidebarColor);
+    window.dispatchEvent(
+      new CustomEvent("sidebarColorUpdate", {
+        detail: { color: sidebarColor },
+      }),
+    );
   }, [sidebarColor]);
 
   useEffect(() => {
-    localStorage.setItem('backgroundColor', backgroundColor);
+    localStorage.setItem("backgroundColor", backgroundColor);
   }, [backgroundColor]);
 
   // Quick Actions with Send Invite button
@@ -485,25 +521,30 @@ export default function EmployeeList() {
       action: () => exportEmployeeList(),
       color: "bg-indigo-600 hover:bg-indigo-700",
     },
-    {
-      label: "Reports",
-      icon: <FaChartBar className="h-4 w-4" />,
-      action: () => navigate("/dashboard/employees/reports"),
-      color: "bg-cyan-600 hover:bg-cyan-700",
-    },
+    // {
+    //   label: "Reports",
+    //   icon: <FaChartBar className="h-4 w-4" />,
+    //   action: () => navigate("/dashboard/employees/reports"),
+    //   color: "bg-cyan-600 hover:bg-cyan-700",
+    // },
   ];
 
   // Handle invite sent
   const handleInviteSent = (response) => {
-    toast.success(`Invite sent successfully! Employee ID: ${response.data?.employee_id}`);
+    toast.success(
+      `Invite sent successfully! Employee ID: ${response.data?.employee_id}`,
+    );
     fetchEmployees();
   };
 
   // Apply filters function
-  const applyFilters = useCallback((employeesList, search, status, department) => {
-    // If the API already handled filtering, we just set the list
-    setFilteredEmployees(employeesList);
-  }, []);
+  const applyFilters = useCallback(
+    (employeesList, search, status, department) => {
+      // If the API already handled filtering, we just set the list
+      setFilteredEmployees(employeesList);
+    },
+    [],
+  );
 
   // Fetch employees
   const fetchEmployees = useCallback(async () => {
@@ -522,18 +563,22 @@ export default function EmployeeList() {
           organization_id: selectedOrganization.id,
           search: searchTerm,
           status: selectedStatus !== "all" ? selectedStatus : undefined,
-          department_id: selectedDepartment !== "all" ? selectedDepartment : undefined,
-          page: currentPage
+          department_id:
+            selectedDepartment !== "all" ? selectedDepartment : undefined,
+          page: currentPage,
         });
         employeesData = response.data?.data?.data || [];
         setPagination(response.data?.data);
       } else {
         // Trashed might not be paginated yet, but let's handle it safely
-        response = await axiosClient.post('/employees/trashed', {
-          organization_id: selectedOrganization.id
+        response = await axiosClient.post("/employees/trashed", {
+          organization_id: selectedOrganization.id,
         });
 
-        if (response.data?.success === true && Array.isArray(response.data.data)) {
+        if (
+          response.data?.success === true &&
+          Array.isArray(response.data.data)
+        ) {
           employeesData = response.data.data;
         } else if (response.data?.data?.data) {
           employeesData = response.data.data.data;
@@ -546,28 +591,22 @@ export default function EmployeeList() {
       setEmployees(employeesData);
       setFilteredEmployees(employeesData);
 
-      // Stats calculation (might be limited to current page now)
-      const activeCount = employeesData.filter(
-        (emp) => emp.status === "Active"
-      ).length;
-      const inactiveCount = employeesData.filter(
-        (emp) => emp.status === "Inactive"
-      ).length;
-      const onLeaveCount = employeesData.filter(
-        (emp) => emp.status === "On Leave"
-      ).length;
-
       const departmentStats = {};
       employeesData.forEach((emp) => {
         const deptName = emp.department?.name || "No Department";
         departmentStats[deptName] = (departmentStats[deptName] || 0) + 1;
       });
 
+      const countsResponse = await getEmployeeStatusCounts({
+        organization_id: selectedOrganization.id,
+      });
+      const counts = countsResponse.data?.data || {};
+
       setStats({
-        total: response.data?.data?.total || employeesData.length,
-        active: activeCount,
-        inactive: inactiveCount,
-        onLeave: onLeaveCount,
+        total: counts.total_employee ?? 0,
+        active: counts.active ?? 0,
+        inactive: counts.in_active ?? 0,
+        onProbation: counts.on_probation ?? 0,
         departments: departmentStats,
       });
     } catch (error) {
@@ -577,7 +616,14 @@ export default function EmployeeList() {
     } finally {
       setLoading(false);
     }
-  }, [selectedOrganization, view, searchTerm, selectedStatus, selectedDepartment, currentPage]);
+  }, [
+    selectedOrganization,
+    view,
+    searchTerm,
+    selectedStatus,
+    selectedDepartment,
+    currentPage,
+  ]);
 
   useEffect(() => {
     applyFilters(employees, searchTerm, selectedStatus, selectedDepartment);
@@ -601,7 +647,14 @@ export default function EmployeeList() {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  const openModal = (action, title, message, type = "delete", employeeId = null, employeeName = "") => {
+  const openModal = (
+    action,
+    title,
+    message,
+    type = "delete",
+    employeeId = null,
+    employeeName = "",
+  ) => {
     setModalState({
       isOpen: true,
       action,
@@ -631,10 +684,11 @@ export default function EmployeeList() {
         await modalState.action();
         fetchEmployees();
         toast.success(
-          `${modalState.type === "delete"
-            ? "Employee moved to trash"
-            : "Employee restored"
-          } successfully!`
+          `${
+            modalState.type === "delete"
+              ? "Employee moved to trash"
+              : "Employee restored"
+          } successfully!`,
         );
       } catch (error) {
         console.error("Error performing action:", error);
@@ -651,7 +705,7 @@ export default function EmployeeList() {
       `Are you sure you want to move "${employee.first_name} ${employee.last_name}" to trash? They will be moved to the trash section and can be restored later.`,
       "delete",
       employee.id,
-      `${employee.first_name} ${employee.last_name}`
+      `${employee.first_name} ${employee.last_name}`,
     );
   };
 
@@ -662,7 +716,7 @@ export default function EmployeeList() {
       `Are you sure you want to restore "${employee.first_name} ${employee.last_name}"? They will be moved back to the active employees list.`,
       "restore",
       employee.id,
-      `${employee.first_name} ${employee.last_name}`
+      `${employee.first_name} ${employee.last_name}`,
     );
   };
 
@@ -673,7 +727,7 @@ export default function EmployeeList() {
       `WARNING: This will permanently delete "${employee.first_name} ${employee.last_name}" and all associated data. This action cannot be undone.`,
       "delete",
       employee.id,
-      `${employee.first_name} ${employee.last_name}`
+      `${employee.first_name} ${employee.last_name}`,
     );
   };
 
@@ -692,7 +746,7 @@ export default function EmployeeList() {
     if (employee.xero_employee_connection || employee.xero_employee_id) {
       setXeroDetailsModal({
         isOpen: true,
-        employee: employee
+        employee: employee,
       });
       return;
     }
@@ -707,29 +761,37 @@ export default function EmployeeList() {
     try {
       const response = await syncEmployeeToXero(
         selectedOrganization.id,
-        employee.id
+        employee.id,
       );
 
       if (response.data?.status === true) {
         const xeroEmployeeId = response.data.xero_employee_id;
 
         if (response.data.message === "Employee already linked with Xero.") {
-          toast.info(`${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`);
+          toast.info(
+            `${employee.first_name} ${employee.last_name} is already linked with Xero (ID: ${xeroEmployeeId})`,
+          );
         } else {
-          toast.success(`Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`);
+          toast.success(
+            `Successfully synced ${employee.first_name} ${employee.last_name} to Xero! Xero ID: ${xeroEmployeeId}`,
+          );
         }
 
         await fetchEmployees();
       } else {
-        throw new Error(response.data?.message || 'Failed to sync with Xero');
+        throw new Error(response.data?.message || "Failed to sync with Xero");
       }
     } catch (error) {
       console.error("Failed to sync to Xero:", error);
 
       if (error.response?.data?.error?.includes("No query results for model")) {
-        toast.error(`Employee ${employee.first_name} ${employee.last_name} not found in the system.`);
+        toast.error(
+          `Employee ${employee.first_name} ${employee.last_name} not found in the system.`,
+        );
       } else {
-        toast.error(`Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.response?.data?.message || error.message}`);
+        toast.error(
+          `Failed to sync ${employee.first_name} ${employee.last_name} to Xero: ${error.response?.data?.message || error.message}`,
+        );
       }
     } finally {
       setSyncingEmployees((prev) => ({ ...prev, [employee.id]: false }));
@@ -743,8 +805,8 @@ export default function EmployeeList() {
       return;
     }
 
-    const unsyncedEmployees = employees.filter(emp =>
-      !emp.xero_employee_id && !emp.xero_employee_connection
+    const unsyncedEmployees = employees.filter(
+      (emp) => !emp.xero_employee_id && !emp.xero_employee_connection,
     );
 
     if (unsyncedEmployees.length === 0) {
@@ -752,7 +814,11 @@ export default function EmployeeList() {
       return;
     }
 
-    if (!window.confirm(`Sync ${unsyncedEmployees.length} employees to Xero? This may take a few moments.`)) {
+    if (
+      !window.confirm(
+        `Sync ${unsyncedEmployees.length} employees to Xero? This may take a few moments.`,
+      )
+    ) {
       return;
     }
 
@@ -763,9 +829,12 @@ export default function EmployeeList() {
 
     for (const employee of unsyncedEmployees) {
       try {
-        setSyncingEmployees(prev => ({ ...prev, [employee.id]: true }));
+        setSyncingEmployees((prev) => ({ ...prev, [employee.id]: true }));
 
-        const response = await syncEmployeeToXero(selectedOrganization.id, employee.id);
+        const response = await syncEmployeeToXero(
+          selectedOrganization.id,
+          employee.id,
+        );
 
         if (response.data?.status === true) {
           successCount++;
@@ -778,11 +847,13 @@ export default function EmployeeList() {
         failedEmployees.push(`${employee.first_name} ${employee.last_name}`);
         console.error(`Failed to sync ${employee.first_name}:`, error);
       } finally {
-        setSyncingEmployees(prev => ({ ...prev, [employee.id]: false }));
+        setSyncingEmployees((prev) => ({ ...prev, [employee.id]: false }));
       }
     }
 
-    toast.success(`Sync complete: ${successCount} succeeded, ${failCount} failed${failedEmployees.length > 0 ? '\nFailed: ' + failedEmployees.join(', ') : ''}`);
+    toast.success(
+      `Sync complete: ${successCount} succeeded, ${failCount} failed${failedEmployees.length > 0 ? "\nFailed: " + failedEmployees.join(", ") : ""}`,
+    );
     fetchEmployees();
     setSyncingAll(false);
   };
@@ -844,7 +915,7 @@ export default function EmployeeList() {
     "On Probation",
   ];
 
-  const trashedCount = employees.filter(e => e.deleted_at).length;
+  const trashedCount = stats.inactive;
 
   return (
     <>
@@ -865,12 +936,12 @@ export default function EmployeeList() {
         onSidebarColorSelect={(color) => {
           //console.log('Setting sidebar color to:', color);
           setSidebarColor(color);
-          localStorage.setItem('sidebarColor', color);
+          localStorage.setItem("sidebarColor", color);
         }}
         onBackgroundColorSelect={(color) => {
           //console.log('Setting background color to:', color);
           setBackgroundColor(color);
-          localStorage.setItem('backgroundColor', color);
+          localStorage.setItem("backgroundColor", color);
         }}
         currentSidebarColor={sidebarColor}
         currentBgColor={backgroundColor}
@@ -964,8 +1035,8 @@ export default function EmployeeList() {
               color="bg-green-50"
             />
             <StatsCard
-              title="On Leave"
-              value={stats.onLeave}
+              title="On Probation"
+              value={stats.onProbation}
               icon={<HiOutlineArchive className="h-4 w-4 text-yellow-600" />}
               color="bg-yellow-50"
             />
@@ -978,10 +1049,14 @@ export default function EmployeeList() {
           </div>
 
           {/* Quick Actions - NOW INCLUDES SEND INVITE BUTTON */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
             {quickActions
-              .filter(action => {
-                if (["Add Employee", "Send Invite", "Import"].includes(action.label)) {
+              .filter((action) => {
+                if (
+                  ["Add Employee", "Send Invite", "Import"].includes(
+                    action.label,
+                  )
+                ) {
                   return canAdd;
                 }
                 return true;
@@ -1007,19 +1082,21 @@ export default function EmployeeList() {
               <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg">
                 <button
                   onClick={() => setView("active")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${view === "active"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                    }`}
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
+                    view === "active"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
                 >
                   Active
                 </button>
                 <button
                   onClick={() => setView("trashed")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${view === "trashed"
-                    ? "bg-white text-red-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                    }`}
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${
+                    view === "trashed"
+                      ? "bg-white text-red-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
                 >
                   <FaTrash className="h-3 w-3" />
                   Trash ({trashedCount})
@@ -1130,8 +1207,8 @@ export default function EmployeeList() {
                       </h3>
                       <p className="text-xs text-gray-500 mb-2">
                         {searchTerm ||
-                          selectedStatus !== "all" ||
-                          selectedDepartment !== "all"
+                        selectedStatus !== "all" ||
+                        selectedDepartment !== "all"
                           ? "Try adjusting your search or filters"
                           : view === "trashed"
                             ? "Trash is empty"
@@ -1174,7 +1251,9 @@ export default function EmployeeList() {
                       <td className="px-3 py-2">
                         <div className="text-xs text-gray-900 flex items-center gap-1 mb-0.5">
                           <FaEnvelope className="text-gray-400 h-3 w-3" />
-                          <span className="truncate max-w-[100px]">{employee.personal_email || "No email"}</span>
+                          <span className="truncate max-w-[100px]">
+                            {employee.personal_email || "No email"}
+                          </span>
                         </div>
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <FaPhone className="text-gray-400 h-3 w-3" />
@@ -1184,7 +1263,9 @@ export default function EmployeeList() {
                       <td className="px-3 py-2">
                         <div className="text-xs text-gray-900 flex items-center gap-1 mb-0.5">
                           <FaBriefcase className="text-gray-400 h-3 w-3" />
-                          <span className="truncate max-w-[80px]">{employee.designation?.title || "No designation"}</span>
+                          <span className="truncate max-w-[80px]">
+                            {employee.designation?.title || "No designation"}
+                          </span>
                         </div>
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <FaBuilding className="text-gray-400 h-3 w-3" />
@@ -1208,14 +1289,16 @@ export default function EmployeeList() {
                       <td className="px-3 py-2 whitespace-nowrap">
                         <div className="text-xs text-gray-900">
                           {employee.joining_date
-                            ? new Date(employee.joining_date).toLocaleDateString()
+                            ? new Date(
+                                employee.joining_date,
+                              ).toLocaleDateString()
                             : "Not set"}
                         </div>
                         {employee.joining_date && (
                           <div className="text-[10px] text-gray-400">
                             {Math.floor(
                               (new Date() - new Date(employee.joining_date)) /
-                              (1000 * 60 * 60 * 24 * 365)
+                                (1000 * 60 * 60 * 24 * 365),
                             )}{" "}
                             yrs
                           </div>
@@ -1231,7 +1314,8 @@ export default function EmployeeList() {
                                 title="View Profile"
                               >
                                 <FaEye className="h-3.5 w-3.5" />
-                              </Link>                               {canEdit && (
+                              </Link>{" "}
+                              {canEdit && (
                                 <Link
                                   to={`/dashboard/employees/edit/${employee.id}`}
                                   className="p-1.5 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors"
@@ -1247,7 +1331,6 @@ export default function EmployeeList() {
                               >
                                 <FaFileAlt className="h-3.5 w-3.5" />
                               </Link>
-
                               {canDelete && (
                                 <button
                                   onClick={() => handleDelete(employee)}
@@ -1294,7 +1377,12 @@ export default function EmployeeList() {
             <div className="px-3 py-2 border-t border-gray-200 bg-gray-50">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                 <div className="text-xs text-gray-600">
-                  Showing <span className="font-semibold">{filteredEmployees.length}</span> of <span className="font-semibold">{employees.length}</span> employees
+                  Showing{" "}
+                  <span className="font-semibold">
+                    {filteredEmployees.length}
+                  </span>{" "}
+                  of <span className="font-semibold">{employees.length}</span>{" "}
+                  employees
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1320,18 +1408,19 @@ export default function EmployeeList() {
         {pagination && pagination.last_page > 1 && (
           <div className="mt-4 flex flex-col md:flex-row justify-between items-center bg-white p-3 shadow-sm rounded-xl border border-gray-200 gap-4">
             <div className="text-xs text-gray-600">
-              Showing <span className="font-semibold">{pagination.from}</span> to{" "}
-              <span className="font-semibold">{pagination.to}</span> of{" "}
+              Showing <span className="font-semibold">{pagination.from}</span>{" "}
+              to <span className="font-semibold">{pagination.to}</span> of{" "}
               <span className="font-semibold">{pagination.total}</span> entries
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === 1
-                  ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                  : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
-                  }`}
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
+                  currentPage === 1
+                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                }`}
               >
                 Prev
               </button>
@@ -1347,10 +1436,11 @@ export default function EmployeeList() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${currentPage === pageNum
-                          ? "bg-blue-600 text-white shadow-sm scale-105"
-                          : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
-                          }`}
+                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 text-white shadow-sm scale-105"
+                            : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
+                        }`}
                       >
                         {pageNum}
                       </button>
@@ -1360,7 +1450,10 @@ export default function EmployeeList() {
                     pageNum === currentPage + 2
                   ) {
                     return (
-                      <span key={pageNum} className="px-1 text-gray-400 text-xs">
+                      <span
+                        key={pageNum}
+                        className="px-1 text-gray-400 text-xs"
+                      >
                         ...
                       </span>
                     );
@@ -1371,14 +1464,15 @@ export default function EmployeeList() {
               <button
                 onClick={() =>
                   setCurrentPage((prev) =>
-                    Math.min(prev + 1, pagination.last_page)
+                    Math.min(prev + 1, pagination.last_page),
                   )
                 }
                 disabled={currentPage === pagination.last_page}
-                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${currentPage === pagination.last_page
-                  ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                  : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
-                  }`}
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
+                  currentPage === pagination.last_page
+                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                }`}
               >
                 Next
               </button>
@@ -1393,9 +1487,7 @@ export default function EmployeeList() {
               <h3 className="text-sm font-semibold text-gray-800">
                 Department Distribution
               </h3>
-              <span className="text-xs text-gray-500">
-                {stats.total} total
-              </span>
+              <span className="text-xs text-gray-500">{stats.total} total</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {Object.entries(stats.departments).map(([dept, count]) => (

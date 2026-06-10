@@ -139,6 +139,11 @@ export const updateEmployeeStatus = (id, status) => {
   return axiosClient.post(`/employees/${id}/status`, { status });
 };
 
+// Get employee status counts by organization
+export const getEmployeeStatusCounts = (params = {}) => {
+  return axiosClient.get("/employees/status-counts", { params });
+};
+
 // Update employee manager
 export const updateEmployeeManager = (id, managerId) => {
   return axiosClient.patch(`/employees/${id}/manager`, { reporting_manager_id: managerId });
@@ -402,6 +407,7 @@ export const employeeService = {
 
   // Status Management
   updateEmployeeStatus,
+  getEmployeeStatusCounts,
   updateEmployeeManager,
   getEmployeeProfile,
 
