@@ -1047,9 +1047,7 @@ const ShiftSwapping = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
                       Shift Dates & Times
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
-                      Rate & Amount
-                    </th>
+                    
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[18%] min-w-[150px]">
                       Reason
                     </th>
@@ -1081,6 +1079,7 @@ const ShiftSwapping = () => {
                     </tr>
                   ) : (
                     filteredRequests.map((request) => {
+                      console.log("Printing req", request);
                       const requesterAmount = calculateShiftAmount(request.requester_roster_id);
                       const requestedAmount = calculateShiftAmount(request.requested_roster_id);
                       const difference = requestedAmount - requesterAmount;
@@ -1103,17 +1102,13 @@ const ShiftSwapping = () => {
                                     ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`.trim()
                                     : "Unknown"}
                                 </div>
-                                <div className="text-xs text-gray-500 mb-1">
-                                  Rate: {formatCurrency(getEmployeeRate(request.requester_employee_id))}/hr
-                                </div>
+                               
                                 <div className="text-sm font-semibold text-gray-900">
                                   {request.requested_employee
                                     ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`.trim()
                                     : "Unknown"}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  Rate: {formatCurrency(getEmployeeRate(request.requested_employee_id))}/hr
-                                </div>
+                               
                               </div>
                             </div>
                           </td>
@@ -1143,25 +1138,7 @@ const ShiftSwapping = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 w-[18%] min-w-[150px]">
-                            <div className="space-y-2">
-                              <div>
-                                <div className="text-xs text-gray-500">Amount:</div>
-                                <div className="text-sm font-medium">
-                                  {formatCurrency(requesterAmount)}
-                                </div>
-                              </div>
-                              <div className="border-t border-gray-200 pt-1">
-                                <div className="text-xs text-gray-500">Amount:</div>
-                                <div className="text-sm font-medium">
-                                  {formatCurrency(requestedAmount)}
-                                </div>
-                              </div>
-                              <div className={`text-xs font-bold ${differenceColor}`}>
-                                Diff: {formatCurrency(difference)}
-                              </div>
-                            </div>
-                          </td>
+                          
                           <td className="px-4 py-3 w-[18%] min-w-[150px]">
                             <div className="text-sm text-gray-900 max-w-xs">
                               {request.requester_reason || "No reason provided"}
@@ -1204,7 +1181,7 @@ const ShiftSwapping = () => {
                               )}
                               
                               {/* Delete button - for all roles with delete permission, but hide for Employee if Approved */}
-                              {canDelete && !(currentUserRole?.toLowerCase() === 'employee' && request.status === "Approved") && (
+                              {canDelete && (currentUserRole?.toLowerCase() !== 'employee' && request.status !== "Approved") && (
                                 <button
                                   onClick={() => handleDeleteRequest(request.id)}
                                   className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
@@ -1463,12 +1440,12 @@ const ShiftSwapping = () => {
                           {selectedRequest.requester_roster?.start_time} -{" "}
                           {selectedRequest.requester_roster?.end_time}
                         </div>
-                        <div className="mt-2 text-xs font-medium text-blue-600">
+                        {/* <div className="mt-2 text-xs font-medium text-blue-600">
                           Rate: {formatCurrency(getEmployeeRate(selectedRequest.requester_employee_id))}/hr
                         </div>
                         <div className="text-xs font-bold text-green-600">
                           Amount: {formatCurrency(calculateShiftAmount(selectedRequest.requester_roster_id))}
-                        </div>
+                        </div> */}
                       </div>
 
                       <FaExchangeAlt className="text-blue-500 text-3xl" />
@@ -1490,17 +1467,17 @@ const ShiftSwapping = () => {
                           {selectedRequest.requested_roster?.start_time} -{" "}
                           {selectedRequest.requested_roster?.end_time}
                         </div>
-                        <div className="mt-2 text-xs font-medium text-purple-600">
+                        {/* <div className="mt-2 text-xs font-medium text-purple-600">
                           Rate: {formatCurrency(getEmployeeRate(selectedRequest.requested_employee_id))}/hr
                         </div>
                         <div className="text-xs font-bold text-green-600">
                           Amount: {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id))}
-                        </div>
+                        </div> */}
                       </div>
                     </div>
 
                     {/* Difference Summary */}
-                    <div className="mt-4 pt-4 border-t border-blue-200">
+                    {/* <div className="mt-4 pt-4 border-t border-blue-200">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">Difference:</span>
                         <span className={`text-lg font-bold ${(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id)) > 0
@@ -1512,7 +1489,7 @@ const ShiftSwapping = () => {
                           {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id) - calculateShiftAmount(selectedRequest.requester_roster_id))}
                         </span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Detailed Information */}
@@ -1532,18 +1509,18 @@ const ShiftSwapping = () => {
                               : "N/A"}
                           </span>
                         </div>
-                        <div>
+                        {/* <div>
                           <span className="text-gray-600">Employee Code:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requester?.employee_code || "N/A"}
                           </span>
-                        </div>
-                        <div>
+                        </div> */}
+                        {/* <div>
                           <span className="text-gray-600">Hourly Rate:</span>
                           <span className="ml-2 font-medium text-green-600">
                             {formatCurrency(getEmployeeRate(selectedRequest.requester_employee_id))}/hr
                           </span>
-                        </div>
+                        </div> */}
                         <div>
                           <span className="text-gray-600">Shift Date:</span>
                           <span className="ml-2 font-medium">
@@ -1554,7 +1531,7 @@ const ShiftSwapping = () => {
                               : "N/A"}
                           </span>
                         </div>
-                        <div>
+                        {/* <div>
                           <span className="text-gray-600">Shift Time:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requester_roster?.start_time ||
@@ -1562,13 +1539,13 @@ const ShiftSwapping = () => {
                             -{" "}
                             {selectedRequest.requester_roster?.end_time || "N/A"}
                           </span>
-                        </div>
-                        <div>
+                        </div> */}
+                        {/* <div>
                           <span className="text-gray-600">Shift Amount:</span>
                           <span className="ml-2 font-medium text-green-600">
                             {formatCurrency(calculateShiftAmount(selectedRequest.requester_roster_id))}
                           </span>
-                        </div>
+                        </div> */}
                         {selectedRequest.requester_roster?.shift_id && (
                           <div>
                             <span className="text-gray-600">Shift Name:</span>
@@ -1599,7 +1576,7 @@ const ShiftSwapping = () => {
                               : "N/A"}
                           </span>
                         </div>
-                        <div>
+                        {/* <div>
                           <span className="text-gray-600">Employee Code:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requested_employee?.employee_code ||
@@ -1611,7 +1588,7 @@ const ShiftSwapping = () => {
                           <span className="ml-2 font-medium text-purple-600">
                             {formatCurrency(getEmployeeRate(selectedRequest.requested_employee_id))}/hr
                           </span>
-                        </div>
+                        </div> */}
                         <div>
                           <span className="text-gray-600">Desired Date:</span>
                           <span className="ml-2 font-medium">
@@ -1622,7 +1599,7 @@ const ShiftSwapping = () => {
                               : "N/A"}
                           </span>
                         </div>
-                        <div>
+                        {/* <div>
                           <span className="text-gray-600">Desired Time:</span>
                           <span className="ml-2 font-medium">
                             {selectedRequest.requested_roster?.start_time ||
@@ -1630,13 +1607,13 @@ const ShiftSwapping = () => {
                             -{" "}
                             {selectedRequest.requested_roster?.end_time || "N/A"}
                           </span>
-                        </div>
-                        <div>
+                        </div> */}
+                        {/* <div>
                           <span className="text-gray-600">Shift Amount:</span>
                           <span className="ml-2 font-medium text-green-600">
                             {formatCurrency(calculateShiftAmount(selectedRequest.requested_roster_id))}
                           </span>
-                        </div>
+                        </div> */}
                         {selectedRequest.requested_roster?.shift_id && (
                           <div>
                             <span className="text-gray-600">Shift Name:</span>

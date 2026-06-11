@@ -153,7 +153,8 @@ const EmployeeRow = ({
   getRostersForEmployeeAndDate,
   shifts,
   getShiftColor,
-  canAdd,
+  canAddRoster,
+  canEditRoster,
   handleAddRoster,
   handleEditRoster,
 }) => {
@@ -205,8 +206,8 @@ const EmployeeRow = ({
               return (
                 <div
                   key={roster.id}
-                  className="w-full text-center cursor-pointer group"
-                  onClick={() => handleEditRoster(roster)}
+                  className={`w-full text-center ${canEditRoster ? 'cursor-pointer group' : 'cursor-not-allowed'}`}
+                  onClick={() => canEditRoster && handleEditRoster(roster)}
                 >
                   <div className="font-bold text-[13px] text-gray-900">
                     {shift?.start_time
@@ -220,7 +221,7 @@ const EmployeeRow = ({
                 </div>
               );
             })}
-            {dayRosters.length === 0 && canAdd && (
+            {dayRosters.length === 0 && canAddRoster && (
               <button
                 onClick={() => handleAddRoster(day, employee.id, employee)}
                 className="w-full h-full flex items-center justify-center text-transparent hover:text-blue-300 transition-colors"
@@ -236,10 +237,14 @@ const EmployeeRow = ({
 };
 
 const RostersPage = () => {
-  const { selectedOrganization } = useOrganizations();
+  const { selectedOrganization, currentUserRole } = useOrganizations();
   const { canAdd, canEdit, canDelete } = usePermissions(
     "rostering.weekly_monthly_rosters",
   );
+  
+  // Prevent Employee role from editing or adding rosters
+  const canEditRoster = currentUserRole?.toLowerCase() !== 'employee' && canEdit;
+  const canAddRoster = currentUserRole?.toLowerCase() !== 'employee' && canAdd;
   const [view, setView] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -1520,21 +1525,23 @@ const RostersPage = () => {
               >
                 <FaPrint /> Print
               </button>
-              <button
-                onClick={() => {
-                  setModalMode("add");
-                  setFormData({
-                    employee_id: "",
-                    shift_id: "",
-                    roster_date: new Date().toISOString().split("T")[0],
-                    notes: "",
-                  });
-                  setShowModal(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                <FaPlus /> Add Roster
-              </button>
+              {canAddRoster && (
+                <button
+                  onClick={() => {
+                    setModalMode("add");
+                    setFormData({
+                      employee_id: "",
+                      shift_id: "",
+                      roster_date: new Date().toISOString().split("T")[0],
+                      notes: "",
+                    });
+                    setShowModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <FaPlus /> Add Roster
+                </button>
+              )}
             </div>
           </div>
 
@@ -1690,7 +1697,8 @@ const RostersPage = () => {
                               }
                               shifts={shifts}
                               getShiftColor={getShiftColor}
-                              canAdd={canAdd}
+                              canAddRoster={canAddRoster}
+                              canEditRoster={canEditRoster}
                               handleAddRoster={handleAddRoster}
                               handleEditRoster={handleEditRoster}
                             />
@@ -1723,7 +1731,8 @@ const RostersPage = () => {
                             }
                             shifts={shifts}
                             getShiftColor={getShiftColor}
-                            canAdd={canAdd}
+                            canAddRoster={canAddRoster}
+                            canEditRoster={canEditRoster}
                             handleAddRoster={handleAddRoster}
                             handleEditRoster={handleEditRoster}
                           />
@@ -1903,7 +1912,7 @@ const RostersPage = () => {
                           >
                             {date.getDate()}
                           </span>
-                          {canAdd && (
+                          {canAddRoster && (
                             <button
                               onClick={() => {
                                 setModalMode("add");
@@ -1949,13 +1958,13 @@ const RostersPage = () => {
                             return (
                               <div
                                 key={roster.id}
-                                className="p-1 rounded text-xs cursor-pointer hover:opacity-90"
+                                className={`p-1 rounded text-xs ${canEditRoster ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed'}`}
                                 style={{
                                   backgroundColor: shiftColor.backgroundColor,
                                   color: shiftColor.color,
                                   border: `1px solid ${shiftColor.borderColor}`,
                                 }}
-                                onClick={() => handleEditRoster(roster)}
+                                onClick={() => canEditRoster && handleEditRoster(roster)}
                               >
                                 <div className="font-medium truncate">
                                   {employee?.first_name?.charAt(0) || ""}.{" "}
@@ -1980,106 +1989,7 @@ const RostersPage = () => {
             </div>
           )}
 
-          {/* Weekly Totals Summary - Now Dynamic */}
-          {view === "week" && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Total Summary */}
-              <div className="bg-white p-4 rounded-lg shadow-lg">
-                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <FaCalculator className="text-blue-500" />
-                  Weekly Summary
-                  {weeklyTotals.lastUpdated && (
-                    <span className="text-xs text-gray-400 ml-2">
-                      Updated: {weeklyTotals.lastUpdated.toLocaleTimeString()}
-                    </span>
-                  )}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      Total Rosters:
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {weeklyTotals.rosterCount || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      Unique Employees:
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {weeklyTotals.uniqueEmployees || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-sm text-gray-600">Total Hours:</span>
-                    <span className="text-lg font-bold text-blue-600">
-                      {weeklyTotals.totalHours}h
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Amount:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      {formatCurrency(weeklyTotals.totalAmount)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-sm text-gray-600">Average Rate:</span>
-                    <span className="text-sm font-bold text-purple-600">
-                      {formatCurrency(weeklyTotals.averageRate)}/hr
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>
-                      Based on {weeklyTotals.rosterCount || 0} rosters
-                    </span>
-                    <span>Auto-calculated</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* By Department Summary */}
-              <div className="bg-white p-4 rounded-lg shadow-lg">
-                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <FaBuilding className="text-orange-500" />
-                  Totals by Department
-                </h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {Object.entries(weeklyTotals.byDepartment).length > 0 ? (
-                    Object.entries(weeklyTotals.byDepartment).map(
-                      ([id, data]) => (
-                        <div
-                          key={id}
-                          className="flex justify-between items-center text-sm border-b pb-2"
-                        >
-                          <div>
-                            <span className="text-gray-600">{data.name}</span>
-                            <span className="text-xs text-gray-400 ml-2">
-                              ({data.employeeCount || 0} employees)
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-medium text-blue-600">
-                              {data.hours.toFixed(1)}h
-                            </span>
-                            <span className="mx-1 text-gray-400">|</span>
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(data.amount)}
-                            </span>
-                          </div>
-                        </div>
-                      ),
-                    )
-                  ) : (
-                    <p className="text-sm text-gray-400 text-center py-4">
-                      No department data available
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
+         
           {/* Legend */}
           <div className="mt-6 p-4 bg-white rounded-lg shadow-lg">
             <h3 className="font-semibold text-gray-800 mb-3">
