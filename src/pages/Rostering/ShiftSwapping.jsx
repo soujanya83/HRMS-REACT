@@ -135,6 +135,7 @@ const ShiftSwapping = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedRequestToReject, setSelectedRequestToReject] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [rosters, setRosters] = useState([]);
   const [shifts, setShifts] = useState([]);
@@ -147,11 +148,12 @@ const ShiftSwapping = () => {
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [filters, setFilters] = useState({
-    search: "",
-    department: "all",
     status: "all",
     employee: "all",
+    roster_date: "",
   });
+
+  console.log(selectedRequest)
 
   // State for InfiniteScrollEmployeeDropdown
   const [dropdownEmployees, setDropdownEmployees] = useState([]);
@@ -169,7 +171,7 @@ const ShiftSwapping = () => {
         organization_id: selectedOrganization.id,
         page,
         search,
-        per_page: 20
+        per_page: 200
       });
 
       if (response?.success) {
@@ -213,15 +215,49 @@ const ShiftSwapping = () => {
   const [ratesLoading, setRatesLoading] = useState(false);
   const [swapAmountDifference, setSwapAmountDifference] = useState(0);
 
-  const { selectedOrganization } = useOrganizations();
+  const { selectedOrganization, currentUserRole } = useOrganizations();
   const { canAdd, canEdit, canDelete } = usePermissions('rostering.shift_swapping_requests');
-  const [currentUserId, setCurrentUserId] = useState(3); // This should come from your auth context
+  
+  // Fetch current user/employee ID from localStorage dynamically
+  const getCurrentUserId = () => {
+    try {
+      const employeeStr = localStorage.getItem('employee');
+      const userStr = localStorage.getItem('user');
+      const userRolesStr = localStorage.getItem('USER_ROLES');
+      
+      // Try to get from employee object first
+      if (employeeStr) {
+        const employee = JSON.parse(employeeStr);
+        if (employee.id) return employee.id;
+      }
+      
+      // Try to get from user object
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.id) return user.id;
+      }
+      
+      // Try to get from USER_ROLES
+      if (userRolesStr) {
+        const userRoles = JSON.parse(userRolesStr);
+        if (userRoles && userRoles.length > 0 && userRoles[0].employee_id) {
+          return userRoles[0].employee_id;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting current user ID from localStorage:', error);
+      return null;
+    }
+  };
+  
+  const [currentUserId, setCurrentUserId] = useState(getCurrentUserId());
 
   const [newRequest, setNewRequest] = useState({
     requester_employee_id: currentUserId,
-    requester_roster_id: "",
     requested_employee_id: "",
-    requested_roster_id: "",
+    roster_date: "",
     requester_reason: "",
   });
 
@@ -232,6 +268,13 @@ const ShiftSwapping = () => {
       fetchDropdownEmployees(1, "", false);
     }
   }, [selectedOrganization]);
+
+  // Refetch data when filters change (status, roster_date, employee) for server-side filtering
+  useEffect(() => {
+    if (selectedOrganization) {
+      fetchAllData();
+    }
+  }, [filters.status, filters.roster_date, filters.employee]);
 
   // Calculate net working hours from shift
   const calculateNetWorkingHours = (shift) => {
@@ -317,6 +360,28 @@ const ShiftSwapping = () => {
         return [];
       };
 
+      // Build API parameters for shift swap requests
+      const swapRequestParams = {
+        organization_id: selectedOrganization.id,
+      };
+      
+      // For Employee role, always send employee_id to fetch their own requests
+      // For other roles, send employee_id if selected in filter
+      if (currentUserRole?.toLowerCase() === 'employee' && currentUserId) {
+        swapRequestParams.employee_id = currentUserId;
+      } else if (filters.employee && filters.employee !== "all") {
+        swapRequestParams.employee_id = filters.employee;
+      }
+      
+      // Add optional filters
+      if (filters.status && filters.status !== "all") {
+        swapRequestParams.status = filters.status;
+      }
+      
+      if (filters.roster_date) {
+        swapRequestParams.roster_date = filters.roster_date;
+      }
+
       // Fetch all data
       const [
         swapRequestsResponse,
@@ -325,9 +390,7 @@ const ShiftSwapping = () => {
         shiftsResponse,
         departmentsResponse,
       ] = await Promise.allSettled([
-        shiftSwapService.getSwapRequests({
-          organization_id: selectedOrganization.id,
-        }),
+        shiftSwapService.getSwapRequests(swapRequestParams),
         shiftSwapService.getEmployees({
           organization_id: selectedOrganization.id,
         }),
@@ -422,45 +485,30 @@ const ShiftSwapping = () => {
     setNewRequest((prev) => ({ ...prev, [name]: value }));
   };
 
-  // When requester roster is selected, automatically set the requested employee to the roster's employee
-  const handleRequesterRosterChange = (rosterId) => {
-    const selectedRoster = rosters.find((r) => r.id == rosterId);
-    if (selectedRoster) {
-      setNewRequest((prev) => ({
-        ...prev,
-        requester_roster_id: rosterId,
-        // Set requested employee to the employee who owns this roster
-        requested_employee_id: selectedRoster.employee_id,
-      }));
-    }
-  };
-
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
     try {
       // Validate form
       if (
-        !newRequest.requester_roster_id ||
-        !newRequest.requested_roster_id ||
+        !newRequest.requester_employee_id ||
+        !newRequest.requested_employee_id ||
+        !newRequest.roster_date ||
         !newRequest.requester_reason
       ) {
         alert("Please fill in all required fields");
         return;
       }
 
-      // Calculate amounts for both shifts
-      const requesterAmount = calculateShiftAmount(newRequest.requester_roster_id);
-      const requestedAmount = calculateShiftAmount(newRequest.requested_roster_id);
-
-      // Add rate information to the request
-      const requestWithRates = {
-        ...newRequest,
-        requester_amount: requesterAmount,
-        requested_amount: requestedAmount,
-        amount_difference: swapAmountDifference,
+      // Build API payload
+      const requestPayload = {
+        organization_id: selectedOrganization.id,
+        requester_employee_id: newRequest.requester_employee_id,
+        requested_employee_id: newRequest.requested_employee_id,
+        roster_date: newRequest.roster_date,
+        requester_reason: newRequest.requester_reason,
       };
 
-      const response = await shiftSwapService.createSwapRequest(requestWithRates);
+      const response = await shiftSwapService.createSwapRequest(requestPayload);
 
       if (response.success) {
         alert("Swap request created successfully!");
@@ -472,9 +520,16 @@ const ShiftSwapping = () => {
       }
     } catch (error) {
       console.error("Error creating swap request:", error);
-      alert(
-        error.message || "Failed to create swap request. Please try again.",
-      );
+      
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        alert(errorMessages.join("\n"));
+      } else {
+        alert(
+          error.response?.data?.message || error.message || "Failed to create swap request. Please try again.",
+        );
+      }
     }
   };
 
@@ -483,7 +538,7 @@ const ShiftSwapping = () => {
       return;
 
     try {
-      const response = await shiftSwapService.approveSwapRequest(requestId);
+      const response = await shiftSwapService.approveSwapRequest(requestId, currentUserId);
 
       if (response.success) {
         alert("Swap request approved successfully!");
@@ -513,11 +568,11 @@ const ShiftSwapping = () => {
     if (!selectedRequestToReject) return;
 
     try {
+      setIsRejecting(true);
       const response = await shiftSwapService.rejectSwapRequest(
         selectedRequestToReject,
-        {
-          rejection_reason: rejectionReason,
-        },
+        rejectionReason,
+        currentUserId,
       );
 
       if (response.success) {
@@ -539,6 +594,8 @@ const ShiftSwapping = () => {
       alert(
         error.message || "Failed to reject swap request. Please try again.",
       );
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -667,9 +724,8 @@ const ShiftSwapping = () => {
   const resetForm = () => {
     setNewRequest({
       requester_employee_id: currentUserId,
-      requester_roster_id: "",
       requested_employee_id: "",
-      requested_roster_id: "",
+      roster_date: "",
       requester_reason: "",
     });
     setSwapAmountDifference(0);
@@ -677,21 +733,21 @@ const ShiftSwapping = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-      approved: "bg-green-100 text-green-800 border border-green-200",
-      rejected: "bg-red-100 text-red-800 border border-red-200",
+      Pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      Approved: "bg-green-100 text-green-800 border border-green-200",
+      Rejected: "bg-red-100 text-red-800 border border-red-200",
     };
     return colors[status] || "bg-gray-100 text-gray-800 border border-gray-200";
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { label: "Pending", icon: FaClock },
-      approved: { label: "Approved", icon: FaCheck },
+      Pending: { label: "Pending", icon: FaClock },
+      Approved: { label: "Approved", icon: FaCheck },
       rejected: { label: "Rejected", icon: FaTimes },
     };
 
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || statusConfig.Pending;
     const IconComponent = config.icon;
 
     return (
@@ -725,60 +781,20 @@ const ShiftSwapping = () => {
     (r) => r.employee_id == newRequest.requested_employee_id,
   );
 
-  // Filter requests based on current filters
+  // Filter requests based on current filters (server-side filtering is now primary)
+  // Client-side filtering kept as fallback for status only
   const filteredRequests = swapRequests.filter((request) => {
-    const requesterName = request.requester
-      ? `${request.requester.first_name || ""} ${request.requester.last_name || ""}`
-        .toLowerCase()
-        .trim()
-      : "";
-
-    const requestedEmployeeName = request.requested_employee
-      ? `${request.requested_employee.first_name || ""} ${request.requested_employee.last_name || ""}`
-        .toLowerCase()
-        .trim()
-      : "";
-
-    const requesterDeptName =
-      request.requester?.department?.name ||
-      request.requester?.department_name ||
-      employees.find((e) => e.id === request.requester_employee_id)
-        ?.department_name ||
-      "";
-
-    const matchesSearch =
-      !filters.search ||
-      requesterName.includes(filters.search.toLowerCase()) ||
-      requestedEmployeeName.includes(filters.search.toLowerCase()) ||
-      (request.requester_reason &&
-        request.requester_reason
-          .toLowerCase()
-          .includes(filters.search.toLowerCase()));
-
     const matchesStatus =
       filters.status === "all" ||
-      (request.status && request.status.toLowerCase() === filters.status);
+      (request.status && request.status === filters.status);
 
-    const matchesDepartment =
-      filters.department === "all" ||
-      requesterDeptName
-        .toLowerCase()
-        .includes(filters.department.toLowerCase());
-
-    const matchesEmployee =
-      filters.employee === "all" ||
-      request.requester_employee_id?.toString() === filters.employee ||
-      request.requested_employee_id?.toString() === filters.employee;
-
-    return (
-      matchesSearch && matchesStatus && matchesDepartment && matchesEmployee
-    );
+    return matchesStatus;
   });
 
   const stats = {
     total: swapRequests.length,
-    pending: swapRequests.filter((req) => req.status === "pending").length,
-    approved: swapRequests.filter((req) => req.status === "approved").length,
+    pending: swapRequests.filter((req) => req.status === "Pending").length,
+    approved: swapRequests.filter((req) => req.status === "Approved").length,
     rejected: swapRequests.filter((req) => req.status === "rejected").length,
   };
 
@@ -966,44 +982,6 @@ const ShiftSwapping = () => {
           {/* Filters Section */}
           <div className="mb-6 p-6 bg-white rounded-xl shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search bar */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search
-                </label>
-                <div className="relative">
-                  <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search requests..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange("search", e.target.value)}
-                    className="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Department filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <select
-                  value={filters.department}
-                  onChange={(e) =>
-                    handleFilterChange("department", e.target.value)
-                  }
-                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
-                >
-                  <option value="all">All Departments</option>
-                  {departments.map((dept, index) => (
-                    <option key={index} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Status filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1015,30 +993,45 @@ const ShiftSwapping = () => {
                   className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-sm"
                 >
                   <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
                 </select>
               </div>
 
-              {/* Employee filter */}
+              {/* Roster Date Filter - Custom Date Only */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employee
+                  Roster Date
                 </label>
-                <InfiniteScrollEmployeeDropdown
-                  employees={dropdownEmployees}
-                  value={filters.employee}
-                  onChange={(val) => handleFilterChange("employee", val)}
-                  onLoadMore={handleDropdownLoadMore}
-                  hasMore={dropdownHasMore}
-                  isLoading={dropdownLoading}
-                  onSearch={handleDropdownSearch}
-                  placeholder="All Employees"
-                  allowAll={true}
-                  selectedName={employees.find(e => String(e.id) === String(filters.employee))?.name}
+                <input
+                  type="date"
+                  value={filters.roster_date}
+                  onChange={(e) => handleFilterChange("roster_date", e.target.value)}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
                 />
               </div>
+
+              {/* Employee filter - Only show for non-Employee roles */}
+              {currentUserRole?.toLowerCase() !== 'employee' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Employee
+                  </label>
+                  <InfiniteScrollEmployeeDropdown
+                    employees={dropdownEmployees}
+                    value={filters.employee}
+                    onChange={(val) => handleFilterChange("employee", val)}
+                    onLoadMore={handleDropdownLoadMore}
+                    hasMore={dropdownHasMore}
+                    isLoading={dropdownLoading}
+                    onSearch={handleDropdownSearch}
+                    placeholder="All Employees"
+                    allowAll={true}
+                    selectedName={employees.find(e => String(e.id) === String(filters.employee))?.name}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1181,14 +1174,17 @@ const ShiftSwapping = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 w-[16%] min-w-[150px] text-sm font-medium">
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => handleViewDetails(request.id)}
                                 className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1"
                                 title="View Details"
                               >
                                 <FaEye size={10} /> View
-                              </button>                               {request.status === "pending" && canEdit && (
+                              </button>
+                              
+                              {/* Approve and Reject buttons - only for non-Employee roles with edit permission */}
+                              {currentUserRole?.toLowerCase() !== 'employee' && request.status === "Pending" && canEdit && (
                                 <>
                                   <button
                                     onClick={() => handleApproveRequest(request.id)}
@@ -1206,7 +1202,9 @@ const ShiftSwapping = () => {
                                   </button>
                                 </>
                               )}
-                              {canDelete && (
+                              
+                              {/* Delete button - for all roles with delete permission, but hide for Employee if Approved */}
+                              {canDelete && !(currentUserRole?.toLowerCase() === 'employee' && request.status === "Approved") && (
                                 <button
                                   onClick={() => handleDeleteRequest(request.id)}
                                   className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
@@ -1263,48 +1261,35 @@ const ShiftSwapping = () => {
 
                 <form onSubmit={handleSubmitRequest} className="p-6">
                   <div className="grid grid-cols-1 gap-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Your Shift to Swap *
-                      </label>
-                      <select
-                        name="requester_roster_id"
-                        required
-                        value={newRequest.requester_roster_id}
-                        onChange={(e) =>
-                          handleRequesterRosterChange(e.target.value)
-                        }
-                        className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-                      >
-                        <option value="">Select Your Shift</option>
-                        {currentUserRosters.map((roster) => {
-                          const shift = shifts.find(
-                            (s) => s.id === roster.shift_id,
-                          );
-                          const hours = calculateNetWorkingHours(shift);
-                          const amount = hours * getEmployeeRate(currentUserId);
-                          return (
-                            <option key={roster.id} value={roster.id}>
-                              {roster.roster_date
-                                ? formatDate(roster.roster_date)
-                                : "No date"}{" "}
-                              - {roster.start_time} to {roster.end_time}
-                              {shift ? ` (${shift.name})` : ""}
-                              {" - "}{hours}h - {formatCurrency(amount)}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
+                    {/* Employee to Swap - only for non-Employee roles */}
+                    {currentUserRole?.toLowerCase() !== 'employee' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Employee to Swap *
+                        </label>
+                        <InfiniteScrollEmployeeDropdown
+                          employees={dropdownEmployees}
+                          value={newRequest.requester_employee_id}
+                          onChange={(val) => setNewRequest(prev => ({ ...prev, requester_employee_id: val }))}
+                          onLoadMore={handleDropdownLoadMore}
+                          hasMore={dropdownHasMore}
+                          isLoading={dropdownLoading}
+                          onSearch={handleDropdownSearch}
+                          placeholder="Select Employee"
+                          allowAll={false}
+                          selectedName={employees.find(e => String(e.id) === String(newRequest.requester_employee_id))?.name}
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Employee to Swap With *
                       </label>
                       <InfiniteScrollEmployeeDropdown
-                        employees={dropdownEmployees.filter(emp => String(emp.id) !== String(currentUserId))}
+                        employees={dropdownEmployees.filter(emp => String(emp.id) !== String(newRequest.requester_employee_id))}
                         value={newRequest.requested_employee_id}
-                        onChange={(val) => setNewRequest(prev => ({ ...prev, requested_employee_id: val, requested_roster_id: "" }))}
+                        onChange={(val) => setNewRequest(prev => ({ ...prev, requested_employee_id: val }))}
                         onLoadMore={handleDropdownLoadMore}
                         hasMore={dropdownHasMore}
                         isLoading={dropdownLoading}
@@ -1314,87 +1299,19 @@ const ShiftSwapping = () => {
                       />
                     </div>
 
-                    {newRequest.requested_employee_id && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Desired Shift from{" "}
-                          {
-                            employees.find(
-                              (e) => e.id == newRequest.requested_employee_id,
-                            )?.name
-                          }{" "}
-                          *
-                        </label>
-                        <select
-                          name="requested_roster_id"
-                          required
-                          value={newRequest.requested_roster_id}
-                          onChange={handleInputChange}
-                          className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-                        >
-                          <option value="">Select Desired Shift</option>
-                          {requestedEmployeeRosters.map((roster) => {
-                            const shift = shifts.find(
-                              (s) => s.id === roster.shift_id,
-                            );
-                            const hours = calculateNetWorkingHours(shift);
-                            const amount = hours * getEmployeeRate(roster.employee_id);
-                            return (
-                              <option key={roster.id} value={roster.id}>
-                                {roster.roster_date
-                                  ? formatDate(roster.roster_date)
-                                  : "No date"}{" "}
-                                - {roster.start_time} to {roster.end_time}
-                                {shift ? ` (${shift.name})` : ""}
-                                {" - "}{hours}h - {formatCurrency(amount)}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Swap Difference Summary */}
-                    {newRequest.requester_roster_id && newRequest.requested_roster_id && (
-                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                        <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                          <FaCalculator className="text-blue-500" />
-                          Swap Financial Impact
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <div className="text-xs text-gray-500">Your Shift Amount</div>
-                            <div className="text-sm font-bold text-blue-600">
-                              {formatCurrency(calculateShiftAmount(newRequest.requester_roster_id))}
-                            </div>
-                          </div>
-                          <div className="text-center flex items-center justify-center">
-                            <FaExchangeAlt className="text-gray-400" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">Requested Shift Amount</div>
-                            <div className="text-sm font-bold text-green-600">
-                              {formatCurrency(calculateShiftAmount(newRequest.requested_roster_id))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-blue-200">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-700">Difference:</span>
-                            <span className={`text-lg font-bold ${swapAmountDifference > 0 ? 'text-green-600' : swapAmountDifference < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                              {swapAmountDifference > 0 ? '+' : ''}{formatCurrency(swapAmountDifference)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {swapAmountDifference > 0
-                              ? "You will earn more after this swap"
-                              : swapAmountDifference < 0
-                                ? "You will earn less after this swap"
-                                : "No change in earnings"}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Roster Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="roster_date"
+                        required
+                        value={newRequest.roster_date}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+                      />
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1428,12 +1345,6 @@ const ShiftSwapping = () => {
                       className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
                     >
                       <FaExchangeAlt /> Submit Request
-                      {swapAmountDifference !== 0 && (
-                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${swapAmountDifference > 0 ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
-                          }`}>
-                          {swapAmountDifference > 0 ? '+' : ''}{formatCurrency(swapAmountDifference)}
-                        </span>
-                      )}
                     </button>
                   </div>
                 </form>
@@ -1485,9 +1396,18 @@ const ShiftSwapping = () => {
                     </button>
                     <button
                       onClick={handleRejectRequest}
-                      className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2"
+                      disabled={isRejecting}
+                      className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <FaTimes /> Confirm Reject
+                      {isRejecting ? (
+                        <>
+                          <FaSpinner className="animate-spin" /> Rejecting...
+                        </>
+                      ) : (
+                        <>
+                          <FaTimes /> Confirm Reject
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1749,7 +1669,7 @@ const ShiftSwapping = () => {
                         </h4>
                         <div className="bg-blue-50 p-3 rounded">
                           <p className="text-sm text-gray-700">
-                            Manager ID: {selectedRequest.manager_approver_id}
+                            {selectedRequest.manager_approver?.name} 
                           </p>
                           <p className="text-xs text-gray-500">
                             Approved at:{" "}
@@ -1779,26 +1699,42 @@ const ShiftSwapping = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  {selectedRequest.status === "pending" && canEdit && (
-                    <div className="flex gap-3 pt-6 border-t border-gray-200">
-                      <button
-                        onClick={() => handleApproveRequest(selectedRequest.id)}
-                        className="flex-1 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
-                      >
-                        <FaCheck /> Approve Request
-                      </button>
+                  <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-200">
+                    {/* Approve and Reject buttons - only for non-Employee roles with edit permission */}
+                    {currentUserRole?.toLowerCase() !== 'employee' && selectedRequest.status === "Pending" && canEdit && (
+                      <>
+                        <button
+                          onClick={() => handleApproveRequest(selectedRequest.id)}
+                          className="flex-1 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                        >
+                          <FaCheck /> Approve Request
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedRequestToReject(selectedRequest.id);
+                            setSelectedRequest(null);
+                            setShowRejectModal(true);
+                          }}
+                          className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                        >
+                          <FaTimes /> Reject Request
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Delete button - for all roles with delete permission, but hide for Employee if Approved */}
+                    {canDelete && !(currentUserRole?.toLowerCase() === 'employee' && selectedRequest.status === "Approved") && (
                       <button
                         onClick={() => {
-                          setSelectedRequestToReject(selectedRequest.id);
+                          handleDeleteRequest(selectedRequest.id);
                           setSelectedRequest(null);
-                          setShowRejectModal(true);
                         }}
-                        className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                        className="px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2"
                       >
-                        <FaTimes /> Reject Request
+                        <FaTrash /> Delete Request
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

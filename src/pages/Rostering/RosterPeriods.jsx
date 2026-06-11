@@ -2622,88 +2622,90 @@ const RosterPeriods = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        >
-                          Employee
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        >
-                          Roster Date
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        >
-                          Shift
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                        >
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {rosters.length === 0 ? (
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                          <td
-                            colSpan="4"
-                            className="px-4 py-8 text-center text-gray-500"
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
                           >
-                            <div className="flex flex-col items-center">
-                              <FaList className="text-3xl text-gray-300 mb-3" />
-                              <p className="text-lg font-medium text-gray-900 mb-1">
-                                No rosters found for this period
-                              </p>
-                              <p className="text-gray-500">
-                                Use Bulk Assign to add rosters
-                              </p>
-                            </div>
-                          </td>
+                            Employee
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                          >
+                            Roster Date
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                          >
+                            Shift
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                          >
+                            Status
+                          </th>
                         </tr>
-                      ) : (
-                        rosters.map((roster) => (
-                          <tr key={roster.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                                  <FaUsers className="h-4 w-4 text-green-600" />
-                                </div>
-                                <div className="ml-3">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {roster.employee.first_name}{" "}
-                                    {roster.employee.middle_name}{" "}
-                                    {roster.employee.last_name}
-                                  </div>
-                                </div>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {rosters.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="px-4 py-8 text-center text-gray-500"
+                            >
+                              <div className="flex flex-col items-center">
+                                <FaList className="text-3xl text-gray-300 mb-3" />
+                                <p className="text-lg font-medium text-gray-900 mb-1">
+                                  No rosters found for this period
+                                </p>
+                                <p className="text-gray-500">
+                                  Use Bulk Assign to add rosters
+                                </p>
                               </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">
-                              {formatDate(roster.roster_date)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className={`text-sm text-gray-900 `}>
-                                {roster.shift.name}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                Active
-                              </span>
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          rosters.map((roster) => (
+                            <tr key={roster.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <FaUsers className="h-4 w-4 text-green-600" />
+                                  </div>
+                                  <div className="ml-3">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {roster.employee.first_name}{" "}
+                                      {roster.employee.middle_name}{" "}
+                                      {roster.employee.last_name}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {formatDate(roster.roster_date)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className={`text-sm text-gray-900 `}>
+                                  {roster.shift.name}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                  Active
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {rosters.length > 0 && (

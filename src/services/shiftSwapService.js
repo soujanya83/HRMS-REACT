@@ -54,10 +54,12 @@ const shiftSwapService = {
   },
 
   // Approve swap request
-  approveSwapRequest: async (id) => {
+  approveSwapRequest: async (id, managerApproverId) => {
     try {
-      // console.log('Approving swap request ID:', id);
-      const response = await axiosClient.patch(`/shift-swap-requests/${id}/approve`);
+      // console.log('Approving swap request ID:', id, 'with manager_approver_id:', managerApproverId);
+      const response = await axiosClient.patch(`/shift-swap-requests/${id}/approve`, {
+        manager_approver_id: managerApproverId
+      });
       // console.log('Approve swap request response:', response.data);
       return response.data;
     } catch (error) {
@@ -67,10 +69,13 @@ const shiftSwapService = {
   },
 
   // Reject swap request
-  rejectSwapRequest: async (id, rejectionReason = '') => {
+  rejectSwapRequest: async (id, rejectionReason = '', managerApproverId) => {
     try {
-      // console.log('Rejecting swap request ID:', id, 'with reason:', rejectionReason);
-      const data = rejectionReason ? { rejection_reason: rejectionReason } : {};
+      // console.log('Rejecting swap request ID:', id, 'with reason:', rejectionReason, 'manager_approver_id:', managerApproverId);
+      const data = {
+        rejection_reason: rejectionReason,
+        manager_approver_id: managerApproverId
+      };
       const response = await axiosClient.patch(`/shift-swap-requests/${id}/reject`, data);
       // console.log('Reject swap request response:', response.data);
       return response.data;
