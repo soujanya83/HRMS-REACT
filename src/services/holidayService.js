@@ -2,28 +2,45 @@
 import axiosClient from '../axiosClient';
 
 export const holidayService = {
-  getHolidays: () => {
-    return axiosClient.get('/organization-holiday');
+  getHolidays: (params, headers = {}) => {
+    return axiosClient.get('/holidays', { params, headers });
   },
 
   createHoliday: (data) => {
-    return axiosClient.post('/organization-holiday', data);
+    return axiosClient.post('/holidays', data);
   },
 
   getHoliday: (id) => {
-    return axiosClient.get(`/organization-holiday/${id}`);
+    return axiosClient.get(`/holidays/${id}`);
   },
 
   updateHoliday: (id, data) => {
-    return axiosClient.post(`/organization-holiday/${id}`, data);
-  },
-
-  partialUpdateHoliday: (id, data) => {
-    return axiosClient.post(`/organization-holiday/${id}/partial`, data);
+    return axiosClient.put(`/holidays/${id}`, data);
   },
 
   deleteHoliday: (id) => {
-    return axiosClient.delete(`/organization-holiday/${id}`);
+    return axiosClient.delete(`/holidays/${id}`);
+  },
+
+  syncAustralianHolidays: (year) => {
+    return axiosClient.post('/holidays/sync-australian', { year });
+  },
+
+  getAustralianStates: () => {
+    return axiosClient.get('/holidays/australian-states');
+  },
+
+  setStateCode: (stateCode) => {
+    return axiosClient.post('/holidays/set-state', { state_code: stateCode });
+  },
+
+  getUpcomingHolidays: (params) => {
+    return axiosClient.get('/holidays/upcoming', {
+      params,
+      headers: {
+        "X-State-Code": "AU-NSW"
+      }
+    });
   }
 };
 

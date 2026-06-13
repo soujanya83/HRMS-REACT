@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useOrganizations } from '../contexts/OrganizationContext';
 import { rosterService } from '../services/rosterService';
+import { holidayService } from '../services/holidayService';
 import {
   Icons,
   DashCard,
@@ -111,6 +112,8 @@ const DashboardContent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [todayRosters, setTodayRosters] = useState([]);
   const [isLoadingRosters, setIsLoadingRosters] = useState(true);
+  const [upcomingHolidays, setUpcomingHolidays] = useState([]);
+  const [isLoadingHolidays, setIsLoadingHolidays] = useState(true);
   const { selectedOrganization } = useOrganizations();
   const context = useOutletContext();
   const user = context?.user || null;
@@ -147,6 +150,47 @@ const DashboardContent = () => {
     };
 
     fetchTodayRosters();
+  }, [selectedOrganization]);
+
+  // Fetch upcoming holidays
+  useEffect(() => {
+    const fetchUpcomingHolidays = async () => {
+      setIsLoadingHolidays(true);
+      try {
+        const params = {};
+        if (selectedOrganization?.id) {
+          params.organization_id = selectedOrganization.id;
+        }
+        const response = await holidayService.getUpcomingHolidays(params);
+        if (response.data?.status === true) {
+          const holidays = response.data.data || [];
+          // Transform API data to match UI format
+          const transformedHolidays = holidays.slice(0, 5).map(holiday => {
+            const date = new Date(holiday.holiday_date);
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const formattedDate = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+            
+            // Determine type based on holiday_type
+            const type = holiday.holiday_type?.toLowerCase() === 'company' ? 'event' : 'holiday';
+            
+            return {
+              date: formattedDate,
+              title: holiday.holiday_name,
+              type: type
+            };
+          });
+          setUpcomingHolidays(transformedHolidays);
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming holidays:', error);
+        // Use static data as fallback
+        setUpcomingHolidays(holidaysEvents);
+      } finally {
+        setIsLoadingHolidays(false);
+      }
+    };
+
+    fetchUpcomingHolidays();
   }, [selectedOrganization]);
 
   // Calendar grid
@@ -295,12 +339,23 @@ const DashboardContent = () => {
             <DashCard accentColor="#A8E6CF">
               <CardTitle icon={<Icons.Calendar />}>Holidays & Events</CardTitle>
               <div className="space-y-3">
-                {holidaysEvents.map((h, i) => (
-                  <div key={i} className={`flex items-start gap-3 pl-3 border-l-4 ${h.type === 'holiday' ? 'border-red-300' : 'border-blue-300'}`}>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-lg ${h.type === 'holiday' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>{h.date}</span>
-                    <span className="text-sm text-gray-700">{h.title}</span>
+                {isLoadingHolidays ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
                   </div>
-                ))}
+                ) : upcomingHolidays.length > 0 ? (
+                  upcomingHolidays.map((h, i) => (
+                    <div key={i} className={`flex items-start gap-3 pl-3 border-l-4 ${h.type === 'holiday' ? 'border-red-300' : 'border-blue-300'}`}>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${h.type === 'holiday' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>{h.date}</span>
+                      <span className="text-sm text-gray-700">{h.title}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                    <Icons.Calendar className="w-6 h-6 mb-2 opacity-20" />
+                    <p className="text-sm">No upcoming holidays</p>
+                  </div>
+                )}
               </div>
             </DashCard>
 
