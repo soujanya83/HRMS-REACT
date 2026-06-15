@@ -118,6 +118,8 @@ const DashboardContent = () => {
   const context = useOutletContext();
   const user = context?.user || null;
 
+  console.log("TODAYS TOSTERS ARE ", todayRosters)
+
   // Use the theme context instead of outlet context
   const { sidebarColor, setSidebarColor, backgroundColor, setBackgroundColor } = useTheme();
 
@@ -274,9 +276,10 @@ const DashboardContent = () => {
                     </thead>
                     <tbody>
                       {todayRosters.map((r, idx) => (
+                        
                         <tr key={r.id || idx} className="border-t border-gray-100">
                           <td className="py-2 font-medium text-gray-700">
-                            {r.employee?.name || `Employee #${r.employee_id}`}
+                            {r.employee?.first_name || ""} {r.employee?.middle_name || ""} {r.employee?.last_name || ""}
                           </td>
                           <td className="py-2 text-gray-500">{r.department_name || 'N/A'}</td>
                           <td className="py-2">
