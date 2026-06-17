@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   FaClipboardList,
   FaUniversity,
@@ -8,14 +8,15 @@ import {
   FaIdCard,
   FaExternalLinkAlt,
   FaShieldAlt,
-} from 'react-icons/fa';
+  FaClipboardCheck,
+} from "react-icons/fa";
 
 const Forms = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Employee Forms</h1>
-        <p className="text-gray-600">Complete your required forms</p>
+        <p className="text-gray-600">Complete your required Forms</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -31,8 +32,12 @@ const Forms = () => {
               <FaUniversity className="text-blue-600 text-xl" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-gray-800">Superannuation Form</h3>
-              <p className="text-sm text-gray-500">Complete superannuation details</p>
+              <h3 className="font-semibold text-gray-800">
+                Superannuation Form
+              </h3>
+              <p className="text-sm text-gray-500">
+                Complete superannuation details
+              </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-blue-600 ml-auto" />
           </a>
@@ -49,7 +54,9 @@ const Forms = () => {
             </div>
             <div className="text-left">
               <h3 className="font-semibold text-gray-800">TFN Declaration</h3>
-              <p className="text-sm text-gray-500">Tax File Number declaration</p>
+              <p className="text-sm text-gray-500">
+                Tax File Number declaration
+              </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-green-600 ml-auto" />
           </a>
@@ -65,8 +72,12 @@ const Forms = () => {
               <FaGavel className="text-red-600 text-xl" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-gray-800">Prohibition Notice</h3>
-              <p className="text-sm text-gray-500">Prohibition notice declaration</p>
+              <h3 className="font-semibold text-gray-800">
+                Prohibition Notice
+              </h3>
+              <p className="text-sm text-gray-500">
+                Prohibition notice declaration
+              </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-red-600 ml-auto" />
           </a>
@@ -82,8 +93,12 @@ const Forms = () => {
               <FaUser className="text-purple-600 text-xl" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-gray-800">Person In Day To Day</h3>
-              <p className="text-sm text-gray-500">Day to day charge declaration</p>
+              <h3 className="font-semibold text-gray-800">
+                Person In Day To Day
+              </h3>
+              <p className="text-sm text-gray-500">
+                Day to day charge declaration
+              </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-purple-600 ml-auto" />
           </a>
@@ -116,10 +131,35 @@ const Forms = () => {
               <FaShieldAlt className="text-teal-600 text-xl" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-gray-800">Child Safe Code of Policy</h3>
-              <p className="text-sm text-gray-500">Child safe code of conduct policy</p>
+              <h3 className="font-semibold text-gray-800">
+                Child Safe Code of Policy
+              </h3>
+              <p className="text-sm text-gray-500">
+                Child safe code of conduct policy
+              </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-teal-600 ml-auto" />
+          </a>
+
+          {/* Staff Induction Checklist Form */}
+          <a
+            href="/staff-induction-form"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group cursor-pointer"
+          >
+            <div className="p-3 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+              <FaClipboardCheck className="text-indigo-600 text-xl" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-800">
+                Staff Induction Checklist
+              </h3>
+              <p className="text-sm text-gray-500">
+                Complete staff induction checklist
+              </p>
+            </div>
+            <FaExternalLinkAlt className="text-gray-400 group-hover:text-indigo-600 ml-auto" />
           </a>
         </div>
       </div>

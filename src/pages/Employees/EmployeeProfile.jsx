@@ -10,10 +10,29 @@ import {
   FaPrint, FaShare, FaQrcode, FaIdCard, FaTasks, FaChartLine,
   FaDownload, FaCopy, FaExternalLinkAlt, FaEllipsisH,
   FaPlus, FaTrash, FaEye, FaFilePdf, FaFileWord, FaFileImage,
-  FaTimes, FaCheck, FaSpinner, FaUpload, FaGavel, FaCheckCircle, FaClock
+  FaTimes, FaCheck, FaSpinner, FaUpload, FaGavel, FaCheckCircle, FaClock,
+  FaClipboardList
 } from 'react-icons/fa';
 import { HiOutlineDocumentReport, HiOutlineUserGroup } from 'react-icons/hi';
 import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument, deleteEmployeeDocument } from '../../services/employeeService';
+import axiosClient from '../../axiosClient';
+import { toast } from 'react-toastify';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const REQUIRED_DOCUMENT_TYPES = [
   'Working With Children Check',
@@ -490,6 +509,147 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
   );
 };
 
+const FORM_META = {
+  "staff-induction": {
+    url: (empId) => `/staff-induction-form?employeeId=${empId}`,
+    icon: FaClipboardList,
+    colorBg: "bg-indigo-100 group-hover:bg-indigo-200",
+    colorIcon: "text-indigo-600",
+    colorBorder: "hover:border-indigo-500 hover:bg-indigo-50",
+    description: "Complete or view staff induction checklist",
+  },
+  "pidtdc-form": {
+    url: (empId) => `/person-in-day-to-day-charge-form?employeeId=${empId}`,
+    icon: FaUser,
+    colorBg: "bg-purple-100 group-hover:bg-purple-200",
+    colorIcon: "text-purple-600",
+    colorBorder: "hover:border-purple-500 hover:bg-purple-50",
+    description: "Consent form for appointment as a Person in Day-to-Day Charge",
+  },
+  "child-safe-code-of-conduct": {
+    url: (empId) => `/child-safe-code-of-policy-form?employeeId=${empId}`,
+    icon: FaShieldAlt,
+    colorBg: "bg-teal-100 group-hover:bg-teal-200",
+    colorIcon: "text-teal-600",
+    colorBorder: "hover:border-teal-500 hover:bg-teal-50",
+    description: "Child safe code of conduct policy declaration",
+  },
+  "superannuation-form": {
+    url: (empId) => `/superannuation?employeeId=${empId}`,
+    icon: FaUniversity,
+    colorBg: "bg-blue-100 group-hover:bg-blue-200",
+    colorIcon: "text-blue-600",
+    colorBorder: "hover:border-blue-500 hover:bg-blue-50",
+    description: "Complete or update superannuation details",
+  },
+  "tfn-declaration": {
+    url: (empId) => `/tfn-declaration?employeeId=${empId}`,
+    icon: FaFileAlt,
+    colorBg: "bg-green-100 group-hover:bg-green-200",
+    colorIcon: "text-green-600",
+    colorBorder: "hover:border-green-500 hover:bg-green-50",
+    description: "Tax File Number declaration details",
+  },
+  "staff-record": {
+    url: (empId) => `/staff-record-form?employeeId=${empId}`,
+    icon: FaIdCard,
+    colorBg: "bg-orange-100 group-hover:bg-orange-200",
+    colorIcon: "text-orange-600",
+    colorBorder: "hover:border-orange-500 hover:bg-orange-50",
+    description: "Complete or update staff record details",
+  },
+  "prohibition-notice-declaration": {
+    url: (empId) => `/prohibition-notice-declaration-form?employeeId=${empId}`,
+    icon: FaGavel,
+    colorBg: "bg-red-100 group-hover:bg-red-200",
+    colorIcon: "text-red-600",
+    colorBorder: "hover:border-red-500 hover:bg-red-50",
+    description: "Prohibition notice declaration details",
+  },
+};
+
+const SortableFormItem = ({ form, employeeId }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: form.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 200ms ease, shadow-md 200ms ease",
+    zIndex: isDragging ? 50 : "auto",
+  };
+
+  const meta = FORM_META[form.slug] || {
+    url: (empId) => `/dashboard?employeeId=${empId}`,
+    icon: FaFileAlt,
+    colorBg: "bg-gray-100 group-hover:bg-gray-200",
+    colorIcon: "text-gray-600",
+    colorBorder: "hover:border-gray-500 hover:bg-gray-50",
+    description: "Compliance and onboarding details",
+  };
+
+  const IconComponent = meta.icon;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 border rounded-xl transition-all group bg-white relative ${
+        isDragging
+          ? "border-blue-400 shadow-xl scale-[1.03] ring-4 ring-blue-50/50 cursor-grabbing"
+          : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+      } ${meta.colorBorder}`}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-400 hover:text-gray-600 flex items-center justify-center select-none"
+        title="Drag to reorder"
+      >
+        <svg
+          className="w-4 h-4 text-gray-400 hover:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 8h16M4 16h16"
+          />
+        </svg>
+      </div>
+
+      <div className={`p-3 rounded-lg transition-colors ${meta.colorBg}`}>
+        <IconComponent className={`${meta.colorIcon} text-xl`} />
+      </div>
+
+      <div className="text-left flex-1 min-w-0">
+        <h4 className="font-semibold text-gray-800 truncate">{form.form_name}</h4>
+        <p className="text-sm text-gray-500 truncate">{meta.description}</p>
+      </div>
+
+      <a
+        href={meta.url(employeeId)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-2 text-gray-400 group-hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all ml-auto shrink-0 flex items-center justify-center cursor-pointer"
+        title={`Open ${form.form_name}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <FaExternalLinkAlt size={14} />
+      </a>
+    </div>
+  );
+};
+
 export default function EmployeeProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -500,6 +660,72 @@ export default function EmployeeProfile() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [formsList, setFormsList] = useState([]);
+  const [loadingForms, setLoadingForms] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const fetchForms = async () => {
+    try {
+      setLoadingForms(true);
+      const response = await axiosClient.get('/form-masters');
+      if (response.data?.data) {
+        const sorted = [...response.data.data].sort((a, b) => a.sort_order - b.sort_order);
+        setFormsList(sorted);
+      }
+    } catch (err) {
+      console.error('Error fetching form master order:', err);
+    } finally {
+      setLoadingForms(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'forms') {
+      fetchForms();
+    }
+  }, [activeTab]);
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (active && over && active.id !== over.id) {
+      const oldIndex = formsList.findIndex((item) => item.id === active.id);
+      const newIndex = formsList.findIndex((item) => item.id === over.id);
+
+      const newOrder = arrayMove(formsList, oldIndex, newIndex);
+      setFormsList(newOrder);
+
+      const payload = {
+        forms: newOrder.map((form, index) => ({
+          id: form.id,
+          sort_order: index + 1,
+        })),
+      };
+
+      try {
+        const response = await axiosClient.post('/form-masters/update-order', payload);
+        if (response.data?.status) {
+          toast.success('Form order updated successfully!');
+        } else {
+          toast.error('Failed to update form order');
+        }
+      } catch (err) {
+        console.error('Error updating form order:', err);
+        toast.error('Failed to save order on server');
+        fetchForms();
+      }
+    }
+  };
 
   const { canEdit } = usePermissions('employee.add_manage_profiles');
 
@@ -1076,113 +1302,45 @@ export default function EmployeeProfile() {
                   <div className="mb-6">
                     <h3 className="text-xl font-semibold text-gray-800">Employee Onboarding Forms</h3>
                     <p className="text-gray-600">
-                      View or edit compliance and onboarding forms completed by {employee.first_name} {employee.last_name}
+                      Drag and drop to reorder compliance and onboarding forms completed by {employee.first_name} {employee.last_name}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Superannuation Form */}
-                    <a
-                      href={`/superannuation?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group cursor-pointer"
+                  {loadingForms ? (
+                    <div className="py-12 text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading onboarding forms order...</p>
+                    </div>
+                  ) : formsList.length > 0 ? (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
                     >
-                      <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                        <FaUniversity className="text-blue-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">Superannuation Form</h3>
-                        <p className="text-sm text-gray-500">View or update superannuation details</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-blue-600 ml-auto" />
-                    </a>
-
-                    {/* TFN Declaration Form */}
-                    <a
-                      href={`/tfn-declaration?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group cursor-pointer"
-                    >
-                      <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <FaFileAlt className="text-green-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">TFN Declaration</h3>
-                        <p className="text-sm text-gray-500">View or update Tax File Number declaration</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-green-600 ml-auto" />
-                    </a>
-
-                    {/* Prohibition Notice Declaration Form */}
-                    <a
-                      href={`/prohibition-notice-declaration-form?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group cursor-pointer"
-                    >
-                      <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
-                        <FaGavel className="text-red-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">Prohibition Notice</h3>
-                        <p className="text-sm text-gray-500">View or update prohibition notice declaration</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-red-600 ml-auto" />
-                    </a>
-
-                    {/* Person In Day To Day Charge Form */}
-                    <a
-                      href={`/person-in-day-to-day-charge-form?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group cursor-pointer"
-                    >
-                      <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                        <FaUser className="text-purple-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">Person In Day To Day</h3>
-                        <p className="text-sm text-gray-500">View or update day to day charge declaration</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-purple-600 ml-auto" />
-                    </a>
-
-                    {/* Staff Record Form */}
-                    <a
-                      href={`/staff-record-form?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group cursor-pointer"
-                    >
-                      <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                        <FaIdCard className="text-orange-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">Staff Record</h3>
-                        <p className="text-sm text-gray-500">View or update staff record details</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-orange-600 ml-auto" />
-                    </a>
-
-                    {/* Child Safe Code of Policy Form */}
-                    <a
-                      href={`/child-safe-code-of-policy-form?employeeId=${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all group cursor-pointer"
-                    >
-                      <div className="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors">
-                        <FaShieldAlt className="text-teal-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-800">Child Safe Code of Policy</h3>
-                        <p className="text-sm text-gray-500">View child safe code of conduct policy</p>
-                      </div>
-                      <FaExternalLinkAlt className="text-gray-400 group-hover:text-teal-600 ml-auto" />
-                    </a>
-                  </div>
+                      <SortableContext
+                        items={formsList.map((f) => f.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="flex flex-col gap-3 max-w-3xl">
+                          {formsList.map((form) => (
+                            <SortableFormItem
+                              key={form.id}
+                              form={form}
+                              employeeId={id}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-2xl">
+                      <FaFileAlt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h4 className="text-xl font-semibold text-gray-700 mb-2">No Onboarding Forms Found</h4>
+                      <p className="text-gray-600 max-w-md mx-auto">
+                        There are no forms configured for onboarding.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

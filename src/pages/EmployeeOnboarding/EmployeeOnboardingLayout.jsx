@@ -4,6 +4,7 @@ import {
   FaUser,
   FaFileAlt,
   FaClipboardList,
+  FaShieldAlt,
 } from 'react-icons/fa';
 
 const EmployeeOnboardingLayout = () => {
@@ -16,14 +17,19 @@ const EmployeeOnboardingLayout = () => {
       icon: FaUser,
     },
     {
-      path: '/dashboard/employee-onboarding/documents',
-      label: 'Documents & Certificates',
+      path: '/dashboard/employee-onboarding/certificates',
+      label: 'Certificates',
       icon: FaFileAlt,
     },
     {
-      path: '/dashboard/employee-onboarding/forms',
-      label: 'Forms',
+      path: '/dashboard/employee-onboarding/documents',
+      label: 'Documents',
       icon: FaClipboardList,
+    },
+    {
+      path: '/dashboard/employee-onboarding/policies',
+      label: 'Policies',
+      icon: FaShieldAlt,
     },
   ];
 

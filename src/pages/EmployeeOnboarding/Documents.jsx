@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   FaUpload,
   FaSpinner,
@@ -22,37 +22,135 @@ import {
   FaChevronUp,
   FaPlus,
   FaInfoCircle,
-} from 'react-icons/fa';
-import axiosClient from '../../axiosClient';
+} from "react-icons/fa";
+import axiosClient from "../../axiosClient";
 import {
   getEmployeeDocuments,
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   updateDocumentDates,
   verifyEmployeeDocument,
-} from '../../services/employeeService';
+} from "../../services/employeeService";
 
 // MANDATORY CERTIFICATES CHECKLIST (8 items)
 const MANDATORY_CERTIFICATES_LIST = [
   {
+    id: "qualification",
+    name: "Qualification Certificate (Latest/Highest Qualification)",
+    type: "Qualification Certificate",
+    required: true,
+    hasExpiry: false,
+    description: "Latest or highest qualification certificate",
+    icon: "🎓",
+  },
+  {
+    id: "cpr",
+    name: "CPR Certificate (Full course – every 3 years)",
+    type: "CPR Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 3,
+    description: "CPR training certificate",
+    icon: "🫁",
+  },
+  {
+    id: "first_aid",
+    name: "First-aid Certificate (Refresher Annually)",
+    type: "First Aid Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Provide First Aid certificate (HLTAID012 or equivalent)",
+    icon: "🚑",
+  },
+  {
+    id: "anaphylaxis",
+    name: "Anaphylaxis (Refresher Annually)",
+    type: "Anaphylaxis Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Anaphylaxis management training certificate",
+    icon: "💉",
+  },
+  {
+    id: "protecting_children",
+    name: "Protecting Children - Mandatory Reporting (Annually)",
+    type: "Mandatory Reporting",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Child protection training certificate",
+    icon: "🛡️",
+  },
+  {
+    id: "child_safety_training",
+    name: "Foundations of Child Safety Training (Every 2 years)",
+    type: "Foundations of Child Safety",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Foundations of child safety training",
+    icon: "👶",
+  },
+  {
+    id: "child_safety_training_advanced",
+    name: "Foundations of Child Safety Training – Advanced (Every 2 years)",
+    type: "Advanced Child Safety",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Advanced child safety training",
+    icon: "🚀",
+  },
+  {
+    id: "food_safety",
+    name: "Do Food Safely Certificate (Annually)",
+    type: "Food Safety Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Do Food Safely certificate",
+    icon: "🍎",
+  },
+  {
+    id: "allergens",
+    name: "Allergens for Children’s (CEC) Certificate (Every 2 years)",
+    type: "Allergens Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Allergen training certificate",
+    icon: "🚫",
+  },
+  {
+    id: "sunsmart",
+    name: "SunSmart Certificate (Every 2 years)",
+    type: "SunSmart Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Sun safety certificate",
+    icon: "☀️",
+  },
+  {
+    id: "sleep_safe",
+    name: "Red nose – Sleep Safe (under 3 years old) (not Mandatory for all staff)",
+    type: "Sleep Safe Certificate",
+    required: false,
+    hasExpiry: false,
+    description: "Sleep safety training certificate (optional)",
+    icon: "💤",
+  },
+  {
     id: "wwcc",
-    name: "Working With Children Check",
+    name: "Working with Children’s Check (Renew Every 5 years)",
     type: "Working With Children Check",
     required: true,
     hasExpiry: true,
     expiryYears: 5,
-    description: "Employee type, linked to service",
-    icon: "🆔"
-  },
-  {
-    id: "first_aid",
-    name: "First Aid Certification (HLTAID012)",
-    type: "First Aid Certificate",
-    required: true,
-    hasExpiry: true,
-    expiryYears: 3,
-    description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
-    icon: "🚑"
+    description: "WWCC card or notice",
+    icon: "🆔",
   },
   {
     id: "police_check",
@@ -61,44 +159,8 @@ const MANDATORY_CERTIFICATES_LIST = [
     required: true,
     hasExpiry: true,
     expiryYears: 3,
-    description: "Current National Police Check",
-    icon: "👮"
-  },
-  {
-    id: "qualification",
-    name: "Qualification Certificate",
-    type: "Qualification Certificate",
-    required: true,
-    hasExpiry: false,
-    description: "Certificate III or Diploma in Early Childhood Education",
-    icon: "🎓"
-  },
-  {
-    id: "immunisation",
-    name: "Immunisation Record",
-    type: "Immunisation Record",
-    required: true,
-    hasExpiry: false,
-    description: "Flu and Pertussis recommended for childcare workers",
-    icon: "💉"
-  },
-  {
-    id: "code_of_conduct",
-    name: "Signed Code of Conduct",
-    type: "Code of Conduct",
-    required: true,
-    hasExpiry: false,
-    description: "Signed Code of Conduct agreement",
-    icon: "📄"
-  },
-  {
-    id: "induction",
-    name: "Completed Induction",
-    type: "Induction",
-    required: true,
-    hasExpiry: false,
-    description: "Emergency procedures, supervision, child protection",
-    icon: "📋"
+    description: "National Police Check certificate",
+    icon: "👮",
   },
   {
     id: "right_to_work",
@@ -106,9 +168,9 @@ const MANDATORY_CERTIFICATES_LIST = [
     type: "Right to Work",
     required: true,
     hasExpiry: false,
-    description: "Proof of Australian citizenship or valid work visa",
-    icon: "🇦🇺"
-  }
+    description: "Proof of citizenship, passport, or visa",
+    icon: "🇦🇺",
+  },
 ];
 
 // ============================================
@@ -116,12 +178,12 @@ const MANDATORY_CERTIFICATES_LIST = [
 // ============================================
 const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
   const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
+    if (!dateString) return "Not set";
     try {
-      return new Date(dateString).toLocaleDateString('en-AU', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -130,23 +192,25 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
 
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
-    const ext = fileName.split('.').pop()?.toLowerCase();
+    const ext = fileName.split(".").pop()?.toLowerCase();
 
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
-    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
+    if (ext === "pdf") return <FaFilePdf className="text-red-500" />;
+    if (["doc", "docx"].includes(ext))
+      return <FaFileWord className="text-blue-500" />;
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext))
+      return <FaFileImage className="text-green-500" />;
     return <FaFileAlt className="text-gray-500" />;
   };
 
   const getStatusBadge = (verify) => {
-    if (verify === 'approved') {
+    if (verify === "approved") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">
           <FaCheckCircle size={10} /> Approved
         </span>
       );
     }
-    if (verify === 'rejected') {
+    if (verify === "rejected") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-semibold">
           <FaTimes size={10} /> Rejected
@@ -166,37 +230,52 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
   };
 
   return (
-    <div className={`bg-white border ${document.verify === 'approved' ? 'border-green-200 shadow-sm' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}>
-      {document.verify === 'approved' && (
+    <div
+      className={`bg-white border ${document.verify === "approved" ? "border-green-200 shadow-sm" : "border-gray-200"} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}
+    >
+      {document.verify === "approved" && (
         <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-10">
           <FaCheckCircle size={60} className="text-green-500 -mr-4 -mt-4" />
         </div>
       )}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
-          <div className="mt-1">
-            {getFileIcon(document.file_name)}
-          </div>
+          <div className="mt-1">{getFileIcon(document.file_name)}</div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-800">{document.file_name || document.document_type}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {document.file_name || document.document_type}
+              </p>
               {getStatusBadge(document.verify)}
             </div>
             <div className="flex flex-wrap gap-3 mt-2 text-xs">
               <span className="text-gray-500">
-                <FaCalendarAlt className="inline mr-1 text-gray-400" size={10} />
+                <FaCalendarAlt
+                  className="inline mr-1 text-gray-400"
+                  size={10}
+                />
                 Issue: {formatDate(document.issue_date)}
               </span>
-              <span className={isExpired(document.expiry_date) ? 'text-red-600' : 'text-gray-500'}>
+              <span
+                className={
+                  isExpired(document.expiry_date)
+                    ? "text-red-600"
+                    : "text-gray-500"
+                }
+              >
                 <FaClock className="inline mr-1" size={10} />
                 Expiry: {formatDate(document.expiry_date)}
-                {isExpired(document.expiry_date) && <span className="ml-1 text-red-600 font-semibold">(Expired)</span>}
+                {isExpired(document.expiry_date) && (
+                  <span className="ml-1 text-red-600 font-semibold">
+                    (Expired)
+                  </span>
+                )}
               </span>
             </div>
           </div>
         </div>
         <div className="flex gap-1 ml-2">
-          {document.verify !== 'approved' && (
+          {document.verify !== "approved" && (
             <button
               onClick={() => onEdit(document)}
               className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
@@ -214,7 +293,7 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
               <FaEye size={12} />
             </button>
           )}
-          {document.verify !== 'approved' && (
+          {document.verify !== "approved" && (
             <button
               onClick={() => onDelete(document.id)}
               className="p-1.5 text-red-600 hover:bg-red-100 rounded"
@@ -232,25 +311,31 @@ const DocumentCard = ({ document, onDelete, onView, onEdit }) => {
 // ============================================
 // DOCUMENT UPLOAD MODAL
 // ============================================
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType = null }) => {
+const DocumentUploadModal = ({
+  isOpen,
+  onClose,
+  employeeId,
+  onUploadSuccess,
+  preselectedDocumentType = null,
+}) => {
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showDocumentNameInput, setShowDocumentNameInput] = useState(false);
   const [formData, setFormData] = useState({
-    document_type: '',
-    custom_document_name: '',
+    document_type: "",
+    custom_document_name: "",
     file: null,
   });
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        document_type: preselectedDocumentType || '',
-        custom_document_name: '',
+        document_type: preselectedDocumentType || "",
+        custom_document_name: "",
         file: null,
       });
-      setShowDocumentNameInput(preselectedDocumentType === 'Other Document');
-      setError('');
+      setShowDocumentNameInput(preselectedDocumentType === "Other Document");
+      setError("");
     }
   }, [isOpen, preselectedDocumentType]);
 
@@ -263,11 +348,11 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 
   const handleDocumentTypeChange = (e) => {
     const value = e.target.value;
-    setShowDocumentNameInput(value === 'Other Document');
+    setShowDocumentNameInput(value === "Other Document");
     setFormData({
       ...formData,
       document_type: value,
-      custom_document_name: ''
+      custom_document_name: "",
     });
   };
 
@@ -275,27 +360,30 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     e.preventDefault();
 
     if (!formData.file) {
-      setError('Please select a file to upload');
+      setError("Please select a file to upload");
       return;
     }
 
     let documentTypeToSend = formData.document_type;
 
-    if (formData.document_type === 'Other Document' && formData.custom_document_name.trim()) {
+    if (
+      formData.document_type === "Other Document" &&
+      formData.custom_document_name.trim()
+    ) {
       documentTypeToSend = formData.custom_document_name.trim();
     } else if (!formData.document_type) {
-      setError('Please select a document type');
+      setError("Please select a document type");
       return;
     }
 
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
       const actualFormData = new FormData();
-      actualFormData.append('employee_id', employeeId);
-      actualFormData.append('document_type', documentTypeToSend);
-      actualFormData.append('file', formData.file);
+      actualFormData.append("employee_id", employeeId);
+      actualFormData.append("document_type", documentTypeToSend);
+      actualFormData.append("file", formData.file);
 
       const response = await uploadEmployeeDocument(actualFormData);
 
@@ -305,19 +393,23 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 
       if ((extractedIssueDate || extractedExpiryDate) && documentId) {
         await updateDocumentDates(documentId, {
-          issue_date: extractedIssueDate || '',
-          expiry_date: extractedExpiryDate || ''
+          issue_date: extractedIssueDate || "",
+          expiry_date: extractedExpiryDate || "",
         });
-        toast.success('Document uploaded! Dates automatically extracted from file.');
+        toast.success(
+          "Document uploaded! Dates automatically extracted from file.",
+        );
       } else {
-        toast.success('Document uploaded successfully! You can add issue/expiry dates by clicking Edit.');
+        toast.success(
+          "Document uploaded successfully! You can add issue/expiry dates by clicking Edit.",
+        );
       }
 
       onUploadSuccess();
       onClose();
     } catch (err) {
-      console.error('Upload error:', err);
-      setError(err.response?.data?.message || 'Failed to upload document');
+      console.error("Upload error:", err);
+      setError(err.response?.data?.message || "Failed to upload document");
     } finally {
       setUploading(false);
     }
@@ -330,7 +422,10 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-800">Upload Document</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
             <FaTimes />
           </button>
         </div>
@@ -354,14 +449,11 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 required
               >
                 <option value="">Select Document Type</option>
-                <option value="Working With Children Check">🆔 Working With Children Check</option>
-                <option value="First Aid Certificate">🚑 First Aid Certificate</option>
-                <option value="Police Check">👮 Police Check</option>
-                <option value="Qualification Certificate">🎓 Qualification Certificate</option>
-                <option value="Immunisation Record">💉 Immunisation Record</option>
-                <option value="Code of Conduct">📄 Signed Code of Conduct</option>
-                <option value="Induction">📋 Completed Induction</option>
-                <option value="Right to Work">🇦🇺 Right to Work in Australia</option>
+                {MANDATORY_CERTIFICATES_LIST.map((cert) => (
+                  <option key={cert.id} value={cert.type}>
+                    {cert.icon} {cert.name}
+                  </option>
+                ))}
                 <option value="Other Document">📁 Other Document</option>
               </select>
             </div>
@@ -374,7 +466,12 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 <input
                   type="text"
                   value={formData.custom_document_name}
-                  onChange={(e) => setFormData({ ...formData, custom_document_name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      custom_document_name: e.target.value,
+                    })
+                  }
                   placeholder="Enter document name (e.g., Resume, Cover Letter, etc.)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required={showDocumentNameInput}
@@ -446,40 +543,47 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
 // ============================================
 // DOCUMENT METADATA MODAL
 // ============================================
-const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) => {
+const DocumentMetadataModal = ({
+  isOpen,
+  onClose,
+  document,
+  onUpdateSuccess,
+}) => {
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    issue_date: '',
-    expiry_date: '',
+    issue_date: "",
+    expiry_date: "",
   });
 
   useEffect(() => {
     if (isOpen && document) {
       setFormData({
-        issue_date: document.issue_date || '',
-        expiry_date: document.expiry_date || '',
+        issue_date: document.issue_date || "",
+        expiry_date: document.expiry_date || "",
       });
-      setError('');
+      setError("");
     }
   }, [isOpen, document]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUpdating(true);
-    setError('');
+    setError("");
 
     try {
       await updateDocumentDates(document.id, {
         issue_date: formData.issue_date,
-        expiry_date: formData.expiry_date
+        expiry_date: formData.expiry_date,
       });
-      toast.success('Document dates updated successfully!');
+      toast.success("Document dates updated successfully!");
       onUpdateSuccess();
       onClose();
     } catch (err) {
-      console.error('Update error:', err);
-      setError(err.response?.data?.message || 'Failed to update document dates');
+      console.error("Update error:", err);
+      setError(
+        err.response?.data?.message || "Failed to update document dates",
+      );
     } finally {
       setUpdating(false);
     }
@@ -491,8 +595,13 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-800">Edit Document Dates</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-bold text-gray-800">
+            Edit Document Dates
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
             <FaTimes />
           </button>
         </div>
@@ -521,10 +630,14 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
               <input
                 type="date"
                 value={formData.issue_date}
-                onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, issue_date: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Leave empty if not applicable</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty if not applicable
+              </p>
             </div>
 
             <div>
@@ -534,10 +647,14 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
               <input
                 type="date"
                 value={formData.expiry_date}
-                onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, expiry_date: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Leave empty if no expiry date</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty if no expiry date
+              </p>
             </div>
           </div>
 
@@ -568,16 +685,27 @@ const DocumentMetadataModal = ({ isOpen, onClose, document, onUpdateSuccess }) =
 // ============================================
 // CHECKLIST ITEM COMPONENT
 // ============================================
-const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView, onEdit }) => {
-  const itemDocuments = documents.filter(doc =>
-    doc.document_type === item.type ||
-    doc.document_type?.includes(item.type.split(' ')[0])
+const ChecklistItem = ({
+  item,
+  isUploaded,
+  documents,
+  onUpload,
+  onDelete,
+  onView,
+  onEdit,
+}) => {
+  const itemDocuments = documents.filter(
+    (doc) =>
+      doc.document_type === item.type ||
+      doc.document_type?.includes(item.type.split(" ")[0]),
   );
 
-  const hasApprovedDoc = itemDocuments.some(doc => doc.verify === 'approved');
+  const hasApprovedDoc = itemDocuments.some((doc) => doc.verify === "approved");
 
   return (
-    <div className={`border rounded-lg p-4 transition-all ${isUploaded ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
+    <div
+      className={`border rounded-lg p-4 transition-all ${isUploaded ? "border-green-300 bg-green-50" : "border-gray-200 bg-white"}`}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
           <div className="mt-1">
@@ -591,14 +719,22 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xl">{item.icon}</span>
               <h4 className="font-semibold text-gray-800">{item.name}</h4>
-              {item.required && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Required</span>}
-              {item.hasExpiry && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Expires every {item.expiryYears} years</span>}
+              {item.required && (
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                  Required
+                </span>
+              )}
+              {item.hasExpiry && (
+                <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">
+                  Expires every {item.expiryYears} years
+                </span>
+              )}
             </div>
             <p className="text-xs text-gray-500 mt-1">{item.description}</p>
 
             {itemDocuments.length > 0 && (
               <div className="mt-3 space-y-2">
-                {itemDocuments.map(doc => (
+                {itemDocuments.map((doc) => (
                   <DocumentCard
                     key={doc.id}
                     document={doc}
@@ -615,9 +751,10 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
         {!hasApprovedDoc ? (
           <button
             onClick={() => onUpload(item.type)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? 'bg-amber-600 hover:bg-amber-700' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-lg whitespace-nowrap ml-3`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"} text-white rounded-lg whitespace-nowrap ml-3`}
           >
-            {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />} {isUploaded ? 'Replace' : 'Upload'}
+            {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />}{" "}
+            {isUploaded ? "Replace" : "Upload"}
           </button>
         ) : (
           <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg whitespace-nowrap ml-3 font-medium">
@@ -632,12 +769,21 @@ const ChecklistItem = ({ item, isUploaded, documents, onUpload, onDelete, onView
 // ============================================
 // OTHER DOCUMENTS SECTION
 // ============================================
-const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }) => {
+const OtherDocumentsSection = ({
+  documents,
+  onUpload,
+  onDelete,
+  onView,
+  onEdit,
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const otherDocs = documents.filter(doc =>
-    !MANDATORY_CERTIFICATES_LIST.some(m =>
-      doc.document_type === m.type || doc.document_type?.includes(m.type.split(' ')[0])
-    )
+  const otherDocs = documents.filter(
+    (doc) =>
+      !MANDATORY_CERTIFICATES_LIST.some(
+        (m) =>
+          doc.document_type === m.type ||
+          doc.document_type?.includes(m.type.split(" ")[0]),
+      ),
   );
 
   return (
@@ -653,14 +799,18 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }
             {otherDocs.length} document(s)
           </span>
         </div>
-        {isExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
+        {isExpanded ? (
+          <FaChevronUp className="text-gray-500" />
+        ) : (
+          <FaChevronDown className="text-gray-500" />
+        )}
       </button>
 
       {isExpanded && (
         <div className="p-4">
           <div className="flex justify-end mb-4">
             <button
-              onClick={() => onUpload('Other Document')}
+              onClick={() => onUpload("Other Document")}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
               <FaPlus size={12} /> Add Other Document
@@ -669,7 +819,7 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }
 
           {otherDocs.length > 0 ? (
             <div className="grid grid-cols-1 gap-3">
-              {otherDocs.map(doc => (
+              {otherDocs.map((doc) => (
                 <DocumentCard
                   key={doc.id}
                   document={doc}
@@ -682,9 +832,11 @@ const OtherDocumentsSection = ({ documents, onUpload, onDelete, onView, onEdit }
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
               <FaFileAlt className="text-3xl text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">No additional documents uploaded</p>
+              <p className="text-gray-500 text-sm">
+                No additional documents uploaded
+              </p>
               <button
-                onClick={() => onUpload('Other Document')}
+                onClick={() => onUpload("Other Document")}
                 className="mt-2 text-sm text-purple-600 hover:text-purple-700"
               >
                 Click here to upload
@@ -707,7 +859,7 @@ const Documents = () => {
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showMetadataModal, setShowMetadataModal] = useState(false);
-  const [metadata, setMetadata] = useState({ issueDate: '', expiryDate: '' });
+  const [metadata, setMetadata] = useState({ issueDate: "", expiryDate: "" });
 
   useEffect(() => {
     fetchProfile();
@@ -717,12 +869,12 @@ const Documents = () => {
     setLoading(true);
     try {
       // Get logged in employee from localStorage
-      const employeeStr = localStorage.getItem('employee');
+      const employeeStr = localStorage.getItem("employee");
       if (!employeeStr) {
         // Fallback to user if employee not found
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem("user");
         if (!userStr) {
-          toast.error('User session not found');
+          toast.error("User session not found");
           return;
         }
         const user = JSON.parse(userStr);
@@ -750,19 +902,19 @@ const Documents = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to load profile');
+      console.error("Error fetching profile:", error);
+      toast.error(error.response?.data?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
   };
 
   const isCertificateUploaded = (type) => {
-    return documents.some(doc => doc.document_type === type);
+    return documents.some((doc) => doc.document_type === type);
   };
 
   const getDocumentsForCertificate = (type) => {
-    return documents.filter(doc => doc.document_type === type);
+    return documents.filter((doc) => doc.document_type === type);
   };
 
   const openUploadModal = (cert) => {
@@ -771,21 +923,22 @@ const Documents = () => {
   };
 
   const handleDeleteDocument = async (docId) => {
-    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    if (!window.confirm("Are you sure you want to delete this document?"))
+      return;
 
     try {
       await deleteEmployeeDocument(docId);
-      toast.success('Document deleted successfully');
+      toast.success("Document deleted successfully");
       fetchProfile();
     } catch (error) {
-      console.error('Error deleting document:', error);
-      toast.error('Failed to delete document');
+      console.error("Error deleting document:", error);
+      toast.error("Failed to delete document");
     }
   };
 
   const handleViewDocument = (document) => {
     if (document.file_url) {
-      window.open(`https://api.chrispp.au${document.file_url}`, '_blank');
+      window.open(`https://api.chrispp.au${document.file_url}`, "_blank");
     }
   };
 
@@ -802,10 +955,12 @@ const Documents = () => {
     fetchProfile();
   };
 
-  const uploadedCount = MANDATORY_CERTIFICATES_LIST.filter(cert => 
-    isCertificateUploaded(cert.type)
+  const uploadedCount = MANDATORY_CERTIFICATES_LIST.filter((cert) =>
+    isCertificateUploaded(cert.type),
   ).length;
-  const completionPercentage = Math.round((uploadedCount / MANDATORY_CERTIFICATES_LIST.length) * 100);
+  const completionPercentage = Math.round(
+    (uploadedCount / MANDATORY_CERTIFICATES_LIST.length) * 100,
+  );
 
   if (loading) {
     return (
@@ -821,10 +976,13 @@ const Documents = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <FaUpload className="text-purple-600" /> Mandatory Documents Checklist
+              <FaUpload className="text-purple-600" /> Mandatory Certificates
+              Checklist
             </h2>
             <div className="text-right">
-              <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
+              <span className="text-2xl font-bold text-purple-600">
+                {completionPercentage}%
+              </span>
               <p className="text-xs text-gray-500">Completed</p>
             </div>
           </div>
@@ -837,7 +995,8 @@ const Documents = () => {
           </div>
 
           <p className="text-sm text-gray-600">
-            {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory documents uploaded
+            {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory
+            documents uploaded
           </p>
         </div>
 

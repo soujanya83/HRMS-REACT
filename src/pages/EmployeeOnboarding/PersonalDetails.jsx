@@ -166,7 +166,7 @@ const PersonalDetails = () => {
 
       if (response.data?.status) {
         toast.success('Profile updated successfully!');
-        navigate('/dashboard/employee-onboarding/documents');
+        navigate('/dashboard/employee-onboarding/certificates');
       } else {
         toast.error(response.data?.message || 'Failed to update profile');
       }

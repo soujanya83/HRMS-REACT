@@ -61,24 +61,122 @@ import {
 // ============================================
 const MANDATORY_CERTIFICATES_LIST = [
   {
+    id: "qualification",
+    name: "Qualification Certificate (Latest/Highest Qualification)",
+    type: "Qualification Certificate",
+    required: true,
+    hasExpiry: false,
+    description: "Latest or highest qualification certificate",
+    icon: "🎓"
+  },
+  {
+    id: "cpr",
+    name: "CPR Certificate (Full course – every 3 years)",
+    type: "CPR Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 3,
+    description: "CPR training certificate",
+    icon: "🫁"
+  },
+  {
+    id: "first_aid",
+    name: "First-aid Certificate (Refresher Annually)",
+    type: "First Aid Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Provide First Aid certificate (HLTAID012 or equivalent)",
+    icon: "🚑"
+  },
+  {
+    id: "anaphylaxis",
+    name: "Anaphylaxis (Refresher Annually)",
+    type: "Anaphylaxis Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Anaphylaxis management training certificate",
+    icon: "💉"
+  },
+  {
+    id: "protecting_children",
+    name: "Protecting Children - Mandatory Reporting (Annually)",
+    type: "Mandatory Reporting",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Child protection training certificate",
+    icon: "🛡️"
+  },
+  {
+    id: "child_safety_training",
+    name: "Foundations of Child Safety Training (Every 2 years)",
+    type: "Foundations of Child Safety",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Foundations of child safety training",
+    icon: "👶"
+  },
+  {
+    id: "child_safety_training_advanced",
+    name: "Foundations of Child Safety Training – Advanced (Every 2 years)",
+    type: "Advanced Child Safety",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Advanced child safety training",
+    icon: "🚀"
+  },
+  {
+    id: "food_safety",
+    name: "Do Food Safely Certificate (Annually)",
+    type: "Food Safety Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 1,
+    description: "Do Food Safely certificate",
+    icon: "🍎"
+  },
+  {
+    id: "allergens",
+    name: "Allergens for Children’s (CEC) Certificate (Every 2 years)",
+    type: "Allergens Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Allergen training certificate",
+    icon: "🚫"
+  },
+  {
+    id: "sunsmart",
+    name: "SunSmart Certificate (Every 2 years)",
+    type: "SunSmart Certificate",
+    required: true,
+    hasExpiry: true,
+    expiryYears: 2,
+    description: "Sun safety certificate",
+    icon: "☀️"
+  },
+  {
+    id: "sleep_safe",
+    name: "Red nose – Sleep Safe (under 3 years old) (not Mandatory for all staff)",
+    type: "Sleep Safe Certificate",
+    required: false,
+    hasExpiry: false,
+    description: "Sleep safety training certificate (optional)",
+    icon: "💤"
+  },
+  {
     id: "wwcc",
-    name: "Working With Children Check",
+    name: "Working with Children’s Check (Renew Every 5 years)",
     type: "Working With Children Check",
     required: true,
     hasExpiry: true,
     expiryYears: 5,
-    description: "Employee type, linked to service",
+    description: "WWCC card or notice",
     icon: "🆔"
-  },
-  {
-    id: "first_aid",
-    name: "First Aid Certification (HLTAID012)",
-    type: "First Aid Certificate",
-    required: true,
-    hasExpiry: true,
-    expiryYears: 3,
-    description: "HLTAID012 including CPR, Asthma & Anaphylaxis management",
-    icon: "🚑"
   },
   {
     id: "police_check",
@@ -87,53 +185,16 @@ const MANDATORY_CERTIFICATES_LIST = [
     required: true,
     hasExpiry: true,
     expiryYears: 3,
-    description: "Current National Police Check",
+    description: "National Police Check certificate",
     icon: "👮"
   },
-  {
-    id: "qualification",
-    name: "Qualification Certificate",
-    type: "Qualification Certificate",
-    required: true,
-    hasExpiry: false,
-    description: "Certificate III or Diploma in Early Childhood Education",
-    icon: "🎓"
-  },
-  {
-    id: "immunisation",
-    name: "Immunisation Record",
-    type: "Immunisation Record",
-    required: true,
-    hasExpiry: false,
-    description: "Flu and Pertussis recommended for childcare workers",
-    icon: "💉"
-  },
-  {
-    id: "code_of_conduct",
-    name: "Signed Code of Conduct",
-    type: "Code of Conduct",
-    required: true,
-    hasExpiry: false,
-    description: "Signed Code of Conduct agreement",
-    icon: "📄"
-  },
-  {
-    id: "induction",
-    name: "Completed Induction",
-    type: "Induction",
-    required: true,
-    hasExpiry: false,
-    description: "Emergency procedures, supervision, child protection",
-    icon: "📋"
-  },
-
   {
     id: "right_to_work",
     name: "Right to Work in Australia",
     type: "Right to Work",
     required: true,
     hasExpiry: false,
-    description: "Proof of Australian citizenship or valid work visa",
+    description: "Proof of citizenship, passport, or visa",
     icon: "🇦🇺"
   }
 ];
@@ -268,14 +329,11 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 required
               >
                 <option value="">Select Document Type</option>
-                <option value="Working With Children Check">🆔 Working With Children Check</option>
-                <option value="First Aid Certificate">🚑 First Aid Certificate</option>
-                <option value="Police Check">👮 Police Check</option>
-                <option value="Qualification Certificate">🎓 Qualification Certificate</option>
-                <option value="Immunisation Record">💉 Immunisation Record</option>
-                <option value="Code of Conduct">📄 Signed Code of Conduct</option>
-                <option value="Induction">📋 Completed Induction</option>
-                <option value="Right to Work">🇦🇺 Right to Work in Australia</option>
+                {MANDATORY_CERTIFICATES_LIST.map((cert) => (
+                  <option key={cert.id} value={cert.type}>
+                    {cert.icon} {cert.name}
+                  </option>
+                ))}
                 <option value="Other Document">📁 Other Document</option>
               </select>
             </div>

@@ -206,7 +206,7 @@ const EmployeeRow = ({
               return (
                 <div
                   key={roster.id}
-                  className={`w-full text-center ${canEditRoster ? 'cursor-pointer group' : 'cursor-not-allowed'}`}
+                  className={`w-full text-center ${canEditRoster ? "cursor-pointer group" : "cursor-not-allowed"}`}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
                 >
                   <div className="font-bold text-[13px] text-gray-900">
@@ -241,10 +241,11 @@ const RostersPage = () => {
   const { canAdd, canEdit, canDelete } = usePermissions(
     "rostering.weekly_monthly_rosters",
   );
-  
+
   // Prevent Employee role from editing or adding rosters
-  const canEditRoster = currentUserRole?.toLowerCase() !== 'employee' && canEdit;
-  const canAddRoster = currentUserRole?.toLowerCase() !== 'employee' && canAdd;
+  const canEditRoster =
+    currentUserRole?.toLowerCase() !== "employee" && canEdit;
+  const canAddRoster = currentUserRole?.toLowerCase() !== "employee" && canAdd;
   const [view, setView] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -289,12 +290,12 @@ const RostersPage = () => {
   }, [currentDate]);
 
   const formatLocalDate = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
-};
+    return `${year}-${month}-${day}`;
+  };
 
   const weekDates = useMemo(() => getWeekDates(), [getWeekDates]);
 
@@ -1290,7 +1291,6 @@ const RostersPage = () => {
                               {employee.employee_code
                                 ? ` (${employee.employee_code})`
                                 : ""}
-                             
                             </option>
                           ))}
                         </select>
@@ -1302,7 +1302,6 @@ const RostersPage = () => {
                         </label>
                         <div className="p-3 bg-gray-50 rounded-lg">
                           {getEmployeeName(formData.employee_id)}
-                         
                         </div>
                       </div>
                     )}
@@ -1361,8 +1360,6 @@ const RostersPage = () => {
                         placeholder="Add any notes..."
                       />
                     </div>
-
-                   
                   </div>
 
                   <div className="mt-6 flex justify-end space-x-3">
@@ -1958,13 +1955,15 @@ const RostersPage = () => {
                             return (
                               <div
                                 key={roster.id}
-                                className={`p-1 rounded text-xs ${canEditRoster ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed'}`}
+                                className={`p-1 rounded text-xs ${canEditRoster ? "cursor-pointer hover:opacity-90" : "cursor-not-allowed"}`}
                                 style={{
                                   backgroundColor: shiftColor.backgroundColor,
                                   color: shiftColor.color,
                                   border: `1px solid ${shiftColor.borderColor}`,
                                 }}
-                                onClick={() => canEditRoster && handleEditRoster(roster)}
+                                onClick={() =>
+                                  canEditRoster && handleEditRoster(roster)
+                                }
                               >
                                 <div className="font-medium truncate">
                                   {employee?.first_name?.charAt(0) || ""}.{" "}
@@ -1989,7 +1988,6 @@ const RostersPage = () => {
             </div>
           )}
 
-         
           {/* Legend */}
           <div className="mt-6 p-4 bg-white rounded-lg shadow-lg">
             <h3 className="font-semibold text-gray-800 mb-3">

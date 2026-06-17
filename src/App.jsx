@@ -10,18 +10,19 @@ import "./index.css";
 
 import roleService from "./services/roleService";
 
-import PublicEmployeeForm from './pages/public/PublicEmployeeForm';
+import PublicEmployeeForm from "./pages/public/PublicEmployeeForm";
 import InterviewPage from "./pages/Recruitment/InterviewPage";
-import ApplicationSuccess from './pages/public/ApplicationSuccess';
-import PrivacyPolicy from './pages/public/PrivacyPolicy';
-import TermsAndConditions from './pages/public/TermsAndConditions';
-import ContactUs from './pages/public/ContactUs';
-import SuperannuationPage from './pages/Superannuation/SuperannuationPage';
-import TfnDeclarationPage from './pages/TfnDeclaration/TfnDeclarationPage';
-import StaffRecordForm from './pages/StaffRecord/StaffRecordForm';
-import PersonInDayToDayChargeForm from './pages/PersonInDayToDayCharge/PersonInDayToDayChargeForm';
-import ProhibitionNoticeDeclarationForm from './pages/ProhibitionNoticeDeclaration/ProhibitionNoticeDeclarationForm';
-import ChildSafeCodeOfPolicyForm from './pages/ChildSafeCodeOfPolicy/ChildSafeCodeOfPolicyForm';
+import ApplicationSuccess from "./pages/public/ApplicationSuccess";
+import PrivacyPolicy from "./pages/public/PrivacyPolicy";
+import TermsAndConditions from "./pages/public/TermsAndConditions";
+import ContactUs from "./pages/public/ContactUs";
+import SuperannuationPage from "./pages/Superannuation/SuperannuationPage";
+import TfnDeclarationPage from "./pages/TfnDeclaration/TfnDeclarationPage";
+import StaffRecordForm from "./pages/StaffRecord/StaffRecordForm";
+import PersonInDayToDayChargeForm from "./pages/PersonInDayToDayCharge/PersonInDayToDayChargeForm";
+import ProhibitionNoticeDeclarationForm from "./pages/ProhibitionNoticeDeclaration/ProhibitionNoticeDeclarationForm";
+import ChildSafeCodeOfPolicyForm from "./pages/ChildSafeCodeOfPolicy/ChildSafeCodeOfPolicyForm";
+import StaffInductionForm from "./pages/StaffInduction/StaffInductionForm";
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -49,6 +50,7 @@ import EmployeeOnboardingLayout from "./pages/EmployeeOnboarding/EmployeeOnboard
 import PersonalDetails from "./pages/EmployeeOnboarding/PersonalDetails";
 import Documents from "./pages/EmployeeOnboarding/Documents";
 import Forms from "./pages/EmployeeOnboarding/Forms";
+import Policies from "./pages/EmployeeOnboarding/Policies";
 
 // --- Import Attendance Pages ---
 import AttendanceTracking from "./pages/Attendance/AttendanceTracking";
@@ -80,7 +82,10 @@ import FeedbackAppraisals from "./pages/Performance/FeedbackAppraisals";
 
 // --- Import Services & Contexts ---
 import { logout } from "./services/auth";
-import { OrganizationProvider, useOrganizations } from "./contexts/OrganizationContext";
+import {
+  OrganizationProvider,
+  useOrganizations,
+} from "./contexts/OrganizationContext";
 import XeroIntegrationPage from "./pages/setting /XeroIntegrationPage";
 import RoleManagementPage from "./pages/setting /RoleManagementPage";
 import PermissionManagementPage from "./pages/setting /PermissionManagementPage";
@@ -93,12 +98,23 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 // --- Helper function to check if user is admin based on role ---
 const isAdminUser = (roleName) => {
   if (!roleName) return false;
-  const adminRoles = ['superadmin', 'organization_admin', 'hr_manager', 'payroll_manager', 'recruiter'];
+  const adminRoles = [
+    "superadmin",
+    "organization_admin",
+    "hr_manager",
+    "payroll_manager",
+    "recruiter",
+  ];
   return adminRoles.includes(roleName?.toLowerCase());
 };
 
 // --- Route Protectors ---
-const ProtectedRoute = ({ isLoggedIn, user, children, isChangePasswordPage = false }) => {
+const ProtectedRoute = ({
+  isLoggedIn,
+  user,
+  children,
+  isChangePasswordPage = false,
+}) => {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
 
   // If user has a temporary password and is NOT on the change password page, redirect them there
@@ -133,7 +149,8 @@ const RoleGuard = ({ children, allowedRoles }) => {
 // --- Dashboard Router Component - Uses context from parent provider ---
 const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // This hook is now safe because it's inside OrganizationProvider
-  const { selectedOrganization, currentUserRole, userPermissions, isLoading } = useOrganizations();
+  const { selectedOrganization, currentUserRole, userPermissions, isLoading } =
+    useOrganizations();
 
   // console.log("🔍 DashboardRouter Debug:", {
   //   isLoading,
@@ -159,7 +176,8 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
 
   // If user has ANY permissions, they should see the admin layout
   // (the sidebar will filter what's visible based on permissions)
-  const hasPermissions = Array.isArray(userPermissions) && userPermissions.length > 0;
+  const hasPermissions =
+    Array.isArray(userPermissions) && userPermissions.length > 0;
 
   // Use admin layout if user is admin OR has any module permissions
   const useAdminLayout = isAdmin || hasPermissions;
@@ -169,9 +187,7 @@ const DashboardRouter = ({ isLoggedIn, user, onLogout }) => {
   // Choose layout based on role + permissions
   const Layout = useAdminLayout ? DashboardLayout : EmployeeDashboardLayout;
 
-  return (
-    <Layout onLogout={onLogout} user={user} />
-  );
+  return <Layout onLogout={onLogout} user={user} />;
 };
 
 // --- Root Redirect Component ---
@@ -191,7 +207,9 @@ const RootRedirect = () => {
 
   // Dashboard page is based on ROLE only (not permissions)
   const isAdmin = isAdminUser(currentUserRole);
-  const redirectPath = isAdmin ? "/dashboard/admin-dashboard" : "/dashboard/employee-dashboard";
+  const redirectPath = isAdmin
+    ? "/dashboard/admin-dashboard"
+    : "/dashboard/employee-dashboard";
 
   //console.log("🎯 RootRedirect - isAdmin:", isAdmin, "role:", currentUserRole, "→", redirectPath);
 
@@ -200,7 +218,9 @@ const RootRedirect = () => {
 
 // --- Main App Component ---
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("ACCESS_TOKEN"));
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => !!localStorage.getItem("ACCESS_TOKEN"),
+  );
   const [user, setUser] = useState(() => {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
@@ -282,12 +302,28 @@ function App() {
       element: <ChildSafeCodeOfPolicyForm />,
     },
     {
+      path: "/staff-induction-form",
+      element: <StaffInductionForm />,
+    },
+    {
       path: "/login",
-      element: <PublicRoute isLoggedIn={isLoggedIn} user={user}><LoginPage onLogin={handleLogin} /></PublicRoute>,
+      element: (
+        <PublicRoute isLoggedIn={isLoggedIn} user={user}>
+          <LoginPage onLogin={handleLogin} />
+        </PublicRoute>
+      ),
     },
     {
       path: "/change-password",
-      element: <ProtectedRoute isLoggedIn={isLoggedIn} user={user} isChangePasswordPage={true}><ChangePasswordPage onLogout={handleLogout} /></ProtectedRoute>,
+      element: (
+        <ProtectedRoute
+          isLoggedIn={isLoggedIn}
+          user={user}
+          isChangePasswordPage={true}
+        >
+          <ChangePasswordPage onLogout={handleLogout} />
+        </ProtectedRoute>
+      ),
     },
     // Protected routes - Dashboard wrapped with OrganizationProvider at the top level
     {
@@ -295,7 +331,11 @@ function App() {
       element: (
         <ProtectedRoute isLoggedIn={isLoggedIn} user={user}>
           <OrganizationProvider>
-            <DashboardRouter isLoggedIn={isLoggedIn} user={user} onLogout={handleLogout} />
+            <DashboardRouter
+              isLoggedIn={isLoggedIn}
+              user={user}
+              onLogout={handleLogout}
+            />
           </OrganizationProvider>
         </ProtectedRoute>
       ),
@@ -312,73 +352,290 @@ function App() {
         {
           path: "recruitment",
           children: [
-            { path: "jobs/*", element: <PermissionGuard permission="recruitment.job_openings.view"><JobOpeningsPage /></PermissionGuard> },
-            { path: "applicants/*", element: <PermissionGuard permission="recruitment.applicants.view"><ApplicantsPage /></PermissionGuard> },
-            { path: "interviews", element: <PermissionGuard permission="recruitment.interview_scheduling.view"><InterviewSchedulingPage /></PermissionGuard> },
-            { path: "interview", element: <PermissionGuard permission="recruitment.interview.view"><InterviewPage /></PermissionGuard> },
-            { path: "interview/:id", element: <PermissionGuard permission="recruitment.interview.view"><InterviewPage /></PermissionGuard> },
-            { path: "offers", element: <PermissionGuard permission="recruitment.selection_offers.view"><SelectionAndOffersPage /></PermissionGuard> },
-            { path: "onboarding", element: <PermissionGuard permission="recruitment.onboarding.view"><OnboardingPage /></PermissionGuard> },
-          ]
+            {
+              path: "jobs/*",
+              element: (
+                <PermissionGuard permission="recruitment.job_openings.view">
+                  <JobOpeningsPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "applicants/*",
+              element: (
+                <PermissionGuard permission="recruitment.applicants.view">
+                  <ApplicantsPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "interviews",
+              element: (
+                <PermissionGuard permission="recruitment.interview_scheduling.view">
+                  <InterviewSchedulingPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "interview",
+              element: (
+                <PermissionGuard permission="recruitment.interview.view">
+                  <InterviewPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "interview/:id",
+              element: (
+                <PermissionGuard permission="recruitment.interview.view">
+                  <InterviewPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "offers",
+              element: (
+                <PermissionGuard permission="recruitment.selection_offers.view">
+                  <SelectionAndOffersPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "onboarding",
+              element: (
+                <PermissionGuard permission="recruitment.onboarding.view">
+                  <OnboardingPage />
+                </PermissionGuard>
+              ),
+            },
+          ],
         },
         {
           path: "employees",
           children: [
-            { index: true, element: <PermissionGuard permission="employee.add_manage_profiles.view"><EmployeeList /></PermissionGuard> },
-            { path: "new", element: <PermissionGuard permission="employee.add_manage_profiles.add"><EmployeeForm /></PermissionGuard> },
-            { path: "edit/:id", element: <PermissionGuard permission="employee.add_manage_profiles.edit"><EmployeeForm /></PermissionGuard> },
-            { path: "manage", element: <PermissionGuard permission="employee.add_manage_profiles.view"><ManageProfiles /></PermissionGuard> },
-            { path: "probation", element: <PermissionGuard permission="employee.probation_confirmation.view"><ProbationConfirmation /></PermissionGuard> },
-            { path: "exit", element: <PermissionGuard permission="employee.exit_offboarding.view"><ExitOffboarding /></PermissionGuard> },
-            { path: "history", element: <PermissionGuard permission="employee.employment_history.view"><EmployeeHistoryPage /></PermissionGuard> },
-            { path: ":id/documents", element: <PermissionGuard permission="employee.add_manage_profiles.view"><EmployeeDocumentsPage /></PermissionGuard> },
-            { path: ":id", element: <PermissionGuard permission="employee.add_manage_profiles.view"><EmployeeProfile /></PermissionGuard> },
-          ]
+            {
+              index: true,
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <EmployeeList />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "new",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.add">
+                  <EmployeeForm />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "edit/:id",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.edit">
+                  <EmployeeForm />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "manage",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <ManageProfiles />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "probation",
+              element: (
+                <PermissionGuard permission="employee.probation_confirmation.view">
+                  <ProbationConfirmation />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "exit",
+              element: (
+                <PermissionGuard permission="employee.exit_offboarding.view">
+                  <ExitOffboarding />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "history",
+              element: (
+                <PermissionGuard permission="employee.employment_history.view">
+                  <EmployeeHistoryPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: ":id/documents",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <EmployeeDocumentsPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: ":id",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <EmployeeProfile />
+                </PermissionGuard>
+              ),
+            },
+          ],
         },
         {
           path: "settings/*",
           children: [
-            { path: "roles", element: <PermissionGuard permission="settings.role_management.view"><RoleManagementPage /></PermissionGuard> },
-            { path: "assign-role", element: <PermissionGuard permission="settings.assign_roles_to_users.view"><AssignRolePage /></PermissionGuard> },
-            { path: "permissions", element: <PermissionGuard permission="settings.permission_management.view"><PermissionManagementPage /></PermissionGuard> },
+            {
+              path: "roles",
+              element: (
+                <PermissionGuard permission="settings.role_management.view">
+                  <RoleManagementPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "assign-role",
+              element: (
+                <PermissionGuard permission="settings.assign_roles_to_users.view">
+                  <AssignRolePage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "permissions",
+              element: (
+                <PermissionGuard permission="settings.permission_management.view">
+                  <PermissionManagementPage />
+                </PermissionGuard>
+              ),
+            },
             { path: "xero", element: <XeroIntegrationPage /> },
-            { index: true, element: <Navigate to="roles" replace /> }
-          ]
+            { index: true, element: <Navigate to="roles" replace /> },
+          ],
         },
         {
           path: "attendance",
           children: [
-            { path: "tracking", element: <PermissionGuard permission="attendance.attendance_tracking.view"><AttendanceTracking /></PermissionGuard> },
-            { path: "adjustments", element: <PermissionGuard permission="attendance.manual_adjustments.view"><ManualAdjustments /></PermissionGuard> },
-            { path: "requests", element: <PermissionGuard permission="attendance.leave_requests.view"><LeaveRequests /></PermissionGuard> },
-            { path: "balance", element: <PermissionGuard permission="attendance.leave_balance.view"><LeaveBalance /></PermissionGuard> },
-            { path: "holidays", element: <PermissionGuard permission="attendance.holidays_calendars.view"><HolidaysCalendars /></PermissionGuard> },
-            { index: true, element: <Navigate to="tracking" replace /> }
-          ]
+            {
+              path: "tracking",
+              element: (
+                <PermissionGuard permission="attendance.attendance_tracking.view">
+                  <AttendanceTracking />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "adjustments",
+              element: (
+                <PermissionGuard permission="attendance.manual_adjustments.view">
+                  <ManualAdjustments />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "requests",
+              element: (
+                <PermissionGuard permission="attendance.leave_requests.view">
+                  <LeaveRequests />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "balance",
+              element: (
+                <PermissionGuard permission="attendance.leave_balance.view">
+                  <LeaveBalance />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "holidays",
+              element: (
+                <PermissionGuard permission="attendance.holidays_calendars.view">
+                  <HolidaysCalendars />
+                </PermissionGuard>
+              ),
+            },
+            { index: true, element: <Navigate to="tracking" replace /> },
+          ],
         },
         {
           path: "timesheet",
           children: [
-            { path: "entry", element: <PermissionGuard permission="timesheet.timesheet_entry.view"><TimesheetEntry /></PermissionGuard> },
-            { path: "approvals", element: <PermissionGuard permission="timesheet.timesheet_approvals.view"><TimesheetApprovals /></PermissionGuard> },
-            { index: true, element: <Navigate to="entry" replace /> }
-          ]
+            {
+              path: "entry",
+              element: (
+                <PermissionGuard permission="timesheet.timesheet_entry.view">
+                  <TimesheetEntry />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "approvals",
+              element: (
+                <PermissionGuard permission="timesheet.timesheet_approvals.view">
+                  <TimesheetApprovals />
+                </PermissionGuard>
+              ),
+            },
+            { index: true, element: <Navigate to="entry" replace /> },
+          ],
         },
         {
           path: "rostering",
           children: [
-            { path: "scheduling", element: <PermissionGuard permission="rostering.shift_scheduling.view"><ShiftScheduling /></PermissionGuard> },
-            { path: "swapping", element: <PermissionGuard permission="rostering.shift_swapping_requests.view"><ShiftSwapping /></PermissionGuard> },
-            { path: "rosters", element: <PermissionGuard permission="rostering.weekly_monthly_rosters.view"><RostersPage /></PermissionGuard> },
+            {
+              path: "scheduling",
+              element: (
+                <PermissionGuard permission="rostering.shift_scheduling.view">
+                  <ShiftScheduling />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "swapping",
+              element: (
+                <PermissionGuard permission="rostering.shift_swapping_requests.view">
+                  <ShiftSwapping />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "rosters",
+              element: (
+                <PermissionGuard permission="rostering.weekly_monthly_rosters.view">
+                  <RostersPage />
+                </PermissionGuard>
+              ),
+            },
             { path: "notifications", element: <NotificationsPage /> },
-            { path: "periods", element: <PermissionGuard permission="rostering.roster_periods.view"><RosterPeriods /></PermissionGuard> },
-            { index: true, element: <Navigate to="scheduling" replace /> }
-          ]
+            {
+              path: "periods",
+              element: (
+                <PermissionGuard permission="rostering.roster_periods.view">
+                  <RosterPeriods />
+                </PermissionGuard>
+              ),
+            },
+            { index: true, element: <Navigate to="scheduling" replace /> },
+          ],
         },
         {
           path: "payroll",
           children: [
-            { path: "run", element: <PermissionGuard permission="payroll.payroll.view"><RunPayroll /></PermissionGuard> },
+            {
+              path: "run",
+              element: (
+                <PermissionGuard permission="payroll.payroll.view">
+                  <RunPayroll />
+                </PermissionGuard>
+              ),
+            },
             { path: "payslip", element: <PayslipGeneration /> },
             { index: true, element: <Navigate to="run" replace /> },
           ],
@@ -390,16 +647,29 @@ function App() {
             { path: "tracking", element: <KPIOKRTracking /> },
             { path: "reviews", element: <PerformanceReviews /> },
             { path: "appraisals", element: <FeedbackAppraisals /> },
-            { index: true, element: <Navigate to="goals" replace /> }
-          ]
+            { index: true, element: <Navigate to="goals" replace /> },
+          ],
         },
-        { path: "employee-onboarding", element: <Outlet />, children: [
-          { path: "personal-details", element: <PersonalDetails /> },
-          { path: "documents", element: <Documents /> },
-          { path: "forms", element: <Forms /> },
-          { index: true, element: <Navigate to="personal-details" replace /> }
-        ] },
-        { path: "profile", element: <Navigate to="employee-onboarding/personal-details" replace /> },
+        {
+          path: "employee-onboarding",
+          element: <Outlet />,
+          children: [
+            { path: "personal-details", element: <PersonalDetails /> },
+            { path: "certificates", element: <Documents /> },
+            { path: "forms", element: <Forms /> },
+            { path: "policies", element: <Policies /> },
+            {
+              index: true,
+              element: <Navigate to="personal-details" replace />,
+            },
+          ],
+        },
+        {
+          path: "profile",
+          element: (
+            <Navigate to="employee-onboarding/personal-details" replace />
+          ),
+        },
       ],
     },
     // Default redirects
@@ -408,8 +678,6 @@ function App() {
     { path: "*", element: <Navigate to="/login" /> },
   ]);
 
-
-
   return (
     <ThemeProvider>
       <RouterProvider router={router} />
@@ -417,4 +685,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
