@@ -43,6 +43,7 @@ import EmployeeForm from "./pages/Employees/EmployeeForm";
 import EmployeeProfile from "./pages/Employees/EmployeeProfile";
 import EmployeeHistoryPage from "./pages/Employees/EmployeeHistoryPage";
 import ManageProfiles from "./pages/Employees/ManageProfiles";
+import ManagePolicies from "./pages/Employees/ManagePolicies";
 import ProbationConfirmation from "./pages/Employees/ProbationConfirmation";
 import ExitOffboarding from "./pages/Employees/ExitOffboarding";
 import EmployeeDocumentsPage from "./pages/Employees/EmployeeDocumentsPage";
@@ -442,6 +443,14 @@ function App() {
               element: (
                 <PermissionGuard permission="employee.add_manage_profiles.view">
                   <ManageProfiles />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "policies",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <ManagePolicies />
                 </PermissionGuard>
               ),
             },

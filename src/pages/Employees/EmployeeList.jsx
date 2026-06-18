@@ -32,6 +32,7 @@ import {
   FaTimes,
   FaSpinner,
   FaEnvelopeOpenText,
+  FaShieldAlt,
 } from "react-icons/fa";
 import { HiOutlineArchive, HiX } from "react-icons/hi";
 import { useOrganizations } from "../../contexts/OrganizationContext";
@@ -1010,12 +1011,20 @@ export default function EmployeeList() {
                 </button>
               )}
               {canAdd && (
-                <button
-                  onClick={() => navigate("/dashboard/employees/new")}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  <FaPlus className="h-3.5 w-3.5" /> Add Employee
-                </button>
+                <>
+                  <button
+                    onClick={() => navigate("/dashboard/employees/policies")}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    <FaShieldAlt className="h-3.5 w-3.5" /> Manage Policies
+                  </button>
+                  <button
+                    onClick={() => navigate("/dashboard/employees/new")}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <FaPlus className="h-3.5 w-3.5" /> Add Employee
+                  </button>
+                </>
               )}
             </div>
           </div>

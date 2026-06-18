@@ -11,7 +11,7 @@ import {
   FaDownload, FaCopy, FaExternalLinkAlt, FaEllipsisH,
   FaPlus, FaTrash, FaEye, FaFilePdf, FaFileWord, FaFileImage,
   FaTimes, FaCheck, FaSpinner, FaUpload, FaGavel, FaCheckCircle, FaClock,
-  FaClipboardList
+  FaClipboardList, FaFolder, FaChevronDown, FaChevronUp
 } from 'react-icons/fa';
 import { HiOutlineDocumentReport, HiOutlineUserGroup } from 'react-icons/hi';
 import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument, deleteEmployeeDocument } from '../../services/employeeService';
@@ -237,48 +237,60 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
 };
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) => {
+const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType, documentMasters }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  // In DocumentUploadModal component - Update initial state
+  const [showCustomDocType, setShowCustomDocType] = useState(false);
   const [formData, setFormData] = useState({
     document_type: '',
+    custom_document_type: '',
     issue_date: '',
     expiry_date: '',
     file: null,
-    file_name: '', // Add this
+    file_name: '',
   });
 
-  // In EmployeeProfile.jsx - Update handleFileChange
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        document_type: preselectedDocumentType || '',
+        custom_document_type: '',
+        issue_date: '',
+        expiry_date: '',
+        file: null,
+        file_name: '',
+      });
+      setShowCustomDocType(
+        preselectedDocumentType === 'Other' || preselectedDocumentType === 'Other Document'
+      );
+      setError('');
+    }
+  }, [isOpen, preselectedDocumentType]);
+
+  const handleDocTypeChange = (e) => {
+    const val = e.target.value;
+    setFormData((prev) => ({ ...prev, document_type: val }));
+    setShowCustomDocType(val === 'Other' || val === 'Other Document');
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Get filename without extension
       const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
 
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         file: file,
-        // Auto-populate file_name with a cleaned version of the filename
-        file_name: formData.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        // Auto-suggest document type from filename if not set
-        document_type: formData.document_type ||
-          fileNameWithoutExt
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase())
-      });
+        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        document_type: prev.document_type || (
+          preselectedDocumentType || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        )
+      }));
     }
   };
 
-  // In EmployeeProfile.jsx - FIXED handleSubmit function in DocumentUploadModal
-  // In EmployeeProfile.jsx - Update the handleSubmit function in DocumentUploadModal
-  // In EmployeeProfile.jsx - CORRECTED handleSubmit function
-  // In EmployeeProfile.jsx - UPDATED handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // console.log('DEBUG - handleSubmit triggered in EmployeeProfile');
-    // console.log('Employee ID:', employeeId);
-    // console.log('Form data:', formData);
 
     if (!formData.file) {
       setError('Please select a file to upload');
@@ -291,20 +303,16 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
     try {
       const actualFormData = new FormData();
 
-      // CORRECT FIELD NAMES BASED ON PREVIOUS VALIDATION ERRORS:
-      // 1. Add employee_id (required)
       actualFormData.append('employee_id', employeeId);
 
-      // 2. API expects 'document_type' - NOT document_name!
-      actualFormData.append('document_type', formData.document_type);
+      const finalDocType = showCustomDocType
+        ? (formData.custom_document_type || 'Other Document')
+        : formData.document_type;
+      actualFormData.append('document_type', finalDocType);
 
-      // 3. API expects 'file' field for file upload - NOT document!
       actualFormData.append('file', formData.file);
-
-      // 4. API expects 'file_name' field (required)
       actualFormData.append('file_name', formData.file_name || formData.file.name || 'document');
 
-      // 5. Optional fields
       if (formData.issue_date) {
         actualFormData.append('issue_date', formData.issue_date);
       }
@@ -312,38 +320,17 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
         actualFormData.append('expiry_date', formData.expiry_date);
       }
 
-      // Debug: Show FormData contents
-      //console.log('DEBUG - CORRECTED EmployeeProfile FormData being sent:');
-      const formDataObj = {};
-      for (let pair of actualFormData.entries()) {
-        const value = pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1];
-        //console.log(`${pair[0]}: ${value}`);
-        formDataObj[pair[0]] = value;
-      }
-      //console.log('CORRECTED FormData summary:', formDataObj);
-
-      // Call the API
       await uploadEmployeeDocument(actualFormData);
 
-      //console.log('DEBUG - Document upload successful');
       onUploadSuccess();
       onClose();
     } catch (err) {
-      console.error('Upload error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        url: err.config?.url,
-        config: err.config
-      });
+      console.error('Upload error details:', err);
 
       if (err.response?.status === 422) {
         const errors = err.response.data?.errors || {};
         const errorMessages = Object.values(errors).flat();
         setError(errorMessages.join(', ') || 'Validation failed. Please check all fields.');
-
-        // Show specific field errors if available
-        console.error('Validation errors:', errors);
       } else {
         setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
       }
@@ -383,30 +370,58 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess }) =
               </label>
               <select
                 value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                onChange={handleDocTypeChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
                 <option value="">Select Type</option>
-                <option value="Aadhaar Card">Aadhaar Card</option>
-                <option value="PAN Card">PAN Card</option>
-                <option value="Passport">Passport</option>
-                <option value="Driving License">Driving License</option>
-                <option value="Visa">Visa</option>
-                <option value="Work Permit">Work Permit</option>
-                <option value="Employment Contract">Employment Contract</option>
-                <option value="Offer Letter">Offer Letter</option>
-                <option value="Experience Letter">Experience Letter</option>
-                <option value="Salary Slip">Salary Slip</option>
-                <option value="Bank Statement">Bank Statement</option>
-                <option value="Tax Document">Tax Document</option>
-                <option value="Education Certificate">Education Certificate</option>
-                <option value="Professional Certificate">Professional Certificate</option>
-                <option value="Other">Other</option>
+                {documentMasters && documentMasters.length > 0 ? (
+                  <>
+                    {documentMasters.map((master) => (
+                      <option key={master.id} value={master.document_type}>
+                        {master.icon || '📁'} {master.document_name}
+                      </option>
+                    ))}
+                    <option value="Other Document">📁 Other Document</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="PAN Card">PAN Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="Visa">Visa</option>
+                    <option value="Work Permit">Work Permit</option>
+                    <option value="Employment Contract">Employment Contract</option>
+                    <option value="Offer Letter">Offer Letter</option>
+                    <option value="Experience Letter">Experience Letter</option>
+                    <option value="Salary Slip">Salary Slip</option>
+                    <option value="Bank Statement">Bank Statement</option>
+                    <option value="Tax Document">Tax Document</option>
+                    <option value="Education Certificate">Education Certificate</option>
+                    <option value="Professional Certificate">Professional Certificate</option>
+                    <option value="Other">Other</option>
+                  </>
+                )}
               </select>
             </div>
 
-            {/* File Name - ADD THIS */}
+            {showCustomDocType && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Document Type *
+                </label>
+                <input
+                  type="text"
+                  value={formData.custom_document_type || ''}
+                  onChange={(e) => setFormData({ ...formData, custom_document_type: e.target.value })}
+                  placeholder="Enter document type (e.g., Certificate of Service)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 File Name *
@@ -650,6 +665,280 @@ const SortableFormItem = ({ form, employeeId }) => {
   );
 };
 
+const SortableProfilePolicyItem = ({ policy, index }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: policy.id });
+
+  const style = {
+    transform: transform ? CSS.Transform.toString(transform) : undefined,
+    transition: transition || "transform 200ms ease, shadow-md 200ms ease",
+    zIndex: isDragging ? 50 : "auto",
+  };
+
+  const isViewed =
+    policy.viewed === true ||
+    policy.viewed === 1 ||
+    String(policy.viewed).toLowerCase() === "true";
+
+  const targetLink = policy.link || policy.description;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 border rounded-xl transition-all bg-white relative ${
+        isDragging
+          ? "border-blue-400 shadow-xl scale-[1.02] ring-4 ring-blue-50/50 cursor-grabbing"
+          : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+      }`}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 text-gray-400 hover:text-gray-600 flex items-center justify-center select-none shrink-0"
+        title="Drag to reorder"
+      >
+        <svg
+          className="w-4 h-4 text-gray-400 hover:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 8h16M4 16h16"
+          />
+        </svg>
+      </div>
+
+      <div className="p-3 bg-blue-50 text-blue-600 rounded-lg select-none shrink-0">
+        <FaShieldAlt className="text-xl" />
+      </div>
+
+      <div className="text-left flex-grow min-w-0 pr-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="font-semibold text-gray-800 break-words">{policy.policy_name}</h4>
+          {policy.is_required === 1 && (
+            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
+              Required
+            </span>
+          )}
+        </div>
+        {targetLink && (
+          <a
+            href={targetLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1 truncate inline-flex max-w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="truncate max-w-[280px]">{targetLink}</span>
+            <FaExternalLinkAlt size={10} className="shrink-0" />
+          </a>
+        )}
+      </div>
+
+      {/* Viewed Status */}
+      <div className="shrink-0 flex items-center justify-center">
+        <span
+          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all ${
+            isViewed
+              ? "bg-green-100 text-green-700 border border-green-200"
+              : "bg-amber-100 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {isViewed ? (
+            <>
+              <FaCheck size={10} className="shrink-0" />
+              Viewed
+            </>
+          ) : (
+            "Not Viewed"
+          )}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const SortableDocumentMasterItem = ({
+  master,
+  documents,
+  onView,
+  onDelete,
+  canDelete,
+  onUpload,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: master.id });
+
+  const style = {
+    transform: transform ? CSS.Transform.toString(transform) : undefined,
+    transition: transition || "transform 200ms ease, shadow-md 200ms ease",
+    zIndex: isDragging ? 50 : "auto",
+  };
+
+  const itemDocuments = documents.filter(
+    (doc) =>
+      doc.document_type === master.document_type ||
+      doc.document_type?.toLowerCase().includes(master.document_type.split(" ")[0].toLowerCase())
+  );
+
+  const hasApprovedDoc = itemDocuments.some((doc) => doc.verify === "approved");
+  const isUploaded = itemDocuments.length > 0;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`border rounded-xl p-4 transition-all bg-white relative ${
+        isDragging
+          ? "border-blue-400 shadow-xl scale-[1.02] ring-4 ring-blue-50/50 cursor-grabbing"
+          : isUploaded
+          ? "border-green-200 shadow-sm hover:shadow-md hover:border-green-300"
+          : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          {/* Drag handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 mt-0.5 text-gray-400 hover:text-gray-600 flex items-center justify-center select-none shrink-0"
+            title="Drag to reorder"
+          >
+            <svg
+              className="w-4 h-4 text-gray-400 hover:text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 8h16M4 16h16"
+              />
+            </svg>
+          </div>
+
+          <div className="text-xl shrink-0 mt-0.5 select-none">
+            {master.icon || "📁"}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-semibold text-gray-800 break-words">{master.document_name}</h4>
+              {master.is_required === 1 && (
+                <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
+                  Required
+                </span>
+              )}
+              {master.has_expiry === 1 && (
+                <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
+                  Expires {master.expiry_years ? `${master.expiry_years}y` : ""}
+                </span>
+              )}
+            </div>
+            {master.description && (
+              <p className="text-xs text-gray-500 mt-1 break-words">{master.description}</p>
+            )}
+
+            {/* Nested uploaded document cards */}
+            {isUploaded && (
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                {itemDocuments.map((doc) => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    onView={onView}
+                    onDelete={onDelete}
+                    canDelete={canDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 ml-3">
+          {!hasApprovedDoc ? (
+            <button
+              onClick={() => onUpload(master.document_type)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold ${
+                isUploaded ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"
+              } text-white rounded-lg whitespace-nowrap`}
+            >
+              {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />}
+              {isUploaded ? "Replace" : "Upload"}
+            </button>
+          ) : (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg whitespace-nowrap font-semibold">
+              <FaCheckCircle size={12} /> Verified
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OtherDocumentsSection = ({ documents, onView, onDelete, canDelete }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  if (documents.length === 0) return null;
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden mt-6 bg-white shadow-sm">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-5 py-4 bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors border-b border-gray-100"
+      >
+        <div className="flex items-center gap-2">
+          <FaFolder className="text-gray-500 text-lg" />
+          <h3 className="font-semibold text-gray-800">Other Documents</h3>
+          <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-medium">
+            {documents.length}
+          </span>
+        </div>
+        {isExpanded ? <FaChevronUp className="text-gray-400" /> : <FaChevronDown className="text-gray-400" />}
+      </button>
+
+      {isExpanded && (
+        <div className="p-4 bg-gray-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {documents.map((doc) => (
+              <DocumentCard
+                key={doc.id}
+                document={doc}
+                onView={onView}
+                onDelete={onDelete}
+                canDelete={canDelete}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function EmployeeProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -662,6 +951,11 @@ export default function EmployeeProfile() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [formsList, setFormsList] = useState([]);
   const [loadingForms, setLoadingForms] = useState(false);
+  const [documentMastersList, setDocumentMastersList] = useState([]);
+  const [loadingMasters, setLoadingMasters] = useState(false);
+  const [preselectedDocType, setPreselectedDocType] = useState(null);
+  const [policiesList, setPoliciesList] = useState([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -689,9 +983,51 @@ export default function EmployeeProfile() {
     }
   };
 
+  const fetchPolicies = async () => {
+    try {
+      setLoadingPolicies(true);
+      const response = await axiosClient.get('/employee/policies', {
+        params: { employee_id: id }
+      });
+      let policyList = [];
+      if (Array.isArray(response.data)) {
+        policyList = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        policyList = response.data.data;
+      }
+      const sorted = [...policyList].sort((a, b) => a.sort_order - b.sort_order);
+      setPoliciesList(sorted);
+    } catch (err) {
+      console.error('Error fetching employee policies:', err);
+      toast.error('Failed to load employee policies');
+    } finally {
+      setLoadingPolicies(false);
+    }
+  };
+
+  const fetchDocumentMasters = async () => {
+    try {
+      setLoadingMasters(true);
+      const response = await axiosClient.get('/document-masters');
+      if (response.data?.data) {
+        const sorted = [...response.data.data].sort((a, b) => a.sort_order - b.sort_order);
+        setDocumentMastersList(sorted);
+      }
+    } catch (err) {
+      console.error('Error fetching document master order:', err);
+    } finally {
+      setLoadingMasters(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'forms') {
       fetchForms();
+    } else if (activeTab === 'documents') {
+      fetchDocumentMasters();
+      fetchDocuments();
+    } else if (activeTab === 'policies') {
+      fetchPolicies();
     }
   }, [activeTab]);
 
@@ -723,6 +1059,70 @@ export default function EmployeeProfile() {
         console.error('Error updating form order:', err);
         toast.error('Failed to save order on server');
         fetchForms();
+      }
+    }
+  };
+
+  const handleDocumentDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (active && over && active.id !== over.id) {
+      const oldIndex = documentMastersList.findIndex((item) => item.id === active.id);
+      const newIndex = documentMastersList.findIndex((item) => item.id === over.id);
+
+      const newOrder = arrayMove(documentMastersList, oldIndex, newIndex);
+      setDocumentMastersList(newOrder);
+
+      const payload = {
+        documents: newOrder.map((doc, index) => ({
+          id: doc.id,
+          sort_order: index + 1,
+        })),
+      };
+
+      try {
+        const response = await axiosClient.post('/document-masters/update-order', payload);
+        if (response.data?.status) {
+          toast.success('Document order updated successfully!');
+        } else {
+          toast.error('Failed to update document order');
+        }
+      } catch (err) {
+        console.error('Error updating document order:', err);
+        toast.error('Failed to save document order on server');
+        fetchDocumentMasters();
+      }
+    }
+  };
+
+  const handlePolicyDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (active && over && active.id !== over.id) {
+      const oldIndex = policiesList.findIndex((item) => item.id === active.id);
+      const newIndex = policiesList.findIndex((item) => item.id === over.id);
+
+      const newOrder = arrayMove(policiesList, oldIndex, newIndex);
+      setPoliciesList(newOrder);
+
+      const payload = {
+        policies: newOrder.map((policy, index) => ({
+          id: policy.id,
+          sort_order: index + 1,
+        })),
+      };
+
+      try {
+        const response = await axiosClient.post('/policy-masters/update-order', payload);
+        if (response.data && response.data.status) {
+          toast.success(response.data.message || 'Policy order updated successfully!');
+        } else {
+          toast.error('Failed to update policy order');
+        }
+      } catch (err) {
+        console.error('Error updating policy order:', err);
+        toast.error('Failed to save policy order on server');
+        fetchPolicies();
       }
     }
   };
@@ -808,6 +1208,11 @@ export default function EmployeeProfile() {
   // Handle document upload success
   const handleUploadSuccess = () => {
     fetchDocuments(); // Refresh documents list
+  };
+
+  const handleUploadClick = (docType) => {
+    setPreselectedDocType(docType);
+    setUploadModalOpen(true);
   };
 
   // Handle view document
@@ -907,6 +1312,8 @@ export default function EmployeeProfile() {
         onClose={() => setUploadModalOpen(false)}
         employeeId={employee.id}
         onUploadSuccess={handleUploadSuccess}
+        preselectedDocumentType={preselectedDocType}
+        documentMasters={documentMastersList}
       />
 
       <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -1013,7 +1420,7 @@ export default function EmployeeProfile() {
             {/* Tabs */}
             <div className="border-b border-gray-200">
               <nav className="flex overflow-x-auto">
-                {['overview', 'employment', 'financial', 'documents', 'forms'].map((tab) => (
+                {['overview', 'employment', 'financial', 'documents', 'forms', 'policies'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1238,13 +1645,16 @@ export default function EmployeeProfile() {
                     <div>
                       <h3 className="text-xl font-semibold text-gray-800">Employee Documents</h3>
                       <p className="text-gray-600">
-                        Manage documents for {employee.first_name} {employee.last_name}
+                        Drag and drop to reorder compliance and mandatory document categories for {employee.first_name} {employee.last_name}
                       </p>
                     </div>
                     <div className="flex gap-3">
                       {canEdit && (
                         <button
-                          onClick={() => setUploadModalOpen(true)}
+                          onClick={() => {
+                            setPreselectedDocType(null);
+                            setUploadModalOpen(true);
+                          }}
                           className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           <FaPlus /> Upload Document
@@ -1259,10 +1669,51 @@ export default function EmployeeProfile() {
                     </div>
                   </div>
 
-                  {loadingDocuments ? (
+                  {loadingMasters || loadingDocuments ? (
                     <div className="py-12 text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                       <p className="text-gray-600">Loading documents...</p>
+                    </div>
+                  ) : documentMastersList.length > 0 ? (
+                    <div>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDocumentDragEnd}
+                      >
+                        <SortableContext
+                          items={documentMastersList.map((d) => d.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="flex flex-col gap-3 max-w-3xl">
+                            {documentMastersList.map((master) => (
+                              <SortableDocumentMasterItem
+                                key={master.id}
+                                master={master}
+                                documents={documents}
+                                onView={handleViewDocument}
+                                onDelete={handleDeleteDocument}
+                                canDelete={canEdit}
+                                onUpload={handleUploadClick}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+
+                      <OtherDocumentsSection
+                        documents={documents.filter(
+                          (doc) =>
+                            !documentMastersList.some(
+                              (m) =>
+                                doc.document_type === m.document_type ||
+                                doc.document_type?.toLowerCase().includes(m.document_type.split(" ")[0].toLowerCase())
+                            )
+                        )}
+                        onView={handleViewDocument}
+                        onDelete={handleDeleteDocument}
+                        canDelete={canEdit}
+                      />
                     </div>
                   ) : documents.length > 0 ? (
                     <div className="space-y-4">
@@ -1286,7 +1737,10 @@ export default function EmployeeProfile() {
                         This employee doesn't have any documents yet. Upload important documents like IDs, contracts, certificates, etc.
                       </p>
                       <button
-                        onClick={() => setUploadModalOpen(true)}
+                        onClick={() => {
+                          setPreselectedDocType(null);
+                          setUploadModalOpen(true);
+                        }}
                         className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 mx-auto"
                       >
                         <FaUpload /> Upload First Document
@@ -1338,6 +1792,54 @@ export default function EmployeeProfile() {
                       <h4 className="text-xl font-semibold text-gray-700 mb-2">No Onboarding Forms Found</h4>
                       <p className="text-gray-600 max-w-md mx-auto">
                         There are no forms configured for onboarding.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Policies Tab */}
+              {activeTab === 'policies' && (
+                <div>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800">Employee Onboarding Policies</h3>
+                    <p className="text-gray-600">
+                      Drag and drop to reorder compliance and onboarding policies completed by {employee.first_name} {employee.last_name}
+                    </p>
+                  </div>
+
+                  {loadingPolicies ? (
+                    <div className="py-12 text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading onboarding policies order...</p>
+                    </div>
+                  ) : policiesList.length > 0 ? (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handlePolicyDragEnd}
+                    >
+                      <SortableContext
+                        items={policiesList.map((p) => p.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="flex flex-col gap-3 max-w-3xl">
+                          {policiesList.map((policy, index) => (
+                            <SortableProfilePolicyItem
+                              key={policy.id}
+                              policy={policy}
+                              index={index}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-2xl">
+                      <FaShieldAlt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h4 className="text-xl font-semibold text-gray-700 mb-2">No Onboarding Policies Found</h4>
+                      <p className="text-gray-600 max-w-md mx-auto">
+                        There are no policies configured for onboarding.
                       </p>
                     </div>
                   )}
