@@ -1,22 +1,64 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from 'react';
-import usePermissions from '../../hooks/usePermissions';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import usePermissions from "../../hooks/usePermissions";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-  FaUser, FaBriefcase, FaBuilding, FaPhone, FaEnvelope,
-  FaBirthdayCake, FaMapMarkerAlt, FaFileContract, FaUniversity,
-  FaExclamationTriangle, FaArrowLeft, FaDollarSign, FaShieldAlt,
-  FaPassport, FaCalendarAlt, FaEdit, FaFileAlt, FaHistory,
-  FaPrint, FaShare, FaQrcode, FaIdCard, FaTasks, FaChartLine,
-  FaDownload, FaCopy, FaExternalLinkAlt, FaEllipsisH,
-  FaPlus, FaTrash, FaEye, FaFilePdf, FaFileWord, FaFileImage,
-  FaTimes, FaCheck, FaSpinner, FaUpload, FaGavel, FaCheckCircle, FaClock,
-  FaClipboardList, FaFolder, FaChevronDown, FaChevronUp
-} from 'react-icons/fa';
-import { HiOutlineDocumentReport, HiOutlineUserGroup } from 'react-icons/hi';
-import { getEmployee, getEmployeeDocuments, uploadEmployeeDocument, deleteEmployeeDocument } from '../../services/employeeService';
-import axiosClient from '../../axiosClient';
-import { toast } from 'react-toastify';
+  FaUser,
+  FaBriefcase,
+  FaBuilding,
+  FaPhone,
+  FaEnvelope,
+  FaBirthdayCake,
+  FaMapMarkerAlt,
+  FaFileContract,
+  FaUniversity,
+  FaExclamationTriangle,
+  FaArrowLeft,
+  FaDollarSign,
+  FaShieldAlt,
+  FaPassport,
+  FaCalendarAlt,
+  FaEdit,
+  FaFileAlt,
+  FaHistory,
+  FaPrint,
+  FaShare,
+  FaQrcode,
+  FaIdCard,
+  FaTasks,
+  FaChartLine,
+  FaDownload,
+  FaCopy,
+  FaExternalLinkAlt,
+  FaEllipsisH,
+  FaPlus,
+  FaTrash,
+  FaEye,
+  FaFilePdf,
+  FaFileWord,
+  FaFileImage,
+  FaTimes,
+  FaCheck,
+  FaSpinner,
+  FaUpload,
+  FaGavel,
+  FaCheckCircle,
+  FaClock,
+  FaClipboardList,
+  FaFolder,
+  FaChevronDown,
+  FaChevronUp,
+} from "react-icons/fa";
+import { HiOutlineDocumentReport, HiOutlineUserGroup } from "react-icons/hi";
+import {
+  getEmployee,
+  getEmployeeDocuments,
+  uploadEmployeeDocument,
+  deleteEmployeeDocument,
+  verifyEmployeeDocument,
+} from "../../services/employeeService";
+import axiosClient from "../../axiosClient";
+import { toast } from "react-toastify";
 import {
   DndContext,
   closestCenter,
@@ -24,29 +66,32 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const REQUIRED_DOCUMENT_TYPES = [
-  'Working With Children Check',
-  'First Aid Certificate',
-  'Police Check',
-  'Qualification Certificate',
-  'Immunisation Record',
-  'Code of Conduct',
-  'Induction',
-  'Right to Work'
+  "Working With Children Check",
+  "First Aid Certificate",
+  "Police Check",
+  "Qualification Certificate",
+  "Immunisation Record",
+  "Code of Conduct",
+  "Induction",
+  "Right to Work",
 ];
 
-const normalizeDocumentType = (value = '') =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const normalizeDocumentType = (value = "") =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 
 const isRequiredDocument = (documentType) => {
   const normalizedType = normalizeDocumentType(documentType);
@@ -54,14 +99,16 @@ const isRequiredDocument = (documentType) => {
 
   return REQUIRED_DOCUMENT_TYPES.some((requiredType) => {
     const normalizedRequiredType = normalizeDocumentType(requiredType);
-    return normalizedType === normalizedRequiredType
-      || normalizedType.includes(normalizedRequiredType)
-      || normalizedRequiredType.includes(normalizedType);
+    return (
+      normalizedType === normalizedRequiredType ||
+      normalizedType.includes(normalizedRequiredType) ||
+      normalizedRequiredType.includes(normalizedType)
+    );
   });
 };
 
 // Detail Field Component
-const DetailField = ({ icon, label, value, className = '' }) => (
+const DetailField = ({ icon, label, value, className = "" }) => (
   <div className={`flex items-start py-3 ${className}`}>
     <div className="text-gray-500 mr-4 mt-1 flex-shrink-0">{icon}</div>
     <div className="flex-grow">
@@ -74,20 +121,18 @@ const DetailField = ({ icon, label, value, className = '' }) => (
 );
 
 // Stat Card Component
-const StatCard = ({ icon, label, value, color = 'blue' }) => {
+const StatCard = ({ icon, label, value, color = "blue" }) => {
   const colors = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600'
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    purple: "bg-purple-50 text-purple-600",
+    orange: "bg-orange-50 text-orange-600",
   };
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${colors[color]}`}>
-          {icon}
-        </div>
+        <div className={`p-2 rounded-lg ${colors[color]}`}>{icon}</div>
         <span className="text-lg font-bold text-gray-800">{value}</span>
       </div>
       <p className="text-sm text-gray-600">{label}</p>
@@ -96,7 +141,12 @@ const StatCard = ({ icon, label, value, color = 'blue' }) => {
 };
 
 // Action Button Component
-const ActionButton = ({ icon, label, onClick, color = 'bg-blue-600 hover:bg-blue-700' }) => (
+const ActionButton = ({
+  icon,
+  label,
+  onClick,
+  color = "bg-blue-600 hover:bg-blue-700",
+}) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-2.5 text-white rounded-lg font-medium transition-colors ${color}`}
@@ -107,24 +157,26 @@ const ActionButton = ({ icon, label, onClick, color = 'bg-blue-600 hover:bg-blue
 );
 
 // Document Card Component
-const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
+const DocumentCard = ({ document, onView, onDelete, canDelete, onVerify }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
-    const ext = fileName.split('.').pop()?.toLowerCase();
+    const ext = fileName.split(".").pop()?.toLowerCase();
 
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
-    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500" />;
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500" />;
+    if (ext === "pdf") return <FaFilePdf className="text-red-500" />;
+    if (["doc", "docx"].includes(ext))
+      return <FaFileWord className="text-blue-500" />;
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext))
+      return <FaFileImage className="text-green-500" />;
     return <FaFileAlt className="text-gray-500" />;
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString('en-AU', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
       });
     } catch {
       return dateString;
@@ -132,7 +184,7 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
   };
 
   const getStatusBadge = () => {
-    if (document.verify === 'approved') {
+    if (document.verify === "approved") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">
           <FaCheckCircle size={10} /> Approved
@@ -140,7 +192,7 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
       );
     }
 
-    if (document.verify === 'rejected') {
+    if (document.verify === "rejected") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-semibold">
           <FaTimes size={10} /> Rejected
@@ -156,11 +208,14 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
   };
 
   const required = isRequiredDocument(document.document_type);
-  const expired = document.expiry_date && new Date(document.expiry_date) < new Date();
+  const expired =
+    document.expiry_date && new Date(document.expiry_date) < new Date();
 
   return (
-    <div className={`bg-white border ${document.verify === 'approved' ? 'border-green-200' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}>
-      {document.verify === 'approved' && (
+    <div
+      className={`bg-white border ${document.verify === "approved" ? "border-green-200" : "border-gray-200"} rounded-lg p-4 hover:shadow-md transition-shadow relative overflow-hidden`}
+    >
+      {document.verify === "approved" && (
         <FaCheckCircle
           size={60}
           className="absolute -right-3 -top-3 text-green-500 opacity-10 pointer-events-none"
@@ -168,12 +223,12 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
       )}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
-          <div className="text-xl mt-1">
-            {getFileIcon(document.file_name)}
-          </div>
+          <div className="text-xl mt-1">{getFileIcon(document.file_name)}</div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-semibold text-gray-800">{document.file_name || document.document_type || 'Document'}</h4>
+              <h4 className="font-semibold text-gray-800">
+                {document.file_name || document.document_type || "Document"}
+              </h4>
               {getStatusBadge()}
               {required && (
                 <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-semibold">
@@ -189,8 +244,11 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
                 </span>
               )}
               {document.expiry_date && (
-                <span className={`text-xs ${expired ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                  Expires: {formatDate(document.expiry_date)}{expired ? ' (Expired)' : ''}
+                <span
+                  className={`text-xs ${expired ? "text-red-600 font-semibold" : "text-gray-500"}`}
+                >
+                  Expires: {formatDate(document.expiry_date)}
+                  {expired ? " (Expired)" : ""}
                 </span>
               )}
             </div>
@@ -221,70 +279,105 @@ const DocumentCard = ({ document, onView, onDelete, canDelete }) => {
         <span className="text-xs text-gray-400">
           Uploaded: {formatDate(document.created_at)}
         </span>
-        {document.file_url && (
-          <a
-            href={`https://api.chrispp.au${document.file_url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            <FaDownload size={12} /> Download
-          </a>
-        )}
+        <div className="flex items-center gap-2">
+          {onVerify && document.verify !== "approved" && (
+            <button
+              onClick={() => onVerify(document.id, "approved")}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              title="Approve Document"
+            >
+              <FaCheck size={10} /> Approve
+            </button>
+          )}
+          {onVerify && document.verify !== "rejected" && (
+            <button
+              onClick={() => onVerify(document.id, "rejected")}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              title="Reject Document"
+            >
+              <FaTimes size={10} /> Reject
+            </button>
+          )}
+          {document.file_url && (
+            <a
+              href={`https://api.chrispp.au${document.file_url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <FaDownload size={12} /> Download
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, preselectedDocumentType, documentMasters }) => {
+const DocumentUploadModal = ({
+  isOpen,
+  onClose,
+  employeeId,
+  onUploadSuccess,
+  preselectedDocumentType,
+  documentMasters,
+}) => {
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showCustomDocType, setShowCustomDocType] = useState(false);
   const [formData, setFormData] = useState({
-    document_type: '',
-    custom_document_type: '',
-    issue_date: '',
-    expiry_date: '',
+    document_type: "",
+    custom_document_type: "",
+    issue_date: "",
+    expiry_date: "",
     file: null,
-    file_name: '',
+    file_name: "",
   });
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        document_type: preselectedDocumentType || '',
-        custom_document_type: '',
-        issue_date: '',
-        expiry_date: '',
+        document_type: preselectedDocumentType || "",
+        custom_document_type: "",
+        issue_date: "",
+        expiry_date: "",
         file: null,
-        file_name: '',
+        file_name: "",
       });
       setShowCustomDocType(
-        preselectedDocumentType === 'Other' || preselectedDocumentType === 'Other Document'
+        preselectedDocumentType === "Other" ||
+          preselectedDocumentType === "Other Document",
       );
-      setError('');
+      setError("");
     }
   }, [isOpen, preselectedDocumentType]);
 
   const handleDocTypeChange = (e) => {
     const val = e.target.value;
     setFormData((prev) => ({ ...prev, document_type: val }));
-    setShowCustomDocType(val === 'Other' || val === 'Other Document');
+    setShowCustomDocType(val === "Other" || val === "Other Document");
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+      const fileNameWithoutExt = file.name.split(".").slice(0, -1).join(".");
 
       setFormData((prev) => ({
         ...prev,
         file: file,
-        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        document_type: prev.document_type || (
-          preselectedDocumentType || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-        )
+        file_name:
+          prev.file_name ||
+          fileNameWithoutExt
+            .replace(/[_-]/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
+        document_type:
+          prev.document_type ||
+          preselectedDocumentType ||
+          fileNameWithoutExt
+            .replace(/[_-]/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
       }));
     }
   };
@@ -293,31 +386,34 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
     e.preventDefault();
 
     if (!formData.file) {
-      setError('Please select a file to upload');
+      setError("Please select a file to upload");
       return;
     }
 
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
       const actualFormData = new FormData();
 
-      actualFormData.append('employee_id', employeeId);
+      actualFormData.append("employee_id", employeeId);
 
       const finalDocType = showCustomDocType
-        ? (formData.custom_document_type || 'Other Document')
+        ? formData.custom_document_type || "Other Document"
         : formData.document_type;
-      actualFormData.append('document_type', finalDocType);
+      actualFormData.append("document_type", finalDocType);
 
-      actualFormData.append('file', formData.file);
-      actualFormData.append('file_name', formData.file_name || formData.file.name || 'document');
+      actualFormData.append("file", formData.file);
+      actualFormData.append(
+        "file_name",
+        formData.file_name || formData.file.name || "document",
+      );
 
       if (formData.issue_date) {
-        actualFormData.append('issue_date', formData.issue_date);
+        actualFormData.append("issue_date", formData.issue_date);
       }
       if (formData.expiry_date) {
-        actualFormData.append('expiry_date', formData.expiry_date);
+        actualFormData.append("expiry_date", formData.expiry_date);
       }
 
       await uploadEmployeeDocument(actualFormData);
@@ -325,14 +421,20 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       onUploadSuccess();
       onClose();
     } catch (err) {
-      console.error('Upload error details:', err);
+      console.error("Upload error details:", err);
 
       if (err.response?.status === 422) {
         const errors = err.response.data?.errors || {};
         const errorMessages = Object.values(errors).flat();
-        setError(errorMessages.join(', ') || 'Validation failed. Please check all fields.');
+        setError(
+          errorMessages.join(", ") ||
+            "Validation failed. Please check all fields.",
+        );
       } else {
-        setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
+        setError(
+          err.response?.data?.message ||
+            "Failed to upload document. Please try again.",
+        );
       }
     } finally {
       setUploading(false);
@@ -346,7 +448,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
       <div className="bg-white rounded-2xl w-full max-w-md">
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-800">Upload Document</h3>
+            <h3 className="text-xl font-semibold text-gray-800">
+              Upload Document
+            </h3>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg"
@@ -379,7 +483,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                   <>
                     {documentMasters.map((master) => (
                       <option key={master.id} value={master.document_type}>
-                        {master.icon || '📁'} {master.document_name}
+                        {master.icon || "📁"} {master.document_name}
                       </option>
                     ))}
                     <option value="Other Document">📁 Other Document</option>
@@ -392,14 +496,20 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                     <option value="Driving License">Driving License</option>
                     <option value="Visa">Visa</option>
                     <option value="Work Permit">Work Permit</option>
-                    <option value="Employment Contract">Employment Contract</option>
+                    <option value="Employment Contract">
+                      Employment Contract
+                    </option>
                     <option value="Offer Letter">Offer Letter</option>
                     <option value="Experience Letter">Experience Letter</option>
                     <option value="Salary Slip">Salary Slip</option>
                     <option value="Bank Statement">Bank Statement</option>
                     <option value="Tax Document">Tax Document</option>
-                    <option value="Education Certificate">Education Certificate</option>
-                    <option value="Professional Certificate">Professional Certificate</option>
+                    <option value="Education Certificate">
+                      Education Certificate
+                    </option>
+                    <option value="Professional Certificate">
+                      Professional Certificate
+                    </option>
                     <option value="Other">Other</option>
                   </>
                 )}
@@ -413,8 +523,13 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 </label>
                 <input
                   type="text"
-                  value={formData.custom_document_type || ''}
-                  onChange={(e) => setFormData({ ...formData, custom_document_type: e.target.value })}
+                  value={formData.custom_document_type || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      custom_document_type: e.target.value,
+                    })
+                  }
                   placeholder="Enter document type (e.g., Certificate of Service)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
@@ -428,8 +543,10 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
               </label>
               <input
                 type="text"
-                value={formData.file_name || ''}
-                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                value={formData.file_name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, file_name: e.target.value })
+                }
                 placeholder="Enter a descriptive file name (e.g., 'John_Aadhaar_Card')"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
@@ -448,7 +565,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 <input
                   type="date"
                   value={formData.issue_date}
-                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, issue_date: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -459,7 +578,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, pre
                 <input
                   type="date"
                   value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expiry_date: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -539,7 +660,8 @@ const FORM_META = {
     colorBg: "bg-purple-100 group-hover:bg-purple-200",
     colorIcon: "text-purple-600",
     colorBorder: "hover:border-purple-500 hover:bg-purple-50",
-    description: "Consent form for appointment as a Person in Day-to-Day Charge",
+    description:
+      "Consent form for appointment as a Person in Day-to-Day Charge",
   },
   "child-safe-code-of-conduct": {
     url: (empId) => `/child-safe-code-of-policy-form?employeeId=${empId}`,
@@ -647,7 +769,9 @@ const SortableFormItem = ({ form, employeeId }) => {
       </div>
 
       <div className="text-left flex-1 min-w-0">
-        <h4 className="font-semibold text-gray-800 truncate">{form.form_name}</h4>
+        <h4 className="font-semibold text-gray-800 truncate">
+          {form.form_name}
+        </h4>
         <p className="text-sm text-gray-500 truncate">{meta.description}</p>
       </div>
 
@@ -685,6 +809,11 @@ const SortableProfilePolicyItem = ({ policy, index }) => {
     policy.viewed === true ||
     policy.viewed === 1 ||
     String(policy.viewed).toLowerCase() === "true";
+
+  const isAcknowledged =
+    policy.acknowledged === true ||
+    policy.acknowledged === 1 ||
+    String(policy.acknowledged).toLowerCase() === "true";
 
   const targetLink = policy.link || policy.description;
 
@@ -726,7 +855,9 @@ const SortableProfilePolicyItem = ({ policy, index }) => {
 
       <div className="text-left flex-grow min-w-0 pr-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="font-semibold text-gray-800 break-words">{policy.policy_name}</h4>
+          <h4 className="font-semibold text-gray-800 break-words">
+            {policy.policy_name}
+          </h4>
           {policy.is_required === 1 && (
             <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
               Required
@@ -747,8 +878,8 @@ const SortableProfilePolicyItem = ({ policy, index }) => {
         )}
       </div>
 
-      {/* Viewed Status */}
-      <div className="shrink-0 flex items-center justify-center">
+      {/* Viewed & Acknowledged Statuses */}
+      <div className="shrink-0 flex items-center gap-2">
         <span
           className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all ${
             isViewed
@@ -763,6 +894,23 @@ const SortableProfilePolicyItem = ({ policy, index }) => {
             </>
           ) : (
             "Not Viewed"
+          )}
+        </span>
+
+        <span
+          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all ${
+            isAcknowledged
+              ? "bg-green-100 text-green-700 border border-green-200"
+              : "bg-amber-100 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {isAcknowledged ? (
+            <>
+              <FaCheck size={10} className="shrink-0" />
+              Acknowledged
+            </>
+          ) : (
+            "Not Acknowledged"
           )}
         </span>
       </div>
@@ -796,7 +944,9 @@ const SortableDocumentMasterItem = ({
   const itemDocuments = documents.filter(
     (doc) =>
       doc.document_type === master.document_type ||
-      doc.document_type?.toLowerCase().includes(master.document_type.split(" ")[0].toLowerCase())
+      doc.document_type
+        ?.toLowerCase()
+        .includes(master.document_type.split(" ")[0].toLowerCase()),
   );
 
   const hasApprovedDoc = itemDocuments.some((doc) => doc.verify === "approved");
@@ -810,8 +960,8 @@ const SortableDocumentMasterItem = ({
         isDragging
           ? "border-blue-400 shadow-xl scale-[1.02] ring-4 ring-blue-50/50 cursor-grabbing"
           : isUploaded
-          ? "border-green-200 shadow-sm hover:shadow-md hover:border-green-300"
-          : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+            ? "border-green-200 shadow-sm hover:shadow-md hover:border-green-300"
+            : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
       }`}
     >
       <div className="flex items-start justify-between">
@@ -844,7 +994,9 @@ const SortableDocumentMasterItem = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-semibold text-gray-800 break-words">{master.document_name}</h4>
+              <h4 className="font-semibold text-gray-800 break-words">
+                {master.document_name}
+              </h4>
               {master.is_required === 1 && (
                 <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
                   Required
@@ -857,7 +1009,9 @@ const SortableDocumentMasterItem = ({
               )}
             </div>
             {master.description && (
-              <p className="text-xs text-gray-500 mt-1 break-words">{master.description}</p>
+              <p className="text-xs text-gray-500 mt-1 break-words">
+                {master.description}
+              </p>
             )}
 
             {/* Nested uploaded document cards */}
@@ -882,7 +1036,9 @@ const SortableDocumentMasterItem = ({
             <button
               onClick={() => onUpload(master.document_type)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold ${
-                isUploaded ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"
+                isUploaded
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-purple-600 hover:bg-purple-700"
               } text-white rounded-lg whitespace-nowrap`}
             >
               {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />}
@@ -917,7 +1073,11 @@ const OtherDocumentsSection = ({ documents, onView, onDelete, canDelete }) => {
             {documents.length}
           </span>
         </div>
-        {isExpanded ? <FaChevronUp className="text-gray-400" /> : <FaChevronDown className="text-gray-400" />}
+        {isExpanded ? (
+          <FaChevronUp className="text-gray-400" />
+        ) : (
+          <FaChevronDown className="text-gray-400" />
+        )}
       </button>
 
       {isExpanded && (
@@ -947,7 +1107,7 @@ export default function EmployeeProfile() {
   const [loading, setLoading] = useState(true);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [formsList, setFormsList] = useState([]);
   const [loadingForms, setLoadingForms] = useState(false);
@@ -965,19 +1125,21 @@ export default function EmployeeProfile() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const fetchForms = async () => {
     try {
       setLoadingForms(true);
-      const response = await axiosClient.get('/form-masters');
+      const response = await axiosClient.get("/form-masters");
       if (response.data?.data) {
-        const sorted = [...response.data.data].sort((a, b) => a.sort_order - b.sort_order);
+        const sorted = [...response.data.data].sort(
+          (a, b) => a.sort_order - b.sort_order,
+        );
         setFormsList(sorted);
       }
     } catch (err) {
-      console.error('Error fetching form master order:', err);
+      console.error("Error fetching form master order:", err);
     } finally {
       setLoadingForms(false);
     }
@@ -986,8 +1148,8 @@ export default function EmployeeProfile() {
   const fetchPolicies = async () => {
     try {
       setLoadingPolicies(true);
-      const response = await axiosClient.get('/employee/policies', {
-        params: { employee_id: id }
+      const response = await axiosClient.get("/employee/policies", {
+        params: { employee_id: id },
       });
       let policyList = [];
       if (Array.isArray(response.data)) {
@@ -995,11 +1157,13 @@ export default function EmployeeProfile() {
       } else if (response.data && Array.isArray(response.data.data)) {
         policyList = response.data.data;
       }
-      const sorted = [...policyList].sort((a, b) => a.sort_order - b.sort_order);
+      const sorted = [...policyList].sort(
+        (a, b) => a.sort_order - b.sort_order,
+      );
       setPoliciesList(sorted);
     } catch (err) {
-      console.error('Error fetching employee policies:', err);
-      toast.error('Failed to load employee policies');
+      console.error("Error fetching employee policies:", err);
+      toast.error("Failed to load employee policies");
     } finally {
       setLoadingPolicies(false);
     }
@@ -1008,25 +1172,27 @@ export default function EmployeeProfile() {
   const fetchDocumentMasters = async () => {
     try {
       setLoadingMasters(true);
-      const response = await axiosClient.get('/document-masters');
+      const response = await axiosClient.get("/document-masters");
       if (response.data?.data) {
-        const sorted = [...response.data.data].sort((a, b) => a.sort_order - b.sort_order);
+        const sorted = [...response.data.data].sort(
+          (a, b) => a.sort_order - b.sort_order,
+        );
         setDocumentMastersList(sorted);
       }
     } catch (err) {
-      console.error('Error fetching document master order:', err);
+      console.error("Error fetching document master order:", err);
     } finally {
       setLoadingMasters(false);
     }
   };
 
   useEffect(() => {
-    if (activeTab === 'forms') {
+    if (activeTab === "forms") {
       fetchForms();
-    } else if (activeTab === 'documents') {
+    } else if (activeTab === "documents") {
       fetchDocumentMasters();
       fetchDocuments();
-    } else if (activeTab === 'policies') {
+    } else if (activeTab === "policies") {
       fetchPolicies();
     }
   }, [activeTab]);
@@ -1049,15 +1215,18 @@ export default function EmployeeProfile() {
       };
 
       try {
-        const response = await axiosClient.post('/form-masters/update-order', payload);
+        const response = await axiosClient.post(
+          "/form-masters/update-order",
+          payload,
+        );
         if (response.data?.status) {
-          toast.success('Form order updated successfully!');
+          toast.success("Form order updated successfully!");
         } else {
-          toast.error('Failed to update form order');
+          toast.error("Failed to update form order");
         }
       } catch (err) {
-        console.error('Error updating form order:', err);
-        toast.error('Failed to save order on server');
+        console.error("Error updating form order:", err);
+        toast.error("Failed to save order on server");
         fetchForms();
       }
     }
@@ -1067,8 +1236,12 @@ export default function EmployeeProfile() {
     const { active, over } = event;
 
     if (active && over && active.id !== over.id) {
-      const oldIndex = documentMastersList.findIndex((item) => item.id === active.id);
-      const newIndex = documentMastersList.findIndex((item) => item.id === over.id);
+      const oldIndex = documentMastersList.findIndex(
+        (item) => item.id === active.id,
+      );
+      const newIndex = documentMastersList.findIndex(
+        (item) => item.id === over.id,
+      );
 
       const newOrder = arrayMove(documentMastersList, oldIndex, newIndex);
       setDocumentMastersList(newOrder);
@@ -1081,15 +1254,18 @@ export default function EmployeeProfile() {
       };
 
       try {
-        const response = await axiosClient.post('/document-masters/update-order', payload);
+        const response = await axiosClient.post(
+          "/document-masters/update-order",
+          payload,
+        );
         if (response.data?.status) {
-          toast.success('Document order updated successfully!');
+          toast.success("Document order updated successfully!");
         } else {
-          toast.error('Failed to update document order');
+          toast.error("Failed to update document order");
         }
       } catch (err) {
-        console.error('Error updating document order:', err);
-        toast.error('Failed to save document order on server');
+        console.error("Error updating document order:", err);
+        toast.error("Failed to save document order on server");
         fetchDocumentMasters();
       }
     }
@@ -1113,21 +1289,26 @@ export default function EmployeeProfile() {
       };
 
       try {
-        const response = await axiosClient.post('/policy-masters/update-order', payload);
+        const response = await axiosClient.post(
+          "/policy-masters/update-order",
+          payload,
+        );
         if (response.data && response.data.status) {
-          toast.success(response.data.message || 'Policy order updated successfully!');
+          toast.success(
+            response.data.message || "Policy order updated successfully!",
+          );
         } else {
-          toast.error('Failed to update policy order');
+          toast.error("Failed to update policy order");
         }
       } catch (err) {
-        console.error('Error updating policy order:', err);
-        toast.error('Failed to save policy order on server');
+        console.error("Error updating policy order:", err);
+        toast.error("Failed to save policy order on server");
         fetchPolicies();
       }
     }
   };
 
-  const { canEdit } = usePermissions('employee.add_manage_profiles');
+  const { canEdit } = usePermissions("employee.add_manage_profiles");
 
   // Fetch employee data
   useEffect(() => {
@@ -1139,11 +1320,11 @@ export default function EmployeeProfile() {
         if (response.data?.data) {
           setEmployee(response.data.data);
         } else {
-          throw new Error('Employee not found');
+          throw new Error("Employee not found");
         }
       } catch (err) {
-        console.error('Error fetching employee:', err);
-        setError(err.response?.data?.message || 'Failed to load employee data');
+        console.error("Error fetching employee:", err);
+        setError(err.response?.data?.message || "Failed to load employee data");
       } finally {
         setLoading(false);
       }
@@ -1168,7 +1349,7 @@ export default function EmployeeProfile() {
       const documentsData = response.data?.data || response.data || [];
       setDocuments(Array.isArray(documentsData) ? documentsData : []);
     } catch (err) {
-      console.error('Error fetching documents:', err);
+      console.error("Error fetching documents:", err);
       setDocuments([]);
     } finally {
       setLoadingDocuments(false);
@@ -1179,10 +1360,10 @@ export default function EmployeeProfile() {
   const formatDate = (dateString) => {
     if (!dateString) return null;
     try {
-      return new Date(dateString).toLocaleDateString('en-AU', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     } catch (error) {
       return dateString;
@@ -1199,9 +1380,9 @@ export default function EmployeeProfile() {
     const totalMonths = years * 12 + months;
 
     if (totalMonths >= 12) {
-      return `${years} year${years > 1 ? 's' : ''}`;
+      return `${years} year${years > 1 ? "s" : ""}`;
     } else {
-      return `${totalMonths} month${totalMonths > 1 ? 's' : ''}`;
+      return `${totalMonths} month${totalMonths > 1 ? "s" : ""}`;
     }
   };
 
@@ -1218,52 +1399,139 @@ export default function EmployeeProfile() {
   // Handle view document
   const handleViewDocument = (document) => {
     if (document.file_url) {
-      window.open(`https://api.chrispp.au${document.file_url}`, '_blank');
+      window.open(`https://api.chrispp.au${document.file_url}`, "_blank");
     }
   };
 
   // Handle delete document
   const handleDeleteDocument = async (documentId) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
+    if (window.confirm("Are you sure you want to delete this document?")) {
       try {
         await deleteEmployeeDocument(documentId);
-        setDocuments(documents.filter(doc => doc.id !== documentId));
+        setDocuments(documents.filter((doc) => doc.id !== documentId));
       } catch (err) {
-        console.error('Error deleting document:', err);
-        alert('Failed to delete document');
+        console.error("Error deleting document:", err);
+        alert("Failed to delete document");
       }
     }
   };
 
+  // Handle verify/reject document
+  const handleVerifyDocument = async (docId, status) => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      if (!user) {
+        toast.error('Session expired. Please login again.');
+        return;
+      }
+
+      await verifyEmployeeDocument(docId, {
+        verify: status,
+        verified_by: user.id,
+      });
+
+      toast.success(`Document ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
+      fetchDocuments();
+    } catch (err) {
+      console.error('Error verifying document:', err);
+      toast.error(err.response?.data?.message || 'Failed to update document status');
+    }
+  };
+
   // Generate employee stats
-  const employeeStats = employee ? [
-    { icon: <FaCalendarAlt className="h-5 w-5" />, label: 'Tenure', value: calculateTenure(employee.joining_date) || 'N/A', color: 'blue' },
-    { icon: <FaBriefcase className="h-5 w-5" />, label: 'Employment Type', value: employee.employment_type || 'N/A', color: 'green' },
-    { icon: <HiOutlineUserGroup className="h-5 w-5" />, label: 'Department', value: employee.department?.name || 'N/A', color: 'purple' },
-    { icon: <FaUser className="h-5 w-5" />, label: 'Reports To', value: employee.manager ? `${employee.manager.first_name} ${employee.manager.last_name}` : 'N/A', color: 'orange' }
-  ] : [];
+  const employeeStats = employee
+    ? [
+        {
+          icon: <FaCalendarAlt className="h-5 w-5" />,
+          label: "Tenure",
+          value: calculateTenure(employee.joining_date) || "N/A",
+          color: "blue",
+        },
+        {
+          icon: <FaBriefcase className="h-5 w-5" />,
+          label: "Employment Type",
+          value: employee.employment_type || "N/A",
+          color: "green",
+        },
+        {
+          icon: <HiOutlineUserGroup className="h-5 w-5" />,
+          label: "Department",
+          value: employee.department?.name || "N/A",
+          color: "purple",
+        },
+        {
+          icon: <FaUser className="h-5 w-5" />,
+          label: "Reports To",
+          value: employee.manager
+            ? `${employee.manager.first_name} ${employee.manager.last_name}`
+            : "N/A",
+          color: "orange",
+        },
+      ]
+    : [];
 
   // Quick actions
   const quickActions = [
-    ...(canEdit ? [{ label: 'Edit Profile', icon: <FaEdit className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/edit/${id}`), color: 'bg-blue-600 hover:bg-blue-700' }] : []),
-    { label: 'View Documents', icon: <FaFileAlt className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/documents`), color: 'bg-green-600 hover:bg-green-700' },
-    { label: 'History', icon: <FaHistory className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/history`), color: 'bg-purple-600 hover:bg-purple-700' },
-    { label: 'Performance', icon: <FaChartLine className="h-4 w-4" />, action: () => navigate(`/dashboard/employees/${id}/performance`), color: 'bg-orange-600 hover:bg-orange-700' }
+    ...(canEdit
+      ? [
+          {
+            label: "Edit Profile",
+            icon: <FaEdit className="h-4 w-4" />,
+            action: () => navigate(`/dashboard/employees/edit/${id}`),
+            color: "bg-blue-600 hover:bg-blue-700",
+          },
+        ]
+      : []),
+    {
+      label: "View Documents",
+      icon: <FaFileAlt className="h-4 w-4" />,
+      action: () => navigate(`/dashboard/employees/${id}/documents`),
+      color: "bg-green-600 hover:bg-green-700",
+    },
+    {
+      label: "History",
+      icon: <FaHistory className="h-4 w-4" />,
+      action: () => navigate(`/dashboard/employees/${id}/history`),
+      color: "bg-purple-600 hover:bg-purple-700",
+    },
+    {
+      label: "Performance",
+      icon: <FaChartLine className="h-4 w-4" />,
+      action: () => navigate(`/dashboard/employees/${id}/performance`),
+      color: "bg-orange-600 hover:bg-orange-700",
+    },
   ];
 
   // Secondary actions
   const secondaryActions = [
-    { label: 'Print', icon: <FaPrint className="h-4 w-4" />, action: () => window.print(), color: 'bg-gray-600 hover:bg-gray-700' },
-    { label: 'Export', icon: <FaDownload className="h-4 w-4" />, action: () => exportProfile(), color: 'bg-gray-600 hover:bg-gray-700' },
-    { label: 'Share', icon: <FaShare className="h-4 w-4" />, action: () => shareProfile(), color: 'bg-gray-600 hover:bg-gray-700' }
+    {
+      label: "Print",
+      icon: <FaPrint className="h-4 w-4" />,
+      action: () => window.print(),
+      color: "bg-gray-600 hover:bg-gray-700",
+    },
+    {
+      label: "Export",
+      icon: <FaDownload className="h-4 w-4" />,
+      action: () => exportProfile(),
+      color: "bg-gray-600 hover:bg-gray-700",
+    },
+    {
+      label: "Share",
+      icon: <FaShare className="h-4 w-4" />,
+      action: () => shareProfile(),
+      color: "bg-gray-600 hover:bg-gray-700",
+    },
   ];
 
   const exportProfile = () => {
-    alert('Export feature coming soon!');
+    alert("Export feature coming soon!");
   };
 
   const shareProfile = () => {
-    alert('Share feature coming soon!');
+    alert("Share feature coming soon!");
   };
 
   if (loading) {
@@ -1283,17 +1551,21 @@ export default function EmployeeProfile() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Employee Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || 'The requested employee could not be found.'}</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Employee Not Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {error || "The requested employee could not be found."}
+            </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate('/dashboard/employees')}
+                onClick={() => navigate("/dashboard/employees")}
                 className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Employee List
               </button>
               <button
-                onClick={() => navigate('/dashboard/employees/new')}
+                onClick={() => navigate("/dashboard/employees/new")}
                 className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
               >
                 Add New Employee
@@ -1322,7 +1594,7 @@ export default function EmployeeProfile() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <button
-                onClick={() => navigate('/dashboard/employees')}
+                onClick={() => navigate("/dashboard/employees")}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <FaArrowLeft /> Back to Employees
@@ -1349,14 +1621,18 @@ export default function EmployeeProfile() {
               {/* Avatar */}
               <div className="relative">
                 <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-white border-opacity-30">
-                  {employee.first_name?.[0]}{employee.last_name?.[0]}
+                  {employee.first_name?.[0]}
+                  {employee.last_name?.[0]}
                 </div>
-                <span className={`absolute bottom-0 right-0 px-3 py-1 rounded-full text-xs font-bold ${employee.status === 'Active'
-                  ? 'bg-green-500 text-white'
-                  : employee.status === 'On Leave'
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-red-500 text-white'
-                  }`}>
+                <span
+                  className={`absolute bottom-0 right-0 px-3 py-1 rounded-full text-xs font-bold ${
+                    employee.status === "Active"
+                      ? "bg-green-500 text-white"
+                      : employee.status === "On Leave"
+                        ? "bg-yellow-500 text-white"
+                        : "bg-red-500 text-white"
+                  }`}
+                >
                   {employee.status}
                 </span>
               </div>
@@ -1369,8 +1645,9 @@ export default function EmployeeProfile() {
                       {employee.first_name} {employee.last_name}
                     </h1>
                     <p className="text-xl text-blue-100 opacity-90 mb-3">
-                      {employee.designation?.title || 'No Designation'}
-                      {employee.department?.name && ` • ${employee.department.name}`}
+                      {employee.designation?.title || "No Designation"}
+                      {employee.department?.name &&
+                        ` • ${employee.department.name}`}
                     </p>
 
                     <div className="flex flex-wrap gap-4 mt-4">
@@ -1380,7 +1657,7 @@ export default function EmployeeProfile() {
                       </div>
                       <div className="flex items-center gap-2">
                         <FaPhone className="text-blue-200" />
-                        <span>{employee.phone_number || 'No phone'}</span>
+                        <span>{employee.phone_number || "No phone"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FaIdCard className="text-blue-200" />
@@ -1420,14 +1697,22 @@ export default function EmployeeProfile() {
             {/* Tabs */}
             <div className="border-b border-gray-200">
               <nav className="flex overflow-x-auto">
-                {['overview', 'employment', 'financial', 'documents', 'forms', 'policies'].map((tab) => (
+                {[
+                  "overview",
+                  "employment",
+                  "financial",
+                  "documents",
+                  "forms",
+                  "policies",
+                ].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-4 font-medium border-b-2 whitespace-nowrap transition-colors ${activeTab === tab
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                      }`}
+                    className={`px-6 py-4 font-medium border-b-2 whitespace-nowrap transition-colors ${
+                      activeTab === tab
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
@@ -1438,7 +1723,7 @@ export default function EmployeeProfile() {
             {/* Tab Content */}
             <div className="p-6 md:p-8">
               {/* Overview Tab */}
-              {activeTab === 'overview' && (
+              {activeTab === "overview" && (
                 <div className="space-y-8">
                   {/* Personal Information */}
                   <div>
@@ -1503,7 +1788,7 @@ export default function EmployeeProfile() {
               )}
 
               {/* Employment Tab */}
-              {activeTab === 'employment' && (
+              {activeTab === "employment" && (
                 <div className="space-y-8">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
@@ -1541,7 +1826,11 @@ export default function EmployeeProfile() {
                       <DetailField
                         icon={<FaUser className="h-4 w-4" />}
                         label="Reporting Manager"
-                        value={employee.manager ? `${employee.manager.first_name} ${employee.manager.last_name}` : 'Not assigned'}
+                        value={
+                          employee.manager
+                            ? `${employee.manager.first_name} ${employee.manager.last_name}`
+                            : "Not assigned"
+                        }
                       />
                     </div>
                   </div>
@@ -1569,7 +1858,7 @@ export default function EmployeeProfile() {
                         <DetailField
                           icon={<FaUser className="h-4 w-4" />}
                           label="Applicant Source"
-                          value={employee.applicant.source || 'N/A'}
+                          value={employee.applicant.source || "N/A"}
                           className="md:col-span-2"
                         />
                       )}
@@ -1579,13 +1868,14 @@ export default function EmployeeProfile() {
               )}
 
               {/* Financial Tab */}
-              {activeTab === 'financial' && (
+              {activeTab === "financial" && (
                 <div className="space-y-8">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
                     <div className="flex items-center gap-3">
                       <FaShieldAlt className="h-5 w-5 text-yellow-600" />
                       <p className="text-yellow-800 text-sm">
-                        Financial information is securely stored and used only for payroll and compliance purposes.
+                        Financial information is securely stored and used only
+                        for payroll and compliance purposes.
                       </p>
                     </div>
                   </div>
@@ -1601,7 +1891,11 @@ export default function EmployeeProfile() {
                       <DetailField
                         icon={<FaShieldAlt className="h-4 w-4" />}
                         label="Tax File Number (TFN)"
-                        value={employee.tax_file_number ? '•••• •••• ' + employee.tax_file_number.slice(-3) : null}
+                        value={
+                          employee.tax_file_number
+                            ? "•••• •••• " + employee.tax_file_number.slice(-3)
+                            : null
+                        }
                       />
                       <DetailField
                         icon={<FaUniversity className="h-4 w-4" />}
@@ -1611,17 +1905,40 @@ export default function EmployeeProfile() {
                       <DetailField
                         icon={<FaUniversity className="h-4 w-4" />}
                         label="Superannuation Member #"
-                        value={employee.superannuation_member_number ? '•••• ' + employee.superannuation_member_number.slice(-4) : null}
+                        value={
+                          employee.superannuation_member_number
+                            ? "•••• " +
+                              employee.superannuation_member_number.slice(-4)
+                            : null
+                        }
+                      />
+                      <DetailField
+                        icon={<FaUniversity className="h-4 w-4" />}
+                        label="Bank Name"
+                        value={employee.bank_name}
+                      />
+                      <DetailField
+                        icon={<FaUser className="h-4 w-4" />}
+                        label="Account Name"
+                        value={employee.account_name}
                       />
                       <DetailField
                         icon={<FaDollarSign className="h-4 w-4" />}
                         label="Bank BSB"
-                        value={employee.bank_bsb ? '•••-' + employee.bank_bsb.slice(-3) : null}
+                        value={
+                          employee.bank_bsb
+                            ? "•••-" + employee.bank_bsb.slice(-3)
+                            : null
+                        }
                       />
                       <DetailField
                         icon={<FaDollarSign className="h-4 w-4" />}
                         label="Bank Account #"
-                        value={employee.bank_account_number ? '•••• ' + employee.bank_account_number.slice(-4) : null}
+                        value={
+                          employee.bank_account_number
+                            ? "•••• " + employee.bank_account_number.slice(-4)
+                            : null
+                        }
                       />
                       <DetailField
                         icon={<FaPassport className="h-4 w-4" />}
@@ -1639,13 +1956,17 @@ export default function EmployeeProfile() {
               )}
 
               {/* Documents Tab */}
-              {activeTab === 'documents' && (
+              {activeTab === "documents" && (
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-800">Employee Documents</h3>
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        Employee Documents
+                      </h3>
                       <p className="text-gray-600">
-                        Drag and drop to reorder compliance and mandatory document categories for {employee.first_name} {employee.last_name}
+                        Drag and drop to reorder compliance and mandatory
+                        document categories for {employee.first_name}{" "}
+                        {employee.last_name}
                       </p>
                     </div>
                     <div className="flex gap-3">
@@ -1661,7 +1982,9 @@ export default function EmployeeProfile() {
                         </button>
                       )}
                       <button
-                        onClick={() => navigate(`/dashboard/employees/${id}/documents`)}
+                        onClick={() =>
+                          navigate(`/dashboard/employees/${id}/documents`)
+                        }
                         className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                       >
                         <FaFileAlt /> View All
@@ -1707,8 +2030,12 @@ export default function EmployeeProfile() {
                             !documentMastersList.some(
                               (m) =>
                                 doc.document_type === m.document_type ||
-                                doc.document_type?.toLowerCase().includes(m.document_type.split(" ")[0].toLowerCase())
-                            )
+                                doc.document_type
+                                  ?.toLowerCase()
+                                  .includes(
+                                    m.document_type.split(" ")[0].toLowerCase(),
+                                  ),
+                            ),
                         )}
                         onView={handleViewDocument}
                         onDelete={handleDeleteDocument}
@@ -1732,9 +2059,13 @@ export default function EmployeeProfile() {
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-2xl">
                       <FaFileAlt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h4 className="text-xl font-semibold text-gray-700 mb-2">No Documents Found</h4>
+                      <h4 className="text-xl font-semibold text-gray-700 mb-2">
+                        No Documents Found
+                      </h4>
                       <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                        This employee doesn't have any documents yet. Upload important documents like IDs, contracts, certificates, etc.
+                        This employee doesn't have any documents yet. Upload
+                        important documents like IDs, contracts, certificates,
+                        etc.
                       </p>
                       <button
                         onClick={() => {
@@ -1751,19 +2082,24 @@ export default function EmployeeProfile() {
               )}
 
               {/* Forms Tab */}
-              {activeTab === 'forms' && (
+              {activeTab === "forms" && (
                 <div>
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800">Employee Onboarding Forms</h3>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      Employee Onboarding Forms
+                    </h3>
                     <p className="text-gray-600">
-                      Drag and drop to reorder compliance and onboarding forms completed by {employee.first_name} {employee.last_name}
+                      Drag and drop to reorder compliance and onboarding forms
+                      completed by {employee.first_name} {employee.last_name}
                     </p>
                   </div>
 
                   {loadingForms ? (
                     <div className="py-12 text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading onboarding forms order...</p>
+                      <p className="text-gray-600">
+                        Loading onboarding forms order...
+                      </p>
                     </div>
                   ) : formsList.length > 0 ? (
                     <DndContext
@@ -1789,7 +2125,9 @@ export default function EmployeeProfile() {
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-2xl">
                       <FaFileAlt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h4 className="text-xl font-semibold text-gray-700 mb-2">No Onboarding Forms Found</h4>
+                      <h4 className="text-xl font-semibold text-gray-700 mb-2">
+                        No Onboarding Forms Found
+                      </h4>
                       <p className="text-gray-600 max-w-md mx-auto">
                         There are no forms configured for onboarding.
                       </p>
@@ -1799,19 +2137,25 @@ export default function EmployeeProfile() {
               )}
 
               {/* Policies Tab */}
-              {activeTab === 'policies' && (
+              {activeTab === "policies" && (
                 <div>
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800">Employee Onboarding Policies</h3>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      Employee Onboarding Policies
+                    </h3>
                     <p className="text-gray-600">
-                      Drag and drop to reorder compliance and onboarding policies completed by {employee.first_name} {employee.last_name}
+                      Drag and drop to reorder compliance and onboarding
+                      policies completed by {employee.first_name}{" "}
+                      {employee.last_name}
                     </p>
                   </div>
 
                   {loadingPolicies ? (
                     <div className="py-12 text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading onboarding policies order...</p>
+                      <p className="text-gray-600">
+                        Loading onboarding policies order...
+                      </p>
                     </div>
                   ) : policiesList.length > 0 ? (
                     <DndContext
@@ -1837,7 +2181,9 @@ export default function EmployeeProfile() {
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-2xl">
                       <FaShieldAlt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h4 className="text-xl font-semibold text-gray-700 mb-2">No Onboarding Policies Found</h4>
+                      <h4 className="text-xl font-semibold text-gray-700 mb-2">
+                        No Onboarding Policies Found
+                      </h4>
                       <p className="text-gray-600 max-w-md mx-auto">
                         There are no policies configured for onboarding.
                       </p>
@@ -1849,7 +2195,7 @@ export default function EmployeeProfile() {
           </div>
 
           {/* Additional Tools */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <FaQrcode className="h-5 w-5 text-blue-600" />
@@ -1910,7 +2256,7 @@ export default function EmployeeProfile() {
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </>

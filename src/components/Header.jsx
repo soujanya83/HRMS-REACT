@@ -5,6 +5,7 @@ import { useLocation, Link } from 'react-router-dom';
 import profileImage from '../assets/dummy.png';
 import { useOrganizations } from '../contexts/OrganizationContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getEmployee } from '../services/employeeService';
 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const location = useLocation();
@@ -14,6 +15,7 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
     const orgDropdownRef = useRef(null);
     const { organizations, selectedOrganization, selectOrganization, isLoading, currentUserRole } = useOrganizations();
     const { sidebarColor } = useTheme();
+    const [employeeName, setEmployeeName] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -27,6 +29,29 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Fetch employee name when on an employee profile page
+    useEffect(() => {
+        const pathName = location.pathname.split('/').filter(x => x);
+        // Match /dashboard/employees/:id
+        if (pathName.length === 3 && pathName[0] === 'dashboard' && pathName[1] === 'employees' && /^\d+$/.test(pathName[2])) {
+            const employeeId = pathName[2];
+            setEmployeeName(null); // reset while loading
+            getEmployee(employeeId)
+                .then((response) => {
+                    const emp = response.data?.data;
+                    if (emp) {
+                        const fullName = [emp.first_name, emp.last_name].filter(Boolean).join(' ');
+                        setEmployeeName(fullName || `Employee #${employeeId}`);
+                    }
+                })
+                .catch(() => {
+                    setEmployeeName(null);
+                });
+        } else {
+            setEmployeeName(null);
+        }
+    }, [location.pathname]);
 
     const getPageTitle = () => {
         const pathName = location.pathname.split('/').filter(x => x);
@@ -48,6 +73,11 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
         // Handle edit routes with IDs
         if (/^\d+$/.test(title) && pathName.includes('edit')) {
             return 'Edit';
+        }
+
+        // If on employee profile page, show the employee name
+        if (/^\d+$/.test(title) && pathName[1] === 'employees' && employeeName) {
+            return employeeName;
         }
 
         // If the last segment is a number (e.g. an ID), use route state title if available

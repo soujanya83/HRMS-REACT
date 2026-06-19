@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axiosClient from '../../axiosClient';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FaSave, FaSpinner, FaPrint } from 'react-icons/fa';
+import axiosClient from "../../axiosClient";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FaSave, FaSpinner, FaPrint } from "react-icons/fa";
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
 
@@ -77,16 +77,16 @@ const StaffRecordForm = () => {
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    let empId = queryParams.get('employeeId');
+    let empId = queryParams.get("employeeId");
 
-    const employeeStr = localStorage.getItem('employee');
-    const userStr = localStorage.getItem('user');
+    const employeeStr = localStorage.getItem("employee");
+    const userStr = localStorage.getItem("user");
     if (employeeStr) {
       const employee = JSON.parse(employeeStr);
       setEmployeeId(empId || employee.id);
@@ -107,29 +107,35 @@ const StaffRecordForm = () => {
   const fetchStaffRecord = async () => {
     try {
       setLoading(true);
-      const response = await axiosClient.get(`/staff-records/employee/${employeeId}`);
+      const response = await axiosClient.get(
+        `/staff-records/employee/${employeeId}`,
+      );
       if (response.data) {
         const data = response.data;
         setStaffRecordId(data.id);
         setFormData({
-          name: data.name || '',
-          dateOfBirth: data.dob ? formatDateForInput(data.dob) : '',
-          email: data.email || '',
-          mobileNumber: data.mobile_number || '',
-          address: data.address || '',
-          relevantQualifications: data.relevant_qualifications || '',
-          relevantQualificationsCopiesAttached: data.qualifications_copies_attached || false,
-          otherApprovedTraining: data.other_approved_training || '',
-          otherApprovedTrainingCopiesAttached: data.training_copies_attached || false,
-          workingWithChildrenCheckNumber: data.wwc_wwvp_check_number || '',
-          certifiedSupervisorNumber: data.certified_supervisor_number || '',
-          statusCheckCompletedDate: data.status_check_date ? formatDateForInput(data.status_check_date) : '',
+          name: data.name || "",
+          dateOfBirth: data.dob ? formatDateForInput(data.dob) : "",
+          email: data.email || "",
+          mobileNumber: data.mobile_number || "",
+          address: data.address || "",
+          relevantQualifications: data.relevant_qualifications || "",
+          relevantQualificationsCopiesAttached:
+            data.qualifications_copies_attached || false,
+          otherApprovedTraining: data.other_approved_training || "",
+          otherApprovedTrainingCopiesAttached:
+            data.training_copies_attached || false,
+          workingWithChildrenCheckNumber: data.wwc_wwvp_check_number || "",
+          certifiedSupervisorNumber: data.certified_supervisor_number || "",
+          statusCheckCompletedDate: data.status_check_date
+            ? formatDateForInput(data.status_check_date)
+            : "",
         });
       }
     } catch (error) {
-      console.error('Error fetching staff record:', error);
+      console.error("Error fetching staff record:", error);
       if (error.response?.status !== 404) {
-        toast.error('Failed to load staff record data');
+        toast.error("Failed to load staff record data");
       }
     } finally {
       setLoading(false);
@@ -137,21 +143,27 @@ const StaffRecordForm = () => {
   };
 
   const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toISOString().split('T')[0];
+    if (!dateString) return "";
+    return new Date(dateString).toISOString().split("T")[0];
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.mobileNumber.trim()) newErrors.mobileNumber = 'Mobile number is required';
-    if (!formData.address.trim()) newErrors.address = 'Address is required';
-    if (!formData.relevantQualifications.trim()) newErrors.relevantQualifications = 'Relevant qualifications are required';
-    if (!formData.otherApprovedTraining.trim()) newErrors.otherApprovedTraining = 'Other approved training is required';
-    if (!formData.workingWithChildrenCheckNumber.trim()) newErrors.workingWithChildrenCheckNumber = 'WWC check number is required';
-    if (!formData.statusCheckCompletedDate) newErrors.statusCheckCompletedDate = 'Status check date is required';
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.dateOfBirth)
+      newErrors.dateOfBirth = "Date of birth is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.mobileNumber.trim())
+      newErrors.mobileNumber = "Mobile number is required";
+    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.relevantQualifications.trim())
+      newErrors.relevantQualifications = "Relevant qualifications are required";
+    if (!formData.otherApprovedTraining.trim())
+      newErrors.otherApprovedTraining = "Other approved training is required";
+    if (!formData.workingWithChildrenCheckNumber.trim())
+      newErrors.workingWithChildrenCheckNumber = "WWC check number is required";
+    if (!formData.statusCheckCompletedDate)
+      newErrors.statusCheckCompletedDate = "Status check date is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -159,11 +171,11 @@ const StaffRecordForm = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
     if (!employeeId) {
-      toast.error('Employee ID not found');
+      toast.error("Employee ID not found");
       return;
     }
     try {
@@ -177,7 +189,8 @@ const StaffRecordForm = () => {
         mobile_number: formData.mobileNumber,
         address: formData.address,
         relevant_qualifications: formData.relevantQualifications,
-        qualifications_copies_attached: formData.relevantQualificationsCopiesAttached,
+        qualifications_copies_attached:
+          formData.relevantQualificationsCopiesAttached,
         other_approved_training: formData.otherApprovedTraining,
         training_copies_attached: formData.otherApprovedTrainingCopiesAttached,
         wwc_wwvp_check_number: formData.workingWithChildrenCheckNumber,
@@ -186,17 +199,20 @@ const StaffRecordForm = () => {
       };
       let response;
       if (staffRecordId) {
-        response = await axiosClient.put(`/staff-records/${staffRecordId}`, payload);
-        if (response.data) toast.success('Staff record updated successfully!');
+        response = await axiosClient.put(
+          `/staff-records/${staffRecordId}`,
+          payload,
+        );
+        if (response.data) toast.success("Staff record updated successfully!");
       } else {
-        response = await axiosClient.post('/staff-records', payload);
+        response = await axiosClient.post("/staff-records", payload);
         if (response.data) {
           setStaffRecordId(response.data.id);
-          toast.success('Staff record created successfully!');
+          toast.success("Staff record created successfully!");
         }
       }
     } catch (error) {
-      console.error('Error saving staff record:', error);
+      console.error("Error saving staff record:", error);
       if (error.response?.data?.errors) {
         const apiErrors = error.response.data.errors;
         const formattedErrors = {};
@@ -204,9 +220,9 @@ const StaffRecordForm = () => {
           formattedErrors[key] = apiErrors[key][0];
         });
         setErrors(formattedErrors);
-        toast.error('Please fix the validation errors');
+        toast.error("Please fix the validation errors");
       } else {
-        toast.error('Failed to save staff record');
+        toast.error("Failed to save staff record");
       }
     } finally {
       setSaving(false);
@@ -220,10 +236,10 @@ const StaffRecordForm = () => {
     "w-full h-full resize-none bg-transparent px-2 py-2 text-[13px] leading-snug text-gray-900 outline-none focus:bg-blue-50/30";
   const BORDER = "1px solid #3f3f3f";
   const labelStyle = {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#000',
-    lineHeight: '1.3',
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#000",
+    lineHeight: "1.3",
   };
 
   /* ─── reusable cell helpers ─── */
@@ -231,9 +247,9 @@ const StaffRecordForm = () => {
     <div
       style={{
         borderRight: BORDER,
-        padding: '6px 8px',
-        display: 'flex',
-        alignItems: 'center',
+        padding: "6px 8px",
+        display: "flex",
+        alignItems: "center",
         ...labelStyle,
         ...style,
       }}
@@ -245,8 +261,8 @@ const StaffRecordForm = () => {
   const InputCell = ({ children, borderRight = false, style = {} }) => (
     <div
       style={{
-        borderRight: borderRight ? BORDER : 'none',
-        overflow: 'hidden',
+        borderRight: borderRight ? BORDER : "none",
+        overflow: "hidden",
         ...style,
       }}
     >
@@ -278,11 +294,11 @@ const StaffRecordForm = () => {
         <div
           id="staff-record-print-area"
           style={{
-            position: 'relative',
-            width: '794px',
-            minHeight: '1123px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+            position: "relative",
+            width: "794px",
+            minHeight: "1123px",
+            backgroundColor: "#fff",
+            boxShadow: "0 4px 32px rgba(0,0,0,0.18)",
           }}
         >
           {/* Top header image */}
@@ -290,13 +306,13 @@ const StaffRecordForm = () => {
             src={topImage}
             alt=""
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
-              width: '100%',
-              height: '118px',
-              objectFit: 'cover',
-              display: 'block',
+              width: "100%",
+              height: "118px",
+              objectFit: "cover",
+              display: "block",
             }}
             draggable={false}
           />
@@ -306,13 +322,13 @@ const StaffRecordForm = () => {
             src={bottomImage}
             alt=""
             style={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 0,
               left: 0,
-              width: '100%',
-              height: '118px',
-              objectFit: 'cover',
-              display: 'block',
+              width: "100%",
+              height: "118px",
+              objectFit: "cover",
+              display: "block",
             }}
             draggable={false}
           />
@@ -320,36 +336,35 @@ const StaffRecordForm = () => {
           {/* ─── Content area (between header and footer images) ─── */}
           <div
             style={{
-              paddingTop: '126px',
-              paddingBottom: '130px',
-              paddingLeft: '38px',
-              paddingRight: '38px',
+              paddingTop: "126px",
+              paddingBottom: "130px",
+              paddingLeft: "38px",
+              paddingRight: "38px",
             }}
           >
             {/* Title */}
             <h1
               style={{
-                textAlign: 'center',
-                fontSize: '20px',
-                fontWeight: 'bold',
-                marginBottom: '14px',
-                color: '#000',
-                letterSpacing: '0.5px',
+                textAlign: "center",
+                fontSize: "20px",
+                fontWeight: "bold",
+                marginBottom: "14px",
+                color: "#000",
+                letterSpacing: "0.5px",
               }}
             >
               Staff Record
             </h1>
 
             {/* ─── Main bordered table ─── */}
-            <div style={{ border: BORDER, width: '100%' }}>
-
+            <div style={{ border: BORDER, width: "100%" }}>
               {/* Section header */}
               <div
                 style={{
                   borderBottom: BORDER,
-                  padding: '7px 10px',
+                  padding: "7px 10px",
                   ...labelStyle,
-                  fontSize: '14px',
+                  fontSize: "14px",
                 }}
               >
                 Educators and other staff:
@@ -358,9 +373,9 @@ const StaffRecordForm = () => {
               {/* ── Row 1: Name | Date of Birth ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr 105px 140px',
-                  height: '36px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr 105px 140px",
+                  height: "36px",
                   borderBottom: BORDER,
                 }}
               >
@@ -369,27 +384,45 @@ const StaffRecordForm = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => updateField('name', e.target.value)}
+                    onChange={(e) => updateField("name", e.target.value)}
                     className={inp}
-                    style={errors.name ? { borderBottom: '2px solid #ef4444' } : {}}
+                    style={
+                      errors.name ? { borderBottom: "2px solid #ef4444" } : {}
+                    }
                     aria-label="Name"
                   />
                 </InputCell>
-                <LabelCell style={{ fontSize: '12px' }}>Date of birth</LabelCell>
+                <LabelCell style={{ fontSize: "12px" }}>
+                  Date of birth
+                </LabelCell>
                 <InputCell>
                   <input
                     type="date"
                     value={formData.dateOfBirth}
-                    onChange={(e) => updateField('dateOfBirth', e.target.value)}
+                    onChange={(e) => updateField("dateOfBirth", e.target.value)}
                     className={inp}
-                    style={errors.dateOfBirth ? { borderBottom: '2px solid #ef4444' } : {}}
+                    style={
+                      errors.dateOfBirth
+                        ? { borderBottom: "2px solid #ef4444" }
+                        : {}
+                    }
                     aria-label="Date of birth"
                   />
                 </InputCell>
               </div>
               {/* Row 1 errors */}
               {(errors.name || errors.dateOfBirth) && (
-                <div className="print-error" style={{ display: 'flex', gap: '16px', padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
+                <div
+                  className="print-error"
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
                   {errors.name && <span>Name: {errors.name}</span>}
                   {errors.dateOfBirth && <span>DOB: {errors.dateOfBirth}</span>}
                 </div>
@@ -398,9 +431,9 @@ const StaffRecordForm = () => {
               {/* ── Row 2: Email | Mobile Number ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr 105px 140px',
-                  height: '36px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr 105px 140px",
+                  height: "36px",
                   borderBottom: BORDER,
                 }}
               >
@@ -409,37 +442,59 @@ const StaffRecordForm = () => {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => updateField('email', e.target.value)}
+                    onChange={(e) => updateField("email", e.target.value)}
                     className={inp}
-                    style={errors.email ? { borderBottom: '2px solid #ef4444' } : {}}
+                    style={
+                      errors.email ? { borderBottom: "2px solid #ef4444" } : {}
+                    }
                     aria-label="Email"
                   />
                 </InputCell>
-                <LabelCell style={{ fontSize: '12px' }}>Mobile Number</LabelCell>
+                <LabelCell style={{ fontSize: "12px" }}>
+                  Mobile Number
+                </LabelCell>
                 <InputCell>
                   <input
                     type="tel"
                     value={formData.mobileNumber}
-                    onChange={(e) => updateField('mobileNumber', e.target.value)}
+                    onChange={(e) =>
+                      updateField("mobileNumber", e.target.value)
+                    }
                     className={inp}
-                    style={errors.mobileNumber ? { borderBottom: '2px solid #ef4444' } : {}}
+                    style={
+                      errors.mobileNumber
+                        ? { borderBottom: "2px solid #ef4444" }
+                        : {}
+                    }
                     aria-label="Mobile Number"
                   />
                 </InputCell>
               </div>
               {(errors.email || errors.mobileNumber) && (
-                <div className="print-error" style={{ display: 'flex', gap: '16px', padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
+                <div
+                  className="print-error"
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
                   {errors.email && <span>Email: {errors.email}</span>}
-                  {errors.mobileNumber && <span>Mobile: {errors.mobileNumber}</span>}
+                  {errors.mobileNumber && (
+                    <span>Mobile: {errors.mobileNumber}</span>
+                  )}
                 </div>
               )}
 
               {/* ── Row 3: Address (full width) ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr',
-                  height: '36px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr",
+                  height: "36px",
                   borderBottom: BORDER,
                 }}
               >
@@ -448,15 +503,27 @@ const StaffRecordForm = () => {
                   <input
                     type="text"
                     value={formData.address}
-                    onChange={(e) => updateField('address', e.target.value)}
+                    onChange={(e) => updateField("address", e.target.value)}
                     className={inp}
-                    style={errors.address ? { borderBottom: '2px solid #ef4444' } : {}}
+                    style={
+                      errors.address
+                        ? { borderBottom: "2px solid #ef4444" }
+                        : {}
+                    }
                     aria-label="Address"
                   />
                 </InputCell>
               </div>
               {errors.address && (
-                <div className="print-error" style={{ padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
+                <div
+                  className="print-error"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
                   Address: {errors.address}
                 </div>
               )}
@@ -464,25 +531,34 @@ const StaffRecordForm = () => {
               {/* ── Row 4: Relevant Qualifications ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr 148px',
-                  height: '95px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr 148px",
+                  height: "95px",
                   borderBottom: BORDER,
                 }}
               >
                 <div
                   style={{
                     borderRight: BORDER,
-                    padding: '8px',
+                    padding: "8px",
                     ...labelStyle,
                   }}
                 >
                   Relevant qualifications/s, or course enrolled in
                 </div>
-                <InputCell borderRight style={errors.relevantQualifications ? { borderBottom: '2px solid #ef4444' } : {}}>
+                <InputCell
+                  borderRight
+                  style={
+                    errors.relevantQualifications
+                      ? { borderBottom: "2px solid #ef4444" }
+                      : {}
+                  }
+                >
                   <textarea
                     value={formData.relevantQualifications}
-                    onChange={(e) => updateField('relevantQualifications', e.target.value)}
+                    onChange={(e) =>
+                      updateField("relevantQualifications", e.target.value)
+                    }
                     className={ta}
                     aria-label="Relevant qualifications"
                   />
@@ -490,35 +566,51 @@ const StaffRecordForm = () => {
                 {/* Copies attached */}
                 <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    padding: "10px 12px",
                     ...labelStyle,
-                    fontSize: '12px',
+                    fontSize: "12px",
                   }}
                 >
                   <span>Copies attached</span>
                   <input
                     type="checkbox"
                     checked={formData.relevantQualificationsCopiesAttached}
-                    onChange={(e) => updateField('relevantQualificationsCopiesAttached', e.target.checked)}
+                    onChange={(e) =>
+                      updateField(
+                        "relevantQualificationsCopiesAttached",
+                        e.target.checked,
+                      )
+                    }
                     style={{
-                      width: '22px',
-                      height: '22px',
+                      width: "22px",
+                      height: "22px",
                       flexShrink: 0,
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
+                      appearance: "none",
+                      WebkitAppearance: "none",
                       border: BORDER,
-                      backgroundColor: formData.relevantQualificationsCopiesAttached ? '#4b5563' : 'white',
-                      cursor: 'pointer',
+                      backgroundColor:
+                        formData.relevantQualificationsCopiesAttached
+                          ? "#4b5563"
+                          : "white",
+                      cursor: "pointer",
                     }}
                     aria-label="Relevant qualifications copies attached"
                   />
                 </div>
               </div>
               {errors.relevantQualifications && (
-                <div className="print-error" style={{ padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
+                <div
+                  className="print-error"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
                   {errors.relevantQualifications}
                 </div>
               )}
@@ -526,60 +618,85 @@ const StaffRecordForm = () => {
               {/* ── Row 5: Other Approved Training ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr 148px',
-                  height: '95px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr 148px",
+                  height: "95px",
                   borderBottom: BORDER,
                 }}
               >
                 <div
                   style={{
                     borderRight: BORDER,
-                    padding: '8px',
+                    padding: "8px",
                     ...labelStyle,
                   }}
                 >
                   Other approved training completed
                 </div>
-                <InputCell borderRight style={errors.otherApprovedTraining ? { borderBottom: '2px solid #ef4444' } : {}}>
+                <InputCell
+                  borderRight
+                  style={
+                    errors.otherApprovedTraining
+                      ? { borderBottom: "2px solid #ef4444" }
+                      : {}
+                  }
+                >
                   <textarea
                     value={formData.otherApprovedTraining}
-                    onChange={(e) => updateField('otherApprovedTraining', e.target.value)}
+                    onChange={(e) =>
+                      updateField("otherApprovedTraining", e.target.value)
+                    }
                     className={ta}
                     aria-label="Other approved training"
                   />
                 </InputCell>
                 <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    padding: "10px 12px",
                     ...labelStyle,
-                    fontSize: '12px',
+                    fontSize: "12px",
                   }}
                 >
                   <span>Copies attached</span>
                   <input
                     type="checkbox"
                     checked={formData.otherApprovedTrainingCopiesAttached}
-                    onChange={(e) => updateField('otherApprovedTrainingCopiesAttached', e.target.checked)}
+                    onChange={(e) =>
+                      updateField(
+                        "otherApprovedTrainingCopiesAttached",
+                        e.target.checked,
+                      )
+                    }
                     style={{
-                      width: '22px',
-                      height: '22px',
+                      width: "22px",
+                      height: "22px",
                       flexShrink: 0,
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
+                      appearance: "none",
+                      WebkitAppearance: "none",
                       border: BORDER,
-                      backgroundColor: formData.otherApprovedTrainingCopiesAttached ? '#4b5563' : 'white',
-                      cursor: 'pointer',
+                      backgroundColor:
+                        formData.otherApprovedTrainingCopiesAttached
+                          ? "#4b5563"
+                          : "white",
+                      cursor: "pointer",
                     }}
                     aria-label="Other approved training copies attached"
                   />
                 </div>
               </div>
               {errors.otherApprovedTraining && (
-                <div className="print-error" style={{ padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
+                <div
+                  className="print-error"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
                   {errors.otherApprovedTraining}
                 </div>
               )}
@@ -587,19 +704,20 @@ const StaffRecordForm = () => {
               {/* ── Row 6: WWC Check Number + Certified Supervisor ── */}
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '160px 1fr 115px 133px',
+                  display: "grid",
+                  gridTemplateColumns: "160px 1fr 115px 133px",
                 }}
               >
                 {/* Col A: WWC label */}
                 <div
                   style={{
                     borderRight: BORDER,
-                    padding: '8px',
+                    padding: "8px",
                     ...labelStyle,
                   }}
                 >
-                  Identification number of relevant working with children check or working with vulnerable people check
+                  Identification number of relevant working with children check
+                  or working with vulnerable people check
                 </div>
 
                 {/* Col B: WWC textarea (top) + Date of status check (bottom) */}
@@ -607,14 +725,19 @@ const StaffRecordForm = () => {
                   {/* Sub-row top: WWC number */}
                   <div
                     style={{
-                      height: '82px',
+                      height: "82px",
                       borderBottom: BORDER,
-                      overflow: 'hidden',
+                      overflow: "hidden",
                     }}
                   >
                     <textarea
                       value={formData.workingWithChildrenCheckNumber}
-                      onChange={(e) => updateField('workingWithChildrenCheckNumber', e.target.value)}
+                      onChange={(e) =>
+                        updateField(
+                          "workingWithChildrenCheckNumber",
+                          e.target.value,
+                        )
+                      }
                       className={ta}
                       aria-label="WWC check number"
                     />
@@ -622,34 +745,40 @@ const StaffRecordForm = () => {
                   {/* Sub-row bottom: Date of status check */}
                   <div
                     style={{
-                      height: '82px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      padding: '4px 8px',
-                      overflow: 'hidden',
+                      height: "82px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      padding: "4px 8px",
+                      overflow: "hidden",
                     }}
                   >
                     <label
                       style={{
-                        fontSize: '11px',
-                        color: '#000',
-                        fontWeight: '500',
-                        lineHeight: '1.3',
-                        marginBottom: '5px',
+                        fontSize: "11px",
+                        color: "#000",
+                        fontWeight: "500",
+                        lineHeight: "1.3",
+                        marginBottom: "5px",
                       }}
                     >
-                      Date of status check completed{' '}
-                      <em style={{ fontWeight: 400 }}>(to be done monthly here after)</em>
+                      Date of status check completed{" "}
+                      <em style={{ fontWeight: 400 }}>
+                        (to be done monthly here after)
+                      </em>
                     </label>
                     <input
                       type="date"
                       value={formData.statusCheckCompletedDate}
-                      onChange={(e) => updateField('statusCheckCompletedDate', e.target.value)}
+                      onChange={(e) =>
+                        updateField("statusCheckCompletedDate", e.target.value)
+                      }
                       className={inp}
                       style={{
-                        height: '28px',
-                        ...(errors.statusCheckCompletedDate ? { borderBottom: '2px solid #ef4444' } : {}),
+                        height: "28px",
+                        ...(errors.statusCheckCompletedDate
+                          ? { borderBottom: "2px solid #ef4444" }
+                          : {}),
                       }}
                       aria-label="Date of status check completed"
                     />
@@ -660,9 +789,9 @@ const StaffRecordForm = () => {
                 <div
                   style={{
                     borderRight: BORDER,
-                    padding: '8px',
+                    padding: "8px",
                     ...labelStyle,
-                    fontSize: '12px',
+                    fontSize: "12px",
                   }}
                 >
                   Certified Supervisor number
@@ -672,34 +801,50 @@ const StaffRecordForm = () => {
                 </div>
 
                 {/* Col D: Certified Supervisor textarea */}
-                <div style={{ overflow: 'hidden' }}>
+                <div style={{ overflow: "hidden" }}>
                   <textarea
                     value={formData.certifiedSupervisorNumber}
-                    onChange={(e) => updateField('certifiedSupervisorNumber', e.target.value)}
+                    onChange={(e) =>
+                      updateField("certifiedSupervisorNumber", e.target.value)
+                    }
                     className={ta}
                     aria-label="Certified Supervisor number"
                   />
                 </div>
               </div>
               {/* Row 6 errors */}
-              {(errors.workingWithChildrenCheckNumber || errors.statusCheckCompletedDate) && (
-                <div className="print-error" style={{ display: 'flex', gap: '16px', padding: '2px 8px', fontSize: '11px', color: '#ef4444', background: '#fff5f5' }}>
-                  {errors.workingWithChildrenCheckNumber && <span>WWC#: {errors.workingWithChildrenCheckNumber}</span>}
-                  {errors.statusCheckCompletedDate && <span>Status date: {errors.statusCheckCompletedDate}</span>}
+              {(errors.workingWithChildrenCheckNumber ||
+                errors.statusCheckCompletedDate) && (
+                <div
+                  className="print-error"
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    padding: "2px 8px",
+                    fontSize: "11px",
+                    color: "#ef4444",
+                    background: "#fff5f5",
+                  }}
+                >
+                  {errors.workingWithChildrenCheckNumber && (
+                    <span>WWC#: {errors.workingWithChildrenCheckNumber}</span>
+                  )}
+                  {errors.statusCheckCompletedDate && (
+                    <span>Status date: {errors.statusCheckCompletedDate}</span>
+                  )}
                 </div>
               )}
-
             </div>
             {/* ── end table ── */}
 
             {/* Footer address text */}
             <div
               style={{
-                marginTop: '14px',
-                textAlign: 'center',
-                fontSize: '11px',
-                color: '#8b8b8b',
-                lineHeight: '1.7',
+                marginTop: "14px",
+                textAlign: "center",
+                fontSize: "11px",
+                color: "#8b8b8b",
+                lineHeight: "1.7",
               }}
             >
               <p>ABN: 36 602 053 412</p>
@@ -714,24 +859,26 @@ const StaffRecordForm = () => {
         <form
           onSubmit={handleSave}
           className="no-print"
-          style={{ width: '794px', marginTop: '18px', paddingBottom: '40px' }}
+          style={{ width: "794px", marginTop: "18px", paddingBottom: "40px" }}
         >
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <div
+            style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}
+          >
             <button
               type="button"
               onClick={() => window.print()}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 22px',
-                backgroundColor: '#4b5563',
-                color: '#fff',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 22px",
+                backgroundColor: "#4b5563",
+                color: "#fff",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "14px",
               }}
             >
               <FaPrint />
@@ -741,21 +888,21 @@ const StaffRecordForm = () => {
               type="submit"
               disabled={saving}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 22px',
-                backgroundColor: saving ? '#93c5fd' : '#2563eb',
-                color: '#fff',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 22px",
+                backgroundColor: saving ? "#93c5fd" : "#2563eb",
+                color: "#fff",
+                borderRadius: "8px",
+                border: "none",
+                cursor: saving ? "not-allowed" : "pointer",
+                fontWeight: "600",
+                fontSize: "14px",
               }}
             >
               {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-              {saving ? 'Saving...' : 'Save Staff Record'}
+              {saving ? "Saving..." : "Save Staff Record"}
             </button>
           </div>
         </form>

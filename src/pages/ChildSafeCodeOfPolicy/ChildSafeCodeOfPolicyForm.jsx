@@ -188,7 +188,7 @@ const ChildSafeCodeOfPolicyForm = () => {
       try {
         setLoading(true);
         const { data } = await axiosClient.get(
-          `/child-safe-conduct/employee/${employeeId}`
+          `/child-safe-conduct/employee/${employeeId}`,
         );
 
         if (data) {
@@ -215,9 +215,11 @@ const ChildSafeCodeOfPolicyForm = () => {
   const validateForm = () => {
     const nextErrors = {};
     if (!employeeId) nextErrors.employeeId = "Employee ID not found";
-    if (!organizationId) nextErrors.organizationId = "Organization ID not found";
+    if (!organizationId)
+      nextErrors.organizationId = "Organization ID not found";
     if (!agreementData.name.trim()) nextErrors.name = "Name is required";
-    if (!agreementData.signature) nextErrors.signature = "Signature is required";
+    if (!agreementData.signature)
+      nextErrors.signature = "Signature is required";
     if (!agreementData.date) nextErrors.date = "Date is required";
 
     setErrors(nextErrors);
@@ -261,7 +263,7 @@ const ChildSafeCodeOfPolicyForm = () => {
       toast.success(
         recordId
           ? "Child safe conduct updated successfully!"
-          : "Child safe conduct saved successfully!"
+          : "Child safe conduct saved successfully!",
       );
     } catch (error) {
       if (error.response?.data?.errors) {

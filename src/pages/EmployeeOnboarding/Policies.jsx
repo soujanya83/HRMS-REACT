@@ -125,7 +125,33 @@ const Policies = () => {
     );
   };
 
-  const completedCount = policies.filter((p) => isPolicyViewed(p)).length;
+  const isPolicyAcknowledged = (policy) => {
+    return (
+      policy.acknowledged === true ||
+      policy.acknowledged === 1 ||
+      String(policy.acknowledged).toLowerCase() === "true"
+    );
+  };
+
+  const handleAcknowledge = async (policy) => {
+    try {
+      const response = await axiosClient.post(`/employee/policies/${policy.id}/acknowledge`, {
+        employee_id: employeeId,
+        organization_id: organizationId
+      });
+      if (response.status === 200 || response.data) {
+        toast.success(`Acknowledged: "${policy.policy_name}"`);
+        if (employeeId) {
+          await loadEmployeePolicies(employeeId);
+        }
+      }
+    } catch (err) {
+      console.error("Error acknowledging policy:", err);
+      toast.error("Failed to acknowledge policy on server");
+    }
+  };
+
+  const completedCount = policies.filter((p) => isPolicyAcknowledged(p)).length;
 
   const progressPercent = policies.length
     ? Math.round((completedCount / policies.length) * 100)
@@ -139,7 +165,7 @@ const Policies = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Company Policies</h1>
         <p className="text-gray-600 mt-1">
-          Please click on each policy name to open and read the policy. Opening a policy will mark it as viewed.
+          Please click on each policy name to open and read the policy. Once viewed, select the checkbox to acknowledge it.
         </p>
       </div>
 
@@ -179,18 +205,20 @@ const Policies = () => {
             <div className="flex items-center gap-4 px-6 py-3.5 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 select-none">
               <div className="w-16 shrink-0">Sr. No.</div>
               <div className="flex-1">Policy Name</div>
-              <div className="w-28 shrink-0 text-center">Viewed</div>
+              <div className="w-24 shrink-0 text-center">Viewed</div>
+              <div className="w-32 shrink-0 text-center">Acknowledged</div>
             </div>
 
             {/* Table Rows */}
             {policies.map((policy, index) => {
               const isViewed = isPolicyViewed(policy);
+              const isAcknowledged = isPolicyAcknowledged(policy);
               return (
                 <div
                   key={policy.id}
                   onClick={() => handleOpenAndAcknowledge(policy)}
                   className={`flex items-center gap-4 px-6 py-4 hover:bg-blue-50/20 transition-all cursor-pointer select-none border-b border-gray-100 ${
-                    isViewed ? "bg-gray-50/40" : "bg-white"
+                    isAcknowledged ? "bg-gray-50/40" : "bg-white"
                   }`}
                 >
                   {/* Sr. No */}
@@ -202,7 +230,7 @@ const Policies = () => {
                   <div className="flex-1 min-w-0 pr-4 flex items-center gap-2">
                     <span
                       className={`text-sm font-semibold break-words transition-all ${
-                        isViewed
+                        isAcknowledged
                           ? "text-gray-400 line-through decoration-gray-300"
                           : "text-gray-700 hover:text-blue-600"
                       }`}
@@ -217,7 +245,7 @@ const Policies = () => {
                   </div>
 
                   {/* Viewed (Yes / No) */}
-                  <div className="w-28 shrink-0 flex items-center justify-center">
+                  <div className="w-24 shrink-0 flex items-center justify-center">
                     <span
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all ${
                         isViewed
@@ -234,6 +262,35 @@ const Policies = () => {
                         "No"
                       )}
                     </span>
+                  </div>
+
+                  {/* Acknowledged Checkbox */}
+                  <div
+                    className="w-32 shrink-0 flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isViewed ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`ack-${policy.id}`}
+                          checked={isAcknowledged}
+                          disabled={isAcknowledged}
+                          onChange={() => handleAcknowledge(policy)}
+                          className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <label
+                          htmlFor={`ack-${policy.id}`}
+                          className={`text-xs font-bold ${
+                            isAcknowledged ? "text-green-700" : "text-gray-600"
+                          }`}
+                        >
+                          {isAcknowledged ? "Acknowledged" : "Acknowledge"}
+                        </label>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">View policy first</span>
+                    )}
                   </div>
                 </div>
               );

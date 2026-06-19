@@ -12,7 +12,7 @@ import {
   getDepartmentsByOrganization,
   getDesignationsByDeptId,
   searchSuperFunds,
-  verifyEmployeeDocument
+  verifyEmployeeDocument,
 } from "../../services/employeeService.js";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
@@ -48,7 +48,7 @@ import {
   FaClipboardList,
   FaSearch,
   FaClock,
-  FaCheckCircle
+  FaCheckCircle,
 } from "react-icons/fa";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
@@ -569,9 +569,11 @@ const SuperFundSearch = ({
           onFocus={() => query.trim().length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full pl-10 pr-10 py-2.5 border ${error ? "border-red-500 bg-red-50" : "border-gray-300"
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""
-            }`}
+          className={`w-full pl-10 pr-10 py-2.5 border ${
+            error ? "border-red-500 bg-red-50" : "border-gray-300"
+          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
           autoComplete="off"
         />
 
@@ -731,10 +733,10 @@ const DocumentUploadModal = ({
         prev.expiry_date ||
         (selectedCert?.hasExpiry
           ? new Date(
-            Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000,
-          )
-            .toISOString()
-            .split("T")[0]
+              Date.now() + selectedCert.expiryYears * 365 * 24 * 60 * 60 * 1000,
+            )
+              .toISOString()
+              .split("T")[0]
           : ""),
     }));
   };
@@ -1001,16 +1003,23 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Document Card Component
-const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete, onVerify }) => {
+const DocumentCard = ({
+  document,
+  onDelete,
+  onEdit,
+  canEdit,
+  canDelete,
+  onVerify,
+}) => {
   const getStatusBadge = (verify) => {
-    if (verify === 'approved') {
+    if (verify === "approved") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold border border-green-200">
           <FaCheckCircle size={10} /> Approved
         </span>
       );
     }
-    if (verify === 'rejected') {
+    if (verify === "rejected") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-bold border border-red-200">
           <FaTimes size={10} /> Rejected
@@ -1122,12 +1131,13 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete, onVerify
             <select
               value={document.verify || "pending"}
               onChange={(e) => onVerify(document.id, e.target.value)}
-              className={`text-[11px] font-bold py-1 px-2.5 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer shadow-sm ${document.verify === 'approved'
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : document.verify === 'rejected'
-                  ? 'bg-red-50 text-red-700 border-red-200'
-                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}
+              className={`text-[11px] font-bold py-1 px-2.5 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer shadow-sm ${
+                document.verify === "approved"
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : document.verify === "rejected"
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
             >
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
@@ -1176,12 +1186,13 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete, onVerify
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`h-2 rounded-full ${daysRemaining <= 30
-                ? "bg-red-500"
-                : daysRemaining <= 60
-                  ? "bg-orange-500"
-                  : "bg-yellow-500"
-                }`}
+              className={`h-2 rounded-full ${
+                daysRemaining <= 30
+                  ? "bg-red-500"
+                  : daysRemaining <= 60
+                    ? "bg-orange-500"
+                    : "bg-yellow-500"
+              }`}
               style={{ width: `${Math.min(100, (daysRemaining / 90) * 100)}%` }}
             ></div>
           </div>
@@ -1240,14 +1251,14 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete, onVerify
 // Compliance Checklist Component with Colors
 const ComplianceChecklist = ({ certificates = [], onVerify }) => {
   const getStatusBadge = (verify) => {
-    if (verify === 'approved') {
+    if (verify === "approved") {
       return (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[9px] font-bold ml-2">
           Approved
         </span>
       );
     }
-    if (verify === 'rejected') {
+    if (verify === "rejected") {
       return (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[9px] font-bold ml-2">
           Rejected
@@ -1334,12 +1345,13 @@ const ComplianceChecklist = ({ certificates = [], onVerify }) => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className={`h-3 rounded-full ${compliancePercentage >= 80
-                  ? "bg-green-500"
-                  : compliancePercentage >= 50
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-                  }`}
+                className={`h-3 rounded-full ${
+                  compliancePercentage >= 80
+                    ? "bg-green-500"
+                    : compliancePercentage >= 50
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                }`}
                 style={{ width: `${compliancePercentage}%` }}
               ></div>
             </div>
@@ -1441,8 +1453,9 @@ const ComplianceChecklist = ({ certificates = [], onVerify }) => {
                     return (
                       <div
                         key={item.id}
-                        className={`flex items-start gap-3 p-3 rounded-lg ${item.bgColor || "bg-gray-50"
-                          }`}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${
+                          item.bgColor || "bg-gray-50"
+                        }`}
                       >
                         <div className="mt-1">
                           {uploaded ? (
@@ -1480,13 +1493,16 @@ const ComplianceChecklist = ({ certificates = [], onVerify }) => {
                                 {onVerify && (
                                   <select
                                     value={uploadedDoc.verify || "pending"}
-                                    onChange={(e) => onVerify(uploadedDoc.id, e.target.value)}
-                                    className={`ml-2 text-[10px] font-bold py-0.5 px-1.5 rounded border outline-none cursor-pointer ${uploadedDoc.verify === 'approved'
-                                      ? 'bg-green-50 text-green-700 border-green-200'
-                                      : uploadedDoc.verify === 'rejected'
-                                        ? 'bg-red-50 text-red-700 border-red-200'
-                                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                                      }`}
+                                    onChange={(e) =>
+                                      onVerify(uploadedDoc.id, e.target.value)
+                                    }
+                                    className={`ml-2 text-[10px] font-bold py-0.5 px-1.5 rounded border outline-none cursor-pointer ${
+                                      uploadedDoc.verify === "approved"
+                                        ? "bg-green-50 text-green-700 border-green-200"
+                                        : uploadedDoc.verify === "rejected"
+                                          ? "bg-red-50 text-red-700 border-red-200"
+                                          : "bg-amber-50 text-amber-700 border-amber-200"
+                                    }`}
                                   >
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
@@ -1497,11 +1513,12 @@ const ComplianceChecklist = ({ certificates = [], onVerify }) => {
                                   <>
                                     <span className="text-gray-400">|</span>
                                     <span
-                                      className={`${new Date(uploadedDoc.expiry_date) <
+                                      className={`${
+                                        new Date(uploadedDoc.expiry_date) <
                                         new Date()
-                                        ? "text-red-600"
-                                        : "text-green-600"
-                                        }`}
+                                          ? "text-red-600"
+                                          : "text-green-600"
+                                      }`}
                                     >
                                       Exp:{" "}
                                       {new Date(
@@ -1523,9 +1540,10 @@ const ComplianceChecklist = ({ certificates = [], onVerify }) => {
                               {item.includes.map((inc, idx) => (
                                 <span
                                   key={idx}
-                                  className={`text-xs px-2 py-0.5 rounded-full ${category.badgeColor ||
+                                  className={`text-xs px-2 py-0.5 rounded-full ${
+                                    category.badgeColor ||
                                     "bg-gray-100 text-gray-800"
-                                    }`}
+                                  }`}
                                 >
                                   {inc}
                                 </span>
@@ -1567,10 +1585,13 @@ const InputField = ({
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
-    <div className={`flex items-center rounded-lg border ${error
-      ? "border-red-500 bg-red-50"
-      : "border-gray-300 hover:border-gray-400"
-      } focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200`}>
+    <div
+      className={`flex items-center rounded-lg border ${
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
+      } focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200`}
+    >
       {prefix && (
         <span className="pl-4 pr-1 py-2.5 text-gray-500 font-medium select-none whitespace-nowrap">
           {prefix}
@@ -1624,10 +1645,11 @@ const SelectField = ({
       onChange={onChange}
       required={required}
       disabled={disabled}
-      className={`w-full px-4 py-2.5 rounded-lg border ${error
-        ? "border-red-500 bg-red-50"
-        : "border-gray-300 hover:border-gray-400"
-        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
+      className={`w-full px-4 py-2.5 rounded-lg border ${
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
+      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white`}
     >
       <option value="">{placeholder}</option>
       {options.map((option) => (
@@ -1672,10 +1694,11 @@ const TextAreaField = ({
       required={required}
       placeholder={placeholder}
       rows={rows}
-      className={`w-full px-4 py-2.5 rounded-lg border ${error
-        ? "border-red-500 bg-red-50"
-        : "border-gray-300 hover:border-gray-400"
-        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
+      className={`w-full px-4 py-2.5 rounded-lg border ${
+        error
+          ? "border-red-500 bg-red-50"
+          : "border-gray-300 hover:border-gray-400"
+      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none`}
     />
     {error && (
       <div className="mt-1 flex items-center text-red-600 text-sm">
@@ -1691,18 +1714,20 @@ const TabButton = ({ active, onClick, icon, label, step, completed }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${active
-      ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
-      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-      }`}
+    className={`flex items-center justify-center gap-3 px-6 py-4 w-full rounded-lg transition-all duration-300 ${
+      active
+        ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
+        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+    }`}
   >
     <div
-      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${active
-        ? "bg-blue-100 text-blue-600"
-        : completed
-          ? "bg-green-100 text-green-600"
-          : "bg-gray-100 text-gray-400"
-        }`}
+      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+        active
+          ? "bg-blue-100 text-blue-600"
+          : completed
+            ? "bg-green-100 text-green-600"
+            : "bg-gray-100 text-gray-400"
+      }`}
     >
       {completed && !active ? <FaCheck className="text-sm" /> : icon}
     </div>
@@ -1735,7 +1760,9 @@ export default function EmployeeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [formErrors, setFormErrors] = useState({});
-  const { canAdd, canEdit, canDelete } = usePermissions('employee.add_manage_profiles');
+  const { canAdd, canEdit, canDelete } = usePermissions(
+    "employee.add_manage_profiles",
+  );
 
   const [completedTabs, setCompletedTabs] = useState(new Set());
   const [employeeId, setEmployeeId] = useState(null);
@@ -1777,6 +1804,8 @@ export default function EmployeeForm() {
     tax_file_number: "",
     superannuation_fund_name: "",
     superannuation_member_number: "",
+    bank_name: "",
+    account_name: "",
     bank_bsb: "",
     bank_account_number: "",
     visa_type: "",
@@ -1789,22 +1818,14 @@ export default function EmployeeForm() {
 
   const tabs = [
     { id: "personal", label: "Personal Info", icon: <FaUser />, step: 1 },
-    {
-      id: "certificates",
-      label: "Certificates",
-      icon: <FaCertificate />,
-      step: 2,
-    },
-    { id: "employment", label: "Employment", icon: <FaBriefcase />, step: 3 },
-    { id: "payroll", label: "Payroll", icon: <FaDollarSign />, step: 4 },
+    { id: "employment", label: "Employment", icon: <FaBriefcase />, step: 2 },
+    { id: "payroll", label: "Payroll", icon: <FaDollarSign />, step: 3 },
   ];
 
   const tabDescriptions = {
     personal: "Step 1: Enter basic personal details to create the employee",
-    certificates:
-      "Step 2: Upload certificates and documents - View by list or compliance checklist",
-    employment: "Step 3: Add employment details",
-    payroll: "Step 4: Add payroll information",
+    employment: "Step 2: Add employment details",
+    payroll: "Step 3: Add payroll information",
   };
 
   useEffect(() => {
@@ -2012,8 +2033,10 @@ export default function EmployeeForm() {
     //console.log(`Field changed: ${name} = ${value}`);
 
     // Auto-capitalize first letter for name fields
-    const nameFields = ['first_name', 'middle_name', 'last_name'];
-    const finalValue = nameFields.includes(name) ? capitalizeFirstLetter(value) : value;
+    const nameFields = ["first_name", "middle_name", "last_name"];
+    const finalValue = nameFields.includes(name)
+      ? capitalizeFirstLetter(value)
+      : value;
 
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
 
@@ -2036,24 +2059,26 @@ export default function EmployeeForm() {
 
   const handleVerifyDocument = async (docId, status) => {
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = localStorage.getItem("user");
       const user = userStr ? JSON.parse(userStr) : null;
 
       if (!user) {
-        alert('Session expired. Please login again.');
+        alert("Session expired. Please login again.");
         return;
       }
 
       await verifyEmployeeDocument(docId, {
         verify: status,
-        verified_by: user.id
+        verified_by: user.id,
       });
 
-      alert(`Document ${status === 'approved' ? 'Approved' : 'Rejected'} successfully`);
+      alert(
+        `Document ${status === "approved" ? "Approved" : "Rejected"} successfully`,
+      );
       await fetchCertificates();
     } catch (err) {
-      console.error('Error verifying document:', err);
-      alert(err.response?.data?.message || 'Failed to update document status');
+      console.error("Error verifying document:", err);
+      alert(err.response?.data?.message || "Failed to update document status");
     }
   };
 
@@ -2186,12 +2211,13 @@ export default function EmployeeForm() {
       if (newEmployeeId) {
         setEmployeeId(newEmployeeId);
         setCompletedTabs((prev) => new Set([...prev, "personal"]));
-        setActiveTab("certificates");
-        navigate(
-          `/dashboard/employees/edit/${newEmployeeId}?tab=certificates`,
-          { replace: true },
+        setActiveTab("employment");
+        navigate(`/dashboard/employees/edit/${newEmployeeId}?tab=employment`, {
+          replace: true,
+        });
+        alert(
+          "Employee created successfully! Now you can enter employment details.",
         );
-        alert("Employee created successfully! Now you can upload documents.");
       } else {
         console.error("No employee ID in response:", response);
         alert(
@@ -2207,7 +2233,7 @@ export default function EmployeeForm() {
       } else {
         alert(
           error.response?.data?.message ||
-          "An unexpected error occurred. Please try again.",
+            "An unexpected error occurred. Please try again.",
         );
       }
     } finally {
@@ -2275,6 +2301,12 @@ export default function EmployeeForm() {
     if (!formData.employment_type)
       employmentErrors.employment_type = "Employment Type is required";
     if (!formData.status) employmentErrors.status = "Status is required";
+    if (
+      formData.hourly_wage === undefined ||
+      formData.hourly_wage === null ||
+      String(formData.hourly_wage).trim() === ""
+    )
+      employmentErrors.hourly_wage = "Hourly Wage is required";
 
     if (Object.keys(employmentErrors).length > 0) {
       setFormErrors(employmentErrors);
@@ -2424,25 +2456,17 @@ export default function EmployeeForm() {
           <p className="text-gray-600">
             {!employeeId
               ? "Step 1: Enter basic information to create the employee"
-              : activeTab === "certificates"
-                ? "Step 2: Upload certificates and documents - View by list or compliance checklist"
-                : activeTab === "employment"
-                  ? "Step 3: Add employment details"
-                  : activeTab === "payroll"
-                    ? "Step 4: Add payroll information"
-                    : "Edit employee information"}
+              : activeTab === "employment"
+                ? "Step 2: Add employment details"
+                : activeTab === "payroll"
+                  ? "Step 3: Add payroll information"
+                  : "Edit employee information"}
           </p>
-          {employeeId && (
-            <p className="text-sm text-blue-600 mt-2">
-              Employee ID:{" "}
-              <span className="font-mono font-bold">{employeeId}</span>
-            </p>
-          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {tabs.map((tab) => (
                 <TabButton
                   key={tab.id}
@@ -2627,152 +2651,6 @@ export default function EmployeeForm() {
               </div>
             )}
 
-            {activeTab === "certificates" && (
-              <div className="space-y-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <SectionHeader
-                    title="Certificates & Documents"
-                    description="Upload and manage employee certificates - View by list or compliance checklist"
-                  />
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => setViewMode("list")}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list"
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "text-gray-600 hover:text-gray-800"
-                          }`}
-                      >
-                        List View
-                      </button>
-                      <button
-                        onClick={() => setViewMode("checklist")}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "checklist"
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "text-gray-600 hover:text-gray-800"
-                          }`}
-                      >
-                        Compliance Checklist
-                      </button>
-                    </div>
-
-                    {employeeId && canAdd && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingDocument(null);
-                          setIsCertificateModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <FaPlus /> Upload Document
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {certificateError && (
-                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <FaExclamationTriangle className="text-red-500 mt-0.5" />
-                      <div>
-                        <p className="text-red-700 font-medium">Error</p>
-                        <p className="text-red-600 text-sm">
-                          {certificateError}
-                        </p>
-                        {employeeId && (
-                          <button
-                            onClick={fetchCertificates}
-                            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                          >
-                            Try reloading documents
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!employeeId ? (
-                  <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                    <FaInfoCircle className="mx-auto text-gray-400 text-5xl mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Create Employee First
-                    </h3>
-                    <p className="text-gray-500 max-w-md mx-auto">
-                      Please complete Step 1 (Personal Information) first to
-                      create the employee.
-                    </p>
-                  </div>
-                ) : loadingCertificates ? (
-                  <div className="flex justify-center items-center py-16">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">
-                      Loading certificates...
-                    </span>
-                  </div>
-                ) : viewMode === "list" ? (
-                  certificates.length > 0 ? (
-                    <>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                          {certificates.length}{" "}
-                          {certificates.length === 1 ? "document" : "documents"}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {certificates.map((cert) => (
-                          <DocumentCard
-                            key={cert.id}
-                            document={cert}
-                            onDelete={(id) => {
-                              setDocumentToDelete(id);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            onEdit={(doc) => {
-                              setEditingDocument(doc);
-                              setIsCertificateModalOpen(true);
-                            }}
-                            canEdit={canEdit}
-                            canDelete={canDelete}
-                            onVerify={handleVerifyDocument}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                      <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
-                        <FaFileAlt className="text-4xl text-gray-400" />
-                      </div>
-                      <h4 className="text-xl font-semibold text-gray-700 mb-3">
-                        No documents found
-                      </h4>
-                      <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                        Upload certificates and documents for this employee.
-                      </p>
-                      {canAdd && (
-                        <button
-                          onClick={() => {
-                            setEditingDocument(null);
-                            setIsCertificateModalOpen(true);
-                          }}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                        >
-                          <FaUpload /> Upload First Document
-                        </button>
-                      )}
-                    </div>
-                  )
-                ) : (
-                  <ComplianceChecklist
-                    certificates={certificates}
-                    onVerify={handleVerifyDocument}
-                  />
-                )}
-              </div>
-            )}
-
             {activeTab === "employment" && employeeId && (
               <div className="space-y-8">
                 <SectionHeader
@@ -2883,20 +2761,8 @@ export default function EmployeeForm() {
                     placeholder="e.g., 32.50"
                     step="0.01"
                     min="0"
+                    required
                   />
-
-                  <div className="md:col-span-2">
-                    <SelectField
-                      label="Reporting Manager (Optional)"
-                      name="reporting_manager_id"
-                      id="reporting_manager_id"
-                      value={formData.reporting_manager_id}
-                      onChange={handleChange}
-                      options={managers}
-                      error={formErrors.reporting_manager_id}
-                      placeholder="-- Select Reporting Manager --"
-                    />
-                  </div>
                 </div>
               </div>
             )}
@@ -2946,6 +2812,26 @@ export default function EmployeeForm() {
                     onChange={handleChange}
                     error={formErrors.superannuation_member_number}
                     placeholder="Enter member number"
+                  />
+
+                  <InputField
+                    label="Bank Name"
+                    name="bank_name"
+                    id="bank_name"
+                    value={formData.bank_name || ""}
+                    onChange={handleChange}
+                    error={formErrors.bank_name}
+                    placeholder="Enter bank name"
+                  />
+
+                  <InputField
+                    label="Account Name"
+                    name="account_name"
+                    id="account_name"
+                    value={formData.account_name || ""}
+                    onChange={handleChange}
+                    error={formErrors.account_name}
+                    placeholder="Enter account name"
                   />
 
                   <InputField
@@ -3035,15 +2921,6 @@ export default function EmployeeForm() {
                       </>
                     )}
                   </button>
-                ) : employeeId && activeTab === "certificates" ? (
-                  <button
-                    type="button"
-                    onClick={goToNextTab}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
-                  >
-                    Next: Employment
-                    <FaArrowLeft className="text-sm rotate-180" />
-                  </button>
                 ) : employeeId && activeTab === "employment" ? (
                   <button
                     type="button"
@@ -3093,19 +2970,16 @@ export default function EmployeeForm() {
           <div>
             <p className="text-sm text-blue-800">
               <span className="font-medium">Progress:</span>
-              {!employeeId && " Step 1 of 4 - Create employee first"}
+              {!employeeId && " Step 1 of 3 - Create employee first"}
               {employeeId &&
                 activeTab === "personal" &&
-                " Step 1 of 4 - Edit personal information"}
-              {employeeId &&
-                activeTab === "certificates" &&
-                " Step 2 of 4 - Upload documents"}
+                " Step 1 of 3 - Edit personal information"}
               {employeeId &&
                 activeTab === "employment" &&
-                " Step 3 of 4 - Add employment details"}
+                " Step 2 of 3 - Add employment details"}
               {employeeId &&
                 activeTab === "payroll" &&
-                " Step 4 of 4 - Complete payroll information"}
+                " Step 3 of 3 - Complete payroll information"}
             </p>
           </div>
         </div>

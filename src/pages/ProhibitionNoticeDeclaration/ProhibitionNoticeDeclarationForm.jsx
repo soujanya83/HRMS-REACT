@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -94,7 +90,7 @@ const YesNoChoice = ({ value, onChange, name }) => {
 ───────────────────────────────────────────── */
 const ProhibitionNoticeDeclarationForm = () => {
   const [formData, setFormData] = useState(
-    initialProhibitionNoticeDeclarationState
+    initialProhibitionNoticeDeclarationState,
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -105,9 +101,6 @@ const ProhibitionNoticeDeclarationForm = () => {
   const [showDeclarationSigModal, setShowDeclarationSigModal] = useState(false);
   const [showWitnessSigModal, setShowWitnessSigModal] = useState(false);
 
-
-
-
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -115,7 +108,7 @@ const ProhibitionNoticeDeclarationForm = () => {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    let empId = queryParams.get('employeeId');
+    let empId = queryParams.get("employeeId");
 
     const emp = localStorage.getItem("employee");
     const usr = localStorage.getItem("user");
@@ -136,14 +129,13 @@ const ProhibitionNoticeDeclarationForm = () => {
     if (employeeId) fetchDeclaration();
   }, [employeeId]);
 
-  const fmtDate = (s) =>
-    s ? new Date(s).toISOString().split("T")[0] : "";
+  const fmtDate = (s) => (s ? new Date(s).toISOString().split("T")[0] : "");
 
   const fetchDeclaration = async () => {
     try {
       setLoading(true);
       const { data } = await axiosClient.get(
-        `/declarations/employee/${employeeId}`
+        `/declarations/employee/${employeeId}`,
       );
       if (data) {
         setDeclarationId(data.id);
@@ -191,9 +183,11 @@ const ProhibitionNoticeDeclarationForm = () => {
       e.prohibitedUnderOtherLaw = "This field is required";
     if (!formData.declarationFullName.trim())
       e.declarationFullName = "Declaration full name is required";
-    if (!formData.signedPlace.trim()) e.signedPlace = "Signed place is required";
+    if (!formData.signedPlace.trim())
+      e.signedPlace = "Signed place is required";
     if (!formData.signedDate) e.signedDate = "Signed date is required";
-    if (!formData.witnessName.trim()) e.witnessName = "Witness name is required";
+    if (!formData.witnessName.trim())
+      e.witnessName = "Witness name is required";
     if (!formData.declarationSignature)
       e.declarationSignature = "Declaration signature is required";
     console.log("errors", e);
@@ -209,7 +203,10 @@ const ProhibitionNoticeDeclarationForm = () => {
       toast.error("Please fill in all required fields");
       return;
     }
-    if (!employeeId) { toast.error("Employee ID not found"); return; }
+    if (!employeeId) {
+      toast.error("Employee ID not found");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -242,15 +239,18 @@ const ProhibitionNoticeDeclarationForm = () => {
       let response;
       if (declarationId) {
         // Update existing declaration
-        response = await axiosClient.put(`/declarations/${declarationId}`, payload);
+        response = await axiosClient.put(
+          `/declarations/${declarationId}`,
+          payload,
+        );
         if (response.data) {
           toast.success("Declaration updated successfully!");
         }
       } else {
         // Create new declaration
         response = await axiosClient.post("/declarations", payload);
-        if (response.data) { 
-          setDeclarationId(response.data.id); 
+        if (response.data) {
+          setDeclarationId(response.data.id);
           toast.success("Declaration created successfully!");
         }
       }
@@ -258,7 +258,7 @@ const ProhibitionNoticeDeclarationForm = () => {
       if (err.response?.data?.errors) {
         const fe = {};
         Object.keys(err.response.data.errors).forEach(
-          (k) => (fe[k] = err.response.data.errors[k][0])
+          (k) => (fe[k] = err.response.data.errors[k][0]),
         );
         setErrors(fe);
         toast.error(err.response.data.message || "Failed to save declaration");
@@ -271,7 +271,10 @@ const ProhibitionNoticeDeclarationForm = () => {
   };
 
   const handleDelete = async () => {
-    if (!declarationId) { toast.error("No declaration to delete"); return; }
+    if (!declarationId) {
+      toast.error("No declaration to delete");
+      return;
+    }
     if (!window.confirm("Are you sure you want to delete this declaration?"))
       return;
     try {
@@ -320,8 +323,8 @@ const ProhibitionNoticeDeclarationForm = () => {
           </li>
           <li>
             Completed forms should be retained and stored by the approved
-            provider to support compliance with Section 188 of the Education
-            and Care Services National Law
+            provider to support compliance with Section 188 of the Education and
+            Care Services National Law
           </li>
           <li>
             <strong>
@@ -343,32 +346,66 @@ const ProhibitionNoticeDeclarationForm = () => {
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <label className="grid grid-cols-[92px_1fr] items-end">
                 <span>Title:</span>
-                <LineInput value={formData.title} onChange={(v) => updateField("title", v)} ariaLabel="Title" />
+                <LineInput
+                  value={formData.title}
+                  onChange={(v) => updateField("title", v)}
+                  ariaLabel="Title"
+                />
               </label>
               <label className="grid grid-cols-[82px_1fr] items-end">
                 <span>First name:</span>
                 <div>
-                  <LineInput value={formData.firstName} onChange={(v) => updateField("firstName", v)} ariaLabel="First name" className={errors.firstName ? "border-red-500" : ""} />
-                  {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+                  <LineInput
+                    value={formData.firstName}
+                    onChange={(v) => updateField("firstName", v)}
+                    ariaLabel="First name"
+                    className={errors.firstName ? "border-red-500" : ""}
+                  />
+                  {errors.firstName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.firstName}
+                    </p>
+                  )}
                 </div>
               </label>
               <label className="grid grid-cols-[92px_1fr] items-end">
                 <span>Last name:</span>
                 <div>
-                  <LineInput value={formData.lastName} onChange={(v) => updateField("lastName", v)} ariaLabel="Last name" className={errors.lastName ? "border-red-500" : ""} />
-                  {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+                  <LineInput
+                    value={formData.lastName}
+                    onChange={(v) => updateField("lastName", v)}
+                    ariaLabel="Last name"
+                    className={errors.lastName ? "border-red-500" : ""}
+                  />
+                  {errors.lastName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.lastName}
+                    </p>
+                  )}
                 </div>
               </label>
               <label className="grid grid-cols-[100px_1fr] items-end">
                 <span>Mobile number:</span>
-                <LineInput value={formData.mobileNumber} onChange={(v) => updateField("mobileNumber", v)} ariaLabel="Mobile number" />
+                <LineInput
+                  value={formData.mobileNumber}
+                  onChange={(v) => updateField("mobileNumber", v)}
+                  ariaLabel="Mobile number"
+                />
               </label>
               <label className="grid grid-cols-[92px_1fr] items-end">
                 <span>Phone number:</span>
-                <LineInput value={formData.phoneNumber} onChange={(v) => updateField("phoneNumber", v)} ariaLabel="Phone number" />
+                <LineInput
+                  value={formData.phoneNumber}
+                  onChange={(v) => updateField("phoneNumber", v)}
+                  ariaLabel="Phone number"
+                />
               </label>
               <label className="grid grid-cols-[100px_1fr] items-end">
-                <span className="leading-tight">Date of birth:<br />DD/MM/YYYY</span>
+                <span className="leading-tight">
+                  Date of birth:
+                  <br />
+                  DD/MM/YYYY
+                </span>
                 <input
                   type="date"
                   value={formData.dateOfBirth}
@@ -381,25 +418,50 @@ const ProhibitionNoticeDeclarationForm = () => {
 
             <label className="mt-4 grid grid-cols-[92px_1fr] items-end">
               <span>Email:</span>
-              <LineInput value={formData.email} onChange={(v) => updateField("email", v)} ariaLabel="Email" />
+              <LineInput
+                value={formData.email}
+                onChange={(v) => updateField("email", v)}
+                ariaLabel="Email"
+              />
             </label>
             <label className="mt-4 grid grid-cols-[92px_1fr] items-end">
               <span>Address:</span>
-              <LineInput value={formData.address} onChange={(v) => updateField("address", v)} ariaLabel="Address" />
+              <LineInput
+                value={formData.address}
+                onChange={(v) => updateField("address", v)}
+                ariaLabel="Address"
+              />
             </label>
-            <LineInput value={formData.addressLine2} onChange={(v) => updateField("addressLine2", v)} className="ml-[92px] mt-4 block w-[410px]" ariaLabel="Address line 2" />
+            <LineInput
+              value={formData.addressLine2}
+              onChange={(v) => updateField("addressLine2", v)}
+              className="ml-[92px] mt-4 block w-[410px]"
+              ariaLabel="Address line 2"
+            />
             <label className="mt-4 grid grid-cols-[92px_1fr] items-end">
               <span>Suburb/Town:</span>
-              <LineInput value={formData.suburbTown} onChange={(v) => updateField("suburbTown", v)} ariaLabel="Suburb or town" />
+              <LineInput
+                value={formData.suburbTown}
+                onChange={(v) => updateField("suburbTown", v)}
+                ariaLabel="Suburb or town"
+              />
             </label>
             <div className="mt-4 grid grid-cols-[220px_220px] gap-x-12">
               <label className="grid grid-cols-[105px_1fr] items-end">
                 <span>State/Territory:</span>
-                <LineInput value={formData.stateTerritory} onChange={(v) => updateField("stateTerritory", v)} ariaLabel="State or territory" />
+                <LineInput
+                  value={formData.stateTerritory}
+                  onChange={(v) => updateField("stateTerritory", v)}
+                  ariaLabel="State or territory"
+                />
               </label>
               <label className="grid grid-cols-[70px_1fr] items-end">
                 <span>Postcode:</span>
-                <LineInput value={formData.postcode} onChange={(v) => updateField("postcode", v)} ariaLabel="Postcode" />
+                <LineInput
+                  value={formData.postcode}
+                  onChange={(v) => updateField("postcode", v)}
+                  ariaLabel="Postcode"
+                />
               </label>
             </div>
           </div>
@@ -408,7 +470,8 @@ const ProhibitionNoticeDeclarationForm = () => {
         <div className="mt-7 grid grid-cols-[28px_218px_1fr] gap-x-3 text-[13px]">
           <div className="font-bold">2.</div>
           <p className="font-bold leading-tight">
-            Please provide details of any former names or other names you may be known by:
+            Please provide details of any former names or other names you may be
+            known by:
           </p>
           <LineInput
             value={formData.formerNames}
@@ -421,28 +484,47 @@ const ProhibitionNoticeDeclarationForm = () => {
         <div className="mt-6 grid grid-cols-[28px_1fr_auto] items-center gap-x-3 text-[13px]">
           <div className="font-bold">3.</div>
           <p className="font-bold">
-            Are you currently subject to a prohibition notice under the Education and Care Services National Law?
+            Are you currently subject to a prohibition notice under the
+            Education and Care Services National Law?
           </p>
           <div>
-            <YesNoChoice name="Subject to prohibition notice" value={formData.subjectToProhibitionNotice} onChange={(v) => updateField("subjectToProhibitionNotice", v)} />
-            {errors.subjectToProhibitionNotice && <p className="text-red-500 text-xs mt-1">{errors.subjectToProhibitionNotice}</p>}
+            <YesNoChoice
+              name="Subject to prohibition notice"
+              value={formData.subjectToProhibitionNotice}
+              onChange={(v) => updateField("subjectToProhibitionNotice", v)}
+            />
+            {errors.subjectToProhibitionNotice && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.subjectToProhibitionNotice}
+              </p>
+            )}
           </div>
         </div>
 
         <p className="ml-[58px] mt-5 max-w-[520px] text-[15px] font-bold italic leading-tight">
-          Please note that under section 187 of the Education and Care Services National Law, a person who
-          is subject to a prohibition notice is not allowed to work for or be engaged by an education and
-          care service or carry out any other related activity.
+          Please note that under section 187 of the Education and Care Services
+          National Law, a person who is subject to a prohibition notice is not
+          allowed to work for or be engaged by an education and care service or
+          carry out any other related activity.
         </p>
 
         <div className="mt-3 grid grid-cols-[28px_1fr_auto] items-center gap-x-3 text-[13px]">
           <div className="font-bold">4.</div>
           <p className="font-bold">
-            Are you currently prohibited or restricted from working with children under any other law?
+            Are you currently prohibited or restricted from working with
+            children under any other law?
           </p>
           <div>
-            <YesNoChoice name="Prohibited under other law" value={formData.prohibitedUnderOtherLaw} onChange={(v) => updateField("prohibitedUnderOtherLaw", v)} />
-            {errors.prohibitedUnderOtherLaw && <p className="text-red-500 text-xs mt-1">{errors.prohibitedUnderOtherLaw}</p>}
+            <YesNoChoice
+              name="Prohibited under other law"
+              value={formData.prohibitedUnderOtherLaw}
+              onChange={(v) => updateField("prohibitedUnderOtherLaw", v)}
+            />
+            {errors.prohibitedUnderOtherLaw && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.prohibitedUnderOtherLaw}
+              </p>
+            )}
           </div>
         </div>
 
@@ -460,15 +542,30 @@ const ProhibitionNoticeDeclarationForm = () => {
                 className={`mx-1 w-[300px] ${errors.declarationFullName ? "border-red-500" : ""}`}
                 ariaLabel="Full name of person signing declaration"
               />
-              {errors.declarationFullName && <p className="text-red-500 text-xs">{errors.declarationFullName}</p>}
+              {errors.declarationFullName && (
+                <p className="text-red-500 text-xs">
+                  {errors.declarationFullName}
+                </p>
+              )}
             </div>
-            <span>[insert full name of person signing the declaration] declare that:</span>
+            <span>
+              [insert full name of person signing the declaration] declare that:
+            </span>
           </div>
 
           <ol className="mt-4 list-decimal space-y-2 pl-9">
-            <li>the information provided on this form is true, complete and correct</li>
-            <li>the approved provider or a representative of the approved provider is authorised to verify any information provided in this form</li>
-            <li>I am aware that under the Education and Care Services National Law penalties apply if false or misleading information is provided.</li>
+            <li>
+              the information provided on this form is true, complete and
+              correct
+            </li>
+            <li>
+              the approved provider or a representative of the approved provider
+              is authorised to verify any information provided in this form
+            </li>
+            <li>
+              I am aware that under the Education and Care Services National Law
+              penalties apply if false or misleading information is provided.
+            </li>
           </ol>
 
           {/* Declaration signature */}
@@ -503,7 +600,11 @@ const ProhibitionNoticeDeclarationForm = () => {
               )}
             </div>
           </label>
-          {errors.declarationSignature && <p className="text-red-500 text-xs ml-[303px]">{errors.declarationSignature}</p>}
+          {errors.declarationSignature && (
+            <p className="text-red-500 text-xs ml-[303px]">
+              {errors.declarationSignature}
+            </p>
+          )}
           <SignatureModal
             isOpen={showDeclarationSigModal}
             onClose={() => setShowDeclarationSigModal(false)}
@@ -521,7 +622,9 @@ const ProhibitionNoticeDeclarationForm = () => {
                 ariaLabel="Signed at place"
               />
               <p className="text-center text-[12px] leading-none">[place]</p>
-              {errors.signedPlace && <p className="text-red-500 text-xs">{errors.signedPlace}</p>}
+              {errors.signedPlace && (
+                <p className="text-red-500 text-xs">{errors.signedPlace}</p>
+              )}
             </div>
             <span>on the</span>
             <div>
@@ -533,7 +636,9 @@ const ProhibitionNoticeDeclarationForm = () => {
                 aria-label="Signed date"
               />
               <p className="text-center text-[12px] leading-none">[date]</p>
-              {errors.signedDate && <p className="text-red-500 text-xs">{errors.signedDate}</p>}
+              {errors.signedDate && (
+                <p className="text-red-500 text-xs">{errors.signedDate}</p>
+              )}
             </div>
           </div>
 
@@ -576,10 +681,16 @@ const ProhibitionNoticeDeclarationForm = () => {
                 className={errors.witnessName ? "border-red-500" : ""}
                 ariaLabel="Name of witness"
               />
-              {errors.witnessName && <p className="text-red-500 text-xs">{errors.witnessName}</p>}
+              {errors.witnessName && (
+                <p className="text-red-500 text-xs">{errors.witnessName}</p>
+              )}
             </div>
           </div>
-          {errors.witnessSignature && <p className="text-red-500 text-xs ml-[163px]">{errors.witnessSignature}</p>}
+          {errors.witnessSignature && (
+            <p className="text-red-500 text-xs ml-[163px]">
+              {errors.witnessSignature}
+            </p>
+          )}
           <SignatureModal
             isOpen={showWitnessSigModal}
             onClose={() => setShowWitnessSigModal(false)}

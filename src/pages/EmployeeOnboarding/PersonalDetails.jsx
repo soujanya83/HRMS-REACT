@@ -34,6 +34,8 @@ const PersonalDetails = () => {
     tax_file_number: '',
     superannuation_fund_name: '',
     superannuation_member_number: '',
+    bank_name: '',
+    account_name: '',
     bank_bsb: '',
     bank_account_number: '',
   });
@@ -104,6 +106,8 @@ const PersonalDetails = () => {
       tax_file_number: employee.tax_file_number || '',
       superannuation_fund_name: employee.superannuation_fund_name || '',
       superannuation_member_number: employee.superannuation_member_number || '',
+      bank_name: employee.bank_name || '',
+      account_name: employee.account_name || '',
       bank_bsb: employee.bank_bsb || '',
       bank_account_number: employee.bank_account_number || '',
     });
@@ -158,6 +162,8 @@ const PersonalDetails = () => {
         tax_file_number: formData.tax_file_number,
         superannuation_fund_name: formData.superannuation_fund_name,
         superannuation_member_number: formData.superannuation_member_number,
+        bank_name: formData.bank_name,
+        account_name: formData.account_name,
         bank_bsb: formData.bank_bsb,
         bank_account_number: formData.bank_account_number,
       };
@@ -446,6 +452,34 @@ const PersonalDetails = () => {
                 onChange={handleChange}
                 placeholder="Your superannuation member number"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bank Name
+              </label>
+              <input
+                type="text"
+                name="bank_name"
+                value={formData.bank_name}
+                onChange={handleChange}
+                placeholder="e.g., Commonwealth Bank, ANZ"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Account Name
+              </label>
+              <input
+                type="text"
+                name="account_name"
+                value={formData.account_name}
+                onChange={handleChange}
+                placeholder="Name on the bank account"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
