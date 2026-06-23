@@ -6,6 +6,10 @@ import {
   FaCheck,
   FaBook,
   FaSpinner,
+  FaSearch,
+  FaSortAlphaDown,
+  FaSortAlphaDownAlt,
+  FaTimes,
 } from "react-icons/fa";
 
 const Policies = () => {
@@ -13,6 +17,8 @@ const Policies = () => {
   const [employeeId, setEmployeeId] = useState(null);
   const [organizationId, setOrganizationId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState(null); // null | "asc" | "desc"
 
   // Setup employee and organization context
   useEffect(() => {
@@ -157,6 +163,20 @@ const Policies = () => {
     ? Math.round((completedCount / policies.length) * 100)
     : 0;
 
+  // Derive filtered + sorted list from frontend state only
+  const filteredPolicies = policies
+    .filter((p) =>
+      p.policy_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (!sortOrder) return 0;
+      const nameA = (a.policy_name || "").toLowerCase();
+      const nameB = (b.policy_name || "").toLowerCase();
+      return sortOrder === "asc"
+        ? nameA.localeCompare(nameB)
+        : nameB.localeCompare(nameA);
+    });
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-2">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -187,6 +207,50 @@ const Policies = () => {
         </div>
       </div>
 
+      {/* Search + Sort Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        {/* Search */}
+        <div className="relative flex-1">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+          <input
+            type="text"
+            placeholder="Search policies..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <FaTimes size={12} />
+            </button>
+          )}
+        </div>
+
+        {/* Sort Toggle */}
+        <button
+          onClick={() =>
+            setSortOrder((prev) =>
+              prev === null ? "asc" : prev === "asc" ? "desc" : null
+            )
+          }
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border shadow-sm transition-all ${
+            sortOrder
+              ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+              : "bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600"
+          }`}
+        >
+          {sortOrder === "desc" ? (
+            <FaSortAlphaDownAlt size={15} />
+          ) : (
+            <FaSortAlphaDown size={15} />
+          )}
+          {sortOrder === "asc" ? "A → Z" : sortOrder === "desc" ? "Z → A" : "Sort A–Z"}
+        </button>
+      </div>
+
       {/* Policies List Container */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         {loading ? (
@@ -194,10 +258,20 @@ const Policies = () => {
             <FaSpinner className="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" />
             <p className="text-gray-600">Loading onboarding policies...</p>
           </div>
-        ) : policies.length === 0 ? (
+        ) : filteredPolicies.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-gray-500">
             <FaBook size={48} className="text-gray-300 mb-3" />
-            <p className="text-lg font-medium">No onboarding policies found</p>
+            <p className="text-lg font-medium">
+              {searchQuery ? `No policies matching "${searchQuery}"` : "No onboarding policies found"}
+            </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-2 text-sm text-blue-500 hover:underline"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -210,7 +284,7 @@ const Policies = () => {
             </div>
 
             {/* Table Rows */}
-            {policies.map((policy, index) => {
+            {filteredPolicies.map((policy, index) => {
               const isViewed = isPolicyViewed(policy);
               const isAcknowledged = isPolicyAcknowledged(policy);
               return (
