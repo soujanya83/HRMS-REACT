@@ -446,7 +446,8 @@ const DocumentUploadModal = ({
               <select
                 value={formData.document_type}
                 onChange={handleDocumentTypeChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed text-gray-500"
+                disabled
                 required
               >
                 <option value="">Select Document Type</option>
