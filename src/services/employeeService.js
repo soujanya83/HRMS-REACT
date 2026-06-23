@@ -223,7 +223,7 @@ export const updateDocumentDates = (documentId, datesData) => {
  */
 export const deleteEmployeeDocument = (documentId) => {
   //console.log(`Deleting document ID: ${documentId}`);
-  return axiosClient.delete(`/employee/document/${documentId}`);
+  return axiosClient.delete(`/employee-documents/${documentId}`);
 };
 
 /**

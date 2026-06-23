@@ -11,6 +11,8 @@ import {
   HiViewList,
   HiViewGrid,
 } from "react-icons/hi";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import {
   getOrganizations,
@@ -31,8 +33,16 @@ import {
 // COLOR PALETTE ICON (Same as Dashboard)
 // ============================================
 const ColorPaletteIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-    <path d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z" fill="white" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    className="w-6 h-6"
+  >
+    <path
+      d="M12 2C6.48 2 2 6.03 2 11c0 3.87 3.13 7 7 7h1c.55 0 1 .45 1 1 0 1.1.9 2 2 2 4.42 0 8-3.58 8-8 0-6.08-4.92-11-11-11z"
+      fill="white"
+    />
     <circle cx="7.5" cy="10.5" r="1.5" fill="#2D7BE5" />
     <circle cx="10.5" cy="7.5" r="1.5" fill="#2D7BE5" />
     <circle cx="14.5" cy="7.5" r="1.5" fill="#2D7BE5" />
@@ -49,32 +59,32 @@ const ColorPaletteModal = ({
   onSidebarColorSelect,
   onBackgroundColorSelect,
   currentSidebarColor,
-  currentBgColor
+  currentBgColor,
 }) => {
   if (!isOpen) return null;
 
   const sidebarColors = [
-    { name: 'Dark Navy', value: '#0B1A2E' },
-    { name: 'Charcoal', value: '#2C2C2C' },
-    { name: 'Teal', value: '#008080' },
-    { name: 'Deep Purple', value: '#4B0082' },
-    { name: 'Forest Green', value: '#228B22' },
-    { name: 'Slate Blue', value: '#5B7B9A' },
+    { name: "Dark Navy", value: "#0B1A2E" },
+    { name: "Charcoal", value: "#2C2C2C" },
+    { name: "Teal", value: "#008080" },
+    { name: "Deep Purple", value: "#4B0082" },
+    { name: "Forest Green", value: "#228B22" },
+    { name: "Slate Blue", value: "#5B7B9A" },
   ];
 
   const backgroundColors = [
-    { name: 'Pure White', value: '#FFFFFF' },
-    { name: 'Snow', value: '#FFFAFA' },
-    { name: 'Ivory', value: '#FFFFF0' },
-    { name: 'Pearl', value: '#F8F6F0' },
-    { name: 'Whisper', value: '#F5F5F5' },
-    { name: 'Silver Mist', value: '#E5E7EB' },
-    { name: 'Ash', value: '#D1D5DB' },
-    { name: 'Pewter', value: '#9CA3AF' },
-    { name: 'Stone', value: '#6B7280' },
-    { name: 'Graphite', value: '#4B5563' },
-    { name: 'Slate', value: '#374151' },
-    { name: 'Charcoal', value: '#1F2937' },
+    { name: "Pure White", value: "#FFFFFF" },
+    { name: "Snow", value: "#FFFAFA" },
+    { name: "Ivory", value: "#FFFFF0" },
+    { name: "Pearl", value: "#F8F6F0" },
+    { name: "Whisper", value: "#F5F5F5" },
+    { name: "Silver Mist", value: "#E5E7EB" },
+    { name: "Ash", value: "#D1D5DB" },
+    { name: "Pewter", value: "#9CA3AF" },
+    { name: "Stone", value: "#6B7280" },
+    { name: "Graphite", value: "#4B5563" },
+    { name: "Slate", value: "#374151" },
+    { name: "Charcoal", value: "#1F2937" },
   ];
 
   return (
@@ -82,20 +92,28 @@ const ColorPaletteModal = ({
       <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
       <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Customize Colors</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Customize Colors
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             ✕
           </button>
         </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Sidebar Color</h2>
+        <h2 className="text-md font-semibold text-gray-800 mb-3">
+          Sidebar Color
+        </h2>
         <div className="grid grid-cols-3 gap-3 mb-5">
           {sidebarColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-                }`}
+              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
+                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -103,14 +121,17 @@ const ColorPaletteModal = ({
           ))}
         </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">Background Color</h2>
+        <h2 className="text-md font-semibold text-gray-800 mb-3">
+          Background Color
+        </h2>
         <div className="grid grid-cols-3 gap-3">
           {backgroundColors.map((c) => (
             <button
               key={c.name}
               onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-                }`}
+              className={`p-3 rounded-xl text-sm font-medium border ${
+                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
+              }`}
               style={{ backgroundColor: c.value }}
             >
               {c.name}
@@ -284,37 +305,37 @@ const ALL_ROOM_TEMPLATES = [...ROOM_TEMPLATES, ...OTHER_ROOM_TEMPLATES];
 // Age group options with icons - Updated to match image
 const AGE_GROUPS = [
   {
-    value: "6 - 12 months",
+    value: "6 - 12 Month",
     label: "6 - 12 months",
     icon: "🍼",
     colorHint: "#8176B7",
   },
   {
-    value: "12 - 24 Months",
+    value: "12 - 24 Month",
     label: "12 - 24 Months",
     icon: "🌱",
     colorHint: "#CFA5CA",
   },
   {
-    value: "2 - 3 Years",
+    value: "2-3 Year",
     label: "2 - 3 Years",
     icon: "🔍",
     colorHint: "#C57F9A",
   },
   {
-    value: "3 - 5 Years (Non Kinder)",
+    value: "3-5 Year",
     label: "3 - 5 Years (Non Kinder)",
     icon: "🎨",
     colorHint: "#3FA2DB",
   },
   {
-    value: "3 Years Kinder",
+    value: "3 Year Kinder",
     label: "3 Years Kinder",
     icon: "💭",
     colorHint: "#8DBA90",
   },
   {
-    value: "4 Years Kinder",
+    value: "4 Year Kinder",
     label: "4 Years Kinder",
     icon: "🔬",
     colorHint: "#EBAF94",
@@ -373,21 +394,74 @@ const getColorCode = (value) => {
   return "sky-blue";
 };
 
+// Get hex code from color value/code/label
+const getColorHex = (value) => {
+  if (!value) return "#3FA2DB";
+  if (value.startsWith("#")) return value;
+
+  const codeOption = COLOR_OPTIONS.find((opt) => opt.code === value);
+  if (codeOption) return codeOption.value;
+
+  const labelOption = COLOR_OPTIONS.find(
+    (opt) => opt.label.toLowerCase() === value.toLowerCase(),
+  );
+  if (labelOption) return labelOption.value;
+
+  const valueOption = COLOR_OPTIONS.find((opt) => opt.value === value);
+  if (valueOption) return valueOption.value;
+
+  return "#3FA2DB";
+};
+
+// Map age group to API expectations format
+const getApiAgeGroup = (val) => {
+  if (!val) return "6 - 12 Month";
+  
+  const clean = val.trim().toLowerCase();
+  if (clean.includes("6") && clean.includes("12")) {
+    return "6 - 12 Month";
+  }
+  if (clean.includes("12") && clean.includes("24")) {
+    return "12 - 24 Month";
+  }
+  if (clean.includes("2") && clean.includes("3") && !clean.includes("kinder")) {
+    return "2-3 Year";
+  }
+  if (clean.includes("3") && clean.includes("5")) {
+    return "3-5 Year";
+  }
+  if (clean.includes("3") && clean.includes("kinder")) {
+    return "3 Year Kinder";
+  }
+  if (clean.includes("4") && clean.includes("kinder")) {
+    return "4 Year Kinder";
+  }
+  if (clean.includes("all")) {
+    return "All Ages";
+  }
+  if (clean.includes("staff") || clean.includes("only")) {
+    return "Staff Only";
+  }
+  return val; // Fallback
+};
+
 // Get age group icon
 const getAgeGroupIcon = (ageGroup) => {
   if (!ageGroup) return "👶";
-  const found = AGE_GROUPS.find((ag) => ag.value === ageGroup);
+  const cleanGroup = getApiAgeGroup(ageGroup);
+  const found = AGE_GROUPS.find((ag) => ag.value === cleanGroup);
   return found ? found.icon : "👶";
 };
 
 // Get color for age group
 const getColorForAgeGroup = (ageGroup) => {
-  const found = AGE_GROUPS.find((ag) => ag.value === ageGroup);
+  const cleanGroup = getApiAgeGroup(ageGroup);
+  const found = AGE_GROUPS.find((ag) => ag.value === cleanGroup);
   if (found && found.colorHint) return found.colorHint;
 
   // Match with room templates
   const roomTemplate = ALL_ROOM_TEMPLATES.find(
-    (room) => room.ageGroup === ageGroup,
+    (room) => getApiAgeGroup(room.ageGroup) === cleanGroup,
   );
   if (roomTemplate) return roomTemplate.colorCode;
 
@@ -407,58 +481,6 @@ const getColorWithOpacity = (colorValue, opacity = 0.1) => {
   return colorValue;
 };
 
-// Color Palette Component (For Rooms - kept separate)
-const RoomColorPalette = ({ isOpen, onClose, onColorSelect }) => {
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 bg-black bg-opacity-20 transition-opacity z-40"
-        onClick={onClose}
-      />
-
-      <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Choose Room Color
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <HiX size={24} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {COLOR_OPTIONS.map((color, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  onColorSelect(color.value);
-                  onClose();
-                }}
-                className="w-full p-3 rounded-lg transition-transform hover:scale-105 flex items-center justify-between border border-gray-200"
-                style={{ backgroundColor: color.value }}
-              >
-                <span className="font-medium text-white drop-shadow-sm">
-                  {color.label}
-                </span>
-                <div
-                  className="w-6 h-6 rounded-full border-2 border-white shadow"
-                  style={{ backgroundColor: color.value }}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
 // Reusable Form Components
 const FormInput = ({ label, name, error, ...props }) => (
   <div>
@@ -469,8 +491,9 @@ const FormInput = ({ label, name, error, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
-        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+        error ? "border-red-500" : "border-gray-300"
+      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     />
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -485,8 +508,9 @@ const FormSelect = ({ label, name, error, children, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
-        } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+        error ? "border-red-500" : "border-gray-300"
+      } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     >
       {children}
     </select>
@@ -503,8 +527,9 @@ const FormTextarea = ({ label, name, error, ...props }) => (
       id={name}
       name={name}
       {...props}
-      className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
-        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+        error ? "border-red-500" : "border-gray-300"
+      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
     ></textarea>
     {error && <p className="text-red-500 text-xs mt-1">{error[0]}</p>}
   </div>
@@ -537,8 +562,9 @@ const ColorPicker = ({ label, name, value, onChange, error }) => {
             name={name}
             value={currentCode}
             onChange={handleColorChange}
-            className={`block w-full px-3 py-2 bg-white border ${error ? "border-red-500" : "border-gray-300"
-              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+            className={`block w-full px-3 py-2 bg-white border ${
+              error ? "border-red-500" : "border-gray-300"
+            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
           >
             {COLOR_OPTIONS.map((color) => (
               <option key={color.code} value={color.code}>
@@ -570,7 +596,7 @@ function OrganizationsPage() {
   const [activeTab, setActiveTab] = useState("rooms");
   const [backgroundColor, setBackgroundColor] = useState("#f9fafb");
   const [sidebarColor, setSidebarColor] = useState(() => {
-    return localStorage.getItem('sidebarColor') || '#1a4d4d';
+    return localStorage.getItem("sidebarColor") || "#1a4d4d";
   });
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
 
@@ -594,9 +620,13 @@ function OrganizationsPage() {
 
   // Save sidebar color to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('sidebarColor', sidebarColor);
+    localStorage.setItem("sidebarColor", sidebarColor);
     // Dispatch custom event to update sidebar
-    window.dispatchEvent(new CustomEvent('sidebarColorUpdate', { detail: { color: sidebarColor } }));
+    window.dispatchEvent(
+      new CustomEvent("sidebarColorUpdate", {
+        detail: { color: sidebarColor },
+      }),
+    );
   }, [sidebarColor]);
 
   const fetchOrganizations = useCallback(async () => {
@@ -662,11 +692,11 @@ function OrganizationsPage() {
       setIsModalOpen(false);
       setEditingOrg(null);
 
-      alert(
+      toast.success(
         apiResponse.message ||
-        (editingOrg
-          ? "Organization updated successfully!"
-          : "Organization created successfully!"),
+          (editingOrg
+            ? "Organization updated successfully!"
+            : "Organization created successfully!"),
       );
     } catch (err) {
       console.error("Error in handleSave:", err);
@@ -683,11 +713,11 @@ function OrganizationsPage() {
           "Validation errors:\n" +
           (errors
             ? Object.entries(errors)
-              .map(
-                ([field, msgs]) =>
-                  `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`,
-              )
-              .join("\n")
+                .map(
+                  ([field, msgs]) =>
+                    `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`,
+                )
+                .join("\n")
             : "Invalid data provided.");
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -695,7 +725,7 @@ function OrganizationsPage() {
         errorMessage = err.message;
       }
 
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -716,10 +746,12 @@ function OrganizationsPage() {
         }
 
         await fetchOrganizations();
-        alert("Organization deleted successfully!");
+        toast.success("Organization deleted successfully!");
       } catch (err) {
         console.error("Failed to delete organization:", err);
-        alert(err.response?.data?.message || "Failed to delete organization");
+        toast.error(
+          err.response?.data?.message || "Failed to delete organization",
+        );
       } finally {
         setIsConfirmOpen(false);
         setOrgToDelete(null);
@@ -742,21 +774,19 @@ function OrganizationsPage() {
   const handleSaveRoom = async (roomData) => {
     setIsSubmitting(true);
     try {
-      // console.log("Saving room with data:", roomData);
-
       const apiData = {
         name: roomData.name,
-        description: roomData.description || "",
+        age_group: getApiAgeGroup(roomData.age_group),
+        color_code: getColorHex(roomData.color_code),
       };
 
       let response;
       if (editingRoom) {
+        console.log("Edit room data ", apiData);
         response = await updateDepartment(editingRoom.id, apiData);
       } else {
         response = await createDepartment(currentOrgId, apiData);
       }
-
-      // console.log("Save room response:", response);
 
       if (response && response.success === true) {
         if (editingRoom) {
@@ -766,14 +796,16 @@ function OrganizationsPage() {
         }
 
         handleCloseRoomModal();
+        await fetchOrganizations();
+        // Since list is re-fetched or re-rendered, we can just trigger a state change or re-fetch locally
         window.location.reload();
-        alert(response.message || "Room saved successfully!");
+        toast.success(response.message || "Room saved successfully!");
       } else {
         throw new Error(response?.message || "Failed to save room");
       }
     } catch (err) {
       console.error("Failed to save room:", err);
-      alert(
+      toast.error(
         err.response?.data?.message || err.message || "Failed to save room",
       );
     } finally {
@@ -794,10 +826,10 @@ function OrganizationsPage() {
         setIsRoomConfirmOpen(false);
         setRoomToDelete(null);
         window.location.reload();
-        alert("Room deleted successfully!");
+        toast.success("Room deleted successfully!");
       } catch (err) {
         console.error("Failed to delete room:", err);
-        alert(err.response?.data?.message || "Failed to delete room");
+        toast.error(err.response?.data?.message || "Failed to delete room");
       }
     }
   };
@@ -828,16 +860,16 @@ function OrganizationsPage() {
       if (response && response.success === true) {
         handleCloseDesignationModal();
         window.location.reload();
-        alert(response.message || "Designation saved successfully!");
+        toast.success(response.message || "Designation saved successfully!");
       } else {
         throw new Error(response?.message || "Failed to save designation");
       }
     } catch (err) {
       console.error("Failed to save designation:", err);
-      alert(
+      toast.error(
         err.response?.data?.message ||
-        err.message ||
-        "Failed to save designation",
+          err.message ||
+          "Failed to save designation",
       );
     } finally {
       setIsSubmitting(false);
@@ -856,10 +888,12 @@ function OrganizationsPage() {
         setIsDesignationConfirmOpen(false);
         setDesignationToDelete(null);
         window.location.reload();
-        alert("Designation deleted successfully!");
+        toast.success("Designation deleted successfully!");
       } catch (err) {
         console.error("Failed to delete designation:", err);
-        alert(err.response?.data?.message || "Failed to delete designation");
+        toast.error(
+          err.response?.data?.message || "Failed to delete designation",
+        );
       }
     }
   };
@@ -877,6 +911,7 @@ function OrganizationsPage() {
   return (
     <RoomModalContext.Provider value={roomModalContextValue}>
       <DesignationModalContext.Provider value={designationModalContextValue}>
+        <ToastContainer position="top-right" autoClose={3000} />
         {/* Color Palette Button - Same as Dashboard */}
         <button
           onClick={() => setIsColorPaletteOpen(true)}
@@ -890,14 +925,12 @@ function OrganizationsPage() {
           isOpen={isColorPaletteOpen}
           onClose={() => setIsColorPaletteOpen(false)}
           onSidebarColorSelect={(color) => {
-            //console.log('Setting sidebar color to:', color);
             setSidebarColor(color);
-            localStorage.setItem('sidebarColor', color);
+            localStorage.setItem("sidebarColor", color);
           }}
           onBackgroundColorSelect={(color) => {
-            // console.log('Setting background color to:', color);
             setBackgroundColor(color);
-            localStorage.setItem('backgroundColor', color);
+            localStorage.setItem("backgroundColor", color);
           }}
           currentSidebarColor={sidebarColor}
           currentBgColor={backgroundColor}
@@ -1230,19 +1263,21 @@ function OrganizationDetailView({
         <nav className="flex gap-8">
           <button
             onClick={() => onTabChange("rooms")}
-            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${activeTab === "rooms"
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
+              activeTab === "rooms"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            }`}
           >
             Rooms
           </button>
           <button
             onClick={() => onTabChange("designations")}
-            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${activeTab === "designations"
+            className={`pb-4 px-1 font-medium text-sm border-b-2 transition ${
+              activeTab === "designations"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            }`}
           >
             Designations
           </button>
@@ -1294,7 +1329,6 @@ function RoomsList({ orgId }) {
 
     try {
       const response = await getDepartmentsByOrgId(orgId);
-      //console.log("Rooms API response:", response);
 
       let roomsData = [];
 
@@ -1308,7 +1342,6 @@ function RoomsList({ orgId }) {
         roomsData = response;
       }
 
-      // console.log("Processed rooms data:", roomsData);
       setRooms(roomsData);
     } catch (error) {
       console.error("Failed to fetch rooms", error);
@@ -1382,19 +1415,21 @@ function RoomsList({ orgId }) {
         <div className="flex items-center bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              viewMode === "list"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
-              }`}
+            }`}
           >
             <HiViewList className="inline mr-1" /> List
           </button>
           <button
             onClick={() => setViewMode("grid")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "grid"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              viewMode === "grid"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
-              }`}
+            }`}
           >
             <HiViewGrid className="inline mr-1" /> Grid
           </button>
@@ -1420,7 +1455,7 @@ function RoomsList({ orgId }) {
               (t) => t.name === room.name,
             );
             const defaultColor = matchingTemplate?.colorCode || "#3FA2DB";
-            const roomHexColor = extractColorFromCode(room.id, defaultColor);
+            const roomHexColor = getColorHex(room.color_code || extractColorFromCode(room.id, defaultColor));
 
             return (
               <RoomCard
@@ -1441,7 +1476,7 @@ function RoomsList({ orgId }) {
 // Room Item Component (List View)
 function RoomItem({ room, onEdit, onDelete }) {
   const defaultColor = "#3FA2DB";
-  const roomHexColor = extractColorFromCode(room.id, defaultColor);
+  const roomHexColor = getColorHex(room.color_code || extractColorFromCode(room.id, defaultColor));
 
   // Get age group icon
   const ageGroupIcon = getAgeGroupIcon(room.age_group);
@@ -1477,12 +1512,6 @@ function RoomItem({ room, onEdit, onDelete }) {
                   )}
                 </div>
               </div>
-
-              {room.description && (
-                <p className="text-gray-600 text-sm mt-3 bg-gray-50 p-3 rounded-lg">
-                  {room.description}
-                </p>
-              )}
             </div>
 
             <div className="flex items-center gap-1">
@@ -1569,12 +1598,6 @@ function RoomCard({ room, roomHexColor, onEdit, onDelete }) {
               </div>
             </div>
           </div>
-        )}
-
-        {room.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {room.description}
-          </p>
         )}
       </div>
     </div>
@@ -1895,9 +1918,8 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
     const template = ALL_ROOM_TEMPLATES.find((t) => t.name === roomName);
     if (template) {
       return {
-        age_group: template.ageGroup,
+        age_group: getApiAgeGroup(template.ageGroup),
         color_code: getColorCode(template.colorCode),
-        description: template.description,
       };
     }
     return null;
@@ -1906,18 +1928,15 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
   useEffect(() => {
     if (room) {
       const savedColor = localStorage.getItem(`room_color_${room.id}`);
-      const colorCode = savedColor
-        ? getColorCode(savedColor)
+      const colorSource = room.color_code || savedColor;
+      const colorCode = colorSource
+        ? getColorCode(colorSource)
         : getDefaultFromTemplate(room.name)?.color_code || "sky-blue";
 
       setFormData({
         name: room.name || "",
-        description:
-          room.description ||
-          getDefaultFromTemplate(room.name)?.description ||
-          "",
         age_group:
-          room.age_group ||
+          getApiAgeGroup(room.age_group || "") ||
           getDefaultFromTemplate(room.name)?.age_group ||
           AGE_GROUPS[0].value,
         color_code: colorCode,
@@ -1925,7 +1944,6 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
     } else {
       setFormData({
         name: "",
-        description: "",
         age_group: AGE_GROUPS[0].value,
         color_code: "sky-blue",
       });
@@ -1935,7 +1953,6 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Field changed: ${name} = ${value}`);
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -1948,12 +1965,9 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
 
     const submitData = {
       name: formData.name,
-      description: formData.description || "",
       age_group: formData.age_group || AGE_GROUPS[0].value,
       color_code: formData.color_code || "sky-blue",
     };
-
-    console.log("Submitting room data:", submitData);
 
     try {
       await onSave(submitData);
@@ -2019,15 +2033,6 @@ function RoomModal({ isOpen, onClose, onSave, room, isSubmitting }) {
                 value={formData.color_code}
                 onChange={handleChange}
               />
-
-              <FormTextarea
-                label="Description"
-                name="description"
-                value={formData.description || ""}
-                onChange={handleChange}
-                placeholder="Enter room description (e.g., capacity, special features)"
-                rows="3"
-              />
             </div>
           </div>
 
@@ -2087,8 +2092,8 @@ function DesignationModal({
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        err.message ||
-        "Failed to save designation",
+          err.message ||
+          "Failed to save designation",
       );
     }
   };

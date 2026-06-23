@@ -60,7 +60,8 @@ export const createDepartment = (orgId, data) => {
   // Map our data to match API expectations
   const apiData = {
     name: data.name,
-    description: data.description || '',
+    color_code: data.color_code,
+    age_group: data.age_group,
   };
   return axiosClient.post(`/organizations/${orgId}/departments`, apiData)
     .then(extractData);
@@ -70,7 +71,8 @@ export const updateDepartment = (deptId, data) => {
   // Map our data to match API expectations
   const apiData = {
     name: data.name,
-    description: data.description || '',
+    color_code: data.color_code,
+    age_group: data.age_group,
   };
   return axiosClient.put(`/departments/${deptId}`, apiData)
     .then(extractData);
