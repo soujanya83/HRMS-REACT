@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Forms from "./Forms";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -704,60 +705,76 @@ const ChecklistItem = ({
 
   return (
     <div
-      className={`border rounded-lg p-4 transition-all ${isUploaded ? "border-green-300 bg-green-50" : "border-gray-200 bg-white"}`}
+      className={`flex flex-col rounded-xl border transition-all duration-200 overflow-hidden
+        ${
+          isUploaded
+            ? "border-green-200 bg-gradient-to-b from-green-50 to-white shadow-sm"
+            : "border-gray-200 bg-white hover:border-purple-200 hover:shadow-md"
+        }`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          <div className="mt-1">
-            {isUploaded ? (
-              <FaCheckCircle className="text-green-500 text-xl" />
-            ) : (
-              <div className="w-6 h-6 rounded-full border-2 border-gray-300 bg-gray-100" />
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xl">{item.icon}</span>
-              <h4 className="font-semibold text-gray-800">{item.name}</h4>
-              {item.required && (
-                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                  Required
-                </span>
-              )}
-              {item.hasExpiry && (
-                <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">
-                  Expires every {item.expiryYears} years
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-
-            {itemDocuments.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {itemDocuments.map((doc) => (
-                  <DocumentCard
-                    key={doc.id}
-                    document={doc}
-                    onDelete={onDelete}
-                    onView={onView}
-                    onEdit={onEdit}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Header: icon + status + badges */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl leading-none">{item.icon}</span>
+          {isUploaded ? (
+            <FaCheckCircle className="text-green-500 text-sm" />
+          ) : (
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 bg-white" />
+          )}
         </div>
+        <div className="flex flex-wrap gap-1 justify-end">
+          {item.required && (
+            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+              Required
+            </span>
+          )}
+          {item.hasExpiry && (
+            <span className="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+              {item.expiryYears}yr expiry
+            </span>
+          )}
+        </div>
+      </div>
 
+      {/* Body: title + description + doc cards */}
+      <div className="px-4 pb-3 flex-1">
+        <h4 className="font-semibold text-gray-800 text-sm leading-snug mb-1">
+          {item.name}
+        </h4>
+        <p className="text-xs text-gray-400">{item.description}</p>
+
+        {itemDocuments.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {itemDocuments.map((doc) => (
+              <DocumentCard
+                key={doc.id}
+                document={doc}
+                onDelete={onDelete}
+                onView={onView}
+                onEdit={onEdit}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer: full-width action button */}
+      <div className="px-4 pb-4 pt-2">
         {!hasApprovedDoc ? (
           <button
             onClick={() => onUpload(item.type)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm ${isUploaded ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"} text-white rounded-lg whitespace-nowrap ml-3`}
+            className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-colors
+              ${
+                isUploaded
+                  ? "bg-amber-500 hover:bg-amber-600 text-white"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              }`}
           >
-            {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />}{" "}
+            {isUploaded ? <FaEdit size={12} /> : <FaUpload size={12} />}
             {isUploaded ? "Replace" : "Upload"}
           </button>
         ) : (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg whitespace-nowrap ml-3 font-medium">
+          <div className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700 border border-green-200">
             <FaCheckCircle size={12} /> Verified
           </div>
         )}
@@ -860,6 +877,7 @@ const Documents = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [metadata, setMetadata] = useState({ issueDate: "", expiryDate: "" });
+  const [activeTab, setActiveTab] = useState("certificates");
 
   useEffect(() => {
     fetchProfile();
@@ -894,7 +912,6 @@ const Documents = () => {
 
       // Use the employeedata endpoint with employee.id
       const response = await axiosClient.get(`/employeedata/${employee.id}`);
-
       if (response.data?.success && response.data?.data) {
         const employee = response.data.data;
         if (employee.documents) {
@@ -972,6 +989,35 @@ const Documents = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit shadow-inner">
+        <button
+          onClick={() => setActiveTab("certificates")}
+          className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+            activeTab === "certificates"
+              ? "bg-white text-purple-700 shadow-md shadow-purple-100 scale-[1.02]"
+              : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+          }`}
+        >
+          📋 Certificates
+        </button>
+        <button
+          onClick={() => setActiveTab("forms")}
+          className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+            activeTab === "forms"
+              ? "bg-white text-purple-700 shadow-md shadow-purple-100 scale-[1.02]"
+              : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+          }`}
+        >
+          📝 Forms &amp; Checklists
+        </button>
+      </div>
+
+      {/* Tab: Forms & Checklists */}
+      {activeTab === "forms" && <Forms />}
+
+      {/* Tab: Certificates */}
+      {activeTab === "certificates" && (
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
@@ -1000,7 +1046,7 @@ const Documents = () => {
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {MANDATORY_CERTIFICATES_LIST.map((cert) => (
             <ChecklistItem
               key={cert.id}
@@ -1040,6 +1086,7 @@ const Documents = () => {
 
         <ToastContainer position="top-right" />
       </div>
+      )}
     </div>
   );
 };

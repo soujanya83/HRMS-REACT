@@ -358,17 +358,17 @@ const Sidebar = ({
             permission: "*",
           },
           {
-            name: "Certificates & Documents",
+            name: "Documents",
             path: "/dashboard/employee-onboarding/certificates",
             icon: HiOutlineDocumentText,
             permission: "*",
           },
-          {
-            name: "Forms",
-            path: "/dashboard/employee-onboarding/Forms",
-            icon: HiOutlineClipboardList,
-            permission: "*",
-          },
+          // {
+          //   name: "Forms",
+          //   path: "/dashboard/employee-onboarding/Forms",
+          //   icon: HiOutlineClipboardList,
+          //   permission: "*",
+          // },
           {
             name: "Policies",
             path: "/dashboard/employee-onboarding/policies",
