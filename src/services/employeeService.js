@@ -76,7 +76,7 @@ export const restoreEmployee = (id) => {
 
 // Permanently delete an employee from the database
 export const forceDeleteEmployee = (id) => {
-  return axiosClient.delete(`/employees/${id}/force-delete`);
+  return axiosClient.delete(`/employees/${id}/force`);
 };
 
 // ============================================
