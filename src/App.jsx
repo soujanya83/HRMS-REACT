@@ -52,6 +52,7 @@ import PersonalDetails from "./pages/EmployeeOnboarding/PersonalDetails";
 import Documents from "./pages/EmployeeOnboarding/Documents";
 import Forms from "./pages/EmployeeOnboarding/Forms";
 import Policies from "./pages/EmployeeOnboarding/Policies";
+import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 
 // --- Import Attendance Pages ---
 import AttendanceTracking from "./pages/Attendance/AttendanceTracking";
@@ -678,6 +679,10 @@ function App() {
           element: (
             <Navigate to="employee-onboarding/personal-details" replace />
           ),
+        },
+        {
+          path: "profile-settings",
+          element: <ProfileSettingsPage />,
         },
       ],
     },

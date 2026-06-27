@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   FaSave,
   FaUser,
@@ -9,41 +9,42 @@ import {
   FaEnvelope,
   FaCalendarAlt,
   FaMapMarkerAlt,
-  FaHeart,
+  FaPhoneAlt,
   FaShieldAlt,
   FaSpinner,
   FaExclamationTriangle,
-} from 'react-icons/fa';
-import axiosClient from '../../axiosClient';
-import EncryptedInput from '../public/EncryptedInput';
+} from "react-icons/fa";
+import axiosClient from "../../axiosClient";
+import EncryptedInput from "../public/EncryptedInput";
 
 const PersonalDetails = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    email: '',
-    phone_number: '',
-    date_of_birth: '',
-    gender: '',
-    address: '',
-    emergency_contact_name: '',
-    emergency_contact_phone: '',
-    emergency_contact_relationship: '',
-    tax_file_number: '',
-    superannuation_fund_name: '',
-    superannuation_member_number: '',
-    bank_name: '',
-    account_name: '',
-    bank_bsb: '',
-    bank_account_number: '',
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    email: "",
+    phone_number: "",
+    date_of_birth: "",
+    gender: "",
+    address: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    emergency_contact_relationship: "",
+    tax_file_number: "",
+    superannuation_fund_name: "",
+    superannuation_member_number: "",
+    bank_name: "",
+    account_name: "",
+    bank_bsb: "",
+    bank_account_number: "",
   });
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [employeeId, setEmployeeId] = useState(null);
-  const [showSuperFundSuggestions, setShowSuperFundSuggestions] = useState(false);
+  const [showSuperFundSuggestions, setShowSuperFundSuggestions] =
+    useState(false);
   const [superFundSuggestions, setSuperFundSuggestions] = useState([]);
   const [isSearchingSuperFund, setIsSearchingSuperFund] = useState(false);
 
@@ -55,12 +56,12 @@ const PersonalDetails = () => {
     setLoading(true);
     try {
       // Get logged in employee from localStorage
-      const employeeStr = localStorage.getItem('employee');
+      const employeeStr = localStorage.getItem("employee");
       if (!employeeStr) {
         // Fallback to user if employee not found
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem("user");
         if (!userStr) {
-          toast.error('User session not found');
+          toast.error("User session not found");
           return;
         }
         const user = JSON.parse(userStr);
@@ -80,11 +81,11 @@ const PersonalDetails = () => {
       if (response.data?.success && response.data?.data) {
         populateFormData(response.data.data);
       } else {
-        toast.error('Profile not found');
+        toast.error("Profile not found");
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to load profile');
+      console.error("Error fetching profile:", error);
+      toast.error(error.response?.data?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -92,46 +93,53 @@ const PersonalDetails = () => {
 
   const populateFormData = (employee) => {
     setFormData({
-      first_name: employee.first_name || '',
-      middle_name: employee.middle_name || '',
-      last_name: employee.last_name || '',
-      email: employee.personal_email || '',
-      phone_number: employee.phone_number || '',
-      date_of_birth: employee.date_of_birth || '',
-      gender: employee.gender || '',
-      address: employee.address || '',
-      emergency_contact_name: employee.emergency_contact_name || '',
-      emergency_contact_phone: employee.emergency_contact_phone || '',
-      emergency_contact_relationship: employee.emergency_contact_relationship || '',
-      tax_file_number: employee.tax_file_number || '',
-      superannuation_fund_name: employee.superannuation_fund_name || '',
-      superannuation_member_number: employee.superannuation_member_number || '',
-      bank_name: employee.bank_name || '',
-      account_name: employee.account_name || '',
-      bank_bsb: employee.bank_bsb || '',
-      bank_account_number: employee.bank_account_number || '',
+      first_name: employee.first_name || "",
+      middle_name: employee.middle_name || "",
+      last_name: employee.last_name || "",
+      email: employee.personal_email || "",
+      phone_number: employee.phone_number || "",
+      date_of_birth: employee.date_of_birth || "",
+      gender: employee.gender || "",
+      address: employee.address || "",
+      emergency_contact_name: employee.emergency_contact_name || "",
+      emergency_contact_phone: employee.emergency_contact_phone || "",
+      emergency_contact_relationship:
+        employee.emergency_contact_relationship || "",
+      tax_file_number: employee.tax_file_number || "",
+      superannuation_fund_name: employee.superannuation_fund_name || "",
+      superannuation_member_number: employee.superannuation_member_number || "",
+      bank_name: employee.bank_name || "",
+      account_name: employee.account_name || "",
+      bank_bsb: employee.bank_bsb || "",
+      bank_account_number: employee.bank_account_number || "",
     });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.phone_number.trim()) newErrors.phone_number = 'Phone number is required';
-    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
-    if (!formData.gender) newErrors.gender = 'Gender is required';
-    if (!formData.address.trim()) newErrors.address = 'Address is required';
-    if (!formData.emergency_contact_name.trim()) newErrors.emergency_contact_name = 'Emergency contact name is required';
-    if (!formData.emergency_contact_phone.trim()) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
-    if (!formData.emergency_contact_relationship.trim()) newErrors.emergency_contact_relationship = 'Relationship is required';
-    if (!formData.tax_file_number.trim()) newErrors.tax_file_number = 'TFN is required';
-    
+    if (!formData.phone_number.trim())
+      newErrors.phone_number = "Phone number is required";
+    if (!formData.date_of_birth)
+      newErrors.date_of_birth = "Date of birth is required";
+    if (!formData.gender) newErrors.gender = "Gender is required";
+    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.emergency_contact_name.trim())
+      newErrors.emergency_contact_name = "Emergency contact name is required";
+    if (!formData.emergency_contact_phone.trim())
+      newErrors.emergency_contact_phone = "Emergency contact phone is required";
+    if (!formData.emergency_contact_relationship.trim())
+      newErrors.emergency_contact_relationship = "Relationship is required";
+    if (!formData.tax_file_number.trim())
+      newErrors.tax_file_number = "TFN is required";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -139,7 +147,7 @@ const PersonalDetails = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -168,17 +176,20 @@ const PersonalDetails = () => {
         bank_account_number: formData.bank_account_number,
       };
 
-      const response = await axiosClient.post('/employee/update-profile', payload);
+      const response = await axiosClient.post(
+        "/employee/update-profile",
+        payload,
+      );
 
       if (response.data?.status) {
-        toast.success('Profile updated successfully!');
-        navigate('/dashboard/employee-onboarding/certificates');
+        toast.success("Profile updated successfully!");
+        navigate("/dashboard/employee-onboarding/certificates");
       } else {
-        toast.error(response.data?.message || 'Failed to update profile');
+        toast.error(response.data?.message || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Error saving personal details:', error);
-      toast.error('Failed to save personal details');
+      console.error("Error saving personal details:", error);
+      toast.error("Failed to save personal details");
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +206,7 @@ const PersonalDetails = () => {
       const funds = await searchSuperFunds(query);
       setSuperFundSuggestions(funds);
     } catch (error) {
-      console.error('Error searching super funds:', error);
+      console.error("Error searching super funds:", error);
     } finally {
       setIsSearchingSuperFund(false);
     }
@@ -222,7 +233,10 @@ const PersonalDetails = () => {
         <p className="text-gray-600">Complete your personal information</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-lg p-6"
+      >
         {/* Employee Information (Read Only) */}
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="text-md font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -230,18 +244,26 @@ const PersonalDetails = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-blue-700">Full Name</label>
+              <label className="block text-xs font-medium text-blue-700">
+                Full Name
+              </label>
               <p className="text-sm text-gray-800 font-medium">
-                {formData.first_name} {formData.middle_name} {formData.last_name}
+                {formData.first_name} {formData.middle_name}{" "}
+                {formData.last_name}
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-blue-700">Email</label>
-              <p className="text-sm text-gray-800 font-medium">{formData.email || '-'}</p>
+              <label className="block text-xs font-medium text-blue-700">
+                Email
+              </label>
+              <p className="text-sm text-gray-800 font-medium">
+                {formData.email || "-"}
+              </p>
             </div>
           </div>
           <p className="text-xs text-blue-600 mt-3">
-            <FaExclamationTriangle className="inline mr-1" /> These details cannot be edited. Contact HR for changes.
+            <FaExclamationTriangle className="inline mr-1" /> These details
+            cannot be edited. Contact HR for changes.
           </p>
         </div>
 
@@ -262,10 +284,14 @@ const PersonalDetails = () => {
                 value={formData.phone_number}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-2 border ${errors.phone_number ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-4 py-2 border ${errors.phone_number ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 placeholder="+61 123 456 789"
               />
-              {errors.phone_number && <p className="text-xs text-red-500 mt-1">{errors.phone_number}</p>}
+              {errors.phone_number && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.phone_number}
+                </p>
+              )}
             </div>
 
             <div>
@@ -278,9 +304,13 @@ const PersonalDetails = () => {
                 value={formData.date_of_birth}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-4 py-2 border ${errors.date_of_birth ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-blue-500`}
               />
-              {errors.date_of_birth && <p className="text-xs text-red-500 mt-1">{errors.date_of_birth}</p>}
+              {errors.date_of_birth && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.date_of_birth}
+                </p>
+              )}
             </div>
 
             <div>
@@ -292,7 +322,7 @@ const PersonalDetails = () => {
                 value={formData.gender}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-4 py-2 border ${errors.gender ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-blue-500`}
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
@@ -300,7 +330,9 @@ const PersonalDetails = () => {
                 <option value="Other">Other</option>
                 <option value="Prefer not to say">Prefer not to say</option>
               </select>
-              {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
+              {errors.gender && (
+                <p className="text-xs text-red-500 mt-1">{errors.gender}</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -313,10 +345,12 @@ const PersonalDetails = () => {
                 onChange={handleChange}
                 required
                 rows="2"
-                className={`w-full px-4 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-4 py-2 border ${errors.address ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 placeholder="Enter your full address"
               />
-              {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+              {errors.address && (
+                <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+              )}
             </div>
           </div>
         </div>
@@ -324,7 +358,7 @@ const PersonalDetails = () => {
         {/* Emergency Contact */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-            <FaHeart className="text-red-500" /> Emergency Contact
+            <FaPhoneAlt className="text-red-500" /> Emergency Contact
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -339,9 +373,13 @@ const PersonalDetails = () => {
                 onChange={handleChange}
                 required
                 placeholder="Contact Name"
-                className={`w-full px-4 py-2 border ${errors.emergency_contact_name ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                className={`w-full px-4 py-2 border ${errors.emergency_contact_name ? "border-red-500" : "border-gray-300"} rounded-lg`}
               />
-              {errors.emergency_contact_name && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_name}</p>}
+              {errors.emergency_contact_name && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.emergency_contact_name}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -354,9 +392,13 @@ const PersonalDetails = () => {
                 onChange={handleChange}
                 required
                 placeholder="Contact Phone"
-                className={`w-full px-4 py-2 border ${errors.emergency_contact_phone ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                className={`w-full px-4 py-2 border ${errors.emergency_contact_phone ? "border-red-500" : "border-gray-300"} rounded-lg`}
               />
-              {errors.emergency_contact_phone && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_phone}</p>}
+              {errors.emergency_contact_phone && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.emergency_contact_phone}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -369,9 +411,13 @@ const PersonalDetails = () => {
                 onChange={handleChange}
                 required
                 placeholder="Relationship"
-                className={`w-full px-4 py-2 border ${errors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                className={`w-full px-4 py-2 border ${errors.emergency_contact_relationship ? "border-red-500" : "border-gray-300"} rounded-lg`}
               />
-              {errors.emergency_contact_relationship && <p className="text-xs text-red-500 mt-1">{errors.emergency_contact_relationship}</p>}
+              {errors.emergency_contact_relationship && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.emergency_contact_relationship}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -379,7 +425,8 @@ const PersonalDetails = () => {
         {/* Tax & Financial Information */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
-            <FaShieldAlt className="text-green-600" /> Tax & Financial Information
+            <FaShieldAlt className="text-green-600" /> Tax & Financial
+            Information
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,9 +472,9 @@ const PersonalDetails = () => {
                       key={index}
                       type="button"
                       onClick={() => {
-                        setFormData(prev => ({
+                        setFormData((prev) => ({
                           ...prev,
-                          superannuation_fund_name: fund
+                          superannuation_fund_name: fund,
                         }));
                         setSuperFundSuggestions([]);
                         setShowSuperFundSuggestions(false);
@@ -516,7 +563,7 @@ const PersonalDetails = () => {
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
           >
             {submitting ? <FaSpinner className="animate-spin" /> : <FaSave />}
-            {submitting ? 'Saving...' : 'Save & Continue'}
+            {submitting ? "Saving..." : "Save & Continue"}
           </button>
         </div>
       </form>

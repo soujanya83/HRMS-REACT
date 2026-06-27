@@ -475,7 +475,12 @@ const DocumentUploadModal = ({
               <select
                 value={formData.document_type}
                 onChange={handleDocTypeChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={!!preselectedDocumentType}
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  preselectedDocumentType
+                    ? "border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                }`}
                 required
               >
                 <option value="">Select Type</option>
@@ -769,10 +774,27 @@ const SortableFormItem = ({ form, employeeId }) => {
       </div>
 
       <div className="text-left flex-1 min-w-0">
-        <h4 className="font-semibold text-gray-800 truncate">
-          {form.form_name}
-        </h4>
-        <p className="text-sm text-gray-500 truncate">{meta.description}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="font-semibold text-gray-800 truncate">
+            {form.form_name}
+          </h4>
+          {form.is_required === 1 && (
+            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 font-bold rounded-full uppercase tracking-wider shrink-0">
+              Required
+            </span>
+          )}
+          {form.is_filled ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-700 border border-green-200 shrink-0">
+              <FaCheck size={9} className="shrink-0" />
+              Filled
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+              Not Filled
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-gray-500 truncate mt-0.5">{meta.description}</p>
       </div>
 
       <a
@@ -1131,7 +1153,9 @@ export default function EmployeeProfile() {
   const fetchForms = async () => {
     try {
       setLoadingForms(true);
-      const response = await axiosClient.get("/form-masters");
+      const response = await axiosClient.get("/form-masters", {
+        params: { employee_id: id },
+      });
       if (response.data?.data) {
         const sorted = [...response.data.data].sort(
           (a, b) => a.sort_order - b.sort_order,

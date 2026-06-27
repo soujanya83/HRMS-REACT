@@ -43,7 +43,13 @@ axiosClient.interceptors.response.use(
     //   headers: error.response?.headers
     // });
 
-    if (error.response && error.response.status === 401) {
+    // Skip the automatic redirect for auth endpoints — a failed login
+    // returning 401 should NOT cause a full page reload; let the caller
+    // handle the error and display it in the UI.
+    const authEndpoints = ['/login', '/forgot-password', '/verify-otp', '/reset-password', '/password-change'];
+    const isAuthEndpoint = authEndpoints.some((ep) => error.config?.url?.includes(ep));
+
+    if (error.response && error.response.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('ACCESS_TOKEN');
       window.location.href = '/login';
     }
