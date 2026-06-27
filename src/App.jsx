@@ -47,6 +47,7 @@ import ManagePolicies from "./pages/Employees/ManagePolicies";
 import ProbationConfirmation from "./pages/Employees/ProbationConfirmation";
 import ExitOffboarding from "./pages/Employees/ExitOffboarding";
 import EmployeeDocumentsPage from "./pages/Employees/EmployeeDocumentsPage";
+import DocumentTrackingPage from "./pages/Employees/DocumentTrackingPage";
 import EmployeeOnboardingLayout from "./pages/EmployeeOnboarding/EmployeeOnboardingLayout";
 import PersonalDetails from "./pages/EmployeeOnboarding/PersonalDetails";
 import Documents from "./pages/EmployeeOnboarding/Documents";
@@ -476,6 +477,14 @@ function App() {
               element: (
                 <PermissionGuard permission="employee.employment_history.view">
                   <EmployeeHistoryPage />
+                </PermissionGuard>
+              ),
+            },
+            {
+              path: "document-tracking",
+              element: (
+                <PermissionGuard permission="employee.add_manage_profiles.view">
+                  <DocumentTrackingPage />
                 </PermissionGuard>
               ),
             },

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import usePermissions from '../../hooks/usePermissions';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import usePermissions from "../../hooks/usePermissions";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaPlus,
@@ -16,83 +16,93 @@ import {
   FaTimes,
   FaCheck,
   FaUpload,
-  FaEdit
-} from 'react-icons/fa';
+  FaEdit,
+} from "react-icons/fa";
 import {
   getEmployeeDocuments,
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   updateEmployeeDocument,
-  getEmployee
-} from '../../services/employeeService';
+  getEmployee,
+} from "../../services/employeeService";
 
 // Document Type Options
 const DOCUMENT_TYPES = [
-  'Aadhaar Card',
-  'PAN Card',
-  'Passport',
-  'Driving License',
-  'Visa',
-  'Work Permit',
-  'Employment Contract',
-  'Offer Letter',
-  'Experience Letter',
-  'Salary Slip',
-  'Bank Statement',
-  'Tax Document',
-  'Education Certificate',
-  'Professional Certificate',
-  'Working with Children Check',
-  'First Aid Certificate',
-  'CPR Certificate',
-  'Police Check',
-  'Other'
+  "Aadhaar Card",
+  "PAN Card",
+  "Passport",
+  "Driving License",
+  "Visa",
+  "Work Permit",
+  "Employment Contract",
+  "Offer Letter",
+  "Experience Letter",
+  "Salary Slip",
+  "Bank Statement",
+  "Tax Document",
+  "Education Certificate",
+  "Professional Certificate",
+  "Working with Children Check",
+  "First Aid Certificate",
+  "CPR Certificate",
+  "Police Check",
+  "Other",
 ];
 
 // Document Upload Modal
-const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, documentToEdit }) => {
+const DocumentUploadModal = ({
+  isOpen,
+  onClose,
+  employeeId,
+  onUploadSuccess,
+  documentToEdit,
+}) => {
   const [formData, setFormData] = useState({
-    document_type: '',
-    file_name: '',
-    issue_date: '',
-    expiry_date: '',
-    file: null
+    document_type: "",
+    file_name: "",
+    issue_date: "",
+    expiry_date: "",
+    file: null,
   });
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       if (documentToEdit) {
         setFormData({
-          document_type: documentToEdit.document_type || '',
-          file_name: documentToEdit.file_name || '',
-          issue_date: documentToEdit.issue_date || '',
-          expiry_date: documentToEdit.expiry_date || '',
-          file: null
+          document_type: documentToEdit.document_type || "",
+          file_name: documentToEdit.file_name || "",
+          issue_date: documentToEdit.issue_date || "",
+          expiry_date: documentToEdit.expiry_date || "",
+          file: null,
         });
       } else {
         setFormData({
-          document_type: '',
-          file_name: '',
-          issue_date: '',
-          expiry_date: '',
-          file: null
+          document_type: "",
+          file_name: "",
+          issue_date: "",
+          expiry_date: "",
+          file: null,
         });
       }
-      setError('');
+      setError("");
     }
   }, [isOpen, documentToEdit]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+      const fileNameWithoutExt = file.name.split(".").slice(0, -1).join(".");
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         file,
-        file_name: prev.file_name || fileNameWithoutExt.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        file_name:
+          prev.file_name ||
+          fileNameWithoutExt
+            .replace(/[_-]/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
       }));
     }
   };
@@ -101,43 +111,43 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
     e.preventDefault();
 
     if (!documentToEdit && !formData.file) {
-      setError('Please select a file to upload');
+      setError("Please select a file to upload");
       return;
     }
 
     if (!formData.document_type) {
-      setError('Please select a document type');
+      setError("Please select a document type");
       return;
     }
 
     if (!formData.file_name) {
-      setError('Please enter a file name');
+      setError("Please enter a file name");
       return;
     }
 
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
       const data = new FormData();
 
       // CORRECT FIELDS FOR /employee-documents ENDPOINT
-      data.append('document_type', formData.document_type);
-      data.append('file_name', formData.file_name);
+      data.append("document_type", formData.document_type);
+      data.append("file_name", formData.file_name);
 
       if (formData.file) {
-        data.append('file', formData.file);
+        data.append("file", formData.file);
       }
 
       if (formData.issue_date) {
-        data.append('issue_date', formData.issue_date);
+        data.append("issue_date", formData.issue_date);
       }
       if (formData.expiry_date) {
-        data.append('expiry_date', formData.expiry_date);
+        data.append("expiry_date", formData.expiry_date);
       }
 
       if (documentToEdit) {
-        data.append('_method', 'PUT');
+        data.append("_method", "PUT");
         await updateEmployeeDocument(documentToEdit.id, data);
       } else {
         await uploadEmployeeDocument(data);
@@ -146,13 +156,13 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
       onUploadSuccess();
       onClose();
     } catch (err) {
-      console.error('Upload error:', err);
+      // console.error('Upload error:', err);
       if (err.response?.status === 422) {
         const errors = err.response.data?.errors || {};
         const errorMessages = Object.values(errors).flat();
-        setError(errorMessages.join(', ') || 'Validation failed');
+        setError(errorMessages.join(", ") || "Validation failed");
       } else {
-        setError(err.response?.data?.message || 'Failed to upload document');
+        setError(err.response?.data?.message || "Failed to upload document");
       }
     } finally {
       setUploading(false);
@@ -166,9 +176,12 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-800">
-            {documentToEdit ? 'Edit Document' : 'Upload New Document'}
+            {documentToEdit ? "Edit Document" : "Upload New Document"}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
             <FaTimes />
           </button>
         </div>
@@ -188,13 +201,17 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
               </label>
               <select
                 value={formData.document_type}
-                onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, document_type: e.target.value })
+                }
                 required
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Document Type</option>
-                {DOCUMENT_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {DOCUMENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
@@ -207,7 +224,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
               <input
                 type="text"
                 value={formData.file_name}
-                onChange={(e) => setFormData({ ...formData, file_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, file_name: e.target.value })
+                }
                 placeholder="Enter a descriptive file name"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
@@ -226,7 +245,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
                 <input
                   type="date"
                   value={formData.issue_date}
-                  onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, issue_date: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -237,7 +258,9 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
                 <input
                   type="date"
                   value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expiry_date: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -295,7 +318,7 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
               className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {uploading && <FaSpinner className="animate-spin" />}
-              {documentToEdit ? 'Update Document' : 'Upload Document'}
+              {documentToEdit ? "Update Document" : "Upload Document"}
             </button>
           </div>
         </form>
@@ -307,13 +330,17 @@ const DocumentUploadModal = ({ isOpen, onClose, employeeId, onUploadSuccess, doc
 // Document Card Component
 const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
   const today = new Date();
-  const expiryDate = document.expiry_date ? new Date(document.expiry_date) : null;
+  const expiryDate = document.expiry_date
+    ? new Date(document.expiry_date)
+    : null;
 
   let statusColor = "bg-green-100 text-green-800";
   let statusText = "Valid";
 
   if (expiryDate) {
-    const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.ceil(
+      (expiryDate - today) / (1000 * 60 * 60 * 24),
+    );
 
     if (daysRemaining < 0) {
       statusColor = "bg-red-100 text-red-800";
@@ -325,12 +352,12 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString('en-AU', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -339,15 +366,17 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
 
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400 text-2xl" />;
-    const ext = fileName.split('.').pop()?.toLowerCase();
+    const ext = fileName.split(".").pop()?.toLowerCase();
 
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500 text-2xl" />;
-    if (['doc', 'docx'].includes(ext)) return <FaFileWord className="text-blue-500 text-2xl" />;
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return <FaFileImage className="text-green-500 text-2xl" />;
+    if (ext === "pdf") return <FaFilePdf className="text-red-500 text-2xl" />;
+    if (["doc", "docx"].includes(ext))
+      return <FaFileWord className="text-blue-500 text-2xl" />;
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext))
+      return <FaFileImage className="text-green-500 text-2xl" />;
     return <FaFileAlt className="text-gray-500 text-2xl" />;
   };
 
-  const baseUrl = 'https://api.chrispp.au';
+  const baseUrl = "https://api.chrispp.au";
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200">
@@ -355,12 +384,16 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         <div className="flex items-center gap-3">
           {getFileIcon(document.file_name)}
           <div>
-            <h4 className="font-semibold text-gray-900">{document.document_type || 'Document'}</h4>
+            <h4 className="font-semibold text-gray-900">
+              {document.document_type || "Document"}
+            </h4>
             <p className="text-sm text-gray-500">{document.file_name}</p>
           </div>
         </div>
         {expiryDate && (
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}
+          >
             {statusText}
           </span>
         )}
@@ -370,13 +403,17 @@ const DocumentCard = ({ document, onDelete, onEdit, canEdit, canDelete }) => {
         {document.issue_date && (
           <div>
             <p className="text-xs text-gray-500">Issue Date</p>
-            <p className="text-sm font-medium">{formatDate(document.issue_date)}</p>
+            <p className="text-sm font-medium">
+              {formatDate(document.issue_date)}
+            </p>
           </div>
         )}
         {document.expiry_date && (
           <div>
             <p className="text-xs text-gray-500">Expiry Date</p>
-            <p className="text-sm font-medium">{formatDate(document.expiry_date)}</p>
+            <p className="text-sm font-medium">
+              {formatDate(document.expiry_date)}
+            </p>
           </div>
         )}
       </div>
@@ -473,8 +510,10 @@ export default function EmployeeDocuments() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [documentToEdit, setDocumentToEdit] = useState(null);
-  const [error, setError] = useState('');
-  const { canAdd, canEdit, canDelete } = usePermissions('employee.employee_documents');
+  const [error, setError] = useState("");
+  const { canAdd, canEdit, canDelete } = usePermissions(
+    "employee.employee_documents",
+  );
 
   useEffect(() => {
     fetchData();
@@ -485,7 +524,7 @@ export default function EmployeeDocuments() {
     try {
       const [employeeRes, docsRes] = await Promise.all([
         getEmployee(id),
-        getEmployeeDocuments(id)
+        getEmployeeDocuments(id),
       ]);
 
       setEmployee(employeeRes.data.data);
@@ -502,8 +541,8 @@ export default function EmployeeDocuments() {
       }
       setDocuments(Array.isArray(documentsData) ? documentsData : []);
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load data');
+      console.error("Error fetching data:", err);
+      setError("Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -518,8 +557,8 @@ export default function EmployeeDocuments() {
       setDeleteModalOpen(false);
       setDocumentToDelete(null);
     } catch (err) {
-      console.error('Error deleting document:', err);
-      setError('Failed to delete document');
+      console.error("Error deleting document:", err);
+      setError("Failed to delete document");
     }
   };
 
@@ -580,7 +619,8 @@ export default function EmployeeDocuments() {
               </h1>
               {employee && (
                 <p className="text-gray-600">
-                  Managing documents for {employee.first_name} {employee.last_name}
+                  Managing documents for {employee.first_name}{" "}
+                  {employee.last_name}
                 </p>
               )}
             </div>
@@ -611,7 +651,8 @@ export default function EmployeeDocuments() {
           <>
             <div className="mb-4 flex items-center gap-3">
               <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                {documents.length} {documents.length === 1 ? 'document' : 'documents'} total
+                {documents.length}{" "}
+                {documents.length === 1 ? "document" : "documents"} total
               </span>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -638,7 +679,9 @@ export default function EmployeeDocuments() {
             <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center bg-gray-100 rounded-full">
               <FaFileAlt className="text-4xl text-gray-400" />
             </div>
-            <h4 className="text-xl font-semibold text-gray-700 mb-3">No documents found</h4>
+            <h4 className="text-xl font-semibold text-gray-700 mb-3">
+              No documents found
+            </h4>
             <p className="text-gray-500 mb-8 max-w-md mx-auto">
               Upload important documents like IDs, contracts, certificates, etc.
             </p>

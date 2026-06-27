@@ -254,6 +254,12 @@ const Sidebar = ({
             icon: HiOutlineUserRemove,
             permission: "employee.exit_offboarding.view",
           },
+          {
+            name: "Document Tracking",
+            path: "/dashboard/employees/document-tracking",
+            icon: HiOutlineDocumentSearch,
+            permission: "employee.add_manage_profiles.view",
+          },
         ],
       },
       {
