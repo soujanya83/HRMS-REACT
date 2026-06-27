@@ -31,6 +31,9 @@ const PersonalDetails = () => {
     emergency_contact_name: "",
     emergency_contact_phone: "",
     emergency_contact_relationship: "",
+    emergency_contact_name2: "",
+    emergency_contact_phone2: "",
+    emergency_contact_relationship2: "",
     tax_file_number: "",
     superannuation_fund_name: "",
     superannuation_member_number: "",
@@ -105,6 +108,10 @@ const PersonalDetails = () => {
       emergency_contact_phone: employee.emergency_contact_phone || "",
       emergency_contact_relationship:
         employee.emergency_contact_relationship || "",
+      emergency_contact_name2: employee.emergency_contact_name2 || "",
+      emergency_contact_phone2: employee.emergency_contact_phone2 || "",
+      emergency_contact_relationship2:
+        employee.emergency_contact_relationship2 || "",
       tax_file_number: employee.tax_file_number || "",
       superannuation_fund_name: employee.superannuation_fund_name || "",
       superannuation_member_number: employee.superannuation_member_number || "",
@@ -167,6 +174,9 @@ const PersonalDetails = () => {
         emergency_contact_name: formData.emergency_contact_name,
         emergency_contact_phone: formData.emergency_contact_phone,
         emergency_contact_relationship: formData.emergency_contact_relationship,
+        emergency_contact_name2: formData.emergency_contact_name2,
+        emergency_contact_phone2: formData.emergency_contact_phone2,
+        emergency_contact_relationship2: formData.emergency_contact_relationship2,
         tax_file_number: formData.tax_file_number,
         superannuation_fund_name: formData.superannuation_fund_name,
         superannuation_member_number: formData.superannuation_member_number,
@@ -364,7 +374,7 @@ const PersonalDetails = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Name <span className="text-red-500">*</span>
+                Contact Name1 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -383,7 +393,7 @@ const PersonalDetails = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Phone <span className="text-red-500">*</span>
+                Contact Phone1 <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -402,7 +412,7 @@ const PersonalDetails = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Relationship <span className="text-red-500">*</span>
+                Relationship1 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -418,6 +428,48 @@ const PersonalDetails = () => {
                   {errors.emergency_contact_relationship}
                 </p>
               )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contact Name2
+              </label>
+              <input
+                type="text"
+                name="emergency_contact_name2"
+                value={formData.emergency_contact_name2}
+                onChange={handleChange}
+                placeholder="Contact Name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contact Phone2
+              </label>
+              <input
+                type="tel"
+                name="emergency_contact_phone2"
+                value={formData.emergency_contact_phone2}
+                onChange={handleChange}
+                placeholder="Contact Phone"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Relationship2
+              </label>
+              <input
+                type="text"
+                name="emergency_contact_relationship2"
+                value={formData.emergency_contact_relationship2}
+                onChange={handleChange}
+                placeholder="Relationship"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
             </div>
           </div>
         </div>

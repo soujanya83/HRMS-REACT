@@ -1795,16 +1795,39 @@ export default function EmployeeProfile() {
                       </div>
                       Emergency Contact
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <DetailField
                         icon={<FaUser className="h-4 w-4" />}
-                        label="Contact Name"
+                        label="Contact Name1"
                         value={employee.emergency_contact_name}
                       />
                       <DetailField
                         icon={<FaPhone className="h-4 w-4" />}
-                        label="Contact Phone"
+                        label="Contact Phone1"
                         value={employee.emergency_contact_phone}
+                      />
+                      <DetailField
+                        icon={<FaUser className="h-4 w-4" />}
+                        label="Relationship1"
+                        value={employee.emergency_contact_relationship}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                      <DetailField
+                        icon={<FaUser className="h-4 w-4" />}
+                        label="Contact Name2"
+                        value={employee.emergency_contact_name2}
+                      />
+                      <DetailField
+                        icon={<FaPhone className="h-4 w-4" />}
+                        label="Contact Phone2"
+                        value={employee.emergency_contact_phone2}
+                      />
+                      <DetailField
+                        icon={<FaUser className="h-4 w-4" />}
+                        label="Relationship2"
+                        value={employee.emergency_contact_relationship2}
                       />
                     </div>
                   </div>

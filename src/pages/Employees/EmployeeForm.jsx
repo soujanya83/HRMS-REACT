@@ -1791,6 +1791,9 @@ export default function EmployeeForm() {
     emergency_contact_name: "",
     emergency_contact_phone: "",
     emergency_contact_relationship: "",
+    emergency_contact_name2: "",
+    emergency_contact_phone2: "",
+    emergency_contact_relationship2: "",
 
     employee_code: "",
     joining_date: "",
@@ -2196,6 +2199,10 @@ export default function EmployeeForm() {
       emergency_contact_phone: formData.emergency_contact_phone || "",
       emergency_contact_relationship:
         formData.emergency_contact_relationship || "",
+      emergency_contact_name2: formData.emergency_contact_name2 || "",
+      emergency_contact_phone2: formData.emergency_contact_phone2 || "",
+      emergency_contact_relationship2:
+        formData.emergency_contact_relationship2 || "",
     };
 
     try {
@@ -2618,7 +2625,7 @@ export default function EmployeeForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
-                    label="Emergency Contact Name"
+                    label="Emergency Contact Name1"
                     name="emergency_contact_name"
                     id="emergency_contact_name"
                     value={formData.emergency_contact_name}
@@ -2628,7 +2635,7 @@ export default function EmployeeForm() {
                   />
 
                   <InputField
-                    label="Emergency Contact Phone"
+                    label="Emergency Contact Phone1"
                     name="emergency_contact_phone"
                     id="emergency_contact_phone"
                     value={formData.emergency_contact_phone}
@@ -2639,12 +2646,45 @@ export default function EmployeeForm() {
                   />
 
                   <InputField
-                    label="Emergency Contact Relationship"
+                    label="Emergency Contact Relationship1"
                     name="emergency_contact_relationship"
                     id="emergency_contact_relationship"
                     value={formData.emergency_contact_relationship}
                     onChange={handleChange}
                     error={formErrors.emergency_contact_relationship}
+                    placeholder="e.g., Spouse, Parent, Sibling"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                  <InputField
+                    label="Emergency Contact Name2"
+                    name="emergency_contact_name2"
+                    id="emergency_contact_name2"
+                    value={formData.emergency_contact_name2}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_name2}
+                    placeholder="Enter contact name"
+                  />
+
+                  <InputField
+                    label="Emergency Contact Phone2"
+                    name="emergency_contact_phone2"
+                    id="emergency_contact_phone2"
+                    value={formData.emergency_contact_phone2}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_phone2}
+                    prefix="+61"
+                    placeholder="412 345 678"
+                  />
+
+                  <InputField
+                    label="Emergency Contact Relationship2"
+                    name="emergency_contact_relationship2"
+                    id="emergency_contact_relationship2"
+                    value={formData.emergency_contact_relationship2}
+                    onChange={handleChange}
+                    error={formErrors.emergency_contact_relationship2}
                     placeholder="e.g., Spouse, Parent, Sibling"
                   />
                 </div>
