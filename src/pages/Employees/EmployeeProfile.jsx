@@ -56,6 +56,7 @@ import {
   uploadEmployeeDocument,
   deleteEmployeeDocument,
   verifyEmployeeDocument,
+  changeDocumentStatus,
 } from "../../services/employeeService";
 import axiosClient from "../../axiosClient";
 import { toast } from "react-toastify";
@@ -157,7 +158,7 @@ const ActionButton = ({
 );
 
 // Document Card Component
-const DocumentCard = ({ document, onView, onDelete, canDelete, onVerify }) => {
+const DocumentCard = ({ document, onView, onDelete, canDelete, onStatusChange }) => {
   const getFileIcon = (fileName) => {
     if (!fileName) return <FaFileAlt className="text-gray-400" />;
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -184,6 +185,28 @@ const DocumentCard = ({ document, onView, onDelete, canDelete, onVerify }) => {
   };
 
   const getStatusBadge = () => {
+    if (onStatusChange) {
+      const selectClass = document.verify === "approved"
+        ? "bg-green-50 text-green-700 border-green-200"
+        : document.verify === "rejected"
+          ? "bg-red-50 text-red-700 border-red-200"
+          : "bg-amber-50 text-amber-700 border-amber-200";
+
+      return (
+        <select
+          value={document.verify || "pending"}
+          onChange={(e) => onStatusChange(document, e.target.value)}
+          className={`px-2.5 py-1 border rounded-full text-[11px] font-semibold focus:outline-none cursor-pointer shadow-sm transition-colors ${selectClass}`}
+        >
+          {(!document.verify || (document.verify !== "approved" && document.verify !== "rejected")) && (
+            <option value="pending" disabled>⏳ Pending</option>
+          )}
+          <option value="approved">✅ Approved</option>
+          <option value="rejected">❌ Rejected</option>
+        </select>
+      );
+    }
+
     if (document.verify === "approved") {
       return (
         <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">
@@ -280,24 +303,6 @@ const DocumentCard = ({ document, onView, onDelete, canDelete, onVerify }) => {
           Uploaded: {formatDate(document.created_at)}
         </span>
         <div className="flex items-center gap-2">
-          {onVerify && document.verify !== "approved" && (
-            <button
-              onClick={() => onVerify(document.id, "approved")}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              title="Approve Document"
-            >
-              <FaCheck size={10} /> Approve
-            </button>
-          )}
-          {onVerify && document.verify !== "rejected" && (
-            <button
-              onClick={() => onVerify(document.id, "rejected")}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              title="Reject Document"
-            >
-              <FaTimes size={10} /> Reject
-            </button>
-          )}
           {document.file_url && (
             <a
               href={`https://api.chrispp.au${document.file_url}`}
@@ -414,6 +419,11 @@ const DocumentUploadModal = ({
       }
       if (formData.expiry_date) {
         actualFormData.append("expiry_date", formData.expiry_date);
+      }
+
+      const orgId = localStorage.getItem("selectedOrgId");
+      if (orgId) {
+        actualFormData.append("organization_id", orgId);
       }
 
       await uploadEmployeeDocument(actualFormData);
@@ -794,7 +804,9 @@ const SortableFormItem = ({ form, employeeId }) => {
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-500 truncate mt-0.5">{meta.description}</p>
+        <p className="text-sm text-gray-500 truncate mt-0.5">
+          {meta.description}
+        </p>
       </div>
 
       <a
@@ -947,6 +959,7 @@ const SortableDocumentMasterItem = ({
   onDelete,
   canDelete,
   onUpload,
+  onStatusChange,
 }) => {
   const {
     attributes,
@@ -1046,6 +1059,7 @@ const SortableDocumentMasterItem = ({
                     onView={onView}
                     onDelete={onDelete}
                     canDelete={canDelete}
+                    onStatusChange={onStatusChange}
                   />
                 ))}
               </div>
@@ -1077,7 +1091,7 @@ const SortableDocumentMasterItem = ({
   );
 };
 
-const OtherDocumentsSection = ({ documents, onView, onDelete, canDelete }) => {
+const OtherDocumentsSection = ({ documents, onView, onDelete, canDelete, onStatusChange }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (documents.length === 0) return null;
@@ -1112,6 +1126,7 @@ const OtherDocumentsSection = ({ documents, onView, onDelete, canDelete }) => {
                 onView={onView}
                 onDelete={onDelete}
                 canDelete={canDelete}
+                onStatusChange={onStatusChange}
               />
             ))}
           </div>
@@ -1138,6 +1153,12 @@ export default function EmployeeProfile() {
   const [preselectedDocType, setPreselectedDocType] = useState(null);
   const [policiesList, setPoliciesList] = useState([]);
   const [loadingPolicies, setLoadingPolicies] = useState(false);
+  const [statusConfirmModal, setStatusConfirmModal] = useState({
+    isOpen: false,
+    document: null,
+    targetStatus: "",
+  });
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1369,7 +1390,11 @@ export default function EmployeeProfile() {
 
     setLoadingDocuments(true);
     try {
-      const response = await getEmployeeDocuments(employee.id);
+      const orgId =
+        employee.organization_id ||
+        localStorage.getItem("current_organization_id") ||
+        localStorage.getItem("organization_id");
+      const response = await getEmployeeDocuments(employee.id, orgId);
       const documentsData = response.data?.data || response.data || [];
       setDocuments(Array.isArray(documentsData) ? documentsData : []);
     } catch (err) {
@@ -1377,6 +1402,33 @@ export default function EmployeeProfile() {
       setDocuments([]);
     } finally {
       setLoadingDocuments(false);
+    }
+  };
+
+  const handleStatusChangeRequest = (doc, newStatus) => {
+    setStatusConfirmModal({
+      isOpen: true,
+      document: doc,
+      targetStatus: newStatus,
+    });
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!statusConfirmModal.document || !statusConfirmModal.targetStatus) return;
+    setUpdatingStatus(true);
+    try {
+      await changeDocumentStatus(
+        statusConfirmModal.document.id,
+        statusConfirmModal.targetStatus
+      );
+      toast.success("Document status updated successfully.");
+      fetchDocuments();
+    } catch (err) {
+      console.error("Error updating document status:", err);
+      toast.error(err.response?.data?.message || "Failed to update document status.");
+    } finally {
+      setUpdatingStatus(false);
+      setStatusConfirmModal({ isOpen: false, document: null, targetStatus: "" });
     }
   };
 
@@ -1443,11 +1495,11 @@ export default function EmployeeProfile() {
   // Handle verify/reject document
   const handleVerifyDocument = async (docId, status) => {
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = localStorage.getItem("user");
       const user = userStr ? JSON.parse(userStr) : null;
 
       if (!user) {
-        toast.error('Session expired. Please login again.');
+        toast.error("Session expired. Please login again.");
         return;
       }
 
@@ -1456,11 +1508,15 @@ export default function EmployeeProfile() {
         verified_by: user.id,
       });
 
-      toast.success(`Document ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
+      toast.success(
+        `Document ${status === "approved" ? "approved" : "rejected"} successfully!`,
+      );
       fetchDocuments();
     } catch (err) {
-      console.error('Error verifying document:', err);
-      toast.error(err.response?.data?.message || 'Failed to update document status');
+      console.error("Error verifying document:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to update document status",
+      );
     }
   };
 
@@ -2065,6 +2121,7 @@ export default function EmployeeProfile() {
                                 onDelete={handleDeleteDocument}
                                 canDelete={canEdit}
                                 onUpload={handleUploadClick}
+                                onStatusChange={handleStatusChangeRequest}
                               />
                             ))}
                           </div>
@@ -2087,6 +2144,7 @@ export default function EmployeeProfile() {
                         onView={handleViewDocument}
                         onDelete={handleDeleteDocument}
                         canDelete={canEdit}
+                        onStatusChange={handleStatusChangeRequest}
                       />
                     </div>
                   ) : documents.length > 0 ? (
@@ -2099,6 +2157,7 @@ export default function EmployeeProfile() {
                             onView={handleViewDocument}
                             onDelete={handleDeleteDocument}
                             canDelete={canEdit}
+                            onStatusChange={handleStatusChangeRequest}
                           />
                         ))}
                       </div>
@@ -2306,6 +2365,62 @@ export default function EmployeeProfile() {
           </div> */}
         </div>
       </div>
+      {/* Document Status Change Confirmation Modal */}
+      {statusConfirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <FaClock className="h-6 w-6 text-blue-600 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Change Document Status
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to change the status of{" "}
+                <strong>
+                  {statusConfirmModal.document?.file_name ||
+                    statusConfirmModal.document?.document_type}
+                </strong>{" "}
+                to{" "}
+                <span className="capitalize font-semibold text-gray-800">
+                  {statusConfirmModal.targetStatus}
+                </span>
+                ?
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() =>
+                  setStatusConfirmModal({
+                    isOpen: false,
+                    document: null,
+                    targetStatus: "",
+                  })
+                }
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex-1"
+                disabled={updatingStatus}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmStatusChange}
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex-1 flex items-center justify-center gap-2"
+                disabled={updatingStatus}
+              >
+                {updatingStatus ? (
+                  <>
+                    <FaSpinner className="animate-spin text-sm" />
+                    Updating...
+                  </>
+                ) : (
+                  "Confirm"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

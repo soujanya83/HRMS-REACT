@@ -168,6 +168,12 @@ export const uploadEmployeeDocument = (documentData) => {
   // console.log('Uploading document to /employee/document/store-flexible');
 
   if (documentData instanceof FormData) {
+    if (!documentData.has('organization_id')) {
+      const orgId = localStorage.getItem('selectedOrgId')
+      if (orgId) {
+        documentData.append('organization_id', orgId);
+      }
+    }
     for (let pair of documentData.entries()) {
       //console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
     }
@@ -184,11 +190,17 @@ export const uploadEmployeeDocument = (documentData) => {
 /**
  * Get all documents for an employee
  * @param {number|string} employeeId - The employee ID
+ * @param {number|string} organizationId - The organization ID
  * @returns {Promise} - API response with array of documents
  */
-export const getEmployeeDocuments = (employeeId) => {
+export const getEmployeeDocuments = (employeeId, organizationId = null) => {
   //console.log(`Fetching documents for employee ID: ${employeeId}`);
-  return axiosClient.get(`/employee/${employeeId}/documents`);
+  const params = {};
+  const orgId = organizationId || localStorage.getItem('selectedOrgId');
+  if (orgId) {
+    params.organization_id = orgId;
+  }
+  return axiosClient.get(`/employee/${employeeId}/documents`, { params });
 };
 
 /**
@@ -234,6 +246,23 @@ export const deleteEmployeeDocument = (documentId) => {
  */
 export const verifyEmployeeDocument = (documentId, verifyData) => {
   return axiosClient.post(`/documents/${documentId}/verify`, verifyData);
+};
+
+/**
+ * Change document status (approve/reject)
+ * @param {number|string} documentId - The document ID
+ * @param {string} status - Approved or Rejected
+ * @returns {Promise} - API response
+ */
+export const changeDocumentStatus = (documentId, status) => {
+  const formData = new FormData();
+  formData.append("document_id", documentId);
+  formData.append("status", status);
+  return axiosClient.post('/employee/document/changestatus', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 // ============================================
@@ -418,6 +447,7 @@ export const employeeService = {
   getDocumentDetails,
   updateDocumentDates,
   verifyEmployeeDocument,
+  changeDocumentStatus,
 
   // Departments
   getDepartmentsByOrganization,

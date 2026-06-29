@@ -146,6 +146,11 @@ const DocumentUploadModal = ({
         data.append("expiry_date", formData.expiry_date);
       }
 
+      const orgId = localStorage.getItem("selectedOrgId");
+      if (orgId) {
+        data.append("organization_id", orgId);
+      }
+
       if (documentToEdit) {
         data.append("_method", "PUT");
         await updateEmployeeDocument(documentToEdit.id, data);
@@ -522,12 +527,13 @@ export default function EmployeeDocuments() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [employeeRes, docsRes] = await Promise.all([
-        getEmployee(id),
-        getEmployeeDocuments(id),
-      ]);
+      const employeeRes = await getEmployee(id);
+      const employeeData = employeeRes.data.data;
+      setEmployee(employeeData);
 
-      setEmployee(employeeRes.data.data);
+      const orgId =
+        employeeData?.organization_id || localStorage.getItem("selectedOrgId");
+      const docsRes = await getEmployeeDocuments(id, orgId);
 
       let documentsData = [];
       if (docsRes.data) {

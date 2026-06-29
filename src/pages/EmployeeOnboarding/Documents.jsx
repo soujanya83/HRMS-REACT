@@ -386,6 +386,11 @@ const DocumentUploadModal = ({
       actualFormData.append("document_type", documentTypeToSend);
       actualFormData.append("file", formData.file);
 
+      const orgId = localStorage.getItem("selectedOrgId");
+      if (orgId) {
+        actualFormData.append("organization_id", orgId);
+      }
+
       const response = await uploadEmployeeDocument(actualFormData);
 
       const extractedIssueDate = response.data?.issue_date;
@@ -1019,74 +1024,74 @@ const Documents = () => {
 
       {/* Tab: Certificates */}
       {activeTab === "certificates" && (
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <FaUpload className="text-purple-600" /> Mandatory Certificates
-              Checklist
-            </h2>
-            <div className="text-right">
-              <span className="text-2xl font-bold text-purple-600">
-                {completionPercentage}%
-              </span>
-              <p className="text-xs text-gray-500">Completed</p>
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <FaUpload className="text-purple-600" /> Mandatory Certificates
+                Checklist
+              </h2>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-purple-600">
+                  {completionPercentage}%
+                </span>
+                <p className="text-xs text-gray-500">Completed</p>
+              </div>
             </div>
+
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+              <div
+                className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+
+            <p className="text-sm text-gray-600">
+              {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory
+              documents uploaded
+            </p>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-            <div
-              className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${completionPercentage}%` }}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {MANDATORY_CERTIFICATES_LIST.map((cert) => (
+              <ChecklistItem
+                key={cert.id}
+                item={cert}
+                isUploaded={isCertificateUploaded(cert.type)}
+                documents={getDocumentsForCertificate(cert.type)}
+                onUpload={openUploadModal}
+                onDelete={handleDeleteDocument}
+                onView={handleViewDocument}
+                onEdit={handleEditDocument}
+              />
+            ))}
           </div>
 
-          <p className="text-sm text-gray-600">
-            {uploadedCount} of {MANDATORY_CERTIFICATES_LIST.length} mandatory
-            documents uploaded
-          </p>
+          <OtherDocumentsSection
+            documents={documents}
+            onUpload={openUploadModal}
+            onDelete={handleDeleteDocument}
+            onView={handleViewDocument}
+            onEdit={handleEditDocument}
+          />
+
+          <DocumentUploadModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            employeeId={employeeId}
+            onUploadSuccess={handleUploadSuccess}
+            preselectedDocumentType={selectedDocumentType}
+          />
+
+          <DocumentMetadataModal
+            isOpen={showMetadataModal}
+            onClose={() => setShowMetadataModal(false)}
+            document={selectedDocument}
+            onUpdateSuccess={handleUpdateSuccess}
+          />
+
+          <ToastContainer position="top-right" />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MANDATORY_CERTIFICATES_LIST.map((cert) => (
-            <ChecklistItem
-              key={cert.id}
-              item={cert}
-              isUploaded={isCertificateUploaded(cert.type)}
-              documents={getDocumentsForCertificate(cert.type)}
-              onUpload={openUploadModal}
-              onDelete={handleDeleteDocument}
-              onView={handleViewDocument}
-              onEdit={handleEditDocument}
-            />
-          ))}
-        </div>
-
-        <OtherDocumentsSection
-          documents={documents}
-          onUpload={openUploadModal}
-          onDelete={handleDeleteDocument}
-          onView={handleViewDocument}
-          onEdit={handleEditDocument}
-        />
-
-        <DocumentUploadModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          employeeId={employeeId}
-          onUploadSuccess={handleUploadSuccess}
-          preselectedDocumentType={selectedDocumentType}
-        />
-
-        <DocumentMetadataModal
-          isOpen={showMetadataModal}
-          onClose={() => setShowMetadataModal(false)}
-          document={selectedDocument}
-          onUpdateSuccess={handleUpdateSuccess}
-        />
-
-        <ToastContainer position="top-right" />
-      </div>
       )}
     </div>
   );

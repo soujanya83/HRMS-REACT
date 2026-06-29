@@ -101,23 +101,25 @@ export const getEmployeeProfile = (id) => {
 // ============= DOCUMENT RELATED FUNCTIONS =============
 
 // Get employee documents - FIXED: Use /employee-documents endpoint
-export const getEmployeeDocuments = (employeeId) => {
-  return axiosClient.get(`/employee-documents?employee_id=${employeeId}`);
+export const getEmployeeDocuments = (employeeId, organizationId = null) => {
+  const params = { employee_id: employeeId };
+  const orgId = organizationId || localStorage.getItem('selectedOrgId');
+  if (orgId) {
+    params.organization_id = orgId;
+  }
+  return axiosClient.get('/employee-documents', { params });
 };
 
 // Upload new employee document - FIXED: Use /employee-documents endpoint with correct fields
 export const uploadEmployeeDocument = (documentData) => {
-  //console.log('DEBUG - uploadEmployeeDocument called with data:');
-
-  // Log FormData contents for debugging
-  // if (documentData instanceof FormData) {
-  //   for (let pair of documentData.entries()) {
-  //     //console.log(`${pair[0]}:`, pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].type})` : pair[1]);
-  //   }
-  // }
-
-  // The API expects: document_type, file_name, file, issue_date, expiry_date
-  // This matches the database schema
+  if (documentData instanceof FormData) {
+    if (!documentData.has('organization_id')) {
+      const orgId = localStorage.getItem('selectedOrgId') || localStorage.getItem('organization_id');
+      if (orgId) {
+        documentData.append('organization_id', orgId);
+      }
+    }
+  }
   return axiosClient.post('/employee-documents', documentData, {
     headers: {
       // Let browser set Content-Type with boundary
