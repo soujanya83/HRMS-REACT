@@ -23,6 +23,7 @@ import PersonInDayToDayChargeForm from "./pages/PersonInDayToDayCharge/PersonInD
 import ProhibitionNoticeDeclarationForm from "./pages/ProhibitionNoticeDeclaration/ProhibitionNoticeDeclarationForm";
 import ChildSafeCodeOfPolicyForm from "./pages/ChildSafeCodeOfPolicy/ChildSafeCodeOfPolicyForm";
 import StaffInductionForm from "./pages/StaffInduction/StaffInductionForm";
+import EmploymentContractForm from "./pages/EmploymentContract/EmploymentContractForm";
 
 // --- Import Pages ---
 import LoginPage from "./pages/LoginPage";
@@ -307,6 +308,10 @@ function App() {
     {
       path: "/staff-induction-form",
       element: <StaffInductionForm />,
+    },
+    {
+      path: "/employment-contract",
+      element: <EmploymentContractForm />,
     },
     {
       path: "/login",

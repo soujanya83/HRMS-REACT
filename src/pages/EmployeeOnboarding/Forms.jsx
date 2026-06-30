@@ -9,6 +9,7 @@ import {
   FaExternalLinkAlt,
   FaShieldAlt,
   FaClipboardCheck,
+  FaFileContract,
 } from "react-icons/fa";
 
 const Forms = () => {
@@ -160,6 +161,27 @@ const Forms = () => {
               </p>
             </div>
             <FaExternalLinkAlt className="text-gray-400 group-hover:text-indigo-600 ml-auto" />
+          </a>
+
+          {/* Employment Contract Form */}
+          <a
+            href="/employment-contract"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-pink-500 hover:bg-pink-50 transition-all group cursor-pointer"
+          >
+            <div className="p-3 bg-pink-100 rounded-lg group-hover:bg-pink-200 transition-colors">
+              <FaFileContract className="text-pink-600 text-xl" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-800 font-sans">
+                Employment Contract
+              </h3>
+              <p className="text-sm text-gray-500 font-sans">
+                Complete employment contract terms
+              </p>
+            </div>
+            <FaExternalLinkAlt className="text-gray-400 group-hover:text-pink-600 ml-auto" />
           </a>
         </div>
       </div>
