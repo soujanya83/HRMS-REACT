@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaSave, FaSpinner, FaPrint, FaArrowLeft } from "react-icons/fa";
+import axiosClient from "../../axiosClient";
+import { useOrganizations } from "../../contexts/OrganizationContext";
+
 
 // Import images
 import topImage from "../../assets/common_form_images/img9.jpg";
@@ -256,15 +259,110 @@ const A4ImagePage = ({ src, pageNumber }) => (
 
 const EmploymentContractForm = () => {
   const navigate = useNavigate();
+  const { selectedOrganization } = useOrganizations();
   const [formData, setFormData] = useState(buildInitialState());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [employeeId, setEmployeeId] = useState(null);
+  const [contractId, setContractId] = useState(null);
 
   const [signatureModal, setSignatureModal] = useState({
     open: false,
     field: null,
   });
+
+  const formatToInputDate = (dateStr) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("T")) {
+      return dateStr.split("T")[0];
+    }
+    const parsed = Date.parse(dateStr);
+    if (!isNaN(parsed)) {
+      const date = new Date(parsed);
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return dateStr;
+  };
+
+  const fetchContractDetails = async (empId) => {
+    try {
+      setLoading(true);
+      const res = await axiosClient.get(`/employment-contract/employee/${empId}`);
+      if (res.data && res.data.id) {
+        const contract = res.data;
+        setContractId(contract.id);
+        
+        let hpw = contract.hours_per_week || "";
+        if (hpw.endsWith(" hours")) {
+          hpw = hpw.replace(" hours", "");
+        }
+
+        setFormData({
+          educatorName: contract.educator_name || "",
+          educatorAddress: contract.address || "",
+          letterDate: formatToInputDate(contract.contract_date),
+          position: contract.position || "Co-Educator",
+          employmentType: contract.employment_type || "Full-time",
+          hoursPerWeek: hpw,
+          commencementDate: formatToInputDate(contract.commencement_date),
+          awardClassification: contract.award_classification || "",
+          remuneration: contract.remuneration || "",
+          deeptiSignature: "",
+          deeptiDate: formatToInputDate(contract.contract_date),
+          disclosureName: contract.educator_name || "",
+          disclosureChoice: contract.disclosure_choice || "",
+          disclosureDetails: contract.disclosure_details || "",
+          disclosureSignature: contract.disclosure_signature_url || "",
+          disclosureDate: formatToInputDate(contract.disclosure_date),
+          scheduleSignature: contract.contract_signature_url || "",
+          scheduleDate: formatToInputDate(contract.contract_signature_date),
+        });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error fetching contract details:", err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmployeeDetails = async (id) => {
+    try {
+      setLoading(true);
+      const response = await axiosClient.get(`/employeedata/${id}`);
+      if (response.data?.success && response.data?.data) {
+        const empData = response.data.data;
+        const name =
+          `${empData.first_name || ""} ${empData.last_name || ""}`.trim();
+        const address =
+          `${empData.address || ""} ${empData.suburb || ""} ${empData.state || ""} ${empData.postcode || ""}`.trim();
+
+        setFormData((prev) => {
+          const storageKey = `employment_contract_${id}`;
+          if (localStorage.getItem(storageKey)) return prev;
+
+          return {
+            ...prev,
+            educatorName: prev.educatorName || name,
+            disclosureName: prev.disclosureName || name,
+            educatorAddress: prev.educatorAddress || address,
+          };
+        });
+      }
+    } catch (err) {
+      console.error(
+        "Error fetching employee details for contract pre-fill:",
+        err,
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -293,79 +391,131 @@ const EmploymentContractForm = () => {
 
     setEmployeeId(resolvedEmployeeId);
 
-    // Load from local storage if exists
-    const storageKey = `employment_contract_${resolvedEmployeeId || "default"}`;
-    const localData = localStorage.getItem(storageKey);
-    if (localData) {
-      try {
-        setFormData(JSON.parse(localData));
-      } catch (e) {
-        console.error("Error loading cached contract data", e);
-      }
-    } else {
-      if (fallbackStaffName) {
-        setFormData((prev) => ({
-          ...prev,
-          educatorName: fallbackStaffName,
-          disclosureName: fallbackStaffName,
-          educatorAddress: fallbackAddress,
-        }));
-      }
-      // If we have employeeId, try to fetch employee name/details dynamically from server to prefill
-      if (resolvedEmployeeId) {
-        fetchEmployeeDetails(resolvedEmployeeId);
-      }
+    if (resolvedEmployeeId) {
+      // First try to load from backend
+      fetchContractDetails(resolvedEmployeeId).then((loaded) => {
+        if (!loaded) {
+          // Fallback to local storage
+          const storageKey = `employment_contract_${resolvedEmployeeId}`;
+          const localData = localStorage.getItem(storageKey);
+          if (localData) {
+            try {
+              setFormData(JSON.parse(localData));
+            } catch (e) {
+              console.error("Error loading cached contract data", e);
+            }
+          } else {
+            if (fallbackStaffName) {
+              setFormData((prev) => ({
+                ...prev,
+                educatorName: fallbackStaffName,
+                disclosureName: fallbackStaffName,
+                educatorAddress: fallbackAddress,
+              }));
+            }
+            fetchEmployeeDetails(resolvedEmployeeId);
+          }
+        }
+      });
     }
   }, []);
-
-  const fetchEmployeeDetails = async (id) => {
-    try {
-      setLoading(true);
-      const response = await axiosClient.get(`/employeedata/${id}`);
-      if (response.data?.success && response.data?.data) {
-        const empData = response.data.data;
-        const name =
-          `${empData.first_name || ""} ${empData.last_name || ""}`.trim();
-        const address =
-          `${empData.address || ""} ${empData.suburb || ""} ${empData.state || ""} ${empData.postcode || ""}`.trim();
-
-        setFormData((prev) => {
-          // Keep existing values if loaded from storage, otherwise prefill
-          const storageKey = `employment_contract_${id}`;
-          if (localStorage.getItem(storageKey)) return prev;
-
-          return {
-            ...prev,
-            educatorName: prev.educatorName || name,
-            disclosureName: prev.disclosureName || name,
-            educatorAddress: prev.educatorAddress || address,
-          };
-        });
-      }
-    } catch (err) {
-      console.error(
-        "Error fetching employee details for contract pre-fill:",
-        err,
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = (e) => {
+  const getOrganizationId = () => {
+    if (selectedOrganization?.id) {
+      return selectedOrganization.id;
+    }
+    const localOrgId = localStorage.getItem('CURRENT_ORG_ID');
+    if (localOrgId) return Number(localOrgId);
+
+    const employeeStr = localStorage.getItem("employee");
+    if (employeeStr) {
+      try {
+        const emp = JSON.parse(employeeStr);
+        if (emp.organization_id) return Number(emp.organization_id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const usr = JSON.parse(userStr);
+        if (usr.organization_id) return Number(usr.organization_id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return null;
+  };
+
+  const handleSave = async (e) => {
     if (e) e.preventDefault();
+    if (!employeeId) {
+      toast.error("Employee ID is missing.");
+      return;
+    }
+    const orgId = getOrganizationId();
+    if (!orgId) {
+      toast.error("Organization ID is missing.");
+      return;
+    }
+
     setSaving(true);
     try {
-      const storageKey = `employment_contract_${employeeId || "default"}`;
-      localStorage.setItem(storageKey, JSON.stringify(formData));
-      toast.success("Employment Contract progress saved locally!");
+      const payload = {
+        employee_id: Number(employeeId),
+        organization_id: Number(orgId),
+        contract_date: formData.letterDate,
+        educator_name: formData.educatorName,
+        address: formData.educatorAddress,
+        disclosure_date: formData.disclosureDate,
+        position: formData.position,
+        employment_type: formData.employmentType,
+        hours_per_week: formData.hoursPerWeek ? `${formData.hoursPerWeek} hours` : "",
+        commencement_date: formData.commencementDate,
+        award_classification: formData.awardClassification,
+        remuneration: formData.remuneration,
+        acceptance_name: formData.educatorName,
+        contract_signature_date: formData.scheduleDate,
+      };
+
+      if (formData.disclosureSignature && formData.disclosureSignature.startsWith("data:image/")) {
+        payload.disclosure_signature_base64 = formData.disclosureSignature;
+      }
+
+      if (formData.scheduleSignature && formData.scheduleSignature.startsWith("data:image/")) {
+        payload.contract_signature_base64 = formData.scheduleSignature;
+      }
+
+      let response;
+      if (contractId) {
+        response = await axiosClient.put(`/employment-contract/${contractId}`, payload);
+      } else {
+        response = await axiosClient.post("/employment-contract", payload);
+      }
+
+      if (response.data && (response.data.id || response.data.status || response.data.success)) {
+        const savedContract = response.data.data || response.data;
+        if (savedContract.id) {
+          setContractId(savedContract.id);
+        }
+        
+        // Clean up local progress
+        const storageKey = `employment_contract_${employeeId}`;
+        localStorage.removeItem(storageKey);
+
+        toast.success("Employment Contract saved successfully!");
+      } else {
+        toast.error("Failed to save Employment Contract.");
+      }
     } catch (error) {
       console.error("Error saving contract progress:", error);
-      toast.error("Failed to save progress");
+      toast.error(error.response?.data?.message || "Failed to save progress to database");
     } finally {
       setSaving(false);
     }

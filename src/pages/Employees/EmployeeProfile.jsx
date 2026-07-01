@@ -718,6 +718,14 @@ const FORM_META = {
     colorBorder: "hover:border-red-500 hover:bg-red-50",
     description: "Prohibition notice declaration details",
   },
+  "employment-contract-forms": {
+    url: (empId) => `/employment-contract?employeeId=${empId}`,
+    icon: FaFileContract,
+    colorBg: "bg-amber-100 group-hover:bg-amber-200",
+    colorIcon: "text-amber-600",
+    colorBorder: "hover:border-amber-500 hover:bg-amber-50",
+    description: "Complete or update employment contract details",
+  },
 };
 
 const SortableFormItem = ({ form, employeeId }) => {
