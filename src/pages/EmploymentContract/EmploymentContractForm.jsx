@@ -6,7 +6,6 @@ import { FaSave, FaSpinner, FaPrint, FaArrowLeft } from "react-icons/fa";
 import axiosClient from "../../axiosClient";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
-
 // Import images
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
@@ -290,11 +289,13 @@ const EmploymentContractForm = () => {
   const fetchContractDetails = async (empId) => {
     try {
       setLoading(true);
-      const res = await axiosClient.get(`/employment-contract/employee/${empId}`);
+      const res = await axiosClient.get(
+        `/employment-contract/employee/${empId}`,
+      );
       if (res.data && res.data.id) {
         const contract = res.data;
         setContractId(contract.id);
-        
+
         let hpw = contract.hours_per_week || "";
         if (hpw.endsWith(" hours")) {
           hpw = hpw.replace(" hours", "");
@@ -425,31 +426,13 @@ const EmploymentContractForm = () => {
   };
 
   const getOrganizationId = () => {
+    console.log("selected organizaiton ", selectedOrganization);
     if (selectedOrganization?.id) {
       return selectedOrganization.id;
     }
-    const localOrgId = localStorage.getItem('CURRENT_ORG_ID');
+    const localOrgId = localStorage.getItem("selectedOrgId");
     if (localOrgId) return Number(localOrgId);
 
-    const employeeStr = localStorage.getItem("employee");
-    if (employeeStr) {
-      try {
-        const emp = JSON.parse(employeeStr);
-        if (emp.organization_id) return Number(emp.organization_id);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        const usr = JSON.parse(userStr);
-        if (usr.organization_id) return Number(usr.organization_id);
-      } catch (e) {
-        console.error(e);
-      }
-    }
     return null;
   };
 
@@ -476,7 +459,9 @@ const EmploymentContractForm = () => {
         disclosure_date: formData.disclosureDate,
         position: formData.position,
         employment_type: formData.employmentType,
-        hours_per_week: formData.hoursPerWeek ? `${formData.hoursPerWeek} hours` : "",
+        hours_per_week: formData.hoursPerWeek
+          ? `${formData.hoursPerWeek} hours`
+          : "",
         commencement_date: formData.commencementDate,
         award_classification: formData.awardClassification,
         remuneration: formData.remuneration,
@@ -484,27 +469,39 @@ const EmploymentContractForm = () => {
         contract_signature_date: formData.scheduleDate,
       };
 
-      if (formData.disclosureSignature && formData.disclosureSignature.startsWith("data:image/")) {
+      if (
+        formData.disclosureSignature &&
+        formData.disclosureSignature.startsWith("data:image/")
+      ) {
         payload.disclosure_signature_base64 = formData.disclosureSignature;
       }
 
-      if (formData.scheduleSignature && formData.scheduleSignature.startsWith("data:image/")) {
+      if (
+        formData.scheduleSignature &&
+        formData.scheduleSignature.startsWith("data:image/")
+      ) {
         payload.contract_signature_base64 = formData.scheduleSignature;
       }
 
       let response;
       if (contractId) {
-        response = await axiosClient.put(`/employment-contract/${contractId}`, payload);
+        response = await axiosClient.put(
+          `/employment-contract/${contractId}`,
+          payload,
+        );
       } else {
         response = await axiosClient.post("/employment-contract", payload);
       }
 
-      if (response.data && (response.data.id || response.data.status || response.data.success)) {
+      if (
+        response.data &&
+        (response.data.id || response.data.status || response.data.success)
+      ) {
         const savedContract = response.data.data || response.data;
         if (savedContract.id) {
           setContractId(savedContract.id);
         }
-        
+
         // Clean up local progress
         const storageKey = `employment_contract_${employeeId}`;
         localStorage.removeItem(storageKey);
@@ -515,7 +512,9 @@ const EmploymentContractForm = () => {
       }
     } catch (error) {
       console.error("Error saving contract progress:", error);
-      toast.error(error.response?.data?.message || "Failed to save progress to database");
+      toast.error(
+        error.response?.data?.message || "Failed to save progress to database",
+      );
     } finally {
       setSaving(false);
     }
