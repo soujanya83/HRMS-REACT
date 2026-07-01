@@ -595,8 +595,17 @@ const EmploymentContractForm = () => {
         <div className="employment-contract-print-area flex flex-col items-center">
           {/* ══════════════ PAGE 1 ══════════════ */}
           <A4PageWrapper pageNumber={1}>
-            <div className="text-right text-xs font-sans text-gray-800 font-medium mb-2">
-              Date: {formatDateLabel(formData.letterDate)}
+            <div className="text-right text-xs font-sans text-gray-800 font-medium mb-2 flex items-center justify-end gap-1.5 w-full">
+              <span>Date:</span>
+              <input
+                type="date"
+                value={formData.letterDate}
+                onChange={(e) => updateField("letterDate", e.target.value)}
+                className="no-print border border-gray-300 rounded px-2 py-0.5 text-xs outline-none bg-transparent font-sans cursor-pointer max-w-[150px]"
+              />
+              <span className="print:inline hidden font-semibold text-gray-800 text-xs">
+                {formatDateLabel(formData.letterDate)}
+              </span>
             </div>
 
             <div className="text-xs font-sans text-gray-800 font-semibold mb-2 leading-normal text-left w-full">
