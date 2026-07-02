@@ -121,7 +121,7 @@ const buildInitialState = () => {
     educatorName: "",
     educatorAddress: "",
     letterDate: today,
-    position: "Co-Educator",
+    position: "Introductory educator",
     employmentType: "Full-time",
     hoursPerWeek: "38",
     commencementDate: "2026-10-01",
@@ -321,7 +321,7 @@ const EmploymentContractForm = () => {
           educatorName: contract.educator_name || "",
           educatorAddress: contract.address || "",
           letterDate: formatToInputDate(contract.contract_date),
-          position: contract.position || "Co-Educator",
+          position: contract.position || "Introductory educator",
           employmentType: contract.employment_type || "Full-time",
           hoursPerWeek: hpw,
           commencementDate: formatToInputDate(contract.commencement_date),
@@ -1224,14 +1224,16 @@ const EmploymentContractForm = () => {
                         }
                         className="no-print border border-gray-400 rounded px-2 py-0.5 text-xs w-full max-w-[200px] focus:ring-1 focus:ring-blue-500 font-sans cursor-pointer bg-white"
                       >
-                        <option value="Co-Educator">Co-Educator</option>
+                        <option value="Introductory educator">Introductory educator</option>
                         <option value="Educator">Educator</option>
-                        <option value="Room Leader">Room Leader</option>
-                        <option value="Assistant Manager">
-                          Assistant Manager
-                        </option>
-                        <option value="2IC">2IC</option>
+                        <option value="Qualified educator">Qualified educator</option>
+                        <option value="Experienced educator">Experienced educator</option>
+                        <option value="Advanced educator">Advanced educator</option>
+                        <option value="Room leader">Room leader</option>
+                        <option value="Assistant director">Assistant director</option>
+                        <option value="Director">Director</option>
                         <option value="Cook">Cook</option>
+                        <option value="Kitchen hand">Kitchen hand</option>
                       </select>
                       <span className="print:inline hidden font-bold text-black text-xs">
                         {formData.position}
