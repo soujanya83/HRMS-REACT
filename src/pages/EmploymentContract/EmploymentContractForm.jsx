@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSave, FaSpinner, FaPrint, FaArrowLeft } from "react-icons/fa";
+import {
+  FaSave,
+  FaSpinner,
+  FaPrint,
+  FaArrowLeft,
+  FaTrash,
+} from "react-icons/fa";
 import axiosClient from "../../axiosClient";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 
@@ -119,13 +125,15 @@ const buildInitialState = () => {
     employmentType: "Full-time",
     hoursPerWeek: "38",
     commencementDate: "2026-10-01",
-    awardClassification: "3.4",
-    remuneration:
-      "Salary of $31.66 per hour (plus any applicable wage subsidy)",
+    awardClassification: "Level 3",
+    remunerationRate: "31.66",
     deeptiSignature: "",
-    deeptiDate: today,
+    deeptiDate: "",
     disclosureName: "",
     disclosureChoice: "", // 'none', 'pre-existing', 'recurring'
+    disclosureStrike1: false,
+    disclosureStrike2: false,
+    disclosureStrike3: false,
     disclosureDetails: "",
     disclosureSignature: "",
     disclosureDate: today,
@@ -301,6 +309,14 @@ const EmploymentContractForm = () => {
           hpw = hpw.replace(" hours", "");
         }
 
+        let rate = "31.66";
+        if (contract.remuneration) {
+          const match = contract.remuneration.match(/\$(\d+(\.\d+)?)/);
+          if (match) {
+            rate = match[1];
+          }
+        }
+
         setFormData({
           educatorName: contract.educator_name || "",
           educatorAddress: contract.address || "",
@@ -309,12 +325,24 @@ const EmploymentContractForm = () => {
           employmentType: contract.employment_type || "Full-time",
           hoursPerWeek: hpw,
           commencementDate: formatToInputDate(contract.commencement_date),
-          awardClassification: contract.award_classification || "",
-          remuneration: contract.remuneration || "",
-          deeptiSignature: "",
-          deeptiDate: formatToInputDate(contract.contract_date),
+          awardClassification: contract.award_classification || "Level 3",
+          remunerationRate: rate,
+          deeptiSignature:
+            contract.head_of_operations_signature_url ||
+            contract.head_of_operations_signature ||
+            "",
+          deeptiDate: formatToInputDate(contract.head_of_operations_date) || "",
           disclosureName: contract.educator_name || "",
           disclosureChoice: contract.disclosure_choice || "",
+          disclosureStrike1: contract.disclosure_choice
+            ? contract.disclosure_choice !== "none"
+            : false,
+          disclosureStrike2: contract.disclosure_choice
+            ? contract.disclosure_choice !== "pre-existing"
+            : false,
+          disclosureStrike3: contract.disclosure_choice
+            ? contract.disclosure_choice !== "recurring"
+            : false,
           disclosureDetails: contract.disclosure_details || "",
           disclosureSignature: contract.disclosure_signature_url || "",
           disclosureDate: formatToInputDate(contract.disclosure_date),
@@ -464,10 +492,29 @@ const EmploymentContractForm = () => {
           : "",
         commencement_date: formData.commencementDate,
         award_classification: formData.awardClassification,
-        remuneration: formData.remuneration,
+        remuneration: `Salary of $${formData.remunerationRate || "31.66"} per hour`,
+        disclosure_choice: !formData.disclosureStrike1
+          ? "none"
+          : !formData.disclosureStrike2
+            ? "pre-existing"
+            : !formData.disclosureStrike3
+              ? "recurring"
+              : "",
+        disclosure_details: formData.disclosureDetails,
         acceptance_name: formData.educatorName,
         contract_signature_date: formData.scheduleDate,
+        head_of_operations_date: formData.deeptiDate || "2026-10-01",
       };
+
+      if (formData.deeptiSignature) {
+        if (formData.deeptiSignature.startsWith("data:image/")) {
+          payload.head_of_operations_signature_base64 =
+            formData.deeptiSignature;
+        }
+      } else {
+        payload.head_of_operations_signature_base64 =
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+      }
 
       if (
         formData.disclosureSignature &&
@@ -514,6 +561,29 @@ const EmploymentContractForm = () => {
       console.error("Error saving contract progress:", error);
       toast.error(
         error.response?.data?.message || "Failed to save progress to database",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!contractId) {
+      toast.error("No contract to delete");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this contract?"))
+      return;
+    try {
+      setSaving(true);
+      await axiosClient.delete(`/employment-contract/${contractId}`);
+      setContractId(null);
+      setFormData(buildInitialState());
+      toast.success("Employment Contract deleted successfully!");
+    } catch (err) {
+      console.error("Error deleting contract:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to delete Employment Contract",
       );
     } finally {
       setSaving(false);
@@ -614,10 +684,9 @@ const EmploymentContractForm = () => {
                   type="text"
                   value={formData.educatorName}
                   onChange={(e) => updateField("educatorName", e.target.value)}
-                  placeholder="Enter name"
-                  className="no-print border-b border-gray-300 bg-transparent px-2 py-0.5 text-xs outline-none max-w-[200px] w-full font-sans font-semibold text-black"
+                  className="no-print bg-transparent px-2 py-0.5 text-xs outline-none max-w-[200px] w-full font-sans font-semibold text-black"
                 />
-                <span className="print:inline hidden font-bold text-black border-b border-black max-w-[200px] w-full pb-0.5">
+                <span className="print:inline hidden font-bold text-black max-w-[200px] w-full pb-0.5">
                   {formData.educatorName || ""}
                 </span>
               </div>
@@ -629,10 +698,9 @@ const EmploymentContractForm = () => {
                   onChange={(e) =>
                     updateField("educatorAddress", e.target.value)
                   }
-                  placeholder="Enter address"
-                  className="no-print border-b border-gray-300 bg-transparent px-2 py-0.5 text-xs outline-none max-w-[320px] w-full font-sans font-semibold text-black"
+                  className="no-print bg-transparent px-2 py-0.5 text-xs outline-none max-w-[320px] w-full font-sans font-semibold text-black"
                 />
-                <span className="print:inline hidden font-bold text-black border-b border-black max-w-[320px] w-full pb-0.5">
+                <span className="print:inline hidden font-bold text-black max-w-[320px] w-full pb-0.5">
                   {formData.educatorAddress || ""}
                 </span>
               </div>
@@ -948,80 +1016,88 @@ const EmploymentContractForm = () => {
                   </span>
                 </div>
 
-                <div className="font-bold text-[10.5px] text-gray-700 font-sans mb-1 mt-1.5">
-                  AND (select whichever is applicable):
+                <div className="font-bold text-[10.5px] text-gray-700 font-sans mb-2 mt-1.5 uppercase">
+                  AND (strike out whichever is not applicable):
                 </div>
-                <div className="space-y-1.5 text-xs font-sans text-gray-800 font-semibold">
-                  <label className="flex items-start gap-2 cursor-pointer">
+                <div className="space-y-2 text-xs font-sans text-gray-800 font-semibold">
+                  <div className="flex items-start gap-2">
                     <input
-                      type="radio"
-                      name="disclosureChoice"
-                      value="none"
-                      checked={formData.disclosureChoice === "none"}
-                      onChange={() => updateField("disclosureChoice", "none")}
+                      type="checkbox"
+                      checked={formData.disclosureStrike1 || false}
+                      onChange={(e) =>
+                        updateField("disclosureStrike1", e.target.checked)
+                      }
                       className="mt-0.5 cursor-pointer w-3.5 h-3.5"
                     />
-                    <span className="text-[11px] leading-tight font-medium">
+                    <span
+                      className="text-[11px] leading-tight font-medium"
+                      style={{
+                        textDecoration: formData.disclosureStrike1
+                          ? "line-through"
+                          : "none",
+                      }}
+                    >
                       I do not have an injury or disease that I am aware and one
                       could reasonably be expected to foresee could affect the
                       nature of the proposed employment.
                     </span>
-                  </label>
+                  </div>
 
-                  <label className="flex items-start gap-2 cursor-pointer">
+                  <div className="text-[10px] text-gray-500 font-sans font-bold my-0.5 pl-6">
+                    OR
+                  </div>
+
+                  <div className="flex items-start gap-2">
                     <input
-                      type="radio"
-                      name="disclosureChoice"
-                      value="pre-existing"
-                      checked={formData.disclosureChoice === "pre-existing"}
-                      onChange={() =>
-                        updateField("disclosureChoice", "pre-existing")
+                      type="checkbox"
+                      checked={formData.disclosureStrike2 || false}
+                      onChange={(e) =>
+                        updateField("disclosureStrike2", e.target.checked)
                       }
                       className="mt-0.5 cursor-pointer w-3.5 h-3.5"
                     />
-                    <span className="text-[11px] leading-tight font-medium">
+                    <span
+                      className="text-[11px] leading-tight font-medium"
+                      style={{
+                        textDecoration: formData.disclosureStrike2
+                          ? "line-through"
+                          : "none",
+                      }}
+                    >
                       I have suffered the below listed injuries and/or disease
                       that one could not be reasonably expected to foresee
                       affecting the nature of the proposed employment.
                     </span>
-                  </label>
+                  </div>
 
-                  <label className="flex items-start gap-2 cursor-pointer">
+                  <div className="text-[10px] text-gray-500 font-sans font-bold my-0.5 pl-6">
+                    OR
+                  </div>
+
+                  <div className="flex items-start gap-2">
                     <input
-                      type="radio"
-                      name="disclosureChoice"
-                      value="recurring"
-                      checked={formData.disclosureChoice === "recurring"}
-                      onChange={() =>
-                        updateField("disclosureChoice", "recurring")
+                      type="checkbox"
+                      checked={formData.disclosureStrike3 || false}
+                      onChange={(e) =>
+                        updateField("disclosureStrike3", e.target.checked)
                       }
                       className="mt-0.5 cursor-pointer w-3.5 h-3.5"
                     />
-                    <span className="text-[11px] leading-tight font-medium">
+                    <span
+                      className="text-[11px] leading-tight font-medium"
+                      style={{
+                        textDecoration: formData.disclosureStrike3
+                          ? "line-through"
+                          : "none",
+                      }}
+                    >
                       I have suffered the below listed injuries and/or disease
                       that may recur, deteriorate, accelerate, be exacerbated,
                       or aggravated by the duties described in the position
                       description.
                     </span>
-                  </label>
-                </div>
-
-                {(formData.disclosureChoice === "pre-existing" ||
-                  formData.disclosureChoice === "recurring") && (
-                  <div className="mt-2">
-                    <label className="block text-[10px] font-bold text-gray-600 font-sans mb-0.5">
-                      Details of pre-existing injuries or diseases:
-                    </label>
-                    <textarea
-                      value={formData.disclosureDetails}
-                      onChange={(e) =>
-                        updateField("disclosureDetails", e.target.value)
-                      }
-                      placeholder="Please detail injuries, dates, and work restrictions..."
-                      className="border border-gray-400 rounded p-1.5 text-xs w-full h-[50px] resize-none outline-none font-sans bg-white"
-                    />
                   </div>
-                )}
+                </div>
               </div>
 
               <p className="mb-2 font-bold font-sans text-[11px] text-gray-900">
@@ -1154,6 +1230,7 @@ const EmploymentContractForm = () => {
                         <option value="Assistant Manager">
                           Assistant Manager
                         </option>
+                        <option value="2IC">2IC</option>
                         <option value="Cook">Cook</option>
                       </select>
                       <span className="print:inline hidden font-bold text-black text-xs">
@@ -1192,8 +1269,9 @@ const EmploymentContractForm = () => {
                       >
                         <option value="Full-time">Full-time</option>
                         <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship">Internship</option>
                         <option value="Casual">Casual</option>
-                        <option value="Fixed term">Fixed term</option>
                       </select>
                       <span className="print:inline hidden font-bold text-black text-xs">
                         {formData.employmentType}
@@ -1452,21 +1530,12 @@ const EmploymentContractForm = () => {
                         }
                         className="no-print border border-gray-400 rounded px-2 py-0.5 text-xs w-full max-w-[140px] focus:ring-1 focus:ring-blue-500 font-sans cursor-pointer bg-white"
                       >
-                        <option value="1.1">Level 1.1</option>
-                        <option value="1.2">Level 1.2</option>
-                        <option value="2.1">Level 2.1</option>
-                        <option value="2.2">Level 2.2</option>
-                        <option value="3.1">Level 3.1</option>
-                        <option value="3.2">Level 3.2</option>
-                        <option value="3.3">Level 3.3</option>
-                        <option value="3.4">Level 3.4</option>
-                        <option value="4.1">Level 4.1</option>
-                        <option value="4.2">Level 4.2</option>
-                        <option value="4.3">Level 4.3</option>
-                        <option value="5.1">Level 5.1</option>
-                        <option value="5.2">Level 5.2</option>
-                        <option value="5.3">Level 5.3</option>
-                        <option value="5.4">Level 5.4</option>
+                        <option value="Level 1">Level 1</option>
+                        <option value="Level 2">Level 2</option>
+                        <option value="Level 3">Level 3</option>
+                        <option value="Level 4">Level 4</option>
+                        <option value="Level 5">Level 5</option>
+                        <option value="Level 6">Level 6</option>
                       </select>
                       <span className="print:inline hidden font-bold text-black text-xs">
                         {formData.awardClassification}
@@ -1495,32 +1564,22 @@ const EmploymentContractForm = () => {
                       Remuneration
                     </td>
                     <td style={{ border: BORDER_SOLID, padding: "3px 8px" }}>
-                      <select
-                        value={formData.remuneration}
-                        onChange={(e) =>
-                          updateField("remuneration", e.target.value)
-                        }
-                        className="no-print border border-gray-400 rounded px-2 py-0.5 text-xs w-full max-w-[280px] focus:ring-1 focus:ring-blue-500 font-sans cursor-pointer bg-white"
-                      >
-                        <option value="Salary of $26.12 per hour (plus any applicable wage subsidy)">
-                          Salary of $26.12 per hour
-                        </option>
-                        <option value="Salary of $28.50 per hour (plus any applicable wage subsidy)">
-                          Salary of $28.50 per hour
-                        </option>
-                        <option value="Salary of $31.66 per hour (plus any applicable wage subsidy)">
-                          Salary of $31.66 per hour
-                        </option>
-                        <option value="Salary of $35.00 per hour (plus any applicable wage subsidy)">
-                          Salary of $35.00 per hour
-                        </option>
-                        <option value="Salary of $38.50 per hour (plus any applicable wage subsidy)">
-                          Salary of $38.50 per hour
-                        </option>
-                      </select>
-                      <span className="print:inline hidden font-bold text-black text-xs">
-                        {formData.remuneration}
-                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-black font-semibold flex-wrap">
+                        <span>Salary of $</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.remunerationRate || ""}
+                          onChange={(e) =>
+                            updateField("remunerationRate", e.target.value)
+                          }
+                          className="no-print border border-gray-400 rounded px-2 py-0.5 text-xs w-[80px] focus:ring-1 focus:ring-blue-500 font-sans bg-white"
+                        />
+                        <span className="print:inline hidden font-bold text-black text-xs">
+                          {formData.remunerationRate || ""}
+                        </span>
+                        <span>per hour </span>
+                      </div>
                     </td>
                   </tr>
 
@@ -1727,6 +1786,7 @@ const EmploymentContractForm = () => {
           >
             <FaPrint /> Print Contract
           </button>
+
           <button
             type="button"
             onClick={handleSave}

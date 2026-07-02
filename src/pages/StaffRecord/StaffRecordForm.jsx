@@ -65,6 +65,46 @@ const PRINT_STYLES = `
   }
 `;
 
+const inp =
+  "w-full h-full bg-transparent px-2 py-1 text-[13px] text-gray-900 outline-none focus:bg-blue-50/30";
+const ta =
+  "w-full h-full resize-none bg-transparent px-2 py-2 text-[13px] leading-snug text-gray-900 outline-none focus:bg-blue-50/30";
+const BORDER = "1px solid #3f3f3f";
+const labelStyle = {
+  fontSize: "13px",
+  fontWeight: "600",
+  color: "#000",
+  lineHeight: "1.3",
+};
+
+/* ─── reusable cell helpers ─── */
+const LabelCell = ({ children, style = {} }) => (
+  <div
+    style={{
+      borderRight: BORDER,
+      padding: "6px 8px",
+      display: "flex",
+      alignItems: "center",
+      ...labelStyle,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const InputCell = ({ children, borderRight = false, style = {} }) => (
+  <div
+    style={{
+      borderRight: borderRight ? BORDER : "none",
+      overflow: "hidden",
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
 const StaffRecordForm = () => {
   const [formData, setFormData] = useState(initialStaffRecordState);
   const [loading, setLoading] = useState(false);
@@ -229,46 +269,7 @@ const StaffRecordForm = () => {
     }
   };
 
-  /* ─── shared style tokens ─── */
-  const inp =
-    "w-full h-full bg-transparent px-2 py-1 text-[13px] text-gray-900 outline-none focus:bg-blue-50/30";
-  const ta =
-    "w-full h-full resize-none bg-transparent px-2 py-2 text-[13px] leading-snug text-gray-900 outline-none focus:bg-blue-50/30";
-  const BORDER = "1px solid #3f3f3f";
-  const labelStyle = {
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#000",
-    lineHeight: "1.3",
-  };
 
-  /* ─── reusable cell helpers ─── */
-  const LabelCell = ({ children, style = {} }) => (
-    <div
-      style={{
-        borderRight: BORDER,
-        padding: "6px 8px",
-        display: "flex",
-        alignItems: "center",
-        ...labelStyle,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-
-  const InputCell = ({ children, borderRight = false, style = {} }) => (
-    <div
-      style={{
-        borderRight: borderRight ? BORDER : "none",
-        overflow: "hidden",
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
 
   return (
     <>
