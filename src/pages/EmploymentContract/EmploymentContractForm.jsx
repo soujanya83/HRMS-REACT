@@ -130,7 +130,6 @@ const buildInitialState = () => {
     deeptiSignature: "",
     deeptiDate: "",
     disclosureName: "",
-    disclosureChoice: "", // 'none', 'pre-existing', 'recurring'
     disclosureStrike1: false,
     disclosureStrike2: false,
     disclosureStrike3: false,
@@ -333,16 +332,9 @@ const EmploymentContractForm = () => {
             "",
           deeptiDate: formatToInputDate(contract.head_of_operations_date) || "",
           disclosureName: contract.educator_name || "",
-          disclosureChoice: contract.disclosure_choice || "",
-          disclosureStrike1: contract.disclosure_choice
-            ? contract.disclosure_choice !== "none"
-            : false,
-          disclosureStrike2: contract.disclosure_choice
-            ? contract.disclosure_choice !== "pre-existing"
-            : false,
-          disclosureStrike3: contract.disclosure_choice
-            ? contract.disclosure_choice !== "recurring"
-            : false,
+          disclosureStrike1: contract.disclosureStrike1,
+          disclosureStrike2: contract.disclosureStrike2,
+          disclosureStrike3: contract.disclosureStrike3,
           disclosureDetails: contract.disclosure_details || "",
           disclosureSignature: contract.disclosure_signature_url || "",
           disclosureDate: formatToInputDate(contract.disclosure_date),
@@ -493,13 +485,9 @@ const EmploymentContractForm = () => {
         commencement_date: formData.commencementDate,
         award_classification: formData.awardClassification,
         remuneration: `Salary of $${formData.remunerationRate || "31.66"} per hour`,
-        disclosure_choice: !formData.disclosureStrike1
-          ? "none"
-          : !formData.disclosureStrike2
-            ? "pre-existing"
-            : !formData.disclosureStrike3
-              ? "recurring"
-              : "",
+        disclosureStrike1: formData.disclosureStrike1,
+        disclosureStrike2: formData.disclosureStrike2,
+        disclosureStrike3: formData.disclosureStrike3,
         disclosure_details: formData.disclosureDetails,
         acceptance_name: formData.educatorName,
         contract_signature_date: formData.scheduleDate,
@@ -1224,13 +1212,23 @@ const EmploymentContractForm = () => {
                         }
                         className="no-print border border-gray-400 rounded px-2 py-0.5 text-xs w-full max-w-[200px] focus:ring-1 focus:ring-blue-500 font-sans cursor-pointer bg-white"
                       >
-                        <option value="Introductory educator">Introductory educator</option>
+                        <option value="Introductory educator">
+                          Introductory educator
+                        </option>
                         <option value="Educator">Educator</option>
-                        <option value="Qualified educator">Qualified educator</option>
-                        <option value="Experienced educator">Experienced educator</option>
-                        <option value="Advanced educator">Advanced educator</option>
+                        <option value="Qualified educator">
+                          Qualified educator
+                        </option>
+                        <option value="Experienced educator">
+                          Experienced educator
+                        </option>
+                        <option value="Advanced educator">
+                          Advanced educator
+                        </option>
                         <option value="Room leader">Room leader</option>
-                        <option value="Assistant director">Assistant director</option>
+                        <option value="Assistant director">
+                          Assistant director
+                        </option>
                         <option value="Director">Director</option>
                         <option value="Cook">Cook</option>
                         <option value="Kitchen hand">Kitchen hand</option>
