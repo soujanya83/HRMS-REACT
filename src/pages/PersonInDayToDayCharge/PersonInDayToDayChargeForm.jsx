@@ -79,8 +79,126 @@ const inputLineClass =
 const checkboxClass =
   "h-[13px] w-[13px] shrink-0 appearance-none border border-black bg-white checked:bg-gray-700";
 
+const PIDTDC_RESPONSIVE_STYLES = `
+  @media screen and (max-width: 900px) {
+    .pidtdc-screen {
+      padding: 24px 12px !important;
+    }
+    .pidtdc-form {
+      width: 100%;
+    }
+    .pidtdc-page {
+      width: 100% !important;
+      max-width: 794px !important;
+      height: auto !important;
+      min-height: 1300px;
+      margin: 0 auto;
+    }
+    .pidtdc-page-content {
+      left: 7% !important;
+      width: 86% !important;
+    }
+    .pidtdc-actions {
+      width: 100%;
+      max-width: 794px;
+      flex-wrap: wrap;
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .pidtdc-screen {
+      padding: 12px 8px !important;
+    }
+    .pidtdc-form {
+      gap: 16px !important;
+    }
+    .pidtdc-page {
+      min-height: auto;
+      overflow: visible !important;
+      box-shadow: 0 2px 18px rgba(0,0,0,0.14) !important;
+    }
+    .pidtdc-page > img {
+      height: 76px !important;
+    }
+    .pidtdc-page-content {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      width: auto !important;
+      padding: 92px 14px 100px !important;
+    }
+    .pidtdc-page-content h1 {
+      font-size: 16px !important;
+      line-height: 1.25 !important;
+    }
+    .pidtdc-page-content h2 {
+      font-size: 15px !important;
+      line-height: 1.3 !important;
+    }
+    .pidtdc-page-content p,
+    .pidtdc-page-content li,
+    .pidtdc-page-content span,
+    .pidtdc-page-content label {
+      font-size: 13px !important;
+    }
+    .pidtdc-page-content ul {
+      margin-left: 18px !important;
+    }
+    .pidtdc-page-content input,
+    .pidtdc-page-content textarea {
+      max-width: 100% !important;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .pidtdc-page-content input[type="date"] {
+      width: 100%;
+      min-height: 34px;
+    }
+    .pidtdc-page-content .items-start.gap-4,
+    .pidtdc-page-content .items-end.gap-2,
+    .pidtdc-page-content .mt-4.flex.gap-8,
+    .pidtdc-page-content .mb-5.flex.items-end.gap-2 {
+      align-items: stretch !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .pidtdc-page-content .flex-shrink-0 {
+      width: 100%;
+    }
+    .pidtdc-page-content .flex-1 {
+      width: 100%;
+    }
+    .pidtdc-checklist-header,
+    .pidtdc-checklist-row {
+      grid-template-columns: minmax(0, 1fr) 128px !important;
+    }
+    .pidtdc-checklist-row {
+      min-height: 42px !important;
+    }
+    .pidtdc-checklist-row input {
+      min-height: 42px;
+    }
+    .pidtdc-actions {
+      gap: 10px !important;
+      padding: 4px 0 24px !important;
+    }
+    .pidtdc-action-button {
+      flex: 1 1 100%;
+      justify-content: center;
+      min-height: 42px;
+    }
+  }
+
+  @media screen and (max-width: 420px) {
+    .pidtdc-checklist-header,
+    .pidtdc-checklist-row {
+      grid-template-columns: minmax(0, 1fr) 112px !important;
+    }
+  }
+`;
+
 const Page = ({ children }) => (
-  <section className="relative h-[1300px] w-[794px] overflow-hidden bg-white shadow-lg print:shadow-none">
+  <section className="pidtdc-page relative h-[1300px] w-[794px] overflow-hidden bg-white shadow-lg print:shadow-none">
     <img
       src={topImage}
       alt=""
@@ -93,7 +211,9 @@ const Page = ({ children }) => (
       className="absolute bottom-0 left-0 h-[96px] w-full object-cover"
       draggable={false}
     />
-    <div className="absolute left-[82px] top-[106px] w-[650px]">{children}</div>
+    <div className="pidtdc-page-content absolute left-[82px] top-[106px] w-[650px]">
+      {children}
+    </div>
   </section>
 );
 
@@ -535,7 +655,8 @@ const PersonInDayToDayChargeForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 px-4 py-10 print:bg-white print:py-0">
+    <div className="pidtdc-screen min-h-screen bg-gray-200 px-4 py-10 print:bg-white print:py-0">
+      <style>{PIDTDC_RESPONSIVE_STYLES}</style>
       <ToastContainer position="top-right" />
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -547,7 +668,7 @@ const PersonInDayToDayChargeForm = () => {
       )}
       <form
         onSubmit={handleSave}
-        className="flex flex-col items-center gap-6 print:gap-0"
+        className="pidtdc-form flex flex-col items-center gap-6 print:gap-0"
       >
         <Page>
           <h1 className="mb-6 text-center text-[18px] font-bold leading-tight text-black">
@@ -1139,7 +1260,7 @@ const PersonInDayToDayChargeForm = () => {
           </p>
 
           <div className="w-full border border-gray-500 text-[13px] text-black">
-            <div className="grid grid-cols-[1fr_165px] bg-[#3ea0d1] font-bold text-white">
+            <div className="pidtdc-checklist-header grid grid-cols-[1fr_165px] bg-[#3ea0d1] font-bold text-white">
               <div className="border-r border-gray-500 px-2 py-1">
                 Items to Cover
               </div>
@@ -1148,7 +1269,7 @@ const PersonInDayToDayChargeForm = () => {
             {checklistItems.map((item) => (
               <div
                 key={item}
-                className="grid min-h-[22px] grid-cols-[1fr_165px] border-t border-gray-400"
+                className="pidtdc-checklist-row grid min-h-[22px] grid-cols-[1fr_165px] border-t border-gray-400"
               >
                 <div className="border-r border-gray-400 px-2 py-[2px] leading-tight">
                   {item}
@@ -1318,11 +1439,11 @@ const PersonInDayToDayChargeForm = () => {
             </div>
           </div>
         </Page>
-        <div className="flex justify-center gap-4 py-4 print:hidden">
+        <div className="pidtdc-actions flex justify-center gap-4 py-4 print:hidden">
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="pidtdc-action-button flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {saving ? (
               <>
@@ -1339,7 +1460,7 @@ const PersonInDayToDayChargeForm = () => {
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="pidtdc-action-button flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
             <span>Print Form</span>
           </button>
