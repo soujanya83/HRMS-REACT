@@ -11,6 +11,11 @@ import {
 } from "react-icons/fa";
 import axiosClient from "../../axiosClient";
 import { useOrganizations } from "../../contexts/OrganizationContext";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 // Import images
 import topImage from "../../assets/common_form_images/img9.jpg";
@@ -542,6 +547,7 @@ const EmploymentContractForm = () => {
         localStorage.removeItem(storageKey);
 
         toast.success("Employment Contract saved successfully!");
+        notifyFlutterSaveSuccess();
       } else {
         toast.error("Failed to save Employment Contract.");
       }
@@ -552,6 +558,12 @@ const EmploymentContractForm = () => {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
     }
   };
 
@@ -1774,10 +1786,10 @@ const EmploymentContractForm = () => {
         <div className="no-print w-full max-w-[794px] mt-6 mb-12 flex justify-end gap-4 border-t border-gray-300 pt-6">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleCancel}
             className="flex items-center gap-2 px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer font-sans"
           >
-            <FaArrowLeft size={12} /> Back
+            <FaArrowLeft size={12} /> Cancel
           </button>
           <button
             type="button"

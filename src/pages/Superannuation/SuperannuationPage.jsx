@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import SectionA from "./components/SectionA";
 import SectionB from "./components/SectionB";
@@ -7,6 +8,11 @@ import SectionD from "./components/SectionD";
 import axiosClient from "../../axiosClient";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 const pageVariants = {
   initial: { opacity: 0, y: 30 },
@@ -25,6 +31,7 @@ const createCharArray = (length, initial = "") => {
 };
 
 const SuperannuationPage = () => {
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [existingData, setExistingData] = useState(null);
   const [formId, setFormId] = useState(null);
@@ -436,6 +443,7 @@ const SuperannuationPage = () => {
         );
         if (response.data?.success || response.status === 200) {
           toast.success("Superannuation form updated successfully!");
+          notifyFlutterSaveSuccess();
         } else {
           toast.error(response.data?.message || "Failed to update form");
         }
@@ -446,6 +454,7 @@ const SuperannuationPage = () => {
           toast.success("Superannuation form created successfully!");
           setFormId(response.data.id);
           setExistingData(response.data);
+          notifyFlutterSaveSuccess();
         } else {
           toast.error(response.data?.message || "Failed to create form");
         }
@@ -455,6 +464,12 @@ const SuperannuationPage = () => {
       toast.error(error.response?.data?.message || "Failed to submit form");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath());
     }
   };
 
@@ -647,10 +662,19 @@ const SuperannuationPage = () => {
           </div>
         )}
 
-        {/* Submit button */}
-        {selectedChoice && (
-          <div className="mt-6 flex justify-center">
+        {/* Action buttons */}
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={submitting}
+            className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            Cancel
+          </button>
+          {selectedChoice && (
             <button
+              type="button"
               onClick={handleSubmit}
               disabled={submitting}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -664,8 +688,8 @@ const SuperannuationPage = () => {
                 "Submit Form"
               )}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

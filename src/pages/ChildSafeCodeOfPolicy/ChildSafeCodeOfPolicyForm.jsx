@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaPrint, FaSave, FaSpinner } from "react-icons/fa";
+import { FaPrint, FaSave, FaSpinner, FaTimes } from "react-icons/fa";
 import { SignatureModal } from "../TfnDeclaration/components/TfnFormComponents";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 import page1 from "../../assets/child_safe_code_of_policy/Child Safe Code of Conduct Policy_page-0001.jpg";
 import page2 from "../../assets/child_safe_code_of_policy/Child Safe Code of Conduct Policy_page-0002.jpg";
@@ -140,6 +146,7 @@ const PolicyAgreementPage = ({
 );
 
 const ChildSafeCodeOfPolicyForm = () => {
+  const navigate = useNavigate();
   const [agreementData, setAgreementData] = useState({
     name: "",
     signature: "",
@@ -265,6 +272,7 @@ const ChildSafeCodeOfPolicyForm = () => {
           ? "Child safe conduct updated successfully!"
           : "Child safe conduct saved successfully!",
       );
+      notifyFlutterSaveSuccess();
     } catch (error) {
       if (error.response?.data?.errors) {
         const apiErrors = {};
@@ -285,6 +293,12 @@ const ChildSafeCodeOfPolicyForm = () => {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
     }
   };
 
@@ -328,6 +342,15 @@ const ChildSafeCodeOfPolicyForm = () => {
         })}
 
         <div className="flex justify-center gap-4 py-4 print:hidden">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={saving}
+            className="flex items-center gap-2 rounded bg-gray-500 px-6 py-2 text-white hover:bg-gray-600 disabled:opacity-50"
+          >
+            <FaTimes />
+            Cancel
+          </button>
           <button
             type="button"
             onClick={() => window.print()}

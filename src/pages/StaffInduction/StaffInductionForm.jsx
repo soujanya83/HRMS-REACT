@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSave, FaSpinner, FaPrint } from "react-icons/fa";
+import { FaSave, FaSpinner, FaPrint, FaTimes } from "react-icons/fa";
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
 import { SignaturePad } from "../Superannuation/components/SharedComponents";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 // ─── Signature Modal ──────────────────────────────────────────────────────────
 const SignatureModal = ({
@@ -398,6 +404,7 @@ const BORDER_LIGHT = "1px solid #d1d5db";
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 const StaffInductionForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(buildInitialState());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -565,6 +572,7 @@ const StaffInductionForm = () => {
             setFormData((prev) => ({ ...prev, ...response.data.form_data }));
           }
           toast.success("Staff induction updated successfully!");
+          notifyFlutterSaveSuccess();
         }
       } else {
         response = await axiosClient.post("/staff-inductions", payload);
@@ -574,6 +582,7 @@ const StaffInductionForm = () => {
             setFormData((prev) => ({ ...prev, ...response.data.form_data }));
           }
           toast.success("Staff induction saved successfully!");
+          notifyFlutterSaveSuccess();
         }
       }
     } catch (error) {
@@ -581,6 +590,12 @@ const StaffInductionForm = () => {
       toast.error("Failed to save staff induction");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
     }
   };
 
@@ -1817,8 +1832,35 @@ const StaffInductionForm = () => {
           style={{ width: "794px", marginTop: "0px", paddingBottom: "40px" }}
         >
           <div
-            style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
           >
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 22px",
+                backgroundColor: "#6b7280",
+                color: "#fff",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "14px",
+              }}
+            >
+              <FaTimes />
+              Cancel
+            </button>
+
             <button
               type="button"
               onClick={() => window.print()}

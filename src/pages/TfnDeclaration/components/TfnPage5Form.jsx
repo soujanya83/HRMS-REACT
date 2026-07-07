@@ -63,6 +63,7 @@ const TfnPage5Form = ({
   onUpdate,
   errors = {},
   onSave,
+  onCancel,
   declarationId = null,
   payerReadOnly = false,
 }) => {
@@ -1275,6 +1276,8 @@ const TfnPage5Form = ({
         onReset={() => onUpdate(initialFormState())}
 
         onSave={onSave}
+
+        onCancel={onCancel}
 
       />
 

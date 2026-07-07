@@ -904,7 +904,7 @@ export const TfnDeclarationBlock = ({
 
 
 
-export const TfnFormFooterActions = ({ onPrint, onReset, onSave }) => (
+export const TfnFormFooterActions = ({ onPrint, onReset, onSave, onCancel }) => (
 
   <div className="relative px-4 pb-3 pt-2 border-t border-[#555]">
 
@@ -915,6 +915,8 @@ export const TfnFormFooterActions = ({ onPrint, onReset, onSave }) => (
     <div className="flex justify-center gap-2 my-2">
 
       {[
+
+        { label: "Cancel", onClick: onCancel },
 
         { label: "Print form", onClick: onPrint },
 

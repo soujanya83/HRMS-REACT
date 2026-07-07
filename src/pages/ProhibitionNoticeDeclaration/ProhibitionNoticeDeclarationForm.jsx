@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSave, FaTrash, FaSpinner, FaPrint } from "react-icons/fa";
+import { FaSave, FaTrash, FaSpinner, FaPrint, FaTimes } from "react-icons/fa";
 import { SignaturePad } from "../Superannuation/components/SharedComponents";
 import { SignatureModal } from "../TfnDeclaration/components/TfnFormComponents";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 export const initialProhibitionNoticeDeclarationState = {
   title: "",
@@ -89,6 +95,7 @@ const YesNoChoice = ({ value, onChange, name }) => {
    Main form
 ───────────────────────────────────────────── */
 const ProhibitionNoticeDeclarationForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(
     initialProhibitionNoticeDeclarationState,
   );
@@ -245,6 +252,7 @@ const ProhibitionNoticeDeclarationForm = () => {
         );
         if (response.data) {
           toast.success("Declaration updated successfully!");
+          notifyFlutterSaveSuccess();
         }
       } else {
         // Create new declaration
@@ -252,6 +260,7 @@ const ProhibitionNoticeDeclarationForm = () => {
         if (response.data) {
           setDeclarationId(response.data.id);
           toast.success("Declaration created successfully!");
+          notifyFlutterSaveSuccess();
         }
       }
     } catch (err) {
@@ -267,6 +276,12 @@ const ProhibitionNoticeDeclarationForm = () => {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
     }
   };
 
@@ -701,6 +716,14 @@ const ProhibitionNoticeDeclarationForm = () => {
 
         {/* Action Buttons */}
         <div className="mt-8 flex justify-end gap-4 border-t-2 border-black pt-6 print:hidden">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 font-medium"
+          >
+            <FaTimes /> Cancel
+          </button>
           <button
             type="button"
             onClick={() => window.print()}

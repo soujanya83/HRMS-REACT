@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSave, FaSpinner } from "react-icons/fa";
+import { FaSave, FaSpinner, FaTimes } from "react-icons/fa";
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
 import { SignatureModal } from "../TfnDeclaration/components/TfnFormComponents";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 const checklistItems = [
   "Alarm system operation and troubleshooting",
@@ -250,6 +256,7 @@ const Choice = ({ label, checked, onChange }) => (
 );
 
 const PersonInDayToDayChargeForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialPersonInDayToDayChargeState);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -627,6 +634,7 @@ const PersonInDayToDayChargeForm = () => {
         response = await axiosClient.put(`/pidtdc-forms/${formId}`, payload);
         if (response.data) {
           toast.success("PIDTDC form updated successfully!");
+          notifyFlutterSaveSuccess();
         }
       } else {
         // Create new form
@@ -634,6 +642,7 @@ const PersonInDayToDayChargeForm = () => {
         if (response.data) {
           setFormId(response.data.id);
           toast.success("PIDTDC form created successfully!");
+          notifyFlutterSaveSuccess();
         }
       }
     } catch (error) {
@@ -651,6 +660,12 @@ const PersonInDayToDayChargeForm = () => {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
     }
   };
 
@@ -1440,6 +1455,14 @@ const PersonInDayToDayChargeForm = () => {
           </div>
         </Page>
         <div className="pidtdc-actions flex justify-center gap-4 py-4 print:hidden">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="pidtdc-action-button flex items-center gap-2 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            <FaTimes />
+            <span>Cancel</span>
+          </button>
           <button
             type="submit"
             disabled={saving}

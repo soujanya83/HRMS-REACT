@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 import axiosClient from "../../axiosClient";
 
@@ -22,8 +23,14 @@ import TfnPage5Form, {
 } from "./components/TfnPage5Form";
 
 import TfnPage6PayerInfo from "./components/TfnPage6PayerInfo";
+import {
+  closeFlutterWebView,
+  getOnboardingCancelPath,
+  notifyFlutterSaveSuccess,
+} from "../../utils/onboardingFormNavigation";
 
 const TfnDeclarationPage = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialFormState);
 
   const [loading, setLoading] = useState(false);
@@ -519,6 +526,7 @@ const TfnDeclarationPage = () => {
 
         if (response.data) {
           toast.success("TFN declaration updated successfully!");
+          notifyFlutterSaveSuccess();
         }
       } else {
         // Create new TFN declaration
@@ -529,6 +537,7 @@ const TfnDeclarationPage = () => {
           setDeclarationId(response.data.id);
 
           toast.success("TFN declaration created successfully!");
+          notifyFlutterSaveSuccess();
         }
       }
     } catch (error) {
@@ -625,6 +634,12 @@ const TfnDeclarationPage = () => {
     }
   };
 
+  const handleCancel = () => {
+    if (!closeFlutterWebView()) {
+      navigate(getOnboardingCancelPath(employeeId));
+    }
+  };
+
   const parseDate = (dateString) => {
     if (!dateString || dateString.length !== 8) return "";
 
@@ -668,6 +683,7 @@ const TfnDeclarationPage = () => {
           onUpdate={setForm}
           errors={errors}
           onSave={handleSave}
+          onCancel={handleCancel}
           declarationId={declarationId}
           payerReadOnly={isEmployeeUser}
         />
