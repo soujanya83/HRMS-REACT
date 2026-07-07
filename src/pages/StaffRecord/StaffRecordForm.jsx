@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSave, FaSpinner, FaPrint } from "react-icons/fa";
+import { FaSave, FaSpinner, FaPrint, FaTimes } from "react-icons/fa";
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
 
@@ -243,12 +243,21 @@ const StaffRecordForm = () => {
           `/staff-records/${staffRecordId}`,
           payload,
         );
-        if (response.data) toast.success("Staff record updated successfully!");
+        if (response.data) {
+          toast.success("Staff record updated successfully!");
+          if (window.FlutterChannel) {
+            // Agar WebView mai hai, to Flutter ko message bhej do
+            window.FlutterChannel.postMessage("SAVE_SUCCESS");
+          }
+        }
       } else {
         response = await axiosClient.post("/staff-records", payload);
         if (response.data) {
           setStaffRecordId(response.data.id);
           toast.success("Staff record created successfully!");
+          if (window.FlutterChannel) {
+            window.FlutterChannel.postMessage("SAVE_SUCCESS");
+          }
         }
       }
     } catch (error) {
@@ -266,6 +275,19 @@ const StaffRecordForm = () => {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+
+  const handleCancel = () => {
+    // Check karo ki website Flutter WebView mai chal rahi hai ya nahi
+    if (window.FlutterChannel) {
+      // Flutter ko message bhejo ki WebView band kar de
+      window.FlutterChannel.postMessage("CLOSE_WEBVIEW");
+    } else {
+      // Agar normal browser mai chal raha hai, to normal React Router ka back use kar lo
+      // jaise: navigate('/previous-page');
+      console.log("Not in Flutter App, normal cancel action.");
     }
   };
 
@@ -816,25 +838,25 @@ const StaffRecordForm = () => {
               {/* Row 6 errors */}
               {(errors.workingWithChildrenCheckNumber ||
                 errors.statusCheckCompletedDate) && (
-                <div
-                  className="print-error"
-                  style={{
-                    display: "flex",
-                    gap: "16px",
-                    padding: "2px 8px",
-                    fontSize: "11px",
-                    color: "#ef4444",
-                    background: "#fff5f5",
-                  }}
-                >
-                  {errors.workingWithChildrenCheckNumber && (
-                    <span>WWC#: {errors.workingWithChildrenCheckNumber}</span>
-                  )}
-                  {errors.statusCheckCompletedDate && (
-                    <span>Status date: {errors.statusCheckCompletedDate}</span>
-                  )}
-                </div>
-              )}
+                  <div
+                    className="print-error"
+                    style={{
+                      display: "flex",
+                      gap: "16px",
+                      padding: "2px 8px",
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      background: "#fff5f5",
+                    }}
+                  >
+                    {errors.workingWithChildrenCheckNumber && (
+                      <span>WWC#: {errors.workingWithChildrenCheckNumber}</span>
+                    )}
+                    {errors.statusCheckCompletedDate && (
+                      <span>Status date: {errors.statusCheckCompletedDate}</span>
+                    )}
+                  </div>
+                )}
             </div>
             {/* ── end table ── */}
 
@@ -863,8 +885,35 @@ const StaffRecordForm = () => {
           style={{ width: "794px", marginTop: "18px", paddingBottom: "40px" }}
         >
           <div
-            style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
           >
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 22px",
+                backgroundColor: "#6b7280",
+                color: "#fff",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "14px",
+              }}
+            >
+              <FaTimes />
+              Cancel
+            </button>
+
             <button
               type="button"
               onClick={() => window.print()}
@@ -885,6 +934,8 @@ const StaffRecordForm = () => {
               <FaPrint />
               Print Form
             </button>
+
+
             <button
               type="submit"
               disabled={saving}
