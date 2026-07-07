@@ -200,6 +200,7 @@ const A4PageWrapper = ({ children, pageNumber }) => (
 
     {/* Main content body inside border padding */}
     <div
+      className="employment-contract-page-body"
       style={{
         paddingTop: "126px",
         paddingBottom: "90px",
@@ -216,6 +217,7 @@ const A4PageWrapper = ({ children, pageNumber }) => (
 
       {/* Footnote address and page number */}
       <div
+        className="employment-contract-page-footer"
         style={{
           position: "absolute",
           bottom: "35px",
@@ -244,7 +246,7 @@ const A4PageWrapper = ({ children, pageNumber }) => (
 // Full page Image renderer for pages 2 to 10
 const A4ImagePage = ({ src, pageNumber }) => (
   <div
-    className="employment-contract-page page-break"
+    className="employment-contract-page employment-contract-image-page page-break"
     style={{
       position: "relative",
       width: "794px",
@@ -256,6 +258,7 @@ const A4ImagePage = ({ src, pageNumber }) => (
     }}
   >
     <img
+      className="employment-contract-image-page-img"
       src={src}
       alt={`Contract Page ${pageNumber}`}
       style={{
@@ -616,6 +619,117 @@ const EmploymentContractForm = () => {
     <>
       <style>
         {`
+          @media screen and (max-width: 900px) {
+            .employment-contract-screen {
+              padding: 24px 12px !important;
+            }
+            .employment-contract-print-area {
+              width: 100%;
+            }
+            .employment-contract-page {
+              width: 100% !important;
+              max-width: 794px !important;
+              height: auto !important;
+              min-height: 1123px;
+              margin-left: auto;
+              margin-right: auto;
+            }
+            .employment-contract-image-page {
+              aspect-ratio: 794 / 1123;
+              min-height: auto !important;
+            }
+            .employment-contract-image-page-img {
+              display: block;
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: fill;
+            }
+            .employment-contract-page-body {
+              padding-left: 32px !important;
+              padding-right: 32px !important;
+            }
+            .employment-contract-actions {
+              width: calc(100% - 24px) !important;
+            }
+          }
+
+          @media screen and (max-width: 640px) {
+            .employment-contract-screen {
+              padding: 12px 8px !important;
+            }
+            .employment-contract-page {
+              min-height: auto;
+              overflow: visible !important;
+              box-shadow: 0 2px 18px rgba(0,0,0,0.14) !important;
+            }
+            .employment-contract-page:not(.employment-contract-image-page) > img:first-child {
+              height: 86px !important;
+            }
+            .employment-contract-page:not(.employment-contract-image-page) > img:nth-child(2) {
+              height: 64px !important;
+            }
+            .employment-contract-image-page {
+              aspect-ratio: auto;
+              overflow: hidden !important;
+            }
+            .employment-contract-image-page-img {
+              height: auto !important;
+              object-fit: contain;
+            }
+            .employment-contract-page-body {
+              padding: 96px 14px 78px !important;
+            }
+            .employment-contract-page-body h4,
+            .employment-contract-page-body p,
+            .employment-contract-page-body li,
+            .employment-contract-page-body span,
+            .employment-contract-page-body div,
+            .employment-contract-page-body table {
+              max-width: 100%;
+            }
+            .employment-contract-page-body input,
+            .employment-contract-page-body select,
+            .employment-contract-page-body textarea {
+              max-width: 100% !important;
+              min-width: 0;
+              box-sizing: border-box;
+            }
+            .employment-contract-page-body .grid.grid-cols-2,
+            .employment-contract-page-body .grid.grid-cols-\\[140px_1fr\\] {
+              grid-template-columns: minmax(0, 1fr) !important;
+              gap: 10px !important;
+            }
+            .employment-contract-page-body .flex.items-center,
+            .employment-contract-page-body .flex.items-start,
+            .employment-contract-page-body .flex.items-end {
+              flex-wrap: wrap;
+            }
+            .employment-contract-page-body .overflow-hidden:has(table) {
+              overflow-x: auto !important;
+            }
+            .employment-contract-page-body table {
+              min-width: 620px;
+            }
+            .employment-contract-page-footer {
+              position: static !important;
+              margin-top: auto;
+              padding-top: 8px !important;
+              gap: 8px;
+              flex-wrap: wrap;
+            }
+            .employment-contract-actions {
+              width: calc(100% - 16px) !important;
+              justify-content: stretch !important;
+              flex-wrap: wrap;
+              gap: 10px !important;
+            }
+            .employment-contract-actions button {
+              flex: 1 1 100%;
+              justify-content: center;
+              min-height: 42px;
+            }
+          }
+
           @media print {
             @page {
               size: A4 portrait;
@@ -660,7 +774,7 @@ const EmploymentContractForm = () => {
       )}
 
       {/* Pages Container */}
-      <div className="min-h-screen bg-gray-200 py-8 px-4 flex flex-col items-center print:bg-white print:py-0 print:px-0">
+      <div className="employment-contract-screen min-h-screen bg-gray-200 py-8 px-4 flex flex-col items-center print:bg-white print:py-0 print:px-0">
         <div className="employment-contract-print-area flex flex-col items-center">
           {/* ══════════════ PAGE 1 ══════════════ */}
           <A4PageWrapper pageNumber={1}>
@@ -1783,7 +1897,7 @@ const EmploymentContractForm = () => {
         </div>
 
         {/* Action Buttons (at the bottom, hidden on print) */}
-        <div className="no-print w-full max-w-[794px] mt-6 mb-12 flex justify-end gap-4 border-t border-gray-300 pt-6">
+        <div className="employment-contract-actions no-print w-full max-w-[794px] mt-6 mb-12 flex justify-end gap-4 border-t border-gray-300 pt-6">
           <button
             type="button"
             onClick={handleCancel}

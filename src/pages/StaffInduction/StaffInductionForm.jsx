@@ -365,6 +365,85 @@ const buildInitialState = () => {
 // ─── PRINT STYLES ─────────────────────────────────────────────────────────────
 
 const PRINT_STYLES = `
+  @media screen and (max-width: 900px) {
+    .staff-induction-screen {
+      align-items: stretch !important;
+      padding: 24px 12px !important;
+    }
+    .staff-induction-print-area {
+      width: 100% !important;
+      max-width: 794px !important;
+      min-height: 1123px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .staff-induction-actions {
+      width: calc(100% - 24px) !important;
+      max-width: 794px !important;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .staff-induction-screen {
+      padding: 12px 8px !important;
+    }
+    .staff-induction-print-area {
+      min-height: auto !important;
+      overflow: visible !important;
+      box-shadow: 0 2px 18px rgba(0,0,0,0.14) !important;
+    }
+    .staff-induction-print-area > img {
+      height: 86px !important;
+    }
+    .staff-induction-print-area [style*="paddingLeft: 38px"],
+    .staff-induction-print-area [style*="padding-left: 38px"],
+    .staff-induction-print-area [style*="paddingLeft: 40px"],
+    .staff-induction-print-area [style*="padding-left: 40px"] {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+    .staff-induction-print-area [style*="paddingTop: 126px"],
+    .staff-induction-print-area [style*="padding-top: 126px"] {
+      padding-top: 96px !important;
+    }
+    .staff-induction-print-area [style*="paddingBottom: 130px"],
+    .staff-induction-print-area [style*="padding-bottom: 130px"] {
+      padding-bottom: 96px !important;
+    }
+    .staff-induction-print-area [style*="grid-template-columns: 1fr 1fr"],
+    .staff-induction-print-area [style*="gridTemplateColumns: 1fr 1fr"],
+    .staff-induction-print-area [style*="grid-template-columns: 100px 1fr"],
+    .staff-induction-print-area [style*="gridTemplateColumns: 100px 1fr"],
+    .staff-induction-print-area [style*="grid-template-columns: 120px 1fr"],
+    .staff-induction-print-area [style*="gridTemplateColumns: 120px 1fr"] {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .staff-induction-print-area input,
+    .staff-induction-print-area textarea,
+    .staff-induction-print-area select {
+      max-width: 100% !important;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .staff-induction-print-area textarea {
+      min-height: 72px;
+    }
+    .staff-induction-actions {
+      width: calc(100% - 16px) !important;
+      margin-top: 14px !important;
+    }
+    .staff-induction-actions-row {
+      justify-content: stretch !important;
+    }
+    .staff-induction-action-button {
+      flex: 1 1 100%;
+      justify-content: center;
+      min-height: 42px;
+    }
+  }
+
   @media print {
     @page {
       size: A4 portrait;
@@ -1034,7 +1113,7 @@ const StaffInductionForm = () => {
   return (
     <>
       <style>{PRINT_STYLES}</style>
-      <div className="min-h-screen bg-gray-200 py-8 flex flex-col items-center">
+      <div className="staff-induction-screen min-h-screen bg-gray-200 py-8 flex flex-col items-center">
         <ToastContainer position="top-right" />
 
         {loading && (
@@ -1828,10 +1907,16 @@ const StaffInductionForm = () => {
         {/* ── Action buttons (hidden on print) ── */}
         <form
           onSubmit={handleSave}
-          className="no-print"
-          style={{ width: "794px", marginTop: "0px", paddingBottom: "40px" }}
+          className="staff-induction-actions no-print"
+          style={{
+            width: "794px",
+            maxWidth: "calc(100% - 24px)",
+            marginTop: "0px",
+            paddingBottom: "40px",
+          }}
         >
           <div
+            className="staff-induction-actions-row"
             style={{
               display: "flex",
               justifyContent: "flex-end",
@@ -1841,6 +1926,7 @@ const StaffInductionForm = () => {
             }}
           >
             <button
+              className="staff-induction-action-button"
               type="button"
               onClick={handleCancel}
               style={{
@@ -1862,6 +1948,7 @@ const StaffInductionForm = () => {
             </button>
 
             <button
+              className="staff-induction-action-button"
               type="button"
               onClick={() => window.print()}
               style={{
@@ -1881,6 +1968,7 @@ const StaffInductionForm = () => {
               <FaPrint /> Print Form
             </button>
             <button
+              className="staff-induction-action-button"
               type="submit"
               disabled={saving}
               style={{
