@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axiosClient from "../../axiosClient";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 import { FaSave, FaSpinner, FaPrint, FaTimes } from "react-icons/fa";
 import topImage from "../../assets/common_form_images/img9.jpg";
 import bottomImage from "../../assets/common_form_images/img11.jpg";
@@ -22,6 +23,123 @@ export const initialStaffRecordState = {
 };
 
 const PRINT_STYLES = `
+  @media screen and (max-width: 900px) {
+    .staff-record-page {
+      align-items: stretch !important;
+      padding: 16px 12px !important;
+    }
+    #staff-record-print-area {
+      width: 100% !important;
+      max-width: 794px !important;
+      min-height: auto !important;
+      margin: 0 auto;
+    }
+    .staff-record-content {
+      padding: 118px 20px 122px !important;
+    }
+    .staff-record-row-inline-four {
+      grid-template-columns: 135px minmax(0, 1fr) 105px minmax(120px, 0.8fr) !important;
+    }
+    .staff-record-row-two {
+      grid-template-columns: 135px minmax(0, 1fr) !important;
+    }
+    .staff-record-row-textarea-three {
+      grid-template-columns: 135px minmax(0, 1fr) 132px !important;
+    }
+    .staff-record-row-six {
+      grid-template-columns: 135px minmax(0, 1fr) 110px minmax(115px, 0.7fr) !important;
+    }
+    .staff-record-actions {
+      width: calc(100% - 24px) !important;
+      max-width: 794px !important;
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .staff-record-page {
+      padding: 12px 8px !important;
+    }
+    #staff-record-print-area {
+      overflow: hidden;
+      box-shadow: 0 2px 18px rgba(0,0,0,0.14) !important;
+    }
+    #staff-record-print-area > img {
+      height: 86px !important;
+    }
+    .staff-record-content {
+      padding: 94px 12px 98px !important;
+    }
+    .staff-record-title {
+      font-size: 18px !important;
+      margin-bottom: 10px !important;
+    }
+    .staff-record-row-inline-four,
+    .staff-record-row-two {
+      grid-template-columns: 118px minmax(0, 1fr) !important;
+      height: auto !important;
+    }
+    .staff-record-row-textarea-three,
+    .staff-record-row-six {
+      grid-template-columns: 1fr !important;
+      height: auto !important;
+    }
+    .staff-record-row-inline-four > *,
+    .staff-record-row-two > *,
+    .staff-record-row-textarea-three > *,
+    .staff-record-row-six > * {
+      min-height: 44px;
+    }
+    .staff-record-row-inline-four > :nth-child(1),
+    .staff-record-row-inline-four > :nth-child(2) {
+      border-bottom: 1px solid #3f3f3f !important;
+    }
+    .staff-record-row-inline-four > :nth-child(2) {
+      border-right: none !important;
+    }
+    .staff-record-row-textarea-three > :not(:last-child),
+    .staff-record-row-six > :not(:last-child) {
+      border-bottom: 1px solid #3f3f3f !important;
+    }
+    .staff-record-row-textarea-three > *,
+    .staff-record-row-six > * {
+      border-right: none !important;
+    }
+    .staff-record-row-textarea-three textarea {
+      min-height: 92px;
+    }
+    .staff-record-row-six textarea {
+      min-height: 74px;
+    }
+    .staff-record-row-six > div:nth-child(2) > div {
+      height: auto !important;
+      min-height: 74px;
+    }
+    .staff-record-row-inline-four input,
+    .staff-record-row-two input,
+    .staff-record-row-textarea-three input,
+    .staff-record-row-textarea-three textarea,
+    .staff-record-row-six input,
+    .staff-record-row-six textarea {
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .print-error {
+      flex-wrap: wrap;
+    }
+    .staff-record-actions {
+      width: calc(100% - 16px) !important;
+      margin-top: 14px !important;
+    }
+    .staff-record-actions-row {
+      justify-content: stretch !important;
+    }
+    .staff-record-action-button {
+      flex: 1 1 100%;
+      justify-content: center;
+      min-height: 42px;
+    }
+  }
+
   @media print {
     @page {
       size: A4 portrait;
@@ -106,6 +224,7 @@ const InputCell = ({ children, borderRight = false, style = {} }) => (
 );
 
 const StaffRecordForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialStaffRecordState);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -285,9 +404,7 @@ const StaffRecordForm = () => {
       // Flutter ko message bhejo ki WebView band kar de
       window.FlutterChannel.postMessage("CLOSE_WEBVIEW");
     } else {
-      // Agar normal browser mai chal raha hai, to normal React Router ka back use kar lo
-      // jaise: navigate('/previous-page');
-      console.log("Not in Flutter App, normal cancel action.");
+      navigate("/dashboard/employee-onboarding/certificates");
     }
   };
 
@@ -299,7 +416,7 @@ const StaffRecordForm = () => {
       <style>{PRINT_STYLES}</style>
 
       {/* Page wrapper — hidden on print via the visibility trick in PRINT_STYLES */}
-      <div className="min-h-screen bg-gray-200 py-8 flex flex-col items-center">
+      <div className="staff-record-page min-h-screen bg-gray-200 py-8 flex flex-col items-center">
         <ToastContainer position="top-right" />
 
         {loading && (
@@ -358,6 +475,7 @@ const StaffRecordForm = () => {
 
           {/* ─── Content area (between header and footer images) ─── */}
           <div
+            className="staff-record-content"
             style={{
               paddingTop: "126px",
               paddingBottom: "130px",
@@ -367,6 +485,7 @@ const StaffRecordForm = () => {
           >
             {/* Title */}
             <h1
+              className="staff-record-title"
               style={{
                 textAlign: "center",
                 fontSize: "20px",
@@ -395,6 +514,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 1: Name | Date of Birth ── */}
               <div
+                className="staff-record-row-inline-four"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr 105px 140px",
@@ -453,6 +573,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 2: Email | Mobile Number ── */}
               <div
+                className="staff-record-row-inline-four"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr 105px 140px",
@@ -514,6 +635,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 3: Address (full width) ── */}
               <div
+                className="staff-record-row-two"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr",
@@ -553,6 +675,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 4: Relevant Qualifications ── */}
               <div
+                className="staff-record-row-textarea-three"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr 148px",
@@ -640,6 +763,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 5: Other Approved Training ── */}
               <div
+                className="staff-record-row-textarea-three"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr 148px",
@@ -726,6 +850,7 @@ const StaffRecordForm = () => {
 
               {/* ── Row 6: WWC Check Number + Certified Supervisor ── */}
               <div
+                className="staff-record-row-six"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "160px 1fr 115px 133px",
@@ -881,10 +1006,16 @@ const StaffRecordForm = () => {
         {/* ── Action buttons (hidden on print) ── */}
         <form
           onSubmit={handleSave}
-          className="no-print"
-          style={{ width: "794px", marginTop: "18px", paddingBottom: "40px" }}
+          className="staff-record-actions no-print"
+          style={{
+            width: "794px",
+            maxWidth: "calc(100% - 24px)",
+            marginTop: "18px",
+            paddingBottom: "40px",
+          }}
         >
           <div
+            className="staff-record-actions-row"
             style={{
               display: "flex",
               justifyContent: "flex-end",
@@ -894,6 +1025,7 @@ const StaffRecordForm = () => {
             }}
           >
             <button
+              className="staff-record-action-button"
               type="button"
               onClick={handleCancel}
               style={{
@@ -915,6 +1047,7 @@ const StaffRecordForm = () => {
             </button>
 
             <button
+              className="staff-record-action-button"
               type="button"
               onClick={() => window.print()}
               style={{
@@ -937,6 +1070,7 @@ const StaffRecordForm = () => {
 
 
             <button
+              className="staff-record-action-button"
               type="submit"
               disabled={saving}
               style={{
