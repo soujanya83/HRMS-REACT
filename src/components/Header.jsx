@@ -12,19 +12,33 @@ import {
   HiChevronDown,
   HiChevronUp,
   HiOutlineCog,
+  HiOutlineDocumentText,
 } from "react-icons/hi";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import profileImage from "../assets/dummy.png";
 import { useOrganizations } from "../contexts/OrganizationContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { getEmployee } from "../services/employeeService";
+import { getNotifications, markAsRead } from "../services/notificationService";
 
 const Header = ({ onMenuButtonClick, onLogout, user }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isUserDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isOrgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
   const orgDropdownRef = useRef(null);
+  
+  // Notification states
+  const [isNotificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const notificationDropdownRef = useRef(null);
+
   const {
     organizations,
     selectedOrganization,
@@ -35,6 +49,97 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
   const { sidebarColor } = useTheme();
   const [employeeName, setEmployeeName] = useState(null);
 
+  // Helper: Retrieve active organization ID
+  const getActiveOrgId = () => {
+    if (selectedOrganization?.id) {
+      return selectedOrganization.id;
+    }
+    const savedOrgId = localStorage.getItem("selectedOrgId");
+    if (savedOrgId) {
+      return parseInt(savedOrgId, 10);
+    }
+    return null;
+  };
+
+  // Helper: Format date string to relative time
+  const formatRelativeTime = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const now = new Date();
+      const date = new Date(dateString);
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+    } catch (e) {
+      return "";
+    }
+  };
+
+  // Fetch initial notifications (page 1)
+  const fetchInitialNotifications = async () => {
+    const orgId = getActiveOrgId();
+    if (!orgId) return;
+
+    setIsLoadingNotifications(true);
+    try {
+      const response = await getNotifications(orgId, 1);
+      if (response.data && response.data.success) {
+        const paginatedData = response.data.data;
+        setNotifications(paginatedData.data || []);
+        setUnreadCount(response.data.unread_count || 0);
+        setPage(1);
+        setHasMore(paginatedData.current_page < paginatedData.last_page);
+      }
+    } catch (error) {
+      console.error("Failed to fetch initial notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  // Fetch next page of notifications (infinite scroll)
+  const fetchNextNotifications = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    const orgId = getActiveOrgId();
+    if (!orgId) return;
+
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const response = await getNotifications(orgId, nextPage);
+      if (response.data && response.data.success) {
+        const paginatedData = response.data.data;
+        setNotifications((prev) => [...prev, ...(paginatedData.data || [])]);
+        setUnreadCount(response.data.unread_count || 0);
+        setPage(nextPage);
+        setHasMore(paginatedData.current_page < paginatedData.last_page);
+      }
+    } catch (error) {
+      console.error("Failed to fetch next page of notifications:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Fetch notifications on mount or when organization ID changes
+  useEffect(() => {
+    fetchInitialNotifications();
+  }, [selectedOrganization?.id]);
+
+  // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -49,10 +154,58 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
       ) {
         setOrgDropdownOpen(false);
       }
+      if (
+        notificationDropdownRef.current &&
+        !notificationDropdownRef.current.contains(event.target)
+      ) {
+        setNotificationOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleNotificationClick = () => {
+    if (!isNotificationOpen) {
+      fetchInitialNotifications();
+    }
+    setNotificationOpen(!isNotificationOpen);
+  };
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 15) {
+      fetchNextNotifications();
+    }
+  };
+
+  const handleNotificationItemClick = async (notification) => {
+    if (!notification.read_at) {
+      try {
+        await markAsRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? { ...item, read_at: new Date().toISOString() }
+              : item
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+
+    setNotificationOpen(false);
+
+    const routeLink = notification.data?.route_link;
+    if (routeLink) {
+      const targetLink = routeLink.startsWith("/dashboard")
+        ? routeLink
+        : `/dashboard${routeLink}`;
+      navigate(targetLink);
+    }
+  };
 
   // Fetch employee name when on an employee profile page
   useEffect(() => {
@@ -219,9 +372,115 @@ const Header = ({ onMenuButtonClick, onLogout, user }) => {
             )}
           </div>
 
-          <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100">
-            <HiOutlineBell size={24} />
-          </button>
+          <div className="relative" ref={notificationDropdownRef}>
+            <button
+              onClick={handleNotificationClick}
+              className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative transition-all duration-200"
+              aria-label="Notifications"
+            >
+              <HiOutlineBell size={24} />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+            {isNotificationOpen && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-[400px] bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[480px]">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
+                  <h3 className="font-semibold text-gray-800 text-base">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="text-xs bg-indigo-50 text-indigo-700 font-medium px-2 py-0.5 rounded-full">
+                      {unreadCount} unread
+                    </span>
+                  )}
+                </div>
+
+                {/* Notification items list */}
+                <div
+                  className="overflow-y-auto flex-1 divide-y divide-gray-100 scrollbar-thin"
+                  onScroll={handleScroll}
+                  style={{ maxHeight: "380px" }}
+                >
+                  {isLoadingNotifications && notifications.length === 0 ? (
+                    // Initial loader
+                    <div className="py-12 flex flex-col items-center justify-center text-gray-400">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+                      <p className="text-sm">Loading notifications...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    // Empty state
+                    <div className="py-12 px-4 flex flex-col items-center justify-center text-center text-gray-500">
+                      <div className="bg-gray-50 p-4 rounded-full mb-3">
+                        <HiOutlineBell size={28} className="text-gray-400" />
+                      </div>
+                      <p className="font-medium text-gray-700">All caught up!</p>
+                      <p className="text-xs text-gray-400 mt-1">You have no notifications for this center.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {notifications.map((notification) => {
+                        const isUnread = !notification.read_at;
+                        return (
+                          <div
+                            key={notification.id}
+                            onClick={() => handleNotificationItemClick(notification)}
+                            className={`p-4 flex items-start gap-3 hover:bg-slate-50 transition-colors duration-150 cursor-pointer text-left ${
+                              isUnread ? "bg-indigo-50/30" : ""
+                            }`}
+                          >
+                            {/* Icon column */}
+                            <div className={`p-2 rounded-lg flex-shrink-0 mt-0.5 ${
+                              isUnread ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-500"
+                            }`}>
+                              {notification.type === "document_upload" ? (
+                                <HiOutlineDocumentText size={18} />
+                              ) : (
+                                <HiOutlineBell size={18} />
+                              )}
+                            </div>
+
+                            {/* Text column */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start gap-2 mb-0.5">
+                                <h4 className={`text-sm font-semibold truncate ${
+                                  isUnread ? "text-gray-900" : "text-gray-700"
+                                }`}>
+                                  {notification.title || "Notification"}
+                                </h4>
+                                <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">
+                                  {formatRelativeTime(notification.created_at)}
+                                </span>
+                              </div>
+                              <p className={`text-xs break-words leading-relaxed ${
+                                isUnread ? "text-gray-600 font-medium" : "text-gray-500"
+                              }`}>
+                                {notification.message}
+                              </p>
+                            </div>
+
+                            {/* Unread indicator dot */}
+                            {isUnread && (
+                              <span className="w-2 h-2 rounded-full bg-indigo-600 flex-shrink-0 mt-2"></span>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Loading more spinner */}
+                      {isLoadingMore && (
+                        <div className="py-3 flex items-center justify-center bg-gray-50/50 border-t border-gray-100">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                          <span className="text-xs text-gray-500 font-medium">Loading more...</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="relative" ref={userDropdownRef}>
             <button

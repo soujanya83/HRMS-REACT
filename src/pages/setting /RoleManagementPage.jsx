@@ -56,6 +56,7 @@ import { HiX } from "react-icons/hi";
 import roleService from "../../services/roleService";
 import { useOrganizations } from "../../contexts/OrganizationContext";
 import axiosClient from "../../axiosClient";
+import { getNotificationSettings, syncNotificationSettings, muteNotificationSetting } from "../../services/notificationService";
 
 // Module Icons
 const moduleIcons = {
@@ -808,6 +809,276 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
   );
 };
 
+// Notification Settings Modal
+const NotificationSettingsModal = ({ isOpen, onClose, roles, selectedOrganization }) => {
+  const [assignedSettings, setAssignedSettings] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [mutingRole, setMutingRole] = useState("");
+  const [error, setError] = useState(null);
+
+  const fetchSettings = useCallback(async () => {
+    if (!selectedOrganization?.id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getNotificationSettings(selectedOrganization.id);
+      if (response.data && response.data.success) {
+        const data = response.data.data || [];
+        setAssignedSettings(data);
+        setSelectedRoles(data.map(item => item.role_name));
+      } else {
+        setError("Failed to load settings data.");
+      }
+    } catch (err) {
+      console.error("Error fetching notification settings:", err);
+      setError("Unable to connect to the notification settings API.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedOrganization?.id]);
+
+  useEffect(() => {
+    if (isOpen && selectedOrganization?.id) {
+      fetchSettings();
+    }
+  }, [isOpen, selectedOrganization?.id, fetchSettings]);
+
+  const handleSaveSync = async () => {
+    if (!selectedOrganization?.id) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      const response = await syncNotificationSettings(selectedOrganization.id, selectedRoles);
+      if (response.data && response.data.success) {
+        await fetchSettings();
+      } else {
+        setError(response.data?.message || "Failed to update notification subscriptions.");
+      }
+    } catch (err) {
+      console.error("Error syncing notification settings:", err);
+      setError("An error occurred while saving notification subscriptions.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleMuteChange = async (roleName, duration) => {
+    if (!selectedOrganization?.id) return;
+    setMutingRole(roleName);
+    setError(null);
+    try {
+      await muteNotificationSetting(selectedOrganization.id, roleName, duration);
+      await fetchSettings();
+    } catch (err) {
+      console.error("Error muting notification setting:", err);
+      setError(`Failed to adjust mute settings for role "${roleName}".`);
+    } finally {
+      setMutingRole("");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const isRoleMuted = (mutedUntil) => {
+    if (!mutedUntil) return false;
+    return new Date(mutedUntil) > new Date();
+  };
+
+  const formatMutedUntil = (mutedUntil) => {
+    if (!mutedUntil) return "";
+    const d = new Date(mutedUntil);
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4 font-sans">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FaBell className="text-blue-600 animate-pulse" /> Notification Management
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Select roles to receive notifications and configure their mute durations.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <HiX className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <FaExclamationTriangle className="text-red-500 h-5 w-5 flex-shrink-0" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Section 1: Subscribe Roles */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wider">
+              Role Subscriptions
+            </h3>
+            <p className="text-xs text-gray-500">
+              Only roles selected here will receive notifications for the organization.
+            </p>
+
+            {loading && assignedSettings.length === 0 ? (
+              <div className="py-6 flex items-center justify-center">
+                <FaSpinner className="h-6 w-6 text-blue-600 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1 border border-gray-100 rounded-xl bg-slate-50/30">
+                  {roles.map((role) => (
+                    <label
+                      key={role.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white hover:bg-slate-50 hover:border-gray-300 cursor-pointer transition-all duration-150"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRoles.includes(role.name)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRoles((prev) => [...prev, role.name]);
+                          } else {
+                            setSelectedRoles((prev) => prev.filter((name) => name !== role.name));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span className="text-sm font-semibold text-gray-700 truncate">{role.name}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={handleSaveSync}
+                    disabled={syncing || loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    {syncing && <FaSpinner className="h-3 w-3 animate-spin" />}
+                    Save Subscriptions
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Section 2: Mute Settings */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wider">
+              Mute & Notification Status
+            </h3>
+            <p className="text-xs text-gray-500">
+              Temporarily mute notifications for subscribed roles.
+            </p>
+
+            {loading && assignedSettings.length === 0 ? (
+              <div className="py-6 flex items-center justify-center">
+                <FaSpinner className="h-6 w-6 text-blue-600 animate-spin" />
+              </div>
+            ) : assignedSettings.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-gray-200 rounded-xl text-gray-400 bg-slate-50/50">
+                <FaBell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-medium">No subscribed roles</p>
+                <p className="text-xs text-gray-400 mt-0.5">Subscribe roles above to configure mute settings.</p>
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                <table className="min-w-full divide-y divide-gray-200 text-left">
+                  <thead className="bg-slate-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3">Role Name</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Mute Control</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-sm">
+                    {assignedSettings.map((item) => {
+                      const muted = isRoleMuted(item.muted_until);
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3.5 font-semibold text-gray-800">
+                            {item.role_name}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            {muted ? (
+                              <div className="flex flex-col">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 w-fit">
+                                  Muted
+                                </span>
+                                <span className="text-[10px] text-gray-400 mt-1">
+                                  Until {formatMutedUntil(item.muted_until)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                Active
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="inline-flex items-center gap-2">
+                              {mutingRole === item.role_name && (
+                                <FaSpinner className="h-4 w-4 text-blue-600 animate-spin" />
+                              )}
+                              <select
+                                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                                value=""
+                                disabled={mutingRole === item.role_name}
+                                onChange={(e) => handleMuteChange(item.role_name, e.target.value)}
+                              >
+                                <option value="" disabled>Mute / Unmute...</option>
+                                <option value="1_hour">Mute 1 Hour</option>
+                                <option value="1_week">Mute 1 Week</option>
+                                <option value="1_month">Mute 1 Month</option>
+                                {muted && (
+                                  <option value="unmute">Unmute notifications</option>
+                                )}
+                              </select>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-100 bg-slate-50/50 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 font-semibold text-sm transition-colors shadow-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Role Management Component
 export default function RoleManagementPage() {
   const { canAdd, canEdit, canDelete } = usePermissions('settings.role_management');
@@ -827,6 +1098,7 @@ export default function RoleManagementPage() {
     type: "delete",
     role: null,
   });
+  const [isNotificationModalOpen, setNotificationModalOpen] = useState(false);
 
   useEffect(() => {
     if (selectedOrganization?.id) {
@@ -1129,11 +1401,19 @@ export default function RoleManagementPage() {
               </div>
             )}
           </div>
-          {canAdd && (
-            <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-              <FaPlus className="h-4 w-4" /> Create New Role
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setNotificationModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg transition-colors font-medium shadow-sm"
+            >
+              <FaBell className="h-4 w-4" /> Notification Management
             </button>
-          )}
+            {canAdd && (
+              <button onClick={() => handleOpenForm()} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
+                <FaPlus className="h-4 w-4" /> Create New Role
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -1260,6 +1540,13 @@ export default function RoleManagementPage() {
         message={modalState.type === "delete" ? `Are you sure you want to delete "${modalState.role?.name}"? This action cannot be undone.` : `Create a copy of "${modalState.role?.name}"? You can modify the duplicate.`}
         type={modalState.type}
         loading={saving}
+      />
+
+      <NotificationSettingsModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setNotificationModalOpen(false)}
+        roles={roles}
+        selectedOrganization={selectedOrganization}
       />
     </div>
   );
