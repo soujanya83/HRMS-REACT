@@ -872,6 +872,38 @@ const OtherDocumentsSection = ({
   );
 };
 
+// ============================================
+// PERSONAL DETAILS WARNING MODAL
+// ============================================
+const PersonalDetailsWarningModal = ({ isOpen, onRedirect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center border border-gray-100">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-50 mb-6 animate-pulse">
+          <FaInfoCircle className="h-8 w-8 text-amber-500" />
+        </div>
+        
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          Personal Details Required
+        </h3>
+        
+        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+          You haven't completed your personal details profile. Please fill in your personal details first before uploading any onboarding documents.
+        </p>
+        
+        <button
+          onClick={onRedirect}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+        >
+          Go to Personal Details
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Documents = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
@@ -884,6 +916,21 @@ const Documents = () => {
   const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [metadata, setMetadata] = useState({ issueDate: "", expiryDate: "" });
   const [activeTab, setActiveTab] = useState("certificates");
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
+  const checkOnboardingStatus = async (empId) => {
+    try {
+      const response = await axiosClient.get(`/employees/${empId}/onboarding-status`);
+      if (response.data && response.data.success) {
+        const onboardingData = response.data.data;
+        if (onboardingData.personal_details === false) {
+          setShowWarningModal(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching onboarding status:", error);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -909,6 +956,7 @@ const Documents = () => {
           if (employee.documents) {
             setDocuments(employee.documents);
           }
+          checkOnboardingStatus(employee.id);
         }
         return;
       }
@@ -923,6 +971,7 @@ const Documents = () => {
         if (employee.documents) {
           setDocuments(employee.documents);
         }
+        checkOnboardingStatus(employee.id);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -1088,6 +1137,14 @@ const Documents = () => {
             onClose={() => setShowMetadataModal(false)}
             document={selectedDocument}
             onUpdateSuccess={handleUpdateSuccess}
+          />
+
+          <PersonalDetailsWarningModal
+            isOpen={showWarningModal}
+            onRedirect={() => {
+              setShowWarningModal(false);
+              navigate("/dashboard/employee-onboarding/personal-details");
+            }}
           />
 
           <ToastContainer position="top-right" />

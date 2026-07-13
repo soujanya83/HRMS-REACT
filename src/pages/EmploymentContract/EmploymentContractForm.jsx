@@ -1425,16 +1425,24 @@ const EmploymentContractForm = () => {
                     >
                       Hours of work per week
                     </td>
-                    <td
-                      style={{
-                        border: BORDER_SOLID,
-                        padding: "4px 8px",
-                        fontWeight: "bold",
-                        color: "#000",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {formData.hoursPerWeek} hours
+                    <td style={{ border: BORDER_SOLID, padding: "3px 8px" }}>
+                      <div className="no-print flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          value={formData.hoursPerWeek}
+                          onChange={(e) =>
+                            updateField("hoursPerWeek", e.target.value)
+                          }
+                          className="border border-gray-400 rounded px-2 py-0.5 text-xs w-20 focus:ring-1 focus:ring-blue-500 font-sans outline-none bg-white cursor-pointer"
+                          placeholder="e.g. 38"
+                          min="0"
+                          step="0.5"
+                        />
+                        <span className="text-xs text-gray-700 font-sans">hours</span>
+                      </div>
+                      <span className="print:inline hidden font-bold text-black text-xs">
+                        {formData.hoursPerWeek} hours
+                      </span>
                     </td>
                   </tr>
 
