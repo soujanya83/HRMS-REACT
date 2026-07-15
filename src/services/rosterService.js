@@ -32,6 +32,16 @@ export const rosterService = {
     return axiosClient.post('/rosters/bulk-assign', data);
   },
 
+  // Copy roster
+  copyRoster: (data) => {
+    return axiosClient.post('/rosters/copy', data);
+  },
+
+  // Move roster
+  moveRoster: (data) => {
+    return axiosClient.post('/rosters/move', data);
+  },
+
   // Get rosters by period ID
   getRostersByPeriod: (periodId) => {
     return axiosClient.get(`/rosters/period/${periodId}`);

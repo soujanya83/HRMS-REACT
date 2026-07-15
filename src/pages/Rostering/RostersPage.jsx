@@ -23,6 +23,7 @@ import {
   FaCalculator,
   FaDoorOpen,
   FaDollarSign,
+  FaCopy,
 } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import rosterService from "../../services/rosterService";
@@ -145,6 +146,15 @@ const ColorPaletteModal = ({
   );
 };
 
+const formatLocalDate = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const EmployeeRow = ({
   employee,
   weeklyTotals,
@@ -157,6 +167,11 @@ const EmployeeRow = ({
   canEditRoster,
   handleAddRoster,
   handleEditRoster,
+  handleDragStart,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  dragOverCell,
 }) => {
   const employeeTotal = weeklyTotals.byEmployee[employee.id] || {
     hours: 0,
@@ -172,7 +187,7 @@ const EmployeeRow = ({
       className="border-b transition-colors hover:bg-gray-50"
       style={{
         display: "grid",
-        gridTemplateColumns: "150px 180px repeat(5, 1fr)",
+        gridTemplateColumns: `150px 180px repeat(${weekDates.length}, minmax(100px, 1fr))`,
       }}
     >
       {/* Position Column */}
@@ -191,37 +206,65 @@ const EmployeeRow = ({
 
       {weekDates.map((day) => {
         const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
+        const dateStr = formatLocalDate(day);
+        const isDragOver =
+          dragOverCell?.employeeId === employee.id &&
+          dragOverCell?.dateStr === dateStr;
+
         return (
           <div
             key={day.toString()}
-            className={`p-1 border-r flex flex-col justify-center items-center h-12 ${
-              day.toDateString() === new Date().toDateString()
-                ? "bg-blue-50/30"
-                : ""
+            className={`p-1 border-r flex flex-col justify-center items-center h-12 transition-all relative ${
+              isDragOver
+                ? "bg-blue-50 border-2 border-dashed border-blue-500 scale-[0.98] z-20 animate-pulse"
+                : day.toDateString() === new Date().toDateString()
+                  ? "bg-blue-50/30"
+                  : ""
             }`}
+            onDragOver={(e) => handleDragOver(e, employee.id, dateStr)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, employee.id, day)}
           >
             {dayRosters.map((roster) => {
               const shift =
                 roster.shift || shifts.find((s) => s.id === roster.shift_id);
+              const shiftColor = getShiftColor(shift?.id);
+              const startTime = roster.start_time || shift?.start_time;
+              const endTime = roster.end_time || shift?.end_time;
+              
+              const formatTimeText = (time) => {
+                if (!time) return "NA";
+                return time.substring(0, 5).replace(":", ".");
+              };
+
+              const isDraft = roster.status === "draft";
+
               return (
                 <div
                   key={roster.id}
-                  className={`w-full text-center ${canEditRoster ? "cursor-pointer group" : "cursor-not-allowed"}`}
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, roster)}
+                  className={`w-full py-1 px-1.5 rounded border text-center transition-all cursor-grab active:cursor-grabbing select-none hover:shadow-md hover:scale-[1.02]`}
+                  style={{
+                    backgroundColor: isDraft ? "#fef3c7" : shiftColor.backgroundColor,
+                    color: isDraft ? "#b45309" : shiftColor.color,
+                    borderColor: isDraft ? "#fcd34d" : shiftColor.borderColor,
+                  }}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
+                  title={`${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)`}
                 >
-                  <div className="font-bold text-[13px] text-gray-900">
-                    {shift?.start_time
-                      ? shift.start_time.substring(0, 5).replace(":", ".")
-                      : "NA"}{" "}
-                    -{" "}
-                    {shift?.end_time
-                      ? shift.end_time.substring(0, 5).replace(":", ".")
-                      : "NA"}
+                  <div className="font-bold text-[11px] leading-tight pointer-events-none">
+                    {formatTimeText(startTime)} - {formatTimeText(endTime)}
                   </div>
+                  {isDraft && (
+                    <div className="text-[8px] font-bold uppercase tracking-wider opacity-85 mt-0.5 pointer-events-none">
+                      Draft
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {dayRosters.length === 0 && canAddRoster && (
+            {dayRosters.length === 0 && canAddRoster && !isDragOver && (
               <button
                 onClick={() => handleAddRoster(day, employee.id, employee)}
                 className="w-full h-full flex items-center justify-center text-transparent hover:text-blue-300 transition-colors"
@@ -275,41 +318,36 @@ const RostersPage = () => {
   }, [sidebarColor]);
 
   // Date helpers moved to the top for consistent access
-  const getWeekDates = useCallback(() => {
+  const getDatesForView = useCallback(() => {
     const date = new Date(currentDate);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(date.setDate(diff));
     monday.setHours(0, 0, 0, 0);
 
-    return Array.from({ length: 5 }, (_, i) => {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      return d;
-    });
-  }, [currentDate]);
+    if (view === "week") {
+      return Array.from({ length: 5 }, (_, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        return d;
+      });
+    } else {
+      // fortnight: double mon to fri (Week 1 Mon-Fri + Week 2 Mon-Fri)
+      const week1 = Array.from({ length: 5 }, (_, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        return d;
+      });
+      const week2 = Array.from({ length: 5 }, (_, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + 7 + i);
+        return d;
+      });
+      return [...week1, ...week2];
+    }
+  }, [currentDate, view]);
 
-  const formatLocalDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  };
-
-  const weekDates = useMemo(() => getWeekDates(), [getWeekDates]);
-
-  const getMonthDates = useCallback(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    return Array.from(
-      { length: lastDay },
-      (_, i) => new Date(year, month, i + 1),
-    );
-  }, [currentDate]);
-
-  const monthDates = useMemo(() => getMonthDates(), [getMonthDates]);
+  const weekDates = useMemo(() => getDatesForView(), [getDatesForView]);
 
   useEffect(() => {
     localStorage.setItem("backgroundColor", backgroundColor);
@@ -322,13 +360,28 @@ const RostersPage = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  // Drag and Drop states
+  const [draggedRoster, setDraggedRoster] = useState(null);
+  const [dragOverCell, setDragOverCell] = useState(null); // { employeeId, dateStr }
+  const [dropTarget, setDropTarget] = useState(null); // { employeeId, date, dateStr }
+  const [showDropChoiceModal, setShowDropChoiceModal] = useState(false);
+
   // Form state
   const [formData, setFormData] = useState({
-    employee_id: "",
+    employee_ids: [],
     shift_id: "",
-    roster_date: "",
+    from_date: "",
+    to_date: "",
+    start_time: "",
+    end_time: "",
+    break_start: "",
+    break_end: "",
+    break_grace_minutes: 0,
+    total_working_time: "00:00",
+    status: "draft",
     notes: "",
   });
+  const [empSearchQuery, setEmpSearchQuery] = useState("");
 
   // State for data from API
   const [rosters, setRosters] = useState([]);
@@ -367,19 +420,25 @@ const RostersPage = () => {
     { id: 108, name: "Management", age_group: "" },
   ];
 
-  const calculateNetWorkingHours = useCallback((shift) => {
-    if (!shift || !shift.start_time || !shift.end_time) return 0;
+  const calculateNetWorkingHours = useCallback((shiftOrRoster) => {
+    if (!shiftOrRoster || !shiftOrRoster.start_time || !shiftOrRoster.end_time) return 0;
 
-    const start = new Date(`2000-01-01T${shift.start_time}`);
-    const end = new Date(`2000-01-01T${shift.end_time}`);
+    const start = new Date(`2000-01-01T${shiftOrRoster.start_time}`);
+    const end = new Date(`2000-01-01T${shiftOrRoster.end_time}`);
 
     let totalDuration = (end - start) / (1000 * 60 * 60);
     if (totalDuration < 0) totalDuration += 24;
 
-    if (shift.total_break_minutes) {
-      totalDuration -= parseInt(shift.total_break_minutes) / 60;
-    } else if (shift.break_duration) {
-      totalDuration -= shift.break_duration / 60;
+    if (shiftOrRoster.break_start && shiftOrRoster.break_end) {
+      const bStart = new Date(`2000-01-01T${shiftOrRoster.break_start}`);
+      const bEnd = new Date(`2000-01-01T${shiftOrRoster.break_end}`);
+      let breakDuration = (bEnd - bStart) / (1000 * 60 * 60);
+      if (breakDuration < 0) breakDuration += 24;
+      totalDuration -= breakDuration;
+    } else if (shiftOrRoster.total_break_minutes) {
+      totalDuration -= parseInt(shiftOrRoster.total_break_minutes) / 60;
+    } else if (shiftOrRoster.break_duration) {
+      totalDuration -= shiftOrRoster.break_duration / 60;
     }
 
     return parseFloat(totalDuration.toFixed(2));
@@ -406,9 +465,15 @@ const RostersPage = () => {
 
       const shift =
         roster.shift || shifts.find((s) => s.id === roster.shift_id);
-      if (!shift) return 0;
-
-      const hours = calculateNetWorkingHours(shift);
+      
+      const hours = calculateNetWorkingHours({
+        start_time: roster.start_time || shift?.start_time,
+        end_time: roster.end_time || shift?.end_time,
+        break_start: roster.break_start || shift?.break_start,
+        break_end: roster.break_end || shift?.break_end,
+        total_break_minutes: roster.total_break_minutes || shift?.total_break_minutes,
+        break_duration: roster.break_duration || shift?.break_duration,
+      });
 
       // Get rate from employee data
       let rate = 25; // Default
@@ -508,6 +573,11 @@ const RostersPage = () => {
       const extractData = (response) => {
         if (!response || !response.data) return [];
 
+        // case 0: response.data.rosters is a department-grouped object
+        if (response.data.success === true && response.data.rosters && typeof response.data.rosters === "object" && !Array.isArray(response.data.rosters)) {
+          return Object.values(response.data.rosters).flat();
+        }
+
         // case 1: response.data is success and has data
         if (response.data.success === true) {
           const data = response.data.data;
@@ -572,34 +642,11 @@ const RostersPage = () => {
       let rostersData = [];
       if (rostersRes.status === "fulfilled") {
         rostersData = extractData(rostersRes.value);
-        //console.log("Rosters loaded:", rostersData.length);
       }
-
-      // Process departments (Use mock if backend is empty)
-      let departmentsData = [];
-      if (departmentsRes.status === "fulfilled") {
-        departmentsData = extractData(departmentsRes.value);
-      }
-      if (departmentsData.length === 0) {
-        departmentsData = MOCK_ROOMS;
-      }
-
       // Process employees and their rates
       let employeesData = [];
       if (employeesRes.status === "fulfilled") {
         employeesData = extractData(employeesRes.value);
-
-        // Fallback: Assign employees to mock rooms if backend department is null
-        if (departmentsData.length > 0) {
-          employeesData = employeesData.map((emp, index) => {
-            if (!emp.department_id) {
-              // Cycle through mock rooms for a balanced UI design
-              const mockDept = departmentsData[index % departmentsData.length];
-              return { ...emp, department_id: mockDept.id };
-            }
-            return emp;
-          });
-        }
 
         // Extract and store employee rates
         const rates = {};
@@ -614,6 +661,12 @@ const RostersPage = () => {
       if (shiftsRes.status === "fulfilled") {
         shiftsData = extractData(shiftsRes.value);
         //console.log("Shifts loaded:", shiftsData.length);
+      }
+
+      // Process departments
+      let departmentsData = [];
+      if (departmentsRes.status === "fulfilled") {
+        departmentsData = extractData(departmentsRes.value);
       }
 
       // Process designations
@@ -656,39 +709,43 @@ const RostersPage = () => {
       return;
     }
 
-    // Using top-level weekDates
-    const weekStart = weekDates[0].toISOString().split("T")[0];
-    const weekEnd = weekDates[weekDates.length - 1].toISOString().split("T")[0];
+    const rangeStart = formatLocalDate(weekDates[0]);
+    const rangeEnd = formatLocalDate(weekDates[weekDates.length - 1]);
 
-    // Filter rosters for current week
-    const weekRosters = rosters.filter((roster) => {
+    // Filter rosters for current view period
+    const periodRosters = rosters.filter((roster) => {
       if (!roster.roster_date) return false;
       const rosterDate =
         typeof roster.roster_date === "string"
           ? roster.roster_date.split("T")[0]
-          : new Date(roster.roster_date).toISOString().split("T")[0];
-      return rosterDate >= weekStart && rosterDate <= weekEnd;
+          : formatLocalDate(new Date(roster.roster_date));
+      return rosterDate >= rangeStart && rosterDate <= rangeEnd;
     });
-
-    //console.log("📊 Calculating weekly totals for", weekRosters.length, "rosters");
 
     let totalHours = 0;
     let totalAmount = 0;
     const byEmployee = {};
-    const byDepartment = {};
 
-    weekRosters.forEach((roster) => {
+    periodRosters.forEach((roster) => {
       const shift =
         roster.shift || shifts.find((s) => s.id === roster.shift_id);
-      if (!shift) return;
 
-      const hours = calculateNetWorkingHours(shift);
+      const hours = calculateNetWorkingHours({
+        start_time: roster.start_time || shift?.start_time,
+        end_time: roster.end_time || shift?.end_time,
+        break_start: roster.break_start || shift?.break_start,
+        break_end: roster.break_end || shift?.break_end,
+        total_break_minutes: roster.total_break_minutes || shift?.total_break_minutes,
+        break_duration: roster.break_duration || shift?.break_duration,
+      });
+
+      if (hours === 0) return;
+
       const amount = calculateRosterAmount(roster);
 
       totalHours += hours;
       totalAmount += amount;
 
-      // Calculate by employee
       const employee =
         roster.employee || employees.find((e) => e.id === roster.employee_id);
       if (employee) {
@@ -696,66 +753,36 @@ const RostersPage = () => {
         if (!byEmployee[employeeId]) {
           byEmployee[employeeId] = {
             id: employeeId,
-            name:
-              `${employee.first_name || ""} ${employee.last_name || ""}`.trim() ||
-              "Unknown",
+            name: `${employee.first_name || ""} ${employee.last_name || ""}`.trim() || "Unknown",
             hours: 0,
             amount: 0,
-            department: employee.department_id,
             rate: getEmployeeRate(employee),
           };
         }
         byEmployee[employeeId].hours += hours;
         byEmployee[employeeId].amount += amount;
-
-        // Calculate by department
-        const deptId = employee.department_id;
-        if (deptId) {
-          if (!byDepartment[deptId]) {
-            const dept = departments.find((d) => d.id === deptId);
-            byDepartment[deptId] = {
-              id: deptId,
-              name: dept?.name || "Unknown Department",
-              hours: 0,
-              amount: 0,
-              employeeCount: new Set(),
-            };
-          }
-          byDepartment[deptId].hours += hours;
-          byDepartment[deptId].amount += amount;
-          byDepartment[deptId].employeeCount.add(employeeId);
-        }
       }
     });
 
-    // Calculate average rate
     const averageRate = totalHours > 0 ? totalAmount / totalHours : 0;
-
-    // Convert employeeCount Set to count for departments
-    Object.keys(byDepartment).forEach((deptId) => {
-      byDepartment[deptId].employeeCount =
-        byDepartment[deptId].employeeCount.size;
-    });
 
     const newTotals = {
       totalHours: parseFloat(totalHours.toFixed(2)),
       totalAmount: parseFloat(totalAmount.toFixed(2)),
       byEmployee,
-      byDepartment,
+      byDepartment: {},
       averageRate: parseFloat(averageRate.toFixed(2)),
       lastUpdated: new Date(),
-      rosterCount: weekRosters.length,
+      rosterCount: periodRosters.length,
       uniqueEmployees: Object.keys(byEmployee).length,
     };
 
-    //console.log("✅ Weekly totals updated:", newTotals);
     setWeeklyTotals(newTotals);
   }, [
     rosters,
     employees,
     shifts,
-    departments,
-    currentDate,
+    weekDates,
     calculateNetWorkingHours,
     calculateRosterAmount,
     getEmployeeRate,
@@ -770,7 +797,6 @@ const RostersPage = () => {
     rosters,
     employees,
     shifts,
-    departments,
     currentDate,
     calculateWeeklyTotals,
   ]);
@@ -806,7 +832,7 @@ const RostersPage = () => {
     if (selectedOrganization?.id) {
       fetchData();
     }
-  }, [selectedOrganization, currentDate]);
+  }, [selectedOrganization, currentDate, view]);
 
   // Moved to top
 
@@ -815,7 +841,7 @@ const RostersPage = () => {
     if (view === "week") {
       newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
     } else {
-      newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
+      newDate.setDate(newDate.getDate() + (direction === "next" ? 14 : -14));
     }
     setCurrentDate(newDate);
     // Also update footer base date so tabs follow the main navigation
@@ -878,40 +904,42 @@ const RostersPage = () => {
     });
   }, [employees, filters]);
 
-  // Group filtered employees by room
+  // Group filtered employees by department / room
   const groupedEmployees = useMemo(() => {
     const groups = {};
-    filteredEmployees.forEach((employee) => {
-      const deptId = employee.department_id || "unassigned";
-      if (!groups[deptId]) {
-        groups[deptId] = [];
+
+    departments.forEach((dept) => {
+      const matchesFilter =
+        filters.room === "all" ||
+        dept.id.toString() === filters.room;
+      
+      if (matchesFilter) {
+        groups[dept.name] = [];
       }
-      groups[deptId].push(employee);
     });
-    return groups;
-  }, [filteredEmployees]);
 
-  const getDepartmentColor = useCallback((deptName) => {
-    const name = (deptName || "").toLowerCase();
-
-    // Muted, professional palette based on template
-    if (name.includes("babies")) return "#8183B0"; // Muted Purple
-    if (name.includes("junior toddlers")) return "#C599B8"; // Muted Lilac
-    if (name.includes("toddlers")) return "#D37B8B"; // Muted Rose
-    if (name.includes("non kinder")) return "#3598DB"; // Professional Blue
-    if (name.includes("3 years kinder")) return "#7BB082"; // Sage Green
-    if (name.includes("4 years kinder")) return "#E59A7D"; // Muted Orange
-    if (name.includes("kitchen")) return "#BDB16D"; // Muted Olive
-    if (name.includes("management")) return "#95A5A6"; // Slate Gray
-
-    // Fallback for API rooms - using muted saturation
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    if (filters.room === "all" && !groups["Unassigned"]) {
+      groups["Unassigned"] = [];
     }
-    const h = Math.abs(hash % 360);
-    return `hsl(${h}, 35%, 50%)`; // Lower saturation for more "grounded" feel
-  }, []);
+
+    filteredEmployees.forEach((emp) => {
+      let deptName = "Unassigned";
+      if (emp.department_id) {
+        const dept = departments.find((d) => d.id === emp.department_id);
+        if (dept) deptName = dept.name;
+      }
+      if (groups[deptName]) {
+        groups[deptName].push(emp);
+      }
+    });
+
+    return Object.entries(groups)
+      .sort((a, b) => {
+        if (a[0] === "Unassigned") return 1;
+        if (b[0] === "Unassigned") return -1;
+        return a[0].localeCompare(b[0]);
+      });
+  }, [filteredEmployees, departments, filters.room]);
 
   const getDesignationTitle = useCallback(
     (designationId) => {
@@ -962,11 +990,9 @@ const RostersPage = () => {
           const rosterDate =
             typeof roster.roster_date === "string"
               ? roster.roster_date.split("T")[0]
-              : new Date(roster.roster_date).toISOString().split("T")[0];
-          const weekStart = weekDates[0].toISOString().split("T")[0];
-          const weekEnd = weekDates[weekDates.length - 1]
-            .toISOString()
-            .split("T")[0];
+              : formatLocalDate(new Date(roster.roster_date));
+          const weekStart = formatLocalDate(weekDates[0]);
+          const weekEnd = formatLocalDate(weekDates[weekDates.length - 1]);
           return rosterDate >= weekStart && rosterDate <= weekEnd;
         })
         .map((roster) => {
@@ -1031,7 +1057,7 @@ const RostersPage = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `roster_report_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `roster_report_${formatLocalDate(new Date())}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
     toast.success("Report exported successfully!");
@@ -1041,17 +1067,164 @@ const RostersPage = () => {
     window.print();
   };
 
+  // Drag and Drop Event Handlers
+  const handleDragStart = (e, roster) => {
+    setDraggedRoster(roster);
+    e.dataTransfer.effectAllowed = "copyMove";
+    e.dataTransfer.setData("text/plain", roster.id.toString());
+  };
+
+  const handleDragOver = (e, employeeId, dateStr) => {
+    e.preventDefault();
+    if (!draggedRoster) return;
+
+    const sourceEmployeeId = draggedRoster.employee_id || draggedRoster.employee?.id;
+    const sourceDateStr = typeof draggedRoster.roster_date === "string"
+      ? draggedRoster.roster_date.split("T")[0]
+      : formatLocalDate(new Date(draggedRoster.roster_date));
+
+    if (sourceEmployeeId === employeeId && sourceDateStr === dateStr) {
+      return;
+    }
+
+    setDragOverCell({ employeeId, dateStr });
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCell(null);
+  };
+
+  const handleDrop = (e, employeeId, date) => {
+    e.preventDefault();
+    setDragOverCell(null);
+
+    if (!draggedRoster) return;
+
+    const dateStr = formatLocalDate(date);
+    const sourceEmployeeId = draggedRoster.employee_id || draggedRoster.employee?.id;
+    const sourceDateStr = typeof draggedRoster.roster_date === "string"
+      ? draggedRoster.roster_date.split("T")[0]
+      : formatLocalDate(new Date(draggedRoster.roster_date));
+
+    if (sourceEmployeeId === employeeId && sourceDateStr === dateStr) {
+      setDraggedRoster(null);
+      return;
+    }
+
+    setDropTarget({ employeeId, date, dateStr });
+    setShowDropChoiceModal(true);
+  };
+
+  const handleExecuteMove = async () => {
+    if (!draggedRoster || !dropTarget) return;
+
+    try {
+      setShowDropChoiceModal(false);
+      const payload = {
+        roster_id: draggedRoster.id,
+        target_employee_id: dropTarget.employeeId,
+        target_roster_date: dropTarget.dateStr,
+      };
+
+      const response = await rosterService.moveRoster(payload);
+      if (response.data?.success || response.status === 200 || response.status === 201) {
+        toast.success("Roster moved successfully!");
+        fetchData();
+      } else {
+        toast.error("Failed to move roster.");
+      }
+    } catch (error) {
+      console.error("Error moving roster:", error);
+      toast.error(error.response?.data?.message || "Error moving roster.");
+    } finally {
+      setDraggedRoster(null);
+      setDropTarget(null);
+    }
+  };
+
+  const handleExecuteCopy = async () => {
+    if (!draggedRoster || !dropTarget) return;
+
+    try {
+      setShowDropChoiceModal(false);
+      const payload = {
+        roster_id: draggedRoster.id,
+        target_employee_id: dropTarget.employeeId,
+        target_roster_date: dropTarget.dateStr,
+      };
+
+      const response = await rosterService.copyRoster(payload);
+      if (response.data?.success || response.status === 200 || response.status === 201) {
+        toast.success("Roster copied successfully!");
+        fetchData();
+      } else {
+        toast.error("Failed to copy roster.");
+      }
+    } catch (error) {
+      console.error("Error copying roster:", error);
+      toast.error(error.response?.data?.message || "Error copying roster.");
+    } finally {
+      setDraggedRoster(null);
+      setDropTarget(null);
+    }
+  };
+
+  // Real-time calculation of total working time based on start, end, break times and grace minutes
+  useEffect(() => {
+    const { start_time, end_time, break_start, break_end } = formData;
+    if (start_time && end_time) {
+      const [sH, sM] = start_time.split(":").map(Number);
+      const [eH, eM] = end_time.split(":").map(Number);
+      let durationMins = (eH * 60 + eM) - (sH * 60 + sM);
+      if (durationMins < 0) durationMins += 24 * 60; // overnight support
+
+      let breakMins = 0;
+      if (break_start && break_end) {
+        const [bsH, bsM] = break_start.split(":").map(Number);
+        const [beH, beM] = break_end.split(":").map(Number);
+        breakMins = (beH * 60 + beM) - (bsH * 60 + bsM);
+        if (breakMins < 0) breakMins += 24 * 60;
+      }
+
+      const totalWorkingMins = Math.max(0, durationMins - breakMins);
+      const hrs = Math.floor(totalWorkingMins / 60);
+      const mins = totalWorkingMins % 60;
+      const workingTimeStr = `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+
+      if (formData.total_working_time !== workingTimeStr) {
+        setFormData((prev) => ({
+          ...prev,
+          total_working_time: workingTimeStr,
+        }));
+      }
+    }
+  }, [
+    formData.start_time,
+    formData.end_time,
+    formData.break_start,
+    formData.break_end,
+    formData.total_working_time,
+  ]);
+
   const handleAddRoster = (date, employeeId, employee) => {
     setModalMode("add");
     setSelectedDate(date);
     setSelectedEmployee(employeeId);
 
-    const formattedDate = date.toISOString().split("T")[0];
+    const formattedDate = formatLocalDate(date);
 
     setFormData({
-      employee_id: employeeId,
+      employee_ids: employeeId ? [employeeId] : [],
       shift_id: "",
-      roster_date: formattedDate,
+      from_date: formattedDate,
+      to_date: formattedDate,
+      start_time: "",
+      end_time: "",
+      break_start: "",
+      break_end: "",
+      break_grace_minutes: 0,
+      total_working_time: "00:00",
+      status: "draft",
       notes: "",
     });
 
@@ -1061,14 +1234,29 @@ const RostersPage = () => {
   const handleEditRoster = (roster) => {
     setModalMode("edit");
     setSelectedRoster(roster);
+    setSelectedEmployee(roster.employee_id || roster.employee?.id);
+
+    const formattedDate = typeof roster.roster_date === "string"
+      ? roster.roster_date.split("T")[0]
+      : formatLocalDate(new Date(roster.roster_date));
+
+    const formatTimeField = (time) => {
+      if (!time) return "";
+      return time.substring(0, 5);
+    };
 
     setFormData({
-      employee_id: roster.employee_id || roster.employee?.id,
-      shift_id: roster.shift_id || roster.shift?.id,
-      roster_date:
-        typeof roster.roster_date === "string"
-          ? roster.roster_date.split("T")[0]
-          : new Date(roster.roster_date).toISOString().split("T")[0],
+      employee_ids: [roster.employee_id || roster.employee?.id],
+      shift_id: roster.shift_id || roster.shift?.id || "",
+      from_date: formattedDate,
+      to_date: formattedDate,
+      start_time: formatTimeField(roster.start_time || roster.shift?.start_time),
+      end_time: formatTimeField(roster.end_time || roster.shift?.end_time),
+      break_start: formatTimeField(roster.break_start || roster.shift?.break_start),
+      break_end: formatTimeField(roster.break_end || roster.shift?.break_end),
+      break_grace_minutes: roster.break_grace_minutes || roster.shift?.break_grace_minutes || 0,
+      total_working_time: roster.total_working_time || "00:00",
+      status: roster.status || "draft",
       notes: roster.notes || "",
     });
 
@@ -1077,43 +1265,68 @@ const RostersPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "shift_id" && value) {
+      const selectedShift = shifts.find((s) => s.id === parseInt(value));
+      if (selectedShift) {
+        const formatTimeField = (time) => {
+          if (!time) return "";
+          return time.substring(0, 5);
+        };
+
+        setFormData((prev) => ({
+          ...prev,
+          shift_id: value,
+          start_time: formatTimeField(selectedShift.start_time),
+          end_time: formatTimeField(selectedShift.end_time),
+          break_start: formatTimeField(selectedShift.break_start),
+          break_end: formatTimeField(selectedShift.break_end),
+          break_grace_minutes: selectedShift.break_grace_minutes || 0,
+        }));
+        return;
+      }
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (formData.employee_ids.length === 0) {
+      toast.error("Please select at least one employee");
+      return;
+    }
+
     try {
-      const selectedShift = shifts.find(
-        (s) => s.id === parseInt(formData.shift_id),
-      );
-      if (!selectedShift) {
-        toast.error("Please select a valid shift");
-        return;
-      }
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+      const creatorId = user?.id || 95;
 
       const rosterData = {
+        employee_ids: formData.employee_ids.map(Number),
         organization_id: selectedOrganization.id,
-        employee_id: parseInt(formData.employee_id),
-        shift_id: parseInt(formData.shift_id),
-        roster_date: formData.roster_date,
+        from_date: formData.from_date,
+        to_date: formData.to_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        break_start: formData.break_start || null,
+        break_end: formData.break_end || null,
+        break_grace_minutes: parseInt(formData.break_grace_minutes) || 0,
+        total_working_time: formData.total_working_time,
+        status: formData.status,
         notes: formData.notes || "",
-        created_by: 4,
+        created_by: creatorId,
       };
 
-      //console.log("Submitting roster data:", rosterData);
-
-      let response;
-      if (modalMode === "add") {
-        response = await rosterService.createRoster(rosterData);
-      } else {
-        response = await rosterService.updateRoster(
-          selectedRoster.id,
-          rosterData,
-        );
+      if (formData.shift_id) {
+        rosterData.shift_id = parseInt(formData.shift_id);
       }
 
-      if (response.data?.success) {
+      // API update: POST /rosters serves both create & update operations
+      const response = await rosterService.createRoster(rosterData);
+
+      if (response.data?.success || response.status === 200 || response.status === 201) {
         toast.success(
           `Roster ${modalMode === "add" ? "created" : "updated"} successfully!`,
         );
@@ -1121,9 +1334,17 @@ const RostersPage = () => {
         setShowModal(false);
 
         setFormData({
-          employee_id: "",
+          employee_ids: [],
           shift_id: "",
-          roster_date: "",
+          from_date: "",
+          to_date: "",
+          start_time: "",
+          end_time: "",
+          break_start: "",
+          break_end: "",
+          break_grace_minutes: 0,
+          total_working_time: "00:00",
+          status: "draft",
           notes: "",
         });
       } else {
@@ -1131,9 +1352,7 @@ const RostersPage = () => {
       }
     } catch (error) {
       console.error("Error saving roster:", error);
-
       if (error.response) {
-        console.error("Error response:", error.response.data);
         toast.error(
           error.response.data?.message || `Failed to ${modalMode} roster`,
         );
@@ -1254,130 +1473,503 @@ const RostersPage = () => {
 
         {/* Add/Edit Roster Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-800">
-                    {modalMode === "add" ? "Add Roster" : "Edit Roster"}
+          <div className="fixed inset-0 bg-black bg-opacity-65 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex justify-between items-center shadow-sm">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">
+                    {modalMode === "add" ? "Create New Roster" : "Update Roster Entry"}
                   </h2>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <FaTimes />
-                  </button>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {modalMode === "add"
+                      ? "Assign shift schedule to one or more employees"
+                      : "Modify shift schedule details for the selected employee"}
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="text-slate-400 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full cursor-pointer"
+                >
+                  <FaTimes />
+                </button>
+              </div>
 
-                <form onSubmit={handleSubmit}>
-                  <div className="space-y-4">
-                    {modalMode === "add" ? (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Employee
-                        </label>
-                        <select
-                          name="employee_id"
-                          value={formData.employee_id}
-                          onChange={handleInputChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="">Select Employee</option>
-                          {filteredEmployees.map((employee) => (
-                            <option key={employee.id} value={employee.id}>
-                              {employee.first_name || ""}{" "}
-                              {employee.last_name || ""}
-                              {employee.employee_code
-                                ? ` (${employee.employee_code})`
-                                : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Employee
-                        </label>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          {getEmployeeName(formData.employee_id)}
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column: Employees & Dates */}
+                  <div className="space-y-6">
+                    {/* Employee Selection */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
+                        Employee Assignment
+                      </h3>
+                      {selectedEmployee ? (
+                        /* Particular employee (disabled selection) */
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base shadow-sm">
+                            {getEmployeeName(selectedEmployee).split(" ").map(w => w[0]).join("")}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">
+                              {getEmployeeName(selectedEmployee)}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              Direct cell assignment (Locked)
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Multiple employee selection */
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                              type="text"
+                              placeholder="Search employees..."
+                              value={empSearchQuery}
+                              onChange={(e) => setEmpSearchQuery(e.target.value)}
+                              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+
+                          <div className="border border-gray-200 rounded-xl overflow-hidden bg-slate-50">
+                            {/* Select options control */}
+                            <div className="flex justify-between items-center px-4 py-2 border-b bg-white text-xs text-slate-600 font-medium">
+                              <span>
+                                {formData.employee_ids.length} selected
+                              </span>
+                              <div className="flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      employee_ids: employees.map((e) => e.id),
+                                    }));
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                                >
+                                  Select All
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      employee_ids: [],
+                                    }));
+                                  }}
+                                  className="text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="max-h-56 overflow-y-auto p-2 space-y-1">
+                              {employees
+                                .filter((emp) => {
+                                  const name = `${emp.first_name || ""} ${emp.last_name || ""}`.toLowerCase();
+                                  return name.includes(empSearchQuery.toLowerCase());
+                                })
+                                .map((emp) => {
+                                  const isChecked = formData.employee_ids.includes(emp.id);
+                                  return (
+                                    <label
+                                      key={emp.id}
+                                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors cursor-pointer text-sm text-slate-700"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => {
+                                          setFormData((prev) => {
+                                            const ids = prev.employee_ids.includes(emp.id)
+                                              ? prev.employee_ids.filter((id) => id !== emp.id)
+                                              : [...prev.employee_ids, emp.id];
+                                            return { ...prev, employee_ids: ids };
+                                          });
+                                        }}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                                      />
+                                      <span className="font-medium text-slate-800">
+                                        {emp.first_name || ""} {emp.last_name || ""}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Date Range Selection */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
+                        Roster Period
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            From Date
+                          </label>
+                          <input
+                            type="date"
+                            name="from_date"
+                            value={formData.from_date}
+                            onChange={handleInputChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            To Date
+                          </label>
+                          <input
+                            type="date"
+                            name="to_date"
+                            value={formData.to_date}
+                            onChange={handleInputChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            required
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
 
+                    {/* Roster Status & Notes */}
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                          Status
+                        </label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
+                            <input
+                              type="radio"
+                              name="status"
+                              value="draft"
+                              checked={formData.status === "draft"}
+                              onChange={handleInputChange}
+                              className="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                            />
+                            Draft (Internal Only)
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
+                            <input
+                              type="radio"
+                              name="status"
+                              value="published"
+                              checked={formData.status === "published"}
+                              onChange={handleInputChange}
+                              className="text-green-600 focus:ring-green-500 w-4 h-4 cursor-pointer"
+                            />
+                            Published (Visible to Staff)
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-800 mb-1">
+                          Notes / Instructions
+                        </label>
+                        <textarea
+                          name="notes"
+                          value={formData.notes}
+                          onChange={handleInputChange}
+                          rows="3"
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Optional notes for employees..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Shift, Times, Calculations */}
+                  <div className="space-y-6">
+                    {/* Shift Selector */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Shift
-                      </label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-semibold text-slate-800">
+                          Predefined Shift (Optional)
+                        </label>
+                        <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                          Autofills times
+                        </span>
+                      </div>
                       <select
                         name="shift_id"
                         value={formData.shift_id}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       >
-                        <option value="">Select Shift</option>
+                        <option value="">-- Customize Manually / Choose Shift --</option>
                         {shifts.map((shift) => {
                           const hours = calculateNetWorkingHours(shift);
                           return (
                             <option key={shift.id} value={shift.id}>
-                              {shift.name} ({formatTime(shift.start_time)} -{" "}
-                              {formatTime(shift.end_time)}) • {hours}h
-                              {shift.break_start &&
-                                shift.break_end &&
-                                ` • Break: ${formatTime(shift.break_start)}-${formatTime(shift.break_end)}`}
+                              {shift.name} ({formatTime(shift.start_time)} - {formatTime(shift.end_time)})
                             </option>
                           );
                         })}
                       </select>
                     </div>
 
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
+                      Shift Timing & Break Configuration
+                    </h3>
+
+                    {/* Start & End Times */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          Start Time
+                        </label>
+                        <input
+                          type="time"
+                          name="start_time"
+                          value={formData.start_time}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          End Time
+                        </label>
+                        <input
+                          type="time"
+                          name="end_time"
+                          value={formData.end_time}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Break Start & End Times */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          Break Start (Optional)
+                        </label>
+                        <input
+                          type="time"
+                          name="break_start"
+                          value={formData.break_start}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          Break End (Optional)
+                        </label>
+                        <input
+                          type="time"
+                          name="break_end"
+                          value={formData.break_end}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Break Grace Minutes */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Date
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        Break Grace Minutes
                       </label>
                       <input
-                        type="date"
-                        name="roster_date"
-                        value={formData.roster_date}
+                        type="number"
+                        name="break_grace_minutes"
+                        value={formData.break_grace_minutes}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
+                        min="0"
+                        placeholder="e.g. 15"
+                        className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       />
                     </div>
 
+                    {/* Computation Dashboard */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 shadow-inner">
+                      <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                        <span>Calculated Break Total:</span>
+                        <span className="text-blue-600">
+                          {(() => {
+                            if (formData.break_start && formData.break_end) {
+                              const [bsH, bsM] = formData.break_start.split(":").map(Number);
+                              const [beH, beM] = formData.break_end.split(":").map(Number);
+                              let breakMins = (beH * 60 + beM) - (bsH * 60 + bsM);
+                              if (breakMins < 0) breakMins += 24 * 60;
+                              return breakMins >= 60
+                                ? `${(breakMins / 60).toFixed(1)} hrs`
+                                : `${breakMins} mins`;
+                            }
+                            return "0 mins";
+                          })()}
+                        </span>
+                      </div>
+                      <div className="border-t border-slate-200 my-2"></div>
+                      <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+                        <span>Total Net Working Time:</span>
+                        <span className="text-emerald-600 text-base">
+                          {formData.total_working_time} hours
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-200 hover:shadow-lg cursor-pointer"
+                  >
+                    {modalMode === "add" ? "Create Roster" : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Drag and Drop Move/Copy Choice Modal */}
+        {showDropChoiceModal && draggedRoster && dropTarget && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-900 to-indigo-850 text-white flex justify-between items-center shadow-sm">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">
+                    Roster Action Required
+                  </h2>
+                  <p className="text-xs text-indigo-200 mt-0.5">
+                    Choose how to assign the dropped roster entry
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDropChoiceModal(false);
+                    setDraggedRoster(null);
+                    setDropTarget(null);
+                  }}
+                  className="text-indigo-300 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full cursor-pointer"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4">
+                {/* Visual Flow diagram */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
+                    <span>SOURCE CELL</span>
+                    <span className="text-blue-500 font-bold">➔</span>
+                    <span>TARGET CELL</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes (Optional)
-                      </label>
-                      <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        rows="3"
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Add any notes..."
-                      />
+                      <div className="font-bold text-slate-800 truncate">
+                        {getEmployeeName(draggedRoster.employee_id || draggedRoster.employee?.id)}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {new Date(draggedRoster.roster_date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="text-right border-l border-slate-200 pl-4">
+                      <div className="font-bold text-slate-800 truncate">
+                        {getEmployeeName(dropTarget.employeeId)}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {dropTarget.date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      {modalMode === "add" ? "Add Roster" : "Update Roster"}
-                    </button>
+                  <div className="border-t border-slate-200 pt-2 text-xs text-slate-600 flex justify-between">
+                    <span>Shift hours:</span>
+                    <span className="font-semibold text-slate-800">
+                      {draggedRoster.start_time?.substring(0, 5) || "NA"} - {draggedRoster.end_time?.substring(0, 5) || "NA"}
+                    </span>
                   </div>
-                </form>
+                </div>
+
+                {/* Choices Buttons */}
+                <div className="space-y-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleExecuteMove}
+                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold shadow-md shadow-blue-100 hover:shadow-lg transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FaExchangeAlt className="text-lg opacity-90" />
+                      <div className="text-left">
+                        <div className="text-sm">Move Roster</div>
+                        <div className="text-[10px] text-blue-100 font-normal">
+                          Shifts location to the new employee / date
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-sm group-hover:translate-x-1 transition-transform">➔</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExecuteCopy}
+                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-semibold shadow-md shadow-emerald-100 hover:shadow-lg transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FaCopy className="text-lg opacity-90" />
+                      <div className="text-left">
+                        <div className="text-sm">Copy Roster</div>
+                        <div className="text-[10px] text-emerald-100 font-normal">
+                          Duplicates entry, leaving source intact
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-sm group-hover:translate-x-1 transition-transform">➔</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDropChoiceModal(false);
+                    setDraggedRoster(null);
+                    setDropTarget(null);
+                  }}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-sm cursor-pointer"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
@@ -1472,38 +2064,35 @@ const RostersPage = () => {
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Week View (Mon-Fri)
+                Weekly
               </button>
               <button
-                onClick={() => setView("month")}
+                onClick={() => setView("fortnight")}
                 className={`px-4 py-2 rounded-md transition-colors ${
-                  view === "month"
+                  view === "fortnight"
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Month View
+                Fortnightly
               </button>
             </div>
 
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigateDate("prev")}
-                className="p-2 hover:bg-gray-100 rounded-full border"
+                className="p-2 hover:bg-gray-100 rounded-full border cursor-pointer"
               >
                 <FaChevronLeft />
               </button>
               <div className="text-lg font-semibold">
-                {view === "week"
+                {weekDates.length > 0
                   ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[weekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                  : currentDate.toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })}
+                  : ""}
               </div>
               <button
                 onClick={() => navigateDate("next")}
-                className="p-2 hover:bg-gray-100 rounded-full border"
+                className="p-2 hover:bg-gray-100 rounded-full border cursor-pointer"
               >
                 <FaChevronRight />
               </button>
@@ -1526,15 +2115,24 @@ const RostersPage = () => {
                 <button
                   onClick={() => {
                     setModalMode("add");
+                    setSelectedEmployee(null);
                     setFormData({
-                      employee_id: "",
+                      employee_ids: [],
                       shift_id: "",
-                      roster_date: new Date().toISOString().split("T")[0],
+                      from_date: formatLocalDate(weekDates[0]),
+                      to_date: formatLocalDate(weekDates[weekDates.length - 1]),
+                      start_time: "",
+                      end_time: "",
+                      break_start: "",
+                      break_end: "",
+                      break_grace_minutes: 0,
+                      total_working_time: "00:00",
+                      status: "draft",
                       notes: "",
                     });
                     setShowModal(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold cursor-pointer shadow-sm transition-all"
                 >
                   <FaPlus /> Add Roster
                 </button>
@@ -1589,401 +2187,102 @@ const RostersPage = () => {
               </select>
             </div>
           </div>
-
-          {/* Weekly View */}
-          {view === "week" && (
-            <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-gray-300 relative">
-              {/* Dark Green Header - Sticky at top */}
-              <div
-                className="border-b border-gray-300 sticky top-0  shadow-md"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "150px 180px repeat(5, 1fr)",
-                  height: "56px", // Fixed height for accurate sticky offset
-                }}
-              >
-                <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
-                  Position
-                </div>
-                <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
-                  Staff Name
-                </div>
-                {weekDates.map((day, index) => (
-                  <div
-                    key={day.toString()}
-                    className="text-center font-bold border-r border-gray-300 bg-[#1a4d4d] text-white flex flex-col justify-center py-1"
-                  >
-                    <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">
-                      {
-                        [
-                          "Monday",
-                          "Tuesday",
-                          "Wednesday",
-                          "Thursday",
-                          "Friday",
-                        ][index]
-                      }
-                    </div>
-                    <div className="text-sm pt-0.5">
-                      {day.getDate()}
-                      {day.getDate() === 1 ||
-                      day.getDate() === 21 ||
-                      day.getDate() === 31
-                        ? "st"
-                        : day.getDate() === 2 || day.getDate() === 22
-                          ? "nd"
-                          : day.getDate() === 3 || day.getDate() === 23
-                            ? "rd"
-                            : "th"}
-                    </div>
+          {/* Roster Grid View */}
+          {(view === "week" || view === "fortnight") && (
+            <div className="bg-white rounded-lg shadow-xl border border-gray-300 relative overflow-x-auto">
+              <div style={{ minWidth: `${330 + weekDates.length * 100}px` }}>
+                {/* Roster Header */}
+                <div
+                  className="border-b border-gray-300 sticky top-0 shadow-md"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: `150px 180px repeat(${weekDates.length}, minmax(100px, 1fr))`,
+                    height: "56px",
+                  }}
+                >
+                  <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
+                    Position
                   </div>
-                ))}
-              </div>
+                  <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
+                    Staff Name
+                  </div>
+                  {weekDates.map((day) => (
+                    <div
+                      key={day.toString()}
+                      className="text-center font-bold border-r border-gray-300 bg-[#1a4d4d] text-white flex flex-col justify-center py-1"
+                    >
+                      <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">
+                        {day.toLocaleDateString("en-US", { weekday: "short" })}
+                      </div>
+                      <div className="text-sm pt-0.5">
+                        {day.getDate()}
+                        {day.getDate() === 1 || day.getDate() === 21 || day.getDate() === 31
+                          ? "st"
+                          : day.getDate() === 2 || day.getDate() === 22
+                            ? "nd"
+                            : day.getDate() === 3 || day.getDate() === 23
+                              ? "rd"
+                              : "th"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-              <div
-                className="overflow-y-auto"
-                style={{ maxHeight: "calc(85vh - 56px)" }}
-              >
-                {Object.keys(groupedEmployees).length > 0 ? (
-                  <>
-                    {/* Render existing departments */}
-                    {departments
-                      .filter((dept) => groupedEmployees[dept.id])
-                      .map((dept) => (
-                        <React.Fragment key={dept.id}>
-                          {/* Room Header - Sticky at the top of the scrollable container */}
-                          <div
-                            className="text-white font-bold text-center py-1.5 text-base tracking-wide sticky top-0  shadow-sm border-b border-white/20"
-                            style={{
-                              backgroundColor: getDepartmentColor(dept.name),
-                              width: "100%",
-                            }}
-                          >
-                            {(() => {
-                              const name = dept.name;
-                              let ageRange = dept.age_group || "";
-                              if (!ageRange) {
-                                if (name.toLowerCase().includes("babies"))
-                                  ageRange = "6 - 12 months";
-                                else if (
-                                  name.toLowerCase().includes("junior toddlers")
-                                )
-                                  ageRange = "12 - 24 Months";
-                                else if (
-                                  name.toLowerCase().includes("toddlers")
-                                )
-                                  ageRange = "2 - 3 Years";
-                                else if (name.toLowerCase().includes("kinder"))
-                                  ageRange = name.toLowerCase().includes("3")
-                                    ? "3 Years"
-                                    : "4 Years";
-                              }
-                              return ageRange ? `${name} : ${ageRange}` : name;
-                            })()}
-                          </div>
+                {/* Grid Body */}
+                <div
+                  className="overflow-y-auto"
+                  style={{ maxHeight: "calc(85vh - 56px)" }}
+                >
+                  {groupedEmployees.length > 0 ? (
+                    groupedEmployees.map(([deptName, emps]) => (
+                      <React.Fragment key={deptName}>
+                        {/* Department/Room Header Row */}
+                        <div className="bg-gradient-to-r from-teal-800 to-teal-700 text-white font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 border-b border-teal-900 sticky left-0 shadow-sm w-full">
+                          <FaBuilding className="text-teal-200 text-sm" />
+                          <span>{deptName || "Unassigned"}</span>
+                          <span className="ml-2 px-2 py-0.5 bg-teal-900/60 rounded-full text-[9px] text-teal-100 font-medium normal-case tracking-normal">
+                            {emps.length} {emps.length === 1 ? "Staff Member" : "Staff Members"}
+                          </span>
+                        </div>
 
-                          {groupedEmployees[dept.id].map((employee) => (
+                        {emps.length > 0 ? (
+                          emps.map((employee) => (
                             <EmployeeRow
                               key={employee.id}
                               employee={employee}
                               weeklyTotals={weeklyTotals}
                               getDesignationTitle={getDesignationTitle}
                               weekDates={weekDates}
-                              getRostersForEmployeeAndDate={
-                                getRostersForEmployeeAndDate
-                              }
+                              getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
                               shifts={shifts}
                               getShiftColor={getShiftColor}
                               canAddRoster={canAddRoster}
                               canEditRoster={canEditRoster}
                               handleAddRoster={handleAddRoster}
                               handleEditRoster={handleEditRoster}
+                              handleDragStart={handleDragStart}
+                              handleDragOver={handleDragOver}
+                              handleDragLeave={handleDragLeave}
+                              handleDrop={handleDrop}
+                              dragOverCell={dragOverCell}
                             />
-                          ))}
-                        </React.Fragment>
-                      ))}
-
-                    {/* Render Unassigned/Other employees */}
-                    {groupedEmployees["unassigned"] && (
-                      <React.Fragment key="unassigned">
-                        <div
-                          className="text-white font-bold text-center py-1.5 text-base tracking-wide sticky top-0 
-                          shadow-sm border-b border-white/20"
-                          style={{
-                            backgroundColor: "#95A5A6", // Gray for unassigned
-                            width: "100%",
-                          }}
-                        >
-                          Other Staff / Unassigned
-                        </div>
-                        {groupedEmployees["unassigned"].map((employee) => (
-                          <EmployeeRow
-                            key={employee.id}
-                            employee={employee}
-                            weeklyTotals={weeklyTotals}
-                            getDesignationTitle={getDesignationTitle}
-                            weekDates={weekDates}
-                            getRostersForEmployeeAndDate={
-                              getRostersForEmployeeAndDate
-                            }
-                            shifts={shifts}
-                            getShiftColor={getShiftColor}
-                            canAddRoster={canAddRoster}
-                            canEditRoster={canEditRoster}
-                            handleAddRoster={handleAddRoster}
-                            handleEditRoster={handleEditRoster}
-                          />
-                        ))}
-                      </React.Fragment>
-                    )}
-                  </>
-                ) : (
-                  <div className="p-12 text-center text-gray-400 bg-gray-50">
-                    <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
-                    <p className="text-lg">
-                      No staff members found in the selected period.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Week Switcher Footer - Exact Template Design with Working Navigation */}
-              <div className="bg-[#4a5568] p-1 flex items-center overflow-hidden border-t border-gray-500 shadow-inner">
-                {/* Left Arrow */}
-                <button
-                  onClick={() => {
-                    const newBase = new Date(footerBaseDate);
-                    newBase.setDate(newBase.getDate() - 42); // Back 6 weeks
-                    setFooterBaseDate(newBase);
-                  }}
-                  className="px-4 text-white opacity-70 hover:opacity-100 transition-opacity border-r border-gray-600 h-10"
-                >
-                  <FaChevronLeft />
-                </button>
-
-                <div className="flex flex-1 overflow-x-auto no-scrollbar">
-                  {(() => {
-                    const weeks = [];
-                    // Use a range that includes the currentDate to keep them in sync
-                    const startBase = new Date(footerBaseDate);
-                    // Adjust startBase to the Monday of that week
-                    startBase.setDate(
-                      footerBaseDate.getDate() -
-                        ((footerBaseDate.getDay() + 6) % 7),
-                    );
-
-                    // Show 3 weeks before and 3 weeks after to keep it centered and functional
-                    const offsetStart = new Date(startBase);
-                    offsetStart.setDate(startBase.getDate() - 14); // Start 2 weeks back
-
-                    for (let i = 0; i < 6; i++) {
-                      const wStart = new Date(offsetStart);
-                      wStart.setDate(offsetStart.getDate() + i * 7);
-                      const wEnd = new Date(wStart);
-                      wEnd.setDate(wStart.getDate() + 4);
-
-                      const isActive =
-                        currentDate.toDateString() === wStart.toDateString();
-
-                      const formatDay = (d) => {
-                        const day = d.getDate();
-                        if (day === 1 || day === 21 || day === 31)
-                          return day + "st";
-                        if (day === 2 || day === 22) return day + "nd";
-                        if (day === 3 || day === 23) return day + "rd";
-                        return day + "th";
-                      };
-
-                      const monthName = ` ${wStart.toLocaleString("default", { month: "short" })}`;
-                      const label = `${formatDay(wStart)} - ${formatDay(wEnd)}${monthName}`;
-
-                      weeks.push(
-                        <button
-                          key={i}
-                          onClick={() => setCurrentDate(new Date(wStart))}
-                          className={`px-4 py-2 text-xs font-bold border-r border-gray-600 transition-all whitespace-nowrap h-10 ${
-                            isActive
-                              ? "bg-[#6a7a91] text-white shadow-inner"
-                              : "bg-[#4a5568] text-gray-300 hover:bg-[#5a6a7e] hover:text-white"
-                          }`}
-                        >
-                          {label}
-                        </button>,
-                      );
-                    }
-                    return weeks;
-                  })()}
-                </div>
-
-                {/* Right Arrow */}
-                <button
-                  onClick={() => {
-                    const newBase = new Date(footerBaseDate);
-                    newBase.setDate(newBase.getDate() + 42); // Forward 6 weeks
-                    setFooterBaseDate(newBase);
-                  }}
-                  className="px-4 text-white opacity-70 hover:opacity-100 transition-opacity border-l border-gray-600 h-10"
-                >
-                  <FaChevronRight />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Monthly View */}
-          {view === "month" && (
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="grid grid-cols-5 border-b">
-                {["Mon", "Tue", "Wed", "Thu", "Fri"].map((day) => (
-                  <div
-                    key={day}
-                    className="p-4 text-center font-semibold bg-gray-50"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-5">
-                {Array.from({
-                  length: (() => {
-                    const d = new Date(
-                      currentDate.getFullYear(),
-                      currentDate.getMonth(),
-                      1,
-                    ).getDay();
-                    return d === 0 ? 4 : Math.min(d - 1, 4);
-                  })(),
-                }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="min-h-32 border-r border-b p-2 bg-gray-50"
-                  ></div>
-                ))}
-
-                {monthDates
-                  .filter((date) => {
-                    const day = date.getDay();
-                    return day >= 1 && day <= 5;
-                  })
-                  .map((date) => {
-                    const dateStr = date.toISOString().split("T")[0];
-                    const dayRosters = rosters.filter((r) => {
-                      if (!r.roster_date) return false;
-                      const rosterDate =
-                        typeof r.roster_date === "string"
-                          ? r.roster_date.split("T")[0]
-                          : new Date(r.roster_date).toISOString().split("T")[0];
-                      return rosterDate === dateStr;
-                    });
-
-                    const dayTotalHours = dayRosters.reduce((total, roster) => {
-                      const shift =
-                        roster.shift ||
-                        shifts.find((s) => s.id === roster.shift_id);
-                      return total + calculateNetWorkingHours(shift);
-                    }, 0);
-                    const dayTotalAmount = dayRosters.reduce(
-                      (total, roster) => {
-                        return total + calculateRosterAmount(roster);
-                      },
-                      0,
-                    );
-
-                    return (
-                      <div
-                        key={dateStr}
-                        className={`min-h-32 border-r border-b p-2 ${
-                          date.toDateString() === new Date().toDateString()
-                            ? "bg-blue-50"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span
-                            className={`text-sm font-medium ${
-                              date.toDateString() === new Date().toDateString()
-                                ? "text-blue-600 font-bold"
-                                : ""
-                            }`}
-                          >
-                            {date.getDate()}
-                          </span>
-                          {canAddRoster && (
-                            <button
-                              onClick={() => {
-                                setModalMode("add");
-                                setSelectedDate(date);
-                                setFormData({
-                                  employee_id: "",
-                                  shift_id: "",
-                                  roster_date: dateStr,
-                                  notes: "",
-                                });
-                                setShowModal(true);
-                              }}
-                              className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            >
-                              <FaPlus className="text-xs" />
-                            </button>
-                          )}
-                        </div>
-
-                        {dayRosters.length > 0 && (
-                          <div className="mb-2 p-1 bg-green-50 rounded text-[10px]">
-                            <div className="font-semibold text-green-700">
-                              {dayTotalHours.toFixed(1)}h
-                            </div>
-                            <div className="font-bold text-purple-700">
-                              {formatCurrency(dayTotalAmount)}
-                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 italic border-b sticky left-0 w-full flex items-center justify-center gap-1.5">
+                            <span>No staff members in this room / department.</span>
                           </div>
                         )}
-
-                        <div className="space-y-1 overflow-y-auto max-h-24">
-                          {dayRosters.slice(0, 3).map((roster) => {
-                            const employee =
-                              roster.employee ||
-                              employees.find(
-                                (e) => e.id === roster.employee_id,
-                              );
-                            const shift =
-                              roster.shift ||
-                              shifts.find((s) => s.id === roster.shift_id);
-                            const shiftColor = getShiftColor(roster.shift_id);
-
-                            return (
-                              <div
-                                key={roster.id}
-                                className={`p-1 rounded text-xs ${canEditRoster ? "cursor-pointer hover:opacity-90" : "cursor-not-allowed"}`}
-                                style={{
-                                  backgroundColor: shiftColor.backgroundColor,
-                                  color: shiftColor.color,
-                                  border: `1px solid ${shiftColor.borderColor}`,
-                                }}
-                                onClick={() =>
-                                  canEditRoster && handleEditRoster(roster)
-                                }
-                              >
-                                <div className="font-medium truncate">
-                                  {employee?.first_name?.charAt(0) || ""}.{" "}
-                                  {employee?.last_name || ""}
-                                </div>
-                                <div className="truncate">
-                                  {shift?.name || "No Shift"}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {dayRosters.length > 3 && (
-                            <div className="text-xs text-gray-500 text-center">
-                              + {dayRosters.length - 3} more
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <div className="p-12 text-center text-gray-400 bg-gray-50">
+                      <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
+                      <p className="text-lg">
+                        No staff members found in the selected period.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
