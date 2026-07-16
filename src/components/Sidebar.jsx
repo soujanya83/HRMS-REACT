@@ -272,14 +272,14 @@ const Sidebar = ({
             icon: HiOutlineTable,
             permission: "rostering.shift_scheduling.view",
           },
+          // {
+          //   name: "Roster Periods",
+          //   path: "/dashboard/rostering/periods",
+          //   icon: HiOutlineCalendar,
+          //   permission: "rostering.roster_periods.view",
+          // },
           {
-            name: "Roster Periods",
-            path: "/dashboard/rostering/periods",
-            icon: HiOutlineCalendar,
-            permission: "rostering.roster_periods.view",
-          },
-          {
-            name: "Weekly / Monthly Rosters",
+            name: "Weekly / Fortnightly Rosters",
             path: "/dashboard/rostering/rosters",
             icon: HiOutlineViewGrid,
             permission: "rostering.weekly_monthly_rosters.view",

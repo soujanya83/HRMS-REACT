@@ -221,9 +221,9 @@ const EmployeeRow = ({
                   ? "bg-blue-50/30"
                   : ""
             }`}
-            onDragOver={(e) => handleDragOver(e, employee.id, dateStr)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, employee.id, day)}
+            onDragOver={(e) => canEditRoster && handleDragOver(e, employee.id, dateStr)}
+            onDragLeave={canEditRoster ? handleDragLeave : undefined}
+            onDrop={(e) => canEditRoster && handleDrop(e, employee.id, day)}
           >
             {dayRosters.map((roster) => {
               const shift =
@@ -242,16 +242,26 @@ const EmployeeRow = ({
               return (
                 <div
                   key={roster.id}
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, roster)}
-                  className={`w-full py-1 px-1.5 rounded border text-center transition-all cursor-grab active:cursor-grabbing select-none hover:shadow-md hover:scale-[1.02]`}
+                  draggable={canEditRoster}
+                  onDragStart={(e) => {
+                    if (!canEditRoster) {
+                      e.preventDefault();
+                      return;
+                    }
+                    handleDragStart(e, roster);
+                  }}
+                  className={`w-full py-1 px-1.5 rounded border text-center transition-all select-none ${
+                    canEditRoster
+                      ? "cursor-grab active:cursor-grabbing hover:shadow-md hover:scale-[1.02]"
+                      : "cursor-not-allowed"
+                  }`}
                   style={{
                     backgroundColor: isDraft ? "#fef3c7" : shiftColor.backgroundColor,
                     color: isDraft ? "#b45309" : shiftColor.color,
                     borderColor: isDraft ? "#fcd34d" : shiftColor.borderColor,
                   }}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
-                  title={`${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)`}
+                  title={canEditRoster ? `${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)` : (roster.notes || "")}
                 >
                   <div className="font-bold text-[11px] leading-tight pointer-events-none">
                     {formatTimeText(startTime)} - {formatTimeText(endTime)}
