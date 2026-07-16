@@ -11,6 +11,7 @@ import {
   FaExchangeAlt,
   FaChevronLeft,
   FaChevronRight,
+  FaChevronDown,
   FaEdit,
   FaTrash,
   FaPlus,
@@ -92,54 +93,69 @@ const ColorPaletteModal = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onClose} />
-      <div className="fixed right-6 bottom-24 w-[340px] bg-white rounded-2xl shadow-2xl z-[70] p-5">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Customize Colors
-          </h2>
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 animate-in fade-in" onClick={onClose} />
+      <div className="fixed right-6 bottom-24 w-[350px] bg-white rounded-2xl shadow-2xl z-[70] p-6 border border-slate-100 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">
+              Customize Interface Theme
+            </h2>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">
+              Personalize colors & style
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer"
           >
-            ✕
+            <FaTimes className="text-xs" />
           </button>
         </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">
-          Sidebar Color
-        </h2>
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {sidebarColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onSidebarColorSelect(c.value)}
-              className={`p-3 rounded-xl text-white text-sm font-semibold transition-all ${
-                currentSidebarColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-3">
+              Sidebar Color
+            </h3>
+            <div className="grid grid-cols-3 gap-2.5">
+              {sidebarColors.map((c) => (
+                <button
+                  key={c.name}
+                  onClick={() => onSidebarColorSelect(c.value)}
+                  className={`p-2.5 rounded-xl text-white text-[11px] font-bold transition-all shadow-sm hover:scale-[1.03] active:scale-[0.97] cursor-pointer ${
+                    currentSidebarColor === c.value
+                      ? "ring-2 ring-indigo-500 ring-offset-2 scale-[1.03]"
+                      : "opacity-90 hover:opacity-100"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <h2 className="text-md font-semibold text-gray-800 mb-3">
-          Background Color
-        </h2>
-        <div className="grid grid-cols-3 gap-3">
-          {backgroundColors.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onBackgroundColorSelect(c.value)}
-              className={`p-3 rounded-xl text-sm font-medium border ${
-                currentBgColor === c.value ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: c.value }}
-            >
-              {c.name}
-            </button>
-          ))}
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-3">
+              Background Theme
+            </h3>
+            <div className="grid grid-cols-3 gap-2.5 max-h-[160px] overflow-y-auto pr-1">
+              {backgroundColors.map((c) => (
+                <button
+                  key={c.name}
+                  onClick={() => onBackgroundColorSelect(c.value)}
+                  className={`p-2.5 rounded-xl text-[11px] font-bold border transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer ${
+                    currentBgColor === c.value
+                      ? "border-indigo-600 ring-1 ring-indigo-600 ring-offset-1 scale-[1.03] text-indigo-700"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </>
@@ -153,6 +169,64 @@ const formatLocalDate = (date) => {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const getContrastColor = (hexColor) => {
+  if (!hexColor) return "#ffffff";
+  const hex = hexColor.replace("#", "");
+  const fullHex = hex.length === 3
+    ? hex.split("").map(c => c + c).join("")
+    : hex;
+  const r = parseInt(fullHex.substr(0, 2), 16);
+  const g = parseInt(fullHex.substr(2, 2), 16);
+  const b = parseInt(fullHex.substr(4, 2), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return "#ffffff";
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#1e293b" : "#ffffff";
+};
+
+const formatTimeLabel = (timeStr) => {
+  if (!timeStr) return "";
+  const parts = timeStr.split(":");
+  if (parts.length < 2) return timeStr;
+  let hour = parseInt(parts[0], 10);
+  const minute = parseInt(parts[1], 10);
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? "pm" : "am";
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  const minText = minute > 0 ? `:${String(minute).padStart(2, "0")}` : "";
+  return `${hour}${minText}${ampm}`;
+};
+
+const getShortStaffName = (firstName, lastName) => {
+  const f = (firstName || "").trim().split(/\s+/)[0];
+  const l = (lastName || "").trim().split(/\s+/)[0];
+  return `${f} ${l}`.trim() || "Unknown";
+};
+
+const calculateNetWorkingHours = (shiftOrRoster) => {
+  if (!shiftOrRoster || !shiftOrRoster.start_time || !shiftOrRoster.end_time) return 0;
+
+  const start = new Date(`2000-01-01T${shiftOrRoster.start_time}`);
+  const end = new Date(`2000-01-01T${shiftOrRoster.end_time}`);
+
+  let totalDuration = (end - start) / (1000 * 60 * 60);
+  if (totalDuration < 0) totalDuration += 24;
+
+  if (shiftOrRoster.break_start && shiftOrRoster.break_end) {
+    const bStart = new Date(`2000-01-01T${shiftOrRoster.break_start}`);
+    const bEnd = new Date(`2000-01-01T${shiftOrRoster.break_end}`);
+    let breakDuration = (bEnd - bStart) / (1000 * 60 * 60);
+    if (breakDuration < 0) breakDuration += 24;
+    totalDuration -= breakDuration;
+  } else if (shiftOrRoster.total_break_minutes) {
+    totalDuration -= parseInt(shiftOrRoster.total_break_minutes) / 60;
+  } else if (shiftOrRoster.break_duration) {
+    totalDuration -= shiftOrRoster.break_duration / 60;
+  }
+
+  return parseFloat(totalDuration.toFixed(2));
 };
 
 const EmployeeRow = ({
@@ -182,28 +256,37 @@ const EmployeeRow = ({
     (employee.first_name || "").toUpperCase() === "TBC" ||
     (employee.last_name || "").toUpperCase() === "TBC";
 
+  // Responsive column sizing: narrower for fortnightly (10 cols) to fit on lg screens
+  const isFortnight = weekDates.length > 5;
+  const posW = isFortnight ? 100 : 150;
+  const nameW = isFortnight ? 120 : 180;
+  const dateMin = isFortnight ? 80 : 110;
+  const totalW = isFortnight ? 70 : 90;
+  const fixedW = posW + nameW + totalW;
+
   return (
     <div
       className="border-b transition-colors hover:bg-gray-50"
       style={{
         display: "grid",
-        gridTemplateColumns: `150px 180px repeat(${weekDates.length}, minmax(100px, 1fr))`,
+        gridTemplateColumns: `${posW}px ${nameW}px repeat(${weekDates.length}, minmax(${dateMin}px, 1fr)) ${totalW}px`,
+        minWidth: `${fixedW + weekDates.length * dateMin}px`,
       }}
     >
       {/* Position Column */}
-      <div className="p-2 border-r bg-white sticky left-0 z-10 flex items-center font-medium text-gray-700 text-sm h-12">
+      <div className="p-1.5 border-r bg-white lg:sticky left-0 lg:z-[3] flex items-center font-medium text-gray-700 text-xs h-14 truncate">
         {position}
       </div>
 
       {/* Staff Name Column */}
       <div
-        className={`p-2 border-r sticky left-[150px] z-10 flex items-center justify-center h-12 ${isTBC ? "bg-[#FFFF00]" : "bg-white"}`}
+        className={`p-1.5 border-r lg:sticky lg:z-[3] flex items-center justify-center h-14 ${isTBC ? "bg-[#FFFF00]" : "bg-white"}`}
+        style={{ left: `${posW}px` }}
       >
         <div className="font-bold text-gray-900 text-center text-sm">
-          {employee.first_name || ""} {employee.last_name || ""}
+          {getShortStaffName(employee.first_name, employee.last_name)}
         </div>
       </div>
-
       {weekDates.map((day) => {
         const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
         const dateStr = formatLocalDate(day);
@@ -214,7 +297,7 @@ const EmployeeRow = ({
         return (
           <div
             key={day.toString()}
-            className={`p-1 border-r flex flex-col justify-center items-center h-12 transition-all relative ${
+            className={`p-1 border-r flex flex-col justify-center items-center h-14 transition-all relative ${
               isDragOver
                 ? "bg-blue-50 border-2 border-dashed border-blue-500 scale-[0.98] z-20 animate-pulse"
                 : day.toDateString() === new Date().toDateString()
@@ -232,12 +315,22 @@ const EmployeeRow = ({
               const startTime = roster.start_time || shift?.start_time;
               const endTime = roster.end_time || shift?.end_time;
               
-              const formatTimeText = (time) => {
-                if (!time) return "NA";
-                return time.substring(0, 5).replace(":", ".");
-              };
-
               const isDraft = roster.status === "draft";
+              
+              const hours = roster.total_working_time 
+                ? parseFloat(roster.total_working_time) 
+                : shift 
+                  ? calculateNetWorkingHours(shift) 
+                  : 0;
+
+              const formattedDuration = (() => {
+                const totalMinutes = Math.round(hours * 60);
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                return `${h}h ${m}m`;
+              })();
+
+              const accentColor = isDraft ? "#f59e0b" : shiftColor.borderColor || "#a855f7";
 
               return (
                 <div
@@ -250,27 +343,33 @@ const EmployeeRow = ({
                     }
                     handleDragStart(e, roster);
                   }}
-                  className={`w-full py-1 px-1.5 rounded border text-center transition-all select-none ${
+                  className={`w-full h-full flex items-stretch rounded-lg border border-slate-200/80 bg-slate-50/90 text-left overflow-hidden transition-all select-none ${
                     canEditRoster
-                      ? "cursor-grab active:cursor-grabbing hover:shadow-md hover:scale-[1.02]"
+                      ? "cursor-grab active:cursor-grabbing hover:shadow-sm hover:border-slate-300"
                       : "cursor-not-allowed"
                   }`}
-                  style={{
-                    backgroundColor: isDraft ? "#fef3c7" : shiftColor.backgroundColor,
-                    color: isDraft ? "#b45309" : shiftColor.color,
-                    borderColor: isDraft ? "#fcd34d" : shiftColor.borderColor,
-                  }}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
                   title={canEditRoster ? `${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)` : (roster.notes || "")}
                 >
-                  <div className="font-bold text-[11px] leading-tight pointer-events-none">
-                    {formatTimeText(startTime)} - {formatTimeText(endTime)}
-                  </div>
-                  {isDraft && (
-                    <div className="text-[8px] font-bold uppercase tracking-wider opacity-85 mt-0.5 pointer-events-none">
-                      Draft
+                  {/* Left Accent Color Strip */}
+                  <div 
+                    className="w-1.5 shrink-0" 
+                    style={{ backgroundColor: accentColor }}
+                  />
+                  {/* Text Details Content */}
+                  <div className="px-2 flex-grow min-w-0 flex flex-col justify-center py-0.5 leading-tight">
+                    <div className="font-bold text-[10px] text-slate-700 truncate pointer-events-none">
+                      {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}
                     </div>
-                  )}
+                    <div className="text-[9px] text-slate-400 font-bold mt-0.5 pointer-events-none flex items-center gap-1.5">
+                      <span>{formattedDuration}</span>
+                      {isDraft && (
+                        <span className="text-[7px] text-amber-600 font-extrabold uppercase bg-amber-50 px-1 rounded border border-amber-200/50">
+                          Draft
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -285,6 +384,11 @@ const EmployeeRow = ({
           </div>
         );
       })}
+      
+      {/* Total Hours Column */}
+      <div className="p-1.5 bg-slate-50/50 border-l border-slate-200 font-bold text-slate-700 text-[10px] flex items-center justify-center h-14">
+        {employeeTotal.hours.toFixed(1)}h
+      </div>
     </div>
   );
 };
@@ -302,6 +406,7 @@ const RostersPage = () => {
   const [view, setView] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [lastOrgId, setLastOrgId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem("sidebarColor") || "#1a4d4d";
@@ -312,6 +417,7 @@ const RostersPage = () => {
   const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
   const [filters, setFilters] = useState({
     room: "all",
+    employee: "all",
     shiftType: "all",
     search: "",
   });
@@ -404,6 +510,7 @@ const RostersPage = () => {
 
   // State for rate calculations
   const [employeeRates, setEmployeeRates] = useState({});
+  const [collapsedDepartments, setCollapsedDepartments] = useState({});
   const [selectedShift, setSelectedShift] = useState(null);
   const [estimatedAmount, setEstimatedAmount] = useState(0);
   const [ratesLoading, setRatesLoading] = useState(false);
@@ -430,29 +537,7 @@ const RostersPage = () => {
     { id: 108, name: "Management", age_group: "" },
   ];
 
-  const calculateNetWorkingHours = useCallback((shiftOrRoster) => {
-    if (!shiftOrRoster || !shiftOrRoster.start_time || !shiftOrRoster.end_time) return 0;
 
-    const start = new Date(`2000-01-01T${shiftOrRoster.start_time}`);
-    const end = new Date(`2000-01-01T${shiftOrRoster.end_time}`);
-
-    let totalDuration = (end - start) / (1000 * 60 * 60);
-    if (totalDuration < 0) totalDuration += 24;
-
-    if (shiftOrRoster.break_start && shiftOrRoster.break_end) {
-      const bStart = new Date(`2000-01-01T${shiftOrRoster.break_start}`);
-      const bEnd = new Date(`2000-01-01T${shiftOrRoster.break_end}`);
-      let breakDuration = (bEnd - bStart) / (1000 * 60 * 60);
-      if (breakDuration < 0) breakDuration += 24;
-      totalDuration -= breakDuration;
-    } else if (shiftOrRoster.total_break_minutes) {
-      totalDuration -= parseInt(shiftOrRoster.total_break_minutes) / 60;
-    } else if (shiftOrRoster.break_duration) {
-      totalDuration -= shiftOrRoster.break_duration / 60;
-    }
-
-    return parseFloat(totalDuration.toFixed(2));
-  }, []);
 
   // Get employee hourly rate from employee data
   const getEmployeeRate = useCallback((employee) => {
@@ -567,7 +652,13 @@ const RostersPage = () => {
   // Fetch all data
   const fetchData = async () => {
     try {
-      setLoading(true);
+      const orgChanged = lastOrgId !== selectedOrganization?.id;
+      if (orgChanged || employees.length === 0) {
+        setLoading(true);
+        if (selectedOrganization?.id) {
+          setLastOrgId(selectedOrganization.id);
+        }
+      }
       setRefreshing(true);
 
       if (!selectedOrganization?.id) {
@@ -583,9 +674,18 @@ const RostersPage = () => {
       const extractData = (response) => {
         if (!response || !response.data) return [];
 
-        // case 0: response.data.rosters is a department-grouped object
-        if (response.data.success === true && response.data.rosters && typeof response.data.rosters === "object" && !Array.isArray(response.data.rosters)) {
-          return Object.values(response.data.rosters).flat();
+        // case 0: response.data.rosters is a department-grouped array or object
+        if (response.data.success === true && response.data.rosters) {
+          if (Array.isArray(response.data.rosters)) {
+            // Check if it's the department array layout with sub-rosters: [ { department_id, rosters: [] } ]
+            if (response.data.rosters.length > 0 && Object.prototype.hasOwnProperty.call(response.data.rosters[0], "rosters")) {
+              return response.data.rosters.flatMap(d => d.rosters || []);
+            }
+            return response.data.rosters;
+          }
+          if (typeof response.data.rosters === "object") {
+            return Object.values(response.data.rosters).flat();
+          }
         }
 
         // case 1: response.data is success and has data
@@ -639,6 +739,8 @@ const RostersPage = () => {
           organization_id: selectedOrganization.id,
           start_date: startDate,
           end_date: endDate,
+          ...(filters.room !== "all" && { department_id: filters.room }),
+          ...(filters.employee !== "all" && { employee_id: filters.employee }),
         }),
         rosterService.getEmployees({
           organization_id: selectedOrganization.id,
@@ -677,6 +779,31 @@ const RostersPage = () => {
       let departmentsData = [];
       if (departmentsRes.status === "fulfilled") {
         departmentsData = extractData(departmentsRes.value);
+      }
+
+      // Merge and update departments with color codes/names from the rosters response
+      if (
+        rostersRes.status === "fulfilled" &&
+        rostersRes.value?.data?.rosters &&
+        Array.isArray(rostersRes.value.data.rosters)
+      ) {
+        rostersRes.value.data.rosters.forEach((dept) => {
+          if (dept.department_name) {
+            const id = dept.department_id || null;
+            const exists = departmentsData.some((d) => d.id === id);
+            if (!exists) {
+              departmentsData.push({
+                id,
+                name: dept.department_name,
+                color_code: dept.color_code,
+              });
+            } else if (dept.color_code) {
+              departmentsData = departmentsData.map((d) =>
+                d.id === id ? { ...d, color_code: dept.color_code } : d
+              );
+            }
+          }
+        });
       }
 
       // Process designations
@@ -842,7 +969,7 @@ const RostersPage = () => {
     if (selectedOrganization?.id) {
       fetchData();
     }
-  }, [selectedOrganization, currentDate, view]);
+  }, [selectedOrganization, currentDate, view, filters.room, filters.employee]);
 
   // Moved to top
 
@@ -910,7 +1037,11 @@ const RostersPage = () => {
             .toLowerCase()
             .includes(filters.search.toLowerCase()));
 
-      return matchesRoom && matchesSearch;
+      const matchesEmployee =
+        filters.employee === "all" ||
+        employee.id?.toString() === filters.employee;
+
+      return matchesRoom && matchesSearch && matchesEmployee;
     });
   }, [employees, filters]);
 
@@ -921,7 +1052,7 @@ const RostersPage = () => {
     departments.forEach((dept) => {
       const matchesFilter =
         filters.room === "all" ||
-        dept.id.toString() === filters.room;
+        dept.id?.toString() === filters.room;
       
       if (matchesFilter) {
         groups[dept.name] = [];
@@ -1427,7 +1558,7 @@ const RostersPage = () => {
         className="p-6 min-h-screen transition-colors duration-300"
         style={{ backgroundColor }}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-full mx-auto px-4 md:px-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1476,7 +1607,7 @@ const RostersPage = () => {
       />
 
       <div
-        className="p-4 md:p-6 lg:p-8 min-h-screen font-sans transition-colors duration-300"
+        className="p-2 sm:p-4 md:p-6 lg:p-6 min-h-screen font-sans transition-colors duration-300 max-w-[100vw] overflow-x-hidden"
         style={{ backgroundColor }}
       >
         <ToastContainer position="top-right" autoClose={3000} />
@@ -1515,11 +1646,15 @@ const RostersPage = () => {
                       <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
                         Employee Assignment
                       </h3>
-                      {selectedEmployee ? (
+                      {selectedEmployee ? (() => {
+                        const empObj = employees.find((e) => e.id === selectedEmployee);
+                        const fInit = ((empObj?.first_name || "").split(" ")[0]?.[0] || "").toUpperCase();
+                        const lInit = ((empObj?.last_name || "").split(" ")[0]?.[0] || "").toUpperCase();
+                        return (
                         /* Particular employee (disabled selection) */
                         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base shadow-sm">
-                            {getEmployeeName(selectedEmployee).split(" ").map(w => w[0]).join("")}
+                            {fInit}{lInit}
                           </div>
                           <div>
                             <div className="font-bold text-slate-800 text-sm">
@@ -1530,7 +1665,8 @@ const RostersPage = () => {
                             </div>
                           </div>
                         </div>
-                      ) : (
+                        );
+                      })() : (
                         /* Multiple employee selection */
                         <div className="space-y-3">
                           <div className="relative">
@@ -1604,6 +1740,9 @@ const RostersPage = () => {
                                         }}
                                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                                       />
+                                      <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                        {((emp.first_name || "").split(" ")[0]?.[0] || "").toUpperCase()}{((emp.last_name || "").split(" ")[0]?.[0] || "").toUpperCase()}
+                                      </div>
                                       <span className="font-medium text-slate-800">
                                         {emp.first_name || ""} {emp.last_name || ""}
                                       </span>
@@ -1985,14 +2124,14 @@ const RostersPage = () => {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-full mx-auto">
           {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start mb-2">
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
                   <FaCalendarAlt className="mr-3 text-blue-600" />
-                  {view === "week" ? "Weekly Rosters" : "Monthly Rosters"}
+                  {view === "week" ? "Weekly Rosters" : "Fortnightly Rosters"}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   <span className="font-medium">Organization:</span>{" "}
@@ -2013,148 +2152,104 @@ const RostersPage = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+            {/* Card 1 */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">
-                    Total Employees
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Staff Scheduled
                   </p>
-                  <p className="text-3xl font-bold text-gray-800 tracking-tight">
-                    {employees.length}
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                      {weeklyTotals.uniqueEmployees || 0}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-400">
+                      / {employees.length}
+                    </span>
+                  </div>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <FaUsers className="text-blue-500 text-2xl" />
+                <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                  <FaUsers className="text-indigo-600 text-xl" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all">
+            {/* Card 2 */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">
-                    {view === "week" ? "Hours This Week" : "Hours This Month"}
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Total Hours
                   </p>
-                  <p className="text-3xl font-bold text-gray-800 tracking-tight">
-                    {weeklyTotals.totalHours}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <FaClock className="text-green-500 text-2xl" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">
-                    Different Shifts
-                  </p>
-                  <p className="text-3xl font-bold text-gray-800 tracking-tight">
-                    {shifts.length}
+                  <p className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                    {weeklyTotals.totalHours.toFixed(2)}h
                   </p>
                 </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <FaExchangeAlt className="text-orange-500 text-2xl" />
+                <div className="p-3 bg-sky-50/60 rounded-xl border border-sky-100">
+                  <FaClock className="text-sky-600 text-xl" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* View Toggle and Navigation */}
-          <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex gap-2 p-1 bg-white rounded-lg shadow-sm">
-              <button
-                onClick={() => setView("week")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  view === "week"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => setView("fortnight")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  view === "fortnight"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Fortnightly
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigateDate("prev")}
-                className="p-2 hover:bg-gray-100 rounded-full border cursor-pointer"
-              >
-                <FaChevronLeft />
-              </button>
-              <div className="text-lg font-semibold">
-                {weekDates.length > 0
-                  ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[weekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                  : ""}
-              </div>
-              <button
-                onClick={() => navigateDate("next")}
-                className="p-2 hover:bg-gray-100 rounded-full border cursor-pointer"
-              >
-                <FaChevronRight />
-              </button>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <FaDownload /> Export
-              </button>
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <FaPrint /> Print
-              </button>
-              {canAddRoster && (
+          {/* Controls & Filter Center */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Left: View Mode Toggle & Navigation */}
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Segmented control for Weekly/Fortnightly */}
+              <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
                 <button
-                  onClick={() => {
-                    setModalMode("add");
-                    setSelectedEmployee(null);
-                    setFormData({
-                      employee_ids: [],
-                      shift_id: "",
-                      from_date: formatLocalDate(weekDates[0]),
-                      to_date: formatLocalDate(weekDates[weekDates.length - 1]),
-                      start_time: "",
-                      end_time: "",
-                      break_start: "",
-                      break_end: "",
-                      break_grace_minutes: 0,
-                      total_working_time: "00:00",
-                      status: "draft",
-                      notes: "",
-                    });
-                    setShowModal(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold cursor-pointer shadow-sm transition-all"
+                  onClick={() => setView("week")}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    view === "week"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
                 >
-                  <FaPlus /> Add Roster
+                  Weekly View
                 </button>
-              )}
-            </div>
-          </div>
+                <button
+                  onClick={() => setView("fortnight")}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    view === "fortnight"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Fortnightly View
+                </button>
+              </div>
 
-          {/* Filters */}
-          <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {/* Date Navigation */}
+              <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1">
+                <button
+                  onClick={() => navigateDate("prev")}
+                  className="p-2 hover:bg-white rounded-lg transition-colors cursor-pointer text-slate-600 hover:text-slate-800 hover:shadow-sm"
+                  title="Previous Period"
+                >
+                  <FaChevronLeft className="text-xs" />
+                </button>
+                <div className="px-3 text-xs font-bold text-slate-700 select-none">
+                  {weekDates.length > 0
+                    ? `${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDates[weekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                    : ""}
+                </div>
+                <button
+                  onClick={() => navigateDate("next")}
+                  className="p-2 hover:bg-white rounded-lg transition-colors cursor-pointer text-slate-600 hover:text-slate-800 hover:shadow-sm"
+                  title="Next Period"
+                >
+                  <FaChevronRight className="text-xs" />
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Actions and Filters */}
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              {/* Search Bar */}
+              <div className="relative flex-grow sm:flex-grow-0">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                   type="text"
                   placeholder="Search staff..."
@@ -2162,18 +2257,19 @@ const RostersPage = () => {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, search: e.target.value }))
                   }
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all w-full sm:w-48"
                 />
               </div>
 
+              {/* Room filter dropdown */}
               <select
                 value={filters.room}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, room: e.target.value }))
                 }
-                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
               >
-                <option value="all">All Rooms</option>
+                <option value="all">All Rooms / Departments</option>
                 {departments.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.name}
@@ -2181,45 +2277,118 @@ const RostersPage = () => {
                 ))}
               </select>
 
+              {/* Employee filter dropdown */}
+              <select
+                value={filters.employee}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, employee: e.target.value }))
+                }
+                className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
+              >
+                <option value="all">All Employees</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {getShortStaffName(emp.first_name, emp.last_name)}
+                  </option>
+                ))}
+              </select>
+
+              {/* Shift filter dropdown */}
               <select
                 value={filters.shiftType}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, shiftType: e.target.value }))
                 }
-                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
               >
-                <option value="all">All Shifts</option>
+                <option value="all">All Predefined Shifts</option>
                 {shifts.map((shift) => (
                   <option key={shift.id} value={shift.id}>
                     {shift.name}
                   </option>
                 ))}
               </select>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  title="Export to CSV"
+                >
+                  <FaDownload className="text-[10px]" /> Export
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  title="Print Roster Grid"
+                >
+                  <FaPrint className="text-[10px]" /> Print
+                </button>
+                {canAddRoster && (
+                  <button
+                    onClick={() => {
+                      setModalMode("add");
+                      setSelectedEmployee(null);
+                      setFormData({
+                        employee_ids: [],
+                        shift_id: "",
+                        from_date: formatLocalDate(weekDates[0]),
+                        to_date: formatLocalDate(weekDates[weekDates.length - 1]),
+                        start_time: "",
+                        end_time: "",
+                        break_start: "",
+                        break_end: "",
+                        break_grace_minutes: 0,
+                        total_working_time: "00:00",
+                        status: "draft",
+                        notes: "",
+                      });
+                      setShowModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-100 hover:shadow-lg transition-all cursor-pointer"
+                  >
+                    <FaPlus className="text-[10px]" /> Add Roster
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {/* Roster Grid View */}
           {(view === "week" || view === "fortnight") && (
-            <div className="bg-white rounded-lg shadow-xl border border-gray-300 relative overflow-x-auto">
-              <div style={{ minWidth: `${330 + weekDates.length * 100}px` }}>
+            <div className="bg-white rounded-lg shadow-xl border border-gray-300 relative overflow-x-auto w-full" style={{ maxWidth: "100%" }}>
+              {(() => {
+                const isFN = weekDates.length > 5;
+                const posW = isFN ? 100 : 150;
+                const nameW = isFN ? 120 : 180;
+                const dateMin = isFN ? 80 : 110;
+                const totalW = isFN ? 70 : 90;
+                const fixedW = posW + nameW + totalW;
+                const colTemplate = `${posW}px ${nameW}px repeat(${weekDates.length}, minmax(${dateMin}px, 1fr)) ${totalW}px`;
+                const minW = `${fixedW + weekDates.length * dateMin}px`;
+                return (
+              <div style={{ minWidth: minW, width: "100%" }}>
                 {/* Roster Header */}
                 <div
-                  className="border-b border-gray-300 sticky top-0 shadow-md"
+                  className="border-b border-gray-300 sticky top-0 shadow-md z-[5]"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: `150px 180px repeat(${weekDates.length}, minmax(100px, 1fr))`,
+                    gridTemplateColumns: colTemplate,
                     height: "56px",
+                    minWidth: minW,
                   }}
                 >
-                  <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
+                  <div className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky left-0 lg:z-[3]" style={{ backgroundColor: sidebarColor }}>
                     Position
                   </div>
-                  <div className="p-2 font-bold bg-[#1a4d4d] text-white border-r border-gray-300 flex items-center justify-center text-sm">
-                    Staff Name
+                  <div className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky lg:z-[3]" style={{ backgroundColor: sidebarColor, left: `${posW}px` }}>
+                    Staff
                   </div>
                   {weekDates.map((day) => (
                     <div
                       key={day.toString()}
-                      className="text-center font-bold border-r border-gray-300 bg-[#1a4d4d] text-white flex flex-col justify-center py-1"
+                      className="text-center font-bold border-r border-gray-300 text-white flex flex-col justify-center py-1"
+                      style={{ backgroundColor: sidebarColor }}
                     >
                       <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">
                         {day.toLocaleDateString("en-US", { weekday: "short" })}
@@ -2236,6 +2405,9 @@ const RostersPage = () => {
                       </div>
                     </div>
                   ))}
+                  <div className="p-1.5 font-bold text-white border-l border-gray-300 flex items-center justify-center text-[10px]" style={{ backgroundColor: sidebarColor }}>
+                    Total
+                  </div>
                 </div>
 
                 {/* Grid Body */}
@@ -2244,46 +2416,88 @@ const RostersPage = () => {
                   style={{ maxHeight: "calc(85vh - 56px)" }}
                 >
                   {groupedEmployees.length > 0 ? (
-                    groupedEmployees.map(([deptName, emps]) => (
-                      <React.Fragment key={deptName}>
-                        {/* Department/Room Header Row */}
-                        <div className="bg-gradient-to-r from-teal-800 to-teal-700 text-white font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 border-b border-teal-900 sticky left-0 shadow-sm w-full">
-                          <FaBuilding className="text-teal-200 text-sm" />
-                          <span>{deptName || "Unassigned"}</span>
-                          <span className="ml-2 px-2 py-0.5 bg-teal-900/60 rounded-full text-[9px] text-teal-100 font-medium normal-case tracking-normal">
-                            {emps.length} {emps.length === 1 ? "Staff Member" : "Staff Members"}
-                          </span>
-                        </div>
+                    groupedEmployees.map(([deptName, emps]) => {
+                      const isCollapsed = collapsedDepartments[deptName];
+                      const dept = departments.find((d) => d.name === deptName);
+                      const colorCode = dept?.color_code || "#475569";
+                      const textColor = getContrastColor(colorCode);
 
-                        {emps.length > 0 ? (
-                          emps.map((employee) => (
-                            <EmployeeRow
-                              key={employee.id}
-                              employee={employee}
-                              weeklyTotals={weeklyTotals}
-                              getDesignationTitle={getDesignationTitle}
-                              weekDates={weekDates}
-                              getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
-                              shifts={shifts}
-                              getShiftColor={getShiftColor}
-                              canAddRoster={canAddRoster}
-                              canEditRoster={canEditRoster}
-                              handleAddRoster={handleAddRoster}
-                              handleEditRoster={handleEditRoster}
-                              handleDragStart={handleDragStart}
-                              handleDragOver={handleDragOver}
-                              handleDragLeave={handleDragLeave}
-                              handleDrop={handleDrop}
-                              dragOverCell={dragOverCell}
-                            />
-                          ))
-                        ) : (
-                          <div className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 italic border-b sticky left-0 w-full flex items-center justify-center gap-1.5">
-                            <span>No staff members in this room / department.</span>
+                      return (
+                        <React.Fragment key={deptName}>
+                          {/* Department/Room Header Row */}
+                          <div
+                            onClick={() =>
+                              setCollapsedDepartments((prev) => ({
+                                ...prev,
+                                [deptName]: !prev[deptName],
+                              }))
+                            }
+                            className="font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center justify-center gap-2.5 border-b border-black/10 sticky left-0 shadow-sm w-full cursor-pointer hover:opacity-95 select-none transition-all duration-200"
+                            style={{
+                              backgroundColor: colorCode,
+                              color: textColor,
+                              minWidth: minW,
+                            }}
+                          >
+                            <div className="absolute left-4 flex items-center">
+                              {isCollapsed ? (
+                                <FaChevronRight className="text-[10px]" style={{ color: textColor }} />
+                              ) : (
+                                <FaChevronDown className="text-[10px]" style={{ color: textColor }} />
+                              )}
+                            </div>
+
+                            <FaBuilding className="text-xs opacity-80" style={{ color: textColor }} />
+                            <span style={{ color: textColor }}>{deptName || "Unassigned"}</span>
+                            <span
+                              className="px-2 py-0.5 rounded-full text-[9px] font-bold normal-case tracking-normal"
+                              style={{
+                                backgroundColor:
+                                  textColor === "#ffffff"
+                                    ? "rgba(255, 255, 255, 0.2)"
+                                    : "rgba(0, 0, 0, 0.08)",
+                                color: textColor,
+                              }}
+                            >
+                              {emps.length} {emps.length === 1 ? "Staff Member" : "Staff Members"}
+                            </span>
                           </div>
-                        )}
-                      </React.Fragment>
-                    ))
+
+                          {!isCollapsed && (
+                            emps.length > 0 ? (
+                              emps.map((employee) => (
+                                <EmployeeRow
+                                  key={employee.id}
+                                  employee={employee}
+                                  weeklyTotals={weeklyTotals}
+                                  getDesignationTitle={getDesignationTitle}
+                                  weekDates={weekDates}
+                                  getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
+                                  shifts={shifts}
+                                  getShiftColor={getShiftColor}
+                                  canAddRoster={canAddRoster}
+                                  canEditRoster={canEditRoster}
+                                  handleAddRoster={handleAddRoster}
+                                  handleEditRoster={handleEditRoster}
+                                  handleDragStart={handleDragStart}
+                                  handleDragOver={handleDragOver}
+                                  handleDragLeave={handleDragLeave}
+                                  handleDrop={handleDrop}
+                                  dragOverCell={dragOverCell}
+                                />
+                              ))
+                            ) : (
+                              <div 
+                                className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 italic border-b sticky left-0 w-full flex items-center justify-center gap-1.5"
+                                style={{ minWidth: minW }}
+                              >
+                                <span>No staff members in this room / department.</span>
+                              </div>
+                            )
+                          )}
+                        </React.Fragment>
+                      );
+                    })
                   ) : (
                     <div className="p-12 text-center text-gray-400 bg-gray-50">
                       <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
@@ -2294,54 +2508,83 @@ const RostersPage = () => {
                   )}
                 </div>
               </div>
+                );
+              })()}
             </div>
           )}
 
-          {/* Legend */}
-          <div className="mt-6 p-4 bg-white rounded-lg shadow-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Shift Type Legend
-            </h3>
-            <div className="flex flex-wrap gap-4">
-              {shifts.map((shift) => {
-                const shiftColor = getShiftColor(shift.id);
-                return (
-                  <div key={shift.id} className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded border"
-                      style={{
-                        backgroundColor: shiftColor.backgroundColor,
-                        borderColor: shiftColor.borderColor,
-                      }}
-                    ></div>
-                    <span className="text-sm text-gray-600">{shift.name}</span>
-                    {shift.start_time && shift.end_time && (
-                      <span className="text-xs text-gray-400">
-                        ({formatTime(shift.start_time)} -{" "}
-                        {formatTime(shift.end_time)})
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Summary Footer */}
-          <div className="mt-6 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                Showing {filteredEmployees.length} of {employees.length}{" "}
-                employees
+          {/* Legend & Summary Dashboard */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Shift Type Legend */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-3 bg-indigo-500 rounded-full"></span>
+                Shift Color Legend
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {shifts.map((shift) => {
+                  const shiftColor = getShiftColor(shift.id);
+                  return (
+                    <div key={shift.id} className="flex items-center gap-3 p-2 bg-slate-50/60 rounded-xl border border-slate-100/50 hover:bg-slate-50 transition-colors">
+                      <div
+                        className="w-4 h-4 rounded-lg border shadow-sm shrink-0"
+                        style={{
+                          backgroundColor: shiftColor.backgroundColor,
+                          borderColor: shiftColor.borderColor,
+                        }}
+                      ></div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-700 truncate">{shift.name}</p>
+                        {shift.start_time && shift.end_time && (
+                          <p className="text-[10px] font-medium text-slate-400">
+                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="text-sm font-semibold text-gray-800">
-                Total this period: {weeklyTotals.totalHours}h (
-                {formatCurrency(weeklyTotals.totalAmount)})
-                {weeklyTotals.averageRate > 0 && (
-                  <span className="text-xs text-gray-500 ml-2">
-                    Avg {formatCurrency(weeklyTotals.averageRate)}/hr
-                  </span>
-                )}
+            </div>
+
+            {/* Quick Summary Report Card */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                  <span className="w-1.5 h-3 bg-emerald-400 rounded-full"></span>
+                  Period Summary
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
+                    <span className="text-xs font-medium text-slate-300">Staff Members</span>
+                    <span className="text-sm font-bold text-white">
+                      {filteredEmployees.length} <span className="text-[10px] font-medium text-slate-400">/ {employees.length} total</span>
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
+                    <span className="text-xs font-medium text-slate-300">Rostered Hours</span>
+                    <span className="text-sm font-bold text-white">{weeklyTotals.totalHours.toFixed(2)}h</span>
+                  </div>
+
+                  {weeklyTotals.averageRate > 0 && (
+                    <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
+                      <span className="text-xs font-medium text-slate-300">Average Rate</span>
+                      <span className="text-sm font-bold text-white">{formatCurrency(weeklyTotals.averageRate)}/hr</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-between items-end">
+                <div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Estimated Cost</p>
+                  <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">{formatCurrency(weeklyTotals.totalAmount)}</p>
+                </div>
+                <div className="text-[10px] text-slate-400 italic">
+                  Auto-calculated
+                </div>
               </div>
             </div>
           </div>
