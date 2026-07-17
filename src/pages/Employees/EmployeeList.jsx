@@ -419,11 +419,11 @@ const QuickActionButton = ({
   icon,
   label,
   onClick,
-  color = "bg-blue-600 hover:bg-blue-700",
+  color = "bg-blue-600 hover:bg-blue-700 text-white",
 }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg transition-all hover:opacity-90 ${color} font-medium`}
+    className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-all border font-medium ${color}`}
   >
     {icon}
     <span>{label}</span>
@@ -502,25 +502,25 @@ export default function EmployeeList() {
       label: "Add Employee",
       icon: <FaPlus className="h-4 w-4" />,
       action: () => navigate("/dashboard/employees/new"),
-      color: "bg-blue-600 hover:bg-blue-700",
+      color: "bg-[#4ECDC4] hover:bg-[#3db0a5] text-white border-transparent hover:shadow-md",
     },
     {
       label: "Send Invite",
       icon: <FaEnvelopeOpenText className="h-4 w-4" />,
       action: () => setIsInviteModalOpen(true),
-      color: "bg-purple-600 hover:bg-purple-700",
+      color: "bg-[#FF6B6B] hover:bg-[#f25c5c] text-white border-transparent hover:shadow-md",
     },
     {
       label: "Import",
       icon: <FaUpload className="h-4 w-4" />,
       action: () => toast.info("Import feature coming soon!"),
-      color: "bg-green-600 hover:bg-green-700",
+      color: "bg-[#FFE66D] hover:bg-[#ebd14f] text-slate-800 border-transparent hover:shadow-md",
     },
     {
       label: "Export",
       icon: <FaFileDownload className="h-4 w-4" />,
       action: () => exportEmployeeList(),
-      color: "bg-indigo-600 hover:bg-indigo-700",
+      color: "bg-[#A8E6CF] hover:bg-[#95d4bd] text-slate-800 border-transparent hover:shadow-md",
     },
     // {
     //   label: "Reports",
