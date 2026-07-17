@@ -246,6 +246,8 @@ const EmployeeRow = ({
   handleDragLeave,
   handleDrop,
   dragOverCell,
+  selectedRosterIds = [],
+  setSelectedRosterIds,
 }) => {
   const employeeTotal = weeklyTotals.byEmployee[employee.id] || {
     hours: 0,
@@ -260,7 +262,7 @@ const EmployeeRow = ({
   const isFortnight = weekDates.length > 5;
   const posW = isFortnight ? 100 : 150;
   const nameW = isFortnight ? 120 : 180;
-  const dateMin = isFortnight ? 80 : 110;
+  const dateMin = isFortnight ? 100 : 110;
   const totalW = isFortnight ? 70 : 90;
   const fixedW = posW + nameW + totalW;
 
@@ -316,6 +318,7 @@ const EmployeeRow = ({
               const endTime = roster.end_time || shift?.end_time;
               
               const isDraft = roster.status === "draft";
+              const isPublished = roster.status === "published";
               
               const hours = roster.total_working_time 
                 ? parseFloat(roster.total_working_time) 
@@ -330,7 +333,16 @@ const EmployeeRow = ({
                 return `${h}h ${m}m`;
               })();
 
-              const accentColor = isDraft ? "#f59e0b" : shiftColor.borderColor || "#a855f7";
+              // Published is green, draft is red
+              const accentColor = isDraft 
+                ? "#ef4444" 
+                : (isPublished ? "#22c55e" : (shiftColor.borderColor || "#a855f7"));
+
+              const cardClass = isDraft
+                ? "border-red-200/80 bg-red-50/70 hover:bg-red-50 hover:border-red-300"
+                : (isPublished
+                    ? "border-green-200/80 bg-green-50/70 hover:bg-green-50 hover:border-green-300"
+                    : "border-slate-200/80 bg-slate-50/90 hover:bg-white hover:border-slate-300");
 
               return (
                 <div
@@ -343,9 +355,9 @@ const EmployeeRow = ({
                     }
                     handleDragStart(e, roster);
                   }}
-                  className={`w-full h-full flex items-stretch rounded-lg border border-slate-200/80 bg-slate-50/90 text-left overflow-hidden transition-all select-none ${
+                  className={`w-full h-full flex items-stretch rounded-lg border text-left overflow-hidden transition-all select-none relative ${cardClass} ${
                     canEditRoster
-                      ? "cursor-grab active:cursor-grabbing hover:shadow-sm hover:border-slate-300"
+                      ? "cursor-grab active:cursor-grabbing hover:shadow-sm"
                       : "cursor-not-allowed"
                   }`}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
@@ -353,23 +365,63 @@ const EmployeeRow = ({
                 >
                   {/* Left Accent Color Strip */}
                   <div 
-                    className="w-1.5 shrink-0" 
+                    className={`${isFortnight ? "w-1" : "w-1.5"} shrink-0`}
                     style={{ backgroundColor: accentColor }}
                   />
                   {/* Text Details Content */}
-                  <div className="px-2 flex-grow min-w-0 flex flex-col justify-center py-0.5 leading-tight">
-                    <div className="font-bold text-[10px] text-slate-700 truncate pointer-events-none">
-                      {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}
-                    </div>
-                    <div className="text-[9px] text-slate-400 font-bold mt-0.5 pointer-events-none flex items-center gap-1.5">
-                      <span>{formattedDuration}</span>
-                      {isDraft && (
-                        <span className="text-[7px] text-amber-600 font-extrabold uppercase bg-amber-50 px-1 rounded border border-amber-200/50">
-                          Draft
-                        </span>
-                      )}
-                    </div>
+                  <div className={`px-1.5 flex-grow min-w-0 flex flex-col justify-center py-0.5 leading-tight ${isFortnight ? "pr-5" : ""}`}>
+                    {isFortnight ? (
+                      <>
+                        <div className="font-bold text-[8.5px] text-slate-700 truncate pointer-events-none leading-none">
+                          {formatTimeLabel(startTime)}
+                        </div>
+                        <div className="font-bold text-[8.5px] text-slate-500 truncate pointer-events-none leading-none mt-0.5">
+                          {formatTimeLabel(endTime)}
+                        </div>
+                        <div className="text-[7.5px] text-slate-400 font-bold mt-0.5 pointer-events-none">
+                          {formattedDuration}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-[10px] text-slate-700 truncate pointer-events-none">
+                          {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}
+                        </div>
+                        <div className="text-[9px] text-slate-400 font-bold mt-0.5 pointer-events-none flex items-center gap-1.5">
+                          <span>{formattedDuration}</span>
+                          {isDraft && (
+                            <span className="text-[7px] text-red-600 font-extrabold uppercase bg-red-100 px-1 rounded border border-red-200/50">
+                              Draft
+                            </span>
+                          )}
+                          {isPublished && (
+                            <span className="text-[7px] text-green-600 font-extrabold uppercase bg-green-100 px-1 rounded border border-green-200/50">
+                              Published
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
+                  {/* Checkbox for selection */}
+                  {canEditRoster && (
+                    <div className={`flex items-center shrink-0 ${isFortnight ? "absolute top-1 right-1" : "pr-2"}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedRosterIds.includes(roster.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setSelectedRosterIds(prev => 
+                            prev.includes(roster.id) 
+                              ? prev.filter(id => id !== roster.id) 
+                              : [...prev, roster.id]
+                          );
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -501,6 +553,8 @@ const RostersPage = () => {
 
   // State for data from API
   const [rosters, setRosters] = useState([]);
+  const [selectedRosterIds, setSelectedRosterIds] = useState([]);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
@@ -651,6 +705,7 @@ const RostersPage = () => {
 
   // Fetch all data
   const fetchData = async () => {
+    setSelectedRosterIds([]);
     try {
       const orgChanged = lastOrgId !== selectedOrganization?.id;
       if (orgChanged || employees.length === 0) {
@@ -1111,6 +1166,50 @@ const RostersPage = () => {
 
   const handleRefresh = () => {
     fetchData();
+  };
+
+  const getVisibleRosterIds = useCallback(() => {
+    const employeeIds = new Set(filteredEmployees.map(emp => emp.id));
+    return rosters
+      .filter(roster => {
+        const empId = roster.employee_id || roster.employee?.id;
+        return employeeIds.has(empId);
+      })
+      .map(roster => roster.id);
+  }, [rosters, filteredEmployees]);
+
+  const handleSelectAll = () => {
+    const visibleIds = getVisibleRosterIds();
+    setSelectedRosterIds(visibleIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedRosterIds([]);
+  };
+
+  const handleBulkStatusUpdate = async (status) => {
+    if (selectedRosterIds.length === 0) return;
+    
+    setBulkUpdating(true);
+    try {
+      const response = await rosterService.bulkStatusUpdate({
+        roster_ids: selectedRosterIds,
+        status: status
+      });
+      
+      if (response.data?.success || response.status === 200 || response.status === 201) {
+        toast.success(`Successfully updated ${selectedRosterIds.length} rosters to ${status}`);
+        setSelectedRosterIds([]);
+        fetchData();
+      } else {
+        toast.error(response.data?.message || "Failed to update rosters status");
+      }
+    } catch (error) {
+      console.error("Error bulk updating status:", error);
+      toast.error(error.response?.data?.message || "An error occurred while bulk updating status");
+    } finally {
+      setBulkUpdating(false);
+    }
   };
 
   const handleExport = () => {
@@ -1580,6 +1679,42 @@ const RostersPage = () => {
 
   return (
     <>
+      {/* Floating Action Banner for Bulk Roster Status Update */}
+      {selectedRosterIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-ping shrink-0" />
+            <span className="text-sm font-semibold tracking-wide">
+              {selectedRosterIds.length} rosters selected
+            </span>
+          </div>
+          <div className="hidden sm:block h-6 w-px bg-slate-800" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleBulkStatusUpdate("published")}
+              disabled={bulkUpdating}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/35 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Publish Selected
+            </button>
+            <button
+              onClick={() => handleBulkStatusUpdate("draft")}
+              disabled={bulkUpdating}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-900/35 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Move to Draft
+            </button>
+            <button
+              onClick={handleDeselectAll}
+              disabled={bulkUpdating}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Color Palette Button - Same as Dashboard */}
       <button
         onClick={() => setIsColorPaletteOpen(true)}
@@ -2311,6 +2446,15 @@ const RostersPage = () => {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                {canEditRoster && (
+                  <button
+                    onClick={selectedRosterIds.length > 0 ? handleDeselectAll : handleSelectAll}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                    title={selectedRosterIds.length > 0 ? "Clear all selections" : "Select all visible rosters"}
+                  >
+                    <FaUsers className="text-[10px]" /> {selectedRosterIds.length > 0 ? "Deselect All" : "Select All"}
+                  </button>
+                )}
                 <button
                   onClick={handleExport}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
@@ -2361,7 +2505,7 @@ const RostersPage = () => {
                 const isFN = weekDates.length > 5;
                 const posW = isFN ? 100 : 150;
                 const nameW = isFN ? 120 : 180;
-                const dateMin = isFN ? 80 : 110;
+                const dateMin = isFN ? 100 : 110;
                 const totalW = isFN ? 70 : 90;
                 const fixedW = posW + nameW + totalW;
                 const colTemplate = `${posW}px ${nameW}px repeat(${weekDates.length}, minmax(${dateMin}px, 1fr)) ${totalW}px`;
@@ -2484,6 +2628,8 @@ const RostersPage = () => {
                                   handleDragLeave={handleDragLeave}
                                   handleDrop={handleDrop}
                                   dragOverCell={dragOverCell}
+                                  selectedRosterIds={selectedRosterIds}
+                                  setSelectedRosterIds={setSelectedRosterIds}
                                 />
                               ))
                             ) : (

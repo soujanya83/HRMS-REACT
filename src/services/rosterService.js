@@ -32,6 +32,11 @@ export const rosterService = {
     return axiosClient.post('/rosters/bulk-assign', data);
   },
 
+  // Bulk status update of rosters
+  bulkStatusUpdate: (data) => {
+    return axiosClient.post('/rosters/bulk-status', data);
+  },
+
   // Copy roster
   copyRoster: (data) => {
     return axiosClient.post('/rosters/copy', data);
