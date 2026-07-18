@@ -93,7 +93,10 @@ const ColorPaletteModal = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 animate-in fade-in" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 animate-in fade-in"
+        onClick={onClose}
+      />
       <div className="fixed right-6 bottom-24 w-[350px] bg-white rounded-2xl shadow-2xl z-[70] p-6 border border-slate-100 animate-in slide-in-from-bottom-5 duration-300">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
           <div>
@@ -174,9 +177,13 @@ const formatLocalDate = (date) => {
 const getContrastColor = (hexColor) => {
   if (!hexColor) return "#ffffff";
   const hex = hexColor.replace("#", "");
-  const fullHex = hex.length === 3
-    ? hex.split("").map(c => c + c).join("")
-    : hex;
+  const fullHex =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : hex;
   const r = parseInt(fullHex.substr(0, 2), 16);
   const g = parseInt(fullHex.substr(2, 2), 16);
   const b = parseInt(fullHex.substr(4, 2), 16);
@@ -206,7 +213,8 @@ const getShortStaffName = (firstName, lastName) => {
 };
 
 const calculateNetWorkingHours = (shiftOrRoster) => {
-  if (!shiftOrRoster || !shiftOrRoster.start_time || !shiftOrRoster.end_time) return 0;
+  if (!shiftOrRoster || !shiftOrRoster.start_time || !shiftOrRoster.end_time)
+    return 0;
 
   const start = new Date(`2000-01-01T${shiftOrRoster.start_time}`);
   const end = new Date(`2000-01-01T${shiftOrRoster.end_time}`);
@@ -266,6 +274,34 @@ const EmployeeRow = ({
   const totalW = isFortnight ? 70 : 90;
   const fixedW = posW + nameW + totalW;
 
+  const getEmployeeRosterIdsForPeriod = () => {
+    const ids = [];
+    weekDates.forEach((day) => {
+      const dayRosters = getRostersForEmployeeAndDate(employee.id, day);
+      dayRosters.forEach((r) => {
+        if (r.id) ids.push(r.id);
+      });
+    });
+    return ids;
+  };
+
+  const periodRosterIds = getEmployeeRosterIdsForPeriod();
+  const hasRosters = periodRosterIds.length > 0;
+  const isAllSelected = hasRosters && periodRosterIds.every((id) => selectedRosterIds.includes(id));
+  const isSomeSelected = hasRosters && !isAllSelected && periodRosterIds.some((id) => selectedRosterIds.includes(id));
+
+  const handleToggleEmployeeRosters = (e) => {
+    e.stopPropagation();
+    if (isAllSelected) {
+      setSelectedRosterIds((prev) => prev.filter((id) => !periodRosterIds.includes(id)));
+    } else {
+      setSelectedRosterIds((prev) => {
+        const unique = new Set([...prev, ...periodRosterIds]);
+        return Array.from(unique);
+      });
+    }
+  };
+
   return (
     <div
       className="border-b transition-colors hover:bg-gray-50"
@@ -282,10 +318,22 @@ const EmployeeRow = ({
 
       {/* Staff Name Column */}
       <div
-        className={`p-1.5 border-r lg:sticky lg:z-[3] flex items-center justify-center h-14 ${isTBC ? "bg-[#FFFF00]" : "bg-white"}`}
+        className={`p-1.5 border-r lg:sticky lg:z-[3] flex items-center gap-1.5 h-14 ${isTBC ? "bg-[#FFFF00]" : "bg-white"}`}
         style={{ left: `${posW}px` }}
       >
-        <div className="font-bold text-gray-900 text-center text-sm">
+        {canEditRoster && hasRosters && (
+          <input
+            type="checkbox"
+            checked={isAllSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = isSomeSelected;
+            }}
+            onChange={handleToggleEmployeeRosters}
+            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer shrink-0"
+            title="Toggle selection for all rosters of this employee in the current view"
+          />
+        )}
+        <div className="font-bold text-gray-900 text-left text-xs truncate flex-grow">
           {getShortStaffName(employee.first_name, employee.last_name)}
         </div>
       </div>
@@ -306,7 +354,9 @@ const EmployeeRow = ({
                   ? "bg-blue-50/30"
                   : ""
             }`}
-            onDragOver={(e) => canEditRoster && handleDragOver(e, employee.id, dateStr)}
+            onDragOver={(e) =>
+              canEditRoster && handleDragOver(e, employee.id, dateStr)
+            }
             onDragLeave={canEditRoster ? handleDragLeave : undefined}
             onDrop={(e) => canEditRoster && handleDrop(e, employee.id, day)}
           >
@@ -316,14 +366,14 @@ const EmployeeRow = ({
               const shiftColor = getShiftColor(shift?.id);
               const startTime = roster.start_time || shift?.start_time;
               const endTime = roster.end_time || shift?.end_time;
-              
+
               const isDraft = roster.status === "draft";
               const isPublished = roster.status === "published";
-              
-              const hours = roster.total_working_time 
-                ? parseFloat(roster.total_working_time) 
-                : shift 
-                  ? calculateNetWorkingHours(shift) 
+
+              const hours = roster.total_working_time
+                ? parseFloat(roster.total_working_time)
+                : shift
+                  ? calculateNetWorkingHours(shift)
                   : 0;
 
               const formattedDuration = (() => {
@@ -334,15 +384,17 @@ const EmployeeRow = ({
               })();
 
               // Published is green, draft is red
-              const accentColor = isDraft 
-                ? "#ef4444" 
-                : (isPublished ? "#22c55e" : (shiftColor.borderColor || "#a855f7"));
+              const accentColor = isDraft
+                ? "#ef4444"
+                : isPublished
+                  ? "#22c55e"
+                  : shiftColor.borderColor || "#a855f7";
 
               const cardClass = isDraft
                 ? "border-red-200/80 bg-red-50/70 hover:bg-red-50 hover:border-red-300"
-                : (isPublished
-                    ? "border-green-200/80 bg-green-50/70 hover:bg-green-50 hover:border-green-300"
-                    : "border-slate-200/80 bg-slate-50/90 hover:bg-white hover:border-slate-300");
+                : isPublished
+                  ? "border-green-200/80 bg-green-50/70 hover:bg-green-50 hover:border-green-300"
+                  : "border-slate-200/80 bg-slate-50/90 hover:bg-white hover:border-slate-300";
 
               return (
                 <div
@@ -361,15 +413,21 @@ const EmployeeRow = ({
                       : "cursor-not-allowed"
                   }`}
                   onClick={() => canEditRoster && handleEditRoster(roster)}
-                  title={canEditRoster ? `${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)` : (roster.notes || "")}
+                  title={
+                    canEditRoster
+                      ? `${isDraft ? "[DRAFT] " : ""}${roster.notes || ""} (Drag to Move/Copy)`
+                      : roster.notes || ""
+                  }
                 >
                   {/* Left Accent Color Strip */}
-                  <div 
+                  <div
                     className={`${isFortnight ? "w-1" : "w-1.5"} shrink-0`}
                     style={{ backgroundColor: accentColor }}
                   />
                   {/* Text Details Content */}
-                  <div className={`px-1.5 flex-grow min-w-0 flex flex-col justify-center py-0.5 leading-tight ${isFortnight ? "pr-5" : ""}`}>
+                  <div
+                    className={`px-1.5 flex-grow min-w-0 flex flex-col justify-center py-0.5 leading-tight ${isFortnight ? "pr-5" : ""}`}
+                  >
                     {isFortnight ? (
                       <>
                         <div className="font-bold text-[8.5px] text-slate-700 truncate pointer-events-none leading-none">
@@ -385,7 +443,8 @@ const EmployeeRow = ({
                     ) : (
                       <>
                         <div className="font-bold text-[10px] text-slate-700 truncate pointer-events-none">
-                          {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}
+                          {formatTimeLabel(startTime)} -{" "}
+                          {formatTimeLabel(endTime)}
                         </div>
                         <div className="text-[9px] text-slate-400 font-bold mt-0.5 pointer-events-none flex items-center gap-1.5">
                           <span>{formattedDuration}</span>
@@ -405,16 +464,18 @@ const EmployeeRow = ({
                   </div>
                   {/* Checkbox for selection */}
                   {canEditRoster && (
-                    <div className={`flex items-center shrink-0 ${isFortnight ? "absolute top-1 right-1" : "pr-2"}`}>
+                    <div
+                      className={`flex items-center shrink-0 ${isFortnight ? "absolute top-1 right-1" : "pr-2"}`}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedRosterIds.includes(roster.id)}
                         onChange={(e) => {
                           e.stopPropagation();
-                          setSelectedRosterIds(prev => 
-                            prev.includes(roster.id) 
-                              ? prev.filter(id => id !== roster.id) 
-                              : [...prev, roster.id]
+                          setSelectedRosterIds((prev) =>
+                            prev.includes(roster.id)
+                              ? prev.filter((id) => id !== roster.id)
+                              : [...prev, roster.id],
                           );
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -436,7 +497,7 @@ const EmployeeRow = ({
           </div>
         );
       })}
-      
+
       {/* Total Hours Column */}
       <div className="p-1.5 bg-slate-50/50 border-l border-slate-200 font-bold text-slate-700 text-[10px] flex items-center justify-center h-14">
         {employeeTotal.hours.toFixed(1)}h
@@ -548,6 +609,8 @@ const RostersPage = () => {
     total_working_time: "00:00",
     status: "draft",
     notes: "",
+    period_type: "weekly",
+    department_id: "",
   });
   const [empSearchQuery, setEmpSearchQuery] = useState("");
 
@@ -591,8 +654,6 @@ const RostersPage = () => {
     { id: 108, name: "Management", age_group: "" },
   ];
 
-
-
   // Get employee hourly rate from employee data
   const getEmployeeRate = useCallback((employee) => {
     if (!employee) return 25; // Default fallback rate
@@ -614,13 +675,14 @@ const RostersPage = () => {
 
       const shift =
         roster.shift || shifts.find((s) => s.id === roster.shift_id);
-      
+
       const hours = calculateNetWorkingHours({
         start_time: roster.start_time || shift?.start_time,
         end_time: roster.end_time || shift?.end_time,
         break_start: roster.break_start || shift?.break_start,
         break_end: roster.break_end || shift?.break_end,
-        total_break_minutes: roster.total_break_minutes || shift?.total_break_minutes,
+        total_break_minutes:
+          roster.total_break_minutes || shift?.total_break_minutes,
         break_duration: roster.break_duration || shift?.break_duration,
       });
 
@@ -733,8 +795,14 @@ const RostersPage = () => {
         if (response.data.success === true && response.data.rosters) {
           if (Array.isArray(response.data.rosters)) {
             // Check if it's the department array layout with sub-rosters: [ { department_id, rosters: [] } ]
-            if (response.data.rosters.length > 0 && Object.prototype.hasOwnProperty.call(response.data.rosters[0], "rosters")) {
-              return response.data.rosters.flatMap(d => d.rosters || []);
+            if (
+              response.data.rosters.length > 0 &&
+              Object.prototype.hasOwnProperty.call(
+                response.data.rosters[0],
+                "rosters",
+              )
+            ) {
+              return response.data.rosters.flatMap((d) => d.rosters || []);
             }
             return response.data.rosters;
           }
@@ -835,31 +903,7 @@ const RostersPage = () => {
       if (departmentsRes.status === "fulfilled") {
         departmentsData = extractData(departmentsRes.value);
       }
-
-      // Merge and update departments with color codes/names from the rosters response
-      if (
-        rostersRes.status === "fulfilled" &&
-        rostersRes.value?.data?.rosters &&
-        Array.isArray(rostersRes.value.data.rosters)
-      ) {
-        rostersRes.value.data.rosters.forEach((dept) => {
-          if (dept.department_name) {
-            const id = dept.department_id || null;
-            const exists = departmentsData.some((d) => d.id === id);
-            if (!exists) {
-              departmentsData.push({
-                id,
-                name: dept.department_name,
-                color_code: dept.color_code,
-              });
-            } else if (dept.color_code) {
-              departmentsData = departmentsData.map((d) =>
-                d.id === id ? { ...d, color_code: dept.color_code } : d
-              );
-            }
-          }
-        });
-      }
+      console.log("Departments loaded:", departmentsData);
 
       // Process designations
       let designationsData = [];
@@ -927,7 +971,8 @@ const RostersPage = () => {
         end_time: roster.end_time || shift?.end_time,
         break_start: roster.break_start || shift?.break_start,
         break_end: roster.break_end || shift?.break_end,
-        total_break_minutes: roster.total_break_minutes || shift?.total_break_minutes,
+        total_break_minutes:
+          roster.total_break_minutes || shift?.total_break_minutes,
         break_duration: roster.break_duration || shift?.break_duration,
       });
 
@@ -945,7 +990,9 @@ const RostersPage = () => {
         if (!byEmployee[employeeId]) {
           byEmployee[employeeId] = {
             id: employeeId,
-            name: `${employee.first_name || ""} ${employee.last_name || ""}`.trim() || "Unknown",
+            name:
+              `${employee.first_name || ""} ${employee.last_name || ""}`.trim() ||
+              "Unknown",
             hours: 0,
             amount: 0,
             rate: getEmployeeRate(employee),
@@ -985,13 +1032,7 @@ const RostersPage = () => {
     if (rosters.length > 0 && employees.length > 0 && shifts.length > 0) {
       calculateWeeklyTotals();
     }
-  }, [
-    rosters,
-    employees,
-    shifts,
-    currentDate,
-    calculateWeeklyTotals,
-  ]);
+  }, [rosters, employees, shifts, currentDate, calculateWeeklyTotals]);
 
   // Calculate estimated amount when shift is selected in form
   useEffect(() => {
@@ -1106,9 +1147,8 @@ const RostersPage = () => {
 
     departments.forEach((dept) => {
       const matchesFilter =
-        filters.room === "all" ||
-        dept.id?.toString() === filters.room;
-      
+        filters.room === "all" || dept.id?.toString() === filters.room;
+
       if (matchesFilter) {
         groups[dept.name] = [];
       }
@@ -1129,12 +1169,11 @@ const RostersPage = () => {
       }
     });
 
-    return Object.entries(groups)
-      .sort((a, b) => {
-        if (a[0] === "Unassigned") return 1;
-        if (b[0] === "Unassigned") return -1;
-        return a[0].localeCompare(b[0]);
-      });
+    return Object.entries(groups).sort((a, b) => {
+      if (a[0] === "Unassigned") return 1;
+      if (b[0] === "Unassigned") return -1;
+      return a[0].localeCompare(b[0]);
+    });
   }, [filteredEmployees, departments, filters.room]);
 
   const getDesignationTitle = useCallback(
@@ -1169,13 +1208,13 @@ const RostersPage = () => {
   };
 
   const getVisibleRosterIds = useCallback(() => {
-    const employeeIds = new Set(filteredEmployees.map(emp => emp.id));
+    const employeeIds = new Set(filteredEmployees.map((emp) => emp.id));
     return rosters
-      .filter(roster => {
+      .filter((roster) => {
         const empId = roster.employee_id || roster.employee?.id;
         return employeeIds.has(empId);
       })
-      .map(roster => roster.id);
+      .map((roster) => roster.id);
   }, [rosters, filteredEmployees]);
 
   const handleSelectAll = () => {
@@ -1187,26 +1226,89 @@ const RostersPage = () => {
     setSelectedRosterIds([]);
   };
 
+  const handlePeriodSelectionChange = (e) => {
+    const action = e.target.value;
+    if (!action) return;
+
+    if (action === "clear") {
+      setSelectedRosterIds([]);
+      e.target.value = "";
+      return;
+    }
+
+    let targetDates = [];
+    if (view === "week") {
+      targetDates = weekDates;
+    } else {
+      if (action === "week1") {
+        targetDates = weekDates.slice(0, 5);
+      } else if (action === "week2") {
+        targetDates = weekDates.slice(5, 10);
+      } else if (action === "fortnight") {
+        targetDates = weekDates;
+      }
+    }
+
+    const dateStrings = new Set(targetDates.map((d) => formatLocalDate(d)));
+    const employeeIds = new Set(filteredEmployees.map((emp) => emp.id));
+
+    const matchingRosterIds = rosters
+      .filter((roster) => {
+        const empId = roster.employee_id || roster.employee?.id;
+        if (!employeeIds.has(empId)) return false;
+
+        const rosterDate =
+          typeof roster.roster_date === "string"
+            ? roster.roster_date.split("T")[0]
+            : formatLocalDate(new Date(roster.roster_date));
+
+        return dateStrings.has(rosterDate);
+      })
+      .map((roster) => roster.id);
+
+    setSelectedRosterIds(matchingRosterIds);
+    e.target.value = "";
+
+    if (matchingRosterIds.length > 0) {
+      toast.success(
+        `Selected ${matchingRosterIds.length} rosters for the selected period`,
+      );
+    } else {
+      toast.info("No rosters found in the selected period");
+    }
+  };
+
   const handleBulkStatusUpdate = async (status) => {
     if (selectedRosterIds.length === 0) return;
-    
+
     setBulkUpdating(true);
     try {
       const response = await rosterService.bulkStatusUpdate({
         roster_ids: selectedRosterIds,
-        status: status
+        status: status,
       });
-      
-      if (response.data?.success || response.status === 200 || response.status === 201) {
-        toast.success(`Successfully updated ${selectedRosterIds.length} rosters to ${status}`);
+
+      if (
+        response.data?.success ||
+        response.status === 200 ||
+        response.status === 201
+      ) {
+        toast.success(
+          `Successfully updated ${selectedRosterIds.length} rosters to ${status}`,
+        );
         setSelectedRosterIds([]);
         fetchData();
       } else {
-        toast.error(response.data?.message || "Failed to update rosters status");
+        toast.error(
+          response.data?.message || "Failed to update rosters status",
+        );
       }
     } catch (error) {
       console.error("Error bulk updating status:", error);
-      toast.error(error.response?.data?.message || "An error occurred while bulk updating status");
+      toast.error(
+        error.response?.data?.message ||
+          "An error occurred while bulk updating status",
+      );
     } finally {
       setBulkUpdating(false);
     }
@@ -1318,10 +1420,12 @@ const RostersPage = () => {
     e.preventDefault();
     if (!draggedRoster) return;
 
-    const sourceEmployeeId = draggedRoster.employee_id || draggedRoster.employee?.id;
-    const sourceDateStr = typeof draggedRoster.roster_date === "string"
-      ? draggedRoster.roster_date.split("T")[0]
-      : formatLocalDate(new Date(draggedRoster.roster_date));
+    const sourceEmployeeId =
+      draggedRoster.employee_id || draggedRoster.employee?.id;
+    const sourceDateStr =
+      typeof draggedRoster.roster_date === "string"
+        ? draggedRoster.roster_date.split("T")[0]
+        : formatLocalDate(new Date(draggedRoster.roster_date));
 
     if (sourceEmployeeId === employeeId && sourceDateStr === dateStr) {
       return;
@@ -1341,10 +1445,12 @@ const RostersPage = () => {
     if (!draggedRoster) return;
 
     const dateStr = formatLocalDate(date);
-    const sourceEmployeeId = draggedRoster.employee_id || draggedRoster.employee?.id;
-    const sourceDateStr = typeof draggedRoster.roster_date === "string"
-      ? draggedRoster.roster_date.split("T")[0]
-      : formatLocalDate(new Date(draggedRoster.roster_date));
+    const sourceEmployeeId =
+      draggedRoster.employee_id || draggedRoster.employee?.id;
+    const sourceDateStr =
+      typeof draggedRoster.roster_date === "string"
+        ? draggedRoster.roster_date.split("T")[0]
+        : formatLocalDate(new Date(draggedRoster.roster_date));
 
     if (sourceEmployeeId === employeeId && sourceDateStr === dateStr) {
       setDraggedRoster(null);
@@ -1367,7 +1473,11 @@ const RostersPage = () => {
       };
 
       const response = await rosterService.moveRoster(payload);
-      if (response.data?.success || response.status === 200 || response.status === 201) {
+      if (
+        response.data?.success ||
+        response.status === 200 ||
+        response.status === 201
+      ) {
         toast.success("Roster moved successfully!");
         fetchData();
       } else {
@@ -1394,7 +1504,11 @@ const RostersPage = () => {
       };
 
       const response = await rosterService.copyRoster(payload);
-      if (response.data?.success || response.status === 200 || response.status === 201) {
+      if (
+        response.data?.success ||
+        response.status === 200 ||
+        response.status === 201
+      ) {
         toast.success("Roster copied successfully!");
         fetchData();
       } else {
@@ -1415,14 +1529,14 @@ const RostersPage = () => {
     if (start_time && end_time) {
       const [sH, sM] = start_time.split(":").map(Number);
       const [eH, eM] = end_time.split(":").map(Number);
-      let durationMins = (eH * 60 + eM) - (sH * 60 + sM);
+      let durationMins = eH * 60 + eM - (sH * 60 + sM);
       if (durationMins < 0) durationMins += 24 * 60; // overnight support
 
       let breakMins = 0;
       if (break_start && break_end) {
         const [bsH, bsM] = break_start.split(":").map(Number);
         const [beH, beM] = break_end.split(":").map(Number);
-        breakMins = (beH * 60 + beM) - (bsH * 60 + bsM);
+        breakMins = beH * 60 + beM - (bsH * 60 + bsM);
         if (breakMins < 0) breakMins += 24 * 60;
       }
 
@@ -1466,6 +1580,9 @@ const RostersPage = () => {
       total_working_time: "00:00",
       status: "draft",
       notes: "",
+      period_type: view === "fortnight" ? "fortnightly" : "weekly",
+      department_id:
+        employee?.department_id || (filters.room !== "all" ? filters.room : ""),
     });
 
     setShowModal(true);
@@ -1476,9 +1593,10 @@ const RostersPage = () => {
     setSelectedRoster(roster);
     setSelectedEmployee(roster.employee_id || roster.employee?.id);
 
-    const formattedDate = typeof roster.roster_date === "string"
-      ? roster.roster_date.split("T")[0]
-      : formatLocalDate(new Date(roster.roster_date));
+    const formattedDate =
+      typeof roster.roster_date === "string"
+        ? roster.roster_date.split("T")[0]
+        : formatLocalDate(new Date(roster.roster_date));
 
     const formatTimeField = (time) => {
       if (!time) return "";
@@ -1490,18 +1608,131 @@ const RostersPage = () => {
       shift_id: roster.shift_id || roster.shift?.id || "",
       from_date: formattedDate,
       to_date: formattedDate,
-      start_time: formatTimeField(roster.start_time || roster.shift?.start_time),
+      start_time: formatTimeField(
+        roster.start_time || roster.shift?.start_time,
+      ),
       end_time: formatTimeField(roster.end_time || roster.shift?.end_time),
-      break_start: formatTimeField(roster.break_start || roster.shift?.break_start),
+      break_start: formatTimeField(
+        roster.break_start || roster.shift?.break_start,
+      ),
       break_end: formatTimeField(roster.break_end || roster.shift?.break_end),
-      break_grace_minutes: roster.break_grace_minutes || roster.shift?.break_grace_minutes || 0,
+      break_grace_minutes:
+        roster.break_grace_minutes || roster.shift?.break_grace_minutes || 0,
       total_working_time: roster.total_working_time || "00:00",
       status: roster.status || "draft",
       notes: roster.notes || "",
+      period_type: "weekly",
+      department_id:
+        roster.department_id || roster.employee?.department_id || "",
     });
 
     setShowModal(true);
   };
+
+  const handlePeriodTypeChange = (e) => {
+    const val = e.target.value;
+    setFormData((prev) => {
+      const fromDate = prev.from_date ? new Date(prev.from_date) : new Date();
+      const toDate = new Date(fromDate);
+      if (val === "fortnightly") {
+        toDate.setDate(fromDate.getDate() + 11);
+      } else {
+        toDate.setDate(fromDate.getDate() + 4);
+      }
+      return {
+        ...prev,
+        period_type: val,
+        to_date: formatLocalDate(toDate),
+      };
+    });
+  };
+
+  const handleFromDateChange = (e) => {
+    const fromDateStr = e.target.value;
+    setFormData((prev) => {
+      const fromDate = new Date(fromDateStr);
+      if (isNaN(fromDate.getTime())) {
+        return { ...prev, from_date: fromDateStr };
+      }
+      const toDate = new Date(fromDate);
+      if (prev.period_type === "fortnightly") {
+        toDate.setDate(fromDate.getDate() + 11);
+      } else {
+        toDate.setDate(fromDate.getDate() + 4);
+      }
+      return {
+        ...prev,
+        from_date: fromDateStr,
+        to_date: formatLocalDate(toDate),
+      };
+    });
+  };
+
+  const handleDepartmentChange = async (e) => {
+    const value = e.target.value;
+    
+    // First, update the state so UI reflects the selection
+    setFormData((prev) => ({ ...prev, department_id: value }));
+
+    // If we have exactly one employee, call the assign API
+    if (formData.employee_ids.length === 1 && value) {
+      const empId = formData.employee_ids[0];
+      try {
+        const response = await rosterService.assignDepartmentToEmployee({
+          employee_id: empId.toString(),
+          department_id: value.toString(),
+        });
+        if (response.data?.success) {
+          toast.success(response.data?.message || "Department assigned successfully");
+          // Refresh list of employees / rosters since department change may affect grouping/filters
+          fetchData();
+        } else {
+          toast.error(response.data?.message || "Failed to assign department");
+        }
+      } catch (error) {
+        console.error("Error assigning department to employee:", error);
+        toast.error(error.response?.data?.message || "Error assigning department to employee");
+      }
+    }
+  };
+
+  // Fetch department by employee when exactly 1 employee is selected
+  useEffect(() => {
+    if (showModal && formData.employee_ids.length === 1) {
+      const empId = formData.employee_ids[0];
+      const fetchEmployeeDept = async () => {
+        try {
+          const response = await rosterService.getDepartmentByEmployee(empId);
+          if (response.data?.success && response.data?.data) {
+            setFormData((prev) => ({
+              ...prev,
+              department_id: response.data.data.id?.toString() || "",
+            }));
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              department_id: "",
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching employee department:", error);
+          setFormData((prev) => ({
+            ...prev,
+            department_id: "",
+          }));
+        }
+      };
+      fetchEmployeeDept();
+    } else if (showModal && formData.employee_ids.length !== 1) {
+      // Clear department if employee selection is cleared or multiple selected
+      setFormData((prev) => {
+        if (prev.department_id !== "") {
+          return { ...prev, department_id: "" };
+        }
+        return prev;
+      });
+    }
+  }, [showModal, formData.employee_ids]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1563,10 +1794,18 @@ const RostersPage = () => {
         rosterData.shift_id = parseInt(formData.shift_id);
       }
 
+      if (formData.department_id) {
+        rosterData.department_id = parseInt(formData.department_id);
+      }
+
       // API update: POST /rosters serves both create & update operations
       const response = await rosterService.createRoster(rosterData);
 
-      if (response.data?.success || response.status === 200 || response.status === 201) {
+      if (
+        response.data?.success ||
+        response.status === 200 ||
+        response.status === 201
+      ) {
         toast.success(
           `Roster ${modalMode === "add" ? "created" : "updated"} successfully!`,
         );
@@ -1586,6 +1825,8 @@ const RostersPage = () => {
           total_working_time: "00:00",
           status: "draft",
           notes: "",
+          period_type: "weekly",
+          department_id: "",
         });
       } else {
         toast.error(`Failed to ${modalMode} roster`);
@@ -1755,7 +1996,9 @@ const RostersPage = () => {
               <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex justify-between items-center shadow-sm">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight">
-                    {modalMode === "add" ? "Create New Roster" : "Update Roster Entry"}
+                    {modalMode === "add"
+                      ? "Create New Roster"
+                      : "Update Roster Entry"}
                   </h2>
                   <p className="text-xs text-slate-300 mt-0.5">
                     {modalMode === "add"
@@ -1772,7 +2015,10 @@ const RostersPage = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+              <form
+                onSubmit={handleSubmit}
+                className="flex-1 overflow-y-auto p-6 space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Left Column: Employees & Dates */}
                   <div className="space-y-6">
@@ -1781,27 +2027,36 @@ const RostersPage = () => {
                       <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
                         Employee Assignment
                       </h3>
-                      {selectedEmployee ? (() => {
-                        const empObj = employees.find((e) => e.id === selectedEmployee);
-                        const fInit = ((empObj?.first_name || "").split(" ")[0]?.[0] || "").toUpperCase();
-                        const lInit = ((empObj?.last_name || "").split(" ")[0]?.[0] || "").toUpperCase();
-                        return (
-                        /* Particular employee (disabled selection) */
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base shadow-sm">
-                            {fInit}{lInit}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-800 text-sm">
-                              {getEmployeeName(selectedEmployee)}
+                      {selectedEmployee ? (
+                        (() => {
+                          const empObj = employees.find(
+                            (e) => e.id === selectedEmployee,
+                          );
+                          const fInit = (
+                            (empObj?.first_name || "").split(" ")[0]?.[0] || ""
+                          ).toUpperCase();
+                          const lInit = (
+                            (empObj?.last_name || "").split(" ")[0]?.[0] || ""
+                          ).toUpperCase();
+                          return (
+                            /* Particular employee (disabled selection) */
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base shadow-sm">
+                                {fInit}
+                                {lInit}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-800 text-sm">
+                                  {getEmployeeName(selectedEmployee)}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  Direct cell assignment (Locked)
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-500">
-                              Direct cell assignment (Locked)
-                            </div>
-                          </div>
-                        </div>
-                        );
-                      })() : (
+                          );
+                        })()
+                      ) : (
                         /* Multiple employee selection */
                         <div className="space-y-3">
                           <div className="relative">
@@ -1810,7 +2065,9 @@ const RostersPage = () => {
                               type="text"
                               placeholder="Search employees..."
                               value={empSearchQuery}
-                              onChange={(e) => setEmpSearchQuery(e.target.value)}
+                              onChange={(e) =>
+                                setEmpSearchQuery(e.target.value)
+                              }
                               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
@@ -1852,11 +2109,15 @@ const RostersPage = () => {
                             <div className="max-h-56 overflow-y-auto p-2 space-y-1">
                               {employees
                                 .filter((emp) => {
-                                  const name = `${emp.first_name || ""} ${emp.last_name || ""}`.toLowerCase();
-                                  return name.includes(empSearchQuery.toLowerCase());
+                                  const name =
+                                    `${emp.first_name || ""} ${emp.last_name || ""}`.toLowerCase();
+                                  return name.includes(
+                                    empSearchQuery.toLowerCase(),
+                                  );
                                 })
                                 .map((emp) => {
-                                  const isChecked = formData.employee_ids.includes(emp.id);
+                                  const isChecked =
+                                    formData.employee_ids.includes(emp.id);
                                   return (
                                     <label
                                       key={emp.id}
@@ -1867,19 +2128,38 @@ const RostersPage = () => {
                                         checked={isChecked}
                                         onChange={() => {
                                           setFormData((prev) => {
-                                            const ids = prev.employee_ids.includes(emp.id)
-                                              ? prev.employee_ids.filter((id) => id !== emp.id)
-                                              : [...prev.employee_ids, emp.id];
-                                            return { ...prev, employee_ids: ids };
+                                            const ids =
+                                              prev.employee_ids.includes(emp.id)
+                                                ? prev.employee_ids.filter(
+                                                    (id) => id !== emp.id,
+                                                  )
+                                                : [
+                                                    ...prev.employee_ids,
+                                                    emp.id,
+                                                  ];
+                                            return {
+                                              ...prev,
+                                              employee_ids: ids,
+                                            };
                                           });
                                         }}
                                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                                       />
                                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0">
-                                        {((emp.first_name || "").split(" ")[0]?.[0] || "").toUpperCase()}{((emp.last_name || "").split(" ")[0]?.[0] || "").toUpperCase()}
+                                        {(
+                                          (emp.first_name || "").split(
+                                            " ",
+                                          )[0]?.[0] || ""
+                                        ).toUpperCase()}
+                                        {(
+                                          (emp.last_name || "").split(
+                                            " ",
+                                          )[0]?.[0] || ""
+                                        ).toUpperCase()}
                                       </div>
                                       <span className="font-medium text-slate-800">
-                                        {emp.first_name || ""} {emp.last_name || ""}
+                                        {emp.first_name || ""}{" "}
+                                        {emp.last_name || ""}
                                       </span>
                                     </label>
                                   );
@@ -1890,12 +2170,50 @@ const RostersPage = () => {
                       )}
                     </div>
 
+                    {/* Room/Department Selection */}
+                    {formData.employee_ids.length === 1 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
+                          Room / Department
+                        </h3>
+                        <select
+                          name="department_id"
+                          value={formData.department_id}
+                          onChange={handleDepartmentChange}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          required
+                        >
+                          <option value="">-- Choose Room / Department --</option>
+                          {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                              {dept.name}{" "}
+                              {dept.age_group ? `(${dept.age_group})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     {/* Date Range Selection */}
                     <div>
                       <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">
                         Roster Period
                       </h3>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            Period Type
+                          </label>
+                          <select
+                            name="period_type"
+                            value={formData.period_type || "weekly"}
+                            onChange={handlePeriodTypeChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          >
+                            <option value="weekly">Weekly</option>
+                            <option value="fortnightly">Fortnightly</option>
+                          </select>
+                        </div>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1">
                             From Date
@@ -1904,7 +2222,7 @@ const RostersPage = () => {
                             type="date"
                             name="from_date"
                             value={formData.from_date}
-                            onChange={handleInputChange}
+                            onChange={handleFromDateChange}
                             className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             required
                           />
@@ -1991,12 +2309,15 @@ const RostersPage = () => {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       >
-                        <option value="">-- Customize Manually / Choose Shift --</option>
+                        <option value="">
+                          -- Customize Manually / Choose Shift --
+                        </option>
                         {shifts.map((shift) => {
                           const hours = calculateNetWorkingHours(shift);
                           return (
                             <option key={shift.id} value={shift.id}>
-                              {shift.name} ({formatTime(shift.start_time)} - {formatTime(shift.end_time)})
+                              {shift.name} ({formatTime(shift.start_time)} -{" "}
+                              {formatTime(shift.end_time)})
                             </option>
                           );
                         })}
@@ -2088,9 +2409,13 @@ const RostersPage = () => {
                         <span className="text-blue-600">
                           {(() => {
                             if (formData.break_start && formData.break_end) {
-                              const [bsH, bsM] = formData.break_start.split(":").map(Number);
-                              const [beH, beM] = formData.break_end.split(":").map(Number);
-                              let breakMins = (beH * 60 + beM) - (bsH * 60 + bsM);
+                              const [bsH, bsM] = formData.break_start
+                                .split(":")
+                                .map(Number);
+                              const [beH, beM] = formData.break_end
+                                .split(":")
+                                .map(Number);
+                              let breakMins = beH * 60 + beM - (bsH * 60 + bsM);
                               if (breakMins < 0) breakMins += 24 * 60;
                               return breakMins >= 60
                                 ? `${(breakMins / 60).toFixed(1)} hrs`
@@ -2172,13 +2497,19 @@ const RostersPage = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="font-bold text-slate-800 truncate">
-                        {getEmployeeName(draggedRoster.employee_id || draggedRoster.employee?.id)}
+                        {getEmployeeName(
+                          draggedRoster.employee_id ||
+                            draggedRoster.employee?.id,
+                        )}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {new Date(draggedRoster.roster_date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(draggedRoster.roster_date).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </div>
                     </div>
 
@@ -2198,7 +2529,8 @@ const RostersPage = () => {
                   <div className="border-t border-slate-200 pt-2 text-xs text-slate-600 flex justify-between">
                     <span>Shift hours:</span>
                     <span className="font-semibold text-slate-800">
-                      {draggedRoster.start_time?.substring(0, 5) || "NA"} - {draggedRoster.end_time?.substring(0, 5) || "NA"}
+                      {draggedRoster.start_time?.substring(0, 5) || "NA"} -{" "}
+                      {draggedRoster.end_time?.substring(0, 5) || "NA"}
                     </span>
                   </div>
                 </div>
@@ -2219,7 +2551,9 @@ const RostersPage = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="text-sm group-hover:translate-x-1 transition-transform">➔</span>
+                    <span className="text-sm group-hover:translate-x-1 transition-transform">
+                      ➔
+                    </span>
                   </button>
 
                   <button
@@ -2236,7 +2570,9 @@ const RostersPage = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="text-sm group-hover:translate-x-1 transition-transform">➔</span>
+                    <span className="text-sm group-hover:translate-x-1 transition-transform">
+                      ➔
+                    </span>
                   </button>
                 </div>
               </div>
@@ -2447,13 +2783,44 @@ const RostersPage = () => {
               {/* Action Buttons */}
               <div className="flex items-center gap-2 ml-auto lg:ml-0">
                 {canEditRoster && (
-                  <button
-                    onClick={selectedRosterIds.length > 0 ? handleDeselectAll : handleSelectAll}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
-                    title={selectedRosterIds.length > 0 ? "Clear all selections" : "Select all visible rosters"}
-                  >
-                    <FaUsers className="text-[10px]" /> {selectedRosterIds.length > 0 ? "Deselect All" : "Select All"}
-                  </button>
+                  <>
+                    <select
+                      onChange={handlePeriodSelectionChange}
+                      className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer focus:outline-none"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Select Period...</option>
+                      {view === "week" ? (
+                        <option value="week">Current Week</option>
+                      ) : (
+                        <>
+                          <option value="week1">Week 1 (First 5 Days)</option>
+                          <option value="week2">Week 2 (Second 5 Days)</option>
+                          <option value="fortnight">Full Fortnight</option>
+                        </>
+                      )}
+                      <option value="clear">Clear Selections</option>
+                    </select>
+
+                    <button
+                      onClick={
+                        selectedRosterIds.length > 0
+                          ? handleDeselectAll
+                          : handleSelectAll
+                      }
+                      className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                      title={
+                        selectedRosterIds.length > 0
+                          ? "Clear all selections"
+                          : "Select all visible rosters"
+                      }
+                    >
+                      <FaUsers className="text-[10px]" />{" "}
+                      {selectedRosterIds.length > 0
+                        ? "Deselect All"
+                        : "Select All"}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={handleExport}
@@ -2478,7 +2845,9 @@ const RostersPage = () => {
                         employee_ids: [],
                         shift_id: "",
                         from_date: formatLocalDate(weekDates[0]),
-                        to_date: formatLocalDate(weekDates[weekDates.length - 1]),
+                        to_date: formatLocalDate(
+                          weekDates[weekDates.length - 1],
+                        ),
                         start_time: "",
                         end_time: "",
                         break_start: "",
@@ -2487,6 +2856,10 @@ const RostersPage = () => {
                         total_working_time: "00:00",
                         status: "draft",
                         notes: "",
+                        period_type:
+                          view === "fortnight" ? "fortnightly" : "weekly",
+                        department_id:
+                          filters.room !== "all" ? filters.room : "",
                       });
                       setShowModal(true);
                     }}
@@ -2500,7 +2873,10 @@ const RostersPage = () => {
           </div>
           {/* Roster Grid View */}
           {(view === "week" || view === "fortnight") && (
-            <div className="bg-white rounded-lg shadow-xl border border-gray-300 relative overflow-x-auto w-full" style={{ maxWidth: "100%" }}>
+            <div
+              className="bg-white rounded-lg shadow-xl border border-gray-300 relative overflow-x-auto w-full"
+              style={{ maxWidth: "100%" }}
+            >
               {(() => {
                 const isFN = weekDates.length > 5;
                 const posW = isFN ? 100 : 150;
@@ -2511,149 +2887,187 @@ const RostersPage = () => {
                 const colTemplate = `${posW}px ${nameW}px repeat(${weekDates.length}, minmax(${dateMin}px, 1fr)) ${totalW}px`;
                 const minW = `${fixedW + weekDates.length * dateMin}px`;
                 return (
-              <div style={{ minWidth: minW, width: "100%" }}>
-                {/* Roster Header */}
-                <div
-                  className="border-b border-gray-300 sticky top-0 shadow-md z-[5]"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: colTemplate,
-                    height: "56px",
-                    minWidth: minW,
-                  }}
-                >
-                  <div className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky left-0 lg:z-[3]" style={{ backgroundColor: sidebarColor }}>
-                    Position
-                  </div>
-                  <div className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky lg:z-[3]" style={{ backgroundColor: sidebarColor, left: `${posW}px` }}>
-                    Staff
-                  </div>
-                  {weekDates.map((day) => (
+                  <div style={{ minWidth: minW, width: "100%" }}>
+                    {/* Roster Header */}
                     <div
-                      key={day.toString()}
-                      className="text-center font-bold border-r border-gray-300 text-white flex flex-col justify-center py-1"
-                      style={{ backgroundColor: sidebarColor }}
+                      className="border-b border-gray-300 sticky top-0 shadow-md z-[5]"
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: colTemplate,
+                        height: "56px",
+                        minWidth: minW,
+                      }}
                     >
-                      <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">
-                        {day.toLocaleDateString("en-US", { weekday: "short" })}
+                      <div
+                        className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky left-0 lg:z-[3]"
+                        style={{ backgroundColor: sidebarColor }}
+                      >
+                        Position
                       </div>
-                      <div className="text-sm pt-0.5">
-                        {day.getDate()}
-                        {day.getDate() === 1 || day.getDate() === 21 || day.getDate() === 31
-                          ? "st"
-                          : day.getDate() === 2 || day.getDate() === 22
-                            ? "nd"
-                            : day.getDate() === 3 || day.getDate() === 23
-                              ? "rd"
-                              : "th"}
+                      <div
+                        className="p-1.5 font-bold text-white border-r border-gray-300 flex items-center justify-center text-xs lg:sticky lg:z-[3]"
+                        style={{
+                          backgroundColor: sidebarColor,
+                          left: `${posW}px`,
+                        }}
+                      >
+                        Staff
                       </div>
-                    </div>
-                  ))}
-                  <div className="p-1.5 font-bold text-white border-l border-gray-300 flex items-center justify-center text-[10px]" style={{ backgroundColor: sidebarColor }}>
-                    Total
-                  </div>
-                </div>
-
-                {/* Grid Body */}
-                <div
-                  className="overflow-y-auto"
-                  style={{ maxHeight: "calc(85vh - 56px)" }}
-                >
-                  {groupedEmployees.length > 0 ? (
-                    groupedEmployees.map(([deptName, emps]) => {
-                      const isCollapsed = collapsedDepartments[deptName];
-                      const dept = departments.find((d) => d.name === deptName);
-                      const colorCode = dept?.color_code || "#475569";
-                      const textColor = getContrastColor(colorCode);
-
-                      return (
-                        <React.Fragment key={deptName}>
-                          {/* Department/Room Header Row */}
-                          <div
-                            onClick={() =>
-                              setCollapsedDepartments((prev) => ({
-                                ...prev,
-                                [deptName]: !prev[deptName],
-                              }))
-                            }
-                            className="font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center justify-center gap-2.5 border-b border-black/10 sticky left-0 shadow-sm w-full cursor-pointer hover:opacity-95 select-none transition-all duration-200"
-                            style={{
-                              backgroundColor: colorCode,
-                              color: textColor,
-                              minWidth: minW,
-                            }}
-                          >
-                            <div className="absolute left-4 flex items-center">
-                              {isCollapsed ? (
-                                <FaChevronRight className="text-[10px]" style={{ color: textColor }} />
-                              ) : (
-                                <FaChevronDown className="text-[10px]" style={{ color: textColor }} />
-                              )}
-                            </div>
-
-                            <FaBuilding className="text-xs opacity-80" style={{ color: textColor }} />
-                            <span style={{ color: textColor }}>{deptName || "Unassigned"}</span>
-                            <span
-                              className="px-2 py-0.5 rounded-full text-[9px] font-bold normal-case tracking-normal"
-                              style={{
-                                backgroundColor:
-                                  textColor === "#ffffff"
-                                    ? "rgba(255, 255, 255, 0.2)"
-                                    : "rgba(0, 0, 0, 0.08)",
-                                color: textColor,
-                              }}
-                            >
-                              {emps.length} {emps.length === 1 ? "Staff Member" : "Staff Members"}
-                            </span>
+                      {weekDates.map((day) => (
+                        <div
+                          key={day.toString()}
+                          className="text-center font-bold border-r border-gray-300 text-white flex flex-col justify-center py-1"
+                          style={{ backgroundColor: sidebarColor }}
+                        >
+                          <div className="text-[11px] border-b border-[#ffffff33] pb-0.5 uppercase">
+                            {day.toLocaleDateString("en-US", {
+                              weekday: "short",
+                            })}
                           </div>
-
-                          {!isCollapsed && (
-                            emps.length > 0 ? (
-                              emps.map((employee) => (
-                                <EmployeeRow
-                                  key={employee.id}
-                                  employee={employee}
-                                  weeklyTotals={weeklyTotals}
-                                  getDesignationTitle={getDesignationTitle}
-                                  weekDates={weekDates}
-                                  getRostersForEmployeeAndDate={getRostersForEmployeeAndDate}
-                                  shifts={shifts}
-                                  getShiftColor={getShiftColor}
-                                  canAddRoster={canAddRoster}
-                                  canEditRoster={canEditRoster}
-                                  handleAddRoster={handleAddRoster}
-                                  handleEditRoster={handleEditRoster}
-                                  handleDragStart={handleDragStart}
-                                  handleDragOver={handleDragOver}
-                                  handleDragLeave={handleDragLeave}
-                                  handleDrop={handleDrop}
-                                  dragOverCell={dragOverCell}
-                                  selectedRosterIds={selectedRosterIds}
-                                  setSelectedRosterIds={setSelectedRosterIds}
-                                />
-                              ))
-                            ) : (
-                              <div 
-                                className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 italic border-b sticky left-0 w-full flex items-center justify-center gap-1.5"
-                                style={{ minWidth: minW }}
-                              >
-                                <span>No staff members in this room / department.</span>
-                              </div>
-                            )
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                  ) : (
-                    <div className="p-12 text-center text-gray-400 bg-gray-50">
-                      <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
-                      <p className="text-lg">
-                        No staff members found in the selected period.
-                      </p>
+                          <div className="text-sm pt-0.5">
+                            {day.getDate()}
+                            {day.getDate() === 1 ||
+                            day.getDate() === 21 ||
+                            day.getDate() === 31
+                              ? "st"
+                              : day.getDate() === 2 || day.getDate() === 22
+                                ? "nd"
+                                : day.getDate() === 3 || day.getDate() === 23
+                                  ? "rd"
+                                  : "th"}
+                          </div>
+                        </div>
+                      ))}
+                      <div
+                        className="p-1.5 font-bold text-white border-l border-gray-300 flex items-center justify-center text-[10px]"
+                        style={{ backgroundColor: sidebarColor }}
+                      >
+                        Total
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
+
+                    {/* Grid Body */}
+                    <div
+                      className="overflow-y-auto"
+                      style={{ maxHeight: "calc(85vh - 56px)" }}
+                    >
+                      {groupedEmployees.length > 0 ? (
+                        groupedEmployees.map(([deptName, emps]) => {
+                          const isCollapsed = collapsedDepartments[deptName];
+                          const dept = departments.find(
+                            (d) => d.name === deptName,
+                          );
+                          const colorCode = dept?.color_code || "#475569";
+                          const textColor = getContrastColor(colorCode);
+
+                          return (
+                            <React.Fragment key={deptName}>
+                              {/* Department/Room Header Row */}
+                              <div
+                                onClick={() =>
+                                  setCollapsedDepartments((prev) => ({
+                                    ...prev,
+                                    [deptName]: !prev[deptName],
+                                  }))
+                                }
+                                className="font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center justify-center gap-2.5 border-b border-black/10 sticky left-0 shadow-sm w-full cursor-pointer hover:opacity-95 select-none transition-all duration-200"
+                                style={{
+                                  backgroundColor: colorCode,
+                                  color: textColor,
+                                  minWidth: minW,
+                                }}
+                              >
+                                <div className="absolute left-4 flex items-center">
+                                  {isCollapsed ? (
+                                    <FaChevronRight
+                                      className="text-[10px]"
+                                      style={{ color: textColor }}
+                                    />
+                                  ) : (
+                                    <FaChevronDown
+                                      className="text-[10px]"
+                                      style={{ color: textColor }}
+                                    />
+                                  )}
+                                </div>
+
+                                <FaBuilding
+                                  className="text-xs opacity-80"
+                                  style={{ color: textColor }}
+                                />
+                                <span style={{ color: textColor }}>
+                                  {deptName || "Unassigned"}
+                                </span>
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[9px] font-bold normal-case tracking-normal"
+                                  style={{
+                                    backgroundColor:
+                                      textColor === "#ffffff"
+                                        ? "rgba(255, 255, 255, 0.2)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                                    color: textColor,
+                                  }}
+                                >
+                                  {emps.length}{" "}
+                                  {emps.length === 1
+                                    ? "Staff Member"
+                                    : "Staff Members"}
+                                </span>
+                              </div>
+
+                              {!isCollapsed &&
+                                (emps.length > 0 ? (
+                                  emps.map((employee) => (
+                                    <EmployeeRow
+                                      key={employee.id}
+                                      employee={employee}
+                                      weeklyTotals={weeklyTotals}
+                                      getDesignationTitle={getDesignationTitle}
+                                      weekDates={weekDates}
+                                      getRostersForEmployeeAndDate={
+                                        getRostersForEmployeeAndDate
+                                      }
+                                      shifts={shifts}
+                                      getShiftColor={getShiftColor}
+                                      canAddRoster={canAddRoster}
+                                      canEditRoster={canEditRoster}
+                                      handleAddRoster={handleAddRoster}
+                                      handleEditRoster={handleEditRoster}
+                                      handleDragStart={handleDragStart}
+                                      handleDragOver={handleDragOver}
+                                      handleDragLeave={handleDragLeave}
+                                      handleDrop={handleDrop}
+                                      dragOverCell={dragOverCell}
+                                      selectedRosterIds={selectedRosterIds}
+                                      setSelectedRosterIds={
+                                        setSelectedRosterIds
+                                      }
+                                    />
+                                  ))
+                                ) : (
+                                  <div
+                                    className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 italic border-b sticky left-0 w-full flex items-center justify-center gap-1.5"
+                                    style={{ minWidth: minW }}
+                                  >
+                                    <span>
+                                      No staff members in this room /
+                                      department.
+                                    </span>
+                                  </div>
+                                ))}
+                            </React.Fragment>
+                          );
+                        })
+                      ) : (
+                        <div className="p-12 text-center text-gray-400 bg-gray-50">
+                          <FaUsers className="mx-auto text-4xl mb-3 opacity-20" />
+                          <p className="text-lg">
+                            No staff members found in the selected period.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 );
               })()}
             </div>
@@ -2671,7 +3085,10 @@ const RostersPage = () => {
                 {shifts.map((shift) => {
                   const shiftColor = getShiftColor(shift.id);
                   return (
-                    <div key={shift.id} className="flex items-center gap-3 p-2 bg-slate-50/60 rounded-xl border border-slate-100/50 hover:bg-slate-50 transition-colors">
+                    <div
+                      key={shift.id}
+                      className="flex items-center gap-3 p-2 bg-slate-50/60 rounded-xl border border-slate-100/50 hover:bg-slate-50 transition-colors"
+                    >
                       <div
                         className="w-4 h-4 rounded-lg border shadow-sm shrink-0"
                         style={{
@@ -2680,10 +3097,13 @@ const RostersPage = () => {
                         }}
                       ></div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-700 truncate">{shift.name}</p>
+                        <p className="text-xs font-bold text-slate-700 truncate">
+                          {shift.name}
+                        </p>
                         {shift.start_time && shift.end_time && (
                           <p className="text-[10px] font-medium text-slate-400">
-                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                            {formatTime(shift.start_time)} -{" "}
+                            {formatTime(shift.end_time)}
                           </p>
                         )}
                       </div>
@@ -2700,24 +3120,37 @@ const RostersPage = () => {
                   <span className="w-1.5 h-3 bg-emerald-400 rounded-full"></span>
                   Period Summary
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
-                    <span className="text-xs font-medium text-slate-300">Staff Members</span>
+                    <span className="text-xs font-medium text-slate-300">
+                      Staff Members
+                    </span>
                     <span className="text-sm font-bold text-white">
-                      {filteredEmployees.length} <span className="text-[10px] font-medium text-slate-400">/ {employees.length} total</span>
+                      {filteredEmployees.length}{" "}
+                      <span className="text-[10px] font-medium text-slate-400">
+                        / {employees.length} total
+                      </span>
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
-                    <span className="text-xs font-medium text-slate-300">Rostered Hours</span>
-                    <span className="text-sm font-bold text-white">{weeklyTotals.totalHours.toFixed(2)}h</span>
+                    <span className="text-xs font-medium text-slate-300">
+                      Rostered Hours
+                    </span>
+                    <span className="text-sm font-bold text-white">
+                      {weeklyTotals.totalHours.toFixed(2)}h
+                    </span>
                   </div>
 
                   {weeklyTotals.averageRate > 0 && (
                     <div className="flex justify-between items-center pb-2.5 border-b border-slate-700/50">
-                      <span className="text-xs font-medium text-slate-300">Average Rate</span>
-                      <span className="text-sm font-bold text-white">{formatCurrency(weeklyTotals.averageRate)}/hr</span>
+                      <span className="text-xs font-medium text-slate-300">
+                        Average Rate
+                      </span>
+                      <span className="text-sm font-bold text-white">
+                        {formatCurrency(weeklyTotals.averageRate)}/hr
+                      </span>
                     </div>
                   )}
                 </div>
@@ -2725,8 +3158,12 @@ const RostersPage = () => {
 
               <div className="mt-6 flex justify-between items-end">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Estimated Cost</p>
-                  <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">{formatCurrency(weeklyTotals.totalAmount)}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    Estimated Cost
+                  </p>
+                  <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">
+                    {formatCurrency(weeklyTotals.totalAmount)}
+                  </p>
                 </div>
                 <div className="text-[10px] text-slate-400 italic">
                   Auto-calculated

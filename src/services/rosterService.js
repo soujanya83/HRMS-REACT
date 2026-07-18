@@ -96,6 +96,16 @@ export const rosterService = {
   // Get weekly roster for dashboard
   getWeeklyRoster: (params = {}) => {
     return axiosClient.get('/rosters', { params });
+  },
+
+  // Assign department to employee
+  assignDepartmentToEmployee: (data) => {
+    return axiosClient.post('/assign-department-to-employee', data);
+  },
+
+  // Get department by employee ID
+  getDepartmentByEmployee: (employeeId) => {
+    return axiosClient.get(`/get-department-by-employee/${employeeId}`);
   }
 };
 
