@@ -33,8 +33,8 @@ const CalendarWidget = () => {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  const holidays = [10, 25];
-  const events = [5, 15, 20];
+  const holidays = [];
+  const events = [];
 
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
@@ -147,9 +147,9 @@ const formatMinutes = (m) => {
 };
 
 const dummyAttendanceData = {
-  status: "punched_in",
-  punchInTime: "09:02 AM",
-  workedMinutes: 272,
+  status: "not_punched",
+  punchInTime: "—",
+  workedMinutes: 0,
   totalShiftMinutes: 540,
 };
 
@@ -296,13 +296,7 @@ const AttendanceCard = () => {
 // ============================================
 // TODAY'S SCHEDULE
 // ============================================
-const tasks = [
-  { title: "Update API documentation", status: "completed" },
-  { title: "Fix login page responsive issues", status: "completed" },
-  { title: "Review pull request #142", status: "pending" },
-  { title: "Deploy staging build", status: "pending" },
-  { title: "Write unit tests for auth module", status: "pending" },
-];
+const tasks = [];
 
 const TodayTasksCard = () => (
   <DashCard accentColor="#FFE66D">
@@ -312,24 +306,31 @@ const TodayTasksCard = () => (
         View All <ArrowRight size={13} />
       </button>
     </div>
-    <div className="space-y-3">
-      {tasks.map((t, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
-          {t.status === "completed" ? (
-            <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
-          ) : (
-            <Circle size={18} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
-          )}
-          <span className={`text-sm ${t.status === "completed" ? "line-through text-gray-400" : "text-gray-700"}`}>
-            {t.title}
-          </span>
-          <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${t.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-            }`}>
-            {t.status === "completed" ? "Done" : "Pending"}
-          </span>
-        </div>
-      ))}
-    </div>
+    {tasks.length > 0 ? (
+      <div className="space-y-3">
+        {tasks.map((t, i) => (
+          <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+            {t.status === "completed" ? (
+              <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
+            ) : (
+              <Circle size={18} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
+            )}
+            <span className={`text-sm ${t.status === "completed" ? "line-through text-gray-400" : "text-gray-700"}`}>
+              {t.title}
+            </span>
+            <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${t.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+              }`}>
+              {t.status === "completed" ? "Done" : "Pending"}
+            </span>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+        <CheckCircle2 size={32} className="mb-2 opacity-20" />
+        <p className="text-sm">No tasks assigned for today</p>
+      </div>
+    )}
   </DashCard>
 );
 
@@ -733,31 +734,34 @@ const AttendanceOverview = ({ userId }) => {
 // ============================================
 // HOLIDAYS & EVENTS
 // ============================================
-const holidaysList = [
-  { date: "Apr 25", name: "ANZAC Day", day: "Friday" },
-  { date: "Jun 9", name: "Queen's Birthday", day: "Monday" },
-  { date: "Dec 25", name: "Christmas Day", day: "Thursday" },
-];
+const holidaysList = [];
 
 const HolidaysEvents = () => (
   <DashCard accentColor="#FFB347">
     <CardTitle icon={<PartyPopper size={16} />}>Upcoming Holidays</CardTitle>
-    <div className="space-y-3">
-      {holidaysList.map((h, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-400 to-blue-300 flex flex-col items-center justify-center text-white leading-tight">
-            <span className="text-[10px] font-medium">{h.date.split(" ")[0]}</span>
-            <span className="text-lg font-bold -mt-0.5">{h.date.split(" ")[1]}</span>
+    {holidaysList.length > 0 ? (
+      <div className="space-y-3">
+        {holidaysList.map((h, i) => (
+          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-400 to-blue-300 flex flex-col items-center justify-center text-white leading-tight">
+              <span className="text-[10px] font-medium">{h.date.split(" ")[0]}</span>
+              <span className="text-lg font-bold -mt-0.5">{h.date.split(" ")[1]}</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800">{h.name}</p>
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Calendar size={11} /> {h.day}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-800">{h.name}</p>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <Calendar size={11} /> {h.day}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+        <Calendar size={24} className="mb-2 opacity-20" />
+        <p className="text-sm">No upcoming holidays</p>
+      </div>
+    )}
   </DashCard>
 );
 
@@ -1129,12 +1133,7 @@ const GetPayslipsModal = ({ isOpen, onClose }) => {
   );
 };
 
-const payslips = [
-  { id: 1, month: "March", year: "2024", downloadUrl: "#", viewUrl: "#" },
-  { id: 2, month: "February", year: "2024", downloadUrl: "#", viewUrl: "#" },
-  { id: 3, month: "January", year: "2024", downloadUrl: "#", viewUrl: "#" },
-  { id: 4, month: "December", year: "2023", downloadUrl: "#", viewUrl: "#" },
-];
+const payslips = [];
 
 const PayslipSection = () => {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -1214,53 +1213,60 @@ const PayslipSection = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        {payslips.map((payslip) => (
-          <div
-            key={payslip.id}
-            className={`flex items-center justify-between p-2.5 px-4 rounded-xl transition-all duration-200 border group/card ${selectedIds.includes(payslip.id)
-              ? 'bg-blue-50/50 border-blue-100 shadow-sm'
-              : 'bg-gray-50/30 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
-              }`}
-          >
-            <div className="flex items-center gap-3">
-              <label className="cursor-pointer">
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.includes(payslip.id)
-                  ? 'bg-blue-500 border-blue-500'
-                  : 'bg-white border-gray-300 group-hover/card:border-blue-400'
-                  }`}>
-                  {selectedIds.includes(payslip.id) && <CheckCircle size={10} className="text-white" />}
+      {payslips.length > 0 ? (
+        <div className="grid grid-cols-1 gap-2">
+          {payslips.map((payslip) => (
+            <div
+              key={payslip.id}
+              className={`flex items-center justify-between p-2.5 px-4 rounded-xl transition-all duration-200 border group/card ${selectedIds.includes(payslip.id)
+                ? 'bg-blue-50/50 border-blue-100 shadow-sm'
+                : 'bg-gray-50/30 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-md'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer">
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.includes(payslip.id)
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'bg-white border-gray-300 group-hover/card:border-blue-400'
+                    }`}>
+                    {selectedIds.includes(payslip.id) && <CheckCircle size={10} className="text-white" />}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={selectedIds.includes(payslip.id)}
+                    onChange={() => toggleSelect(payslip.id)}
+                  />
+                </label>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-bold text-gray-800">{payslip.month}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{payslip.year}</p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={selectedIds.includes(payslip.id)}
-                  onChange={() => toggleSelect(payslip.id)}
-                />
-              </label>
-              <div className="flex items-center gap-2">
-                <p className="text-[13px] font-bold text-gray-800">{payslip.month}</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{payslip.year}</p>
+              </div>
+
+              <div className="flex gap-1.5">
+                <button
+                  className="w-8 h-8 flex items-center justify-center text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                  title="View"
+                >
+                  <Eye size={15} />
+                </button>
+                <button
+                  className="w-8 h-8 flex items-center justify-center text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                  title="Download"
+                >
+                  <Download size={15} />
+                </button>
               </div>
             </div>
-
-            <div className="flex gap-1.5">
-              <button
-                className="w-8 h-8 flex items-center justify-center text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
-                title="View"
-              >
-                <Eye size={15} />
-              </button>
-              <button
-                className="w-8 h-8 flex items-center justify-center text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                title="Download"
-              >
-                <Download size={15} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+          <FileIcon size={24} className="mb-2 opacity-20" />
+          <p className="text-sm">No payslips available</p>
+        </div>
+      )}
 
       <div className="flex justify-end mt-4">
         <button
@@ -1290,28 +1296,31 @@ const PayslipSection = () => {
 // ============================================
 // NOTIFICATIONS
 // ============================================
-const notificationsList = [
-  { icon: <Info size={15} className="text-blue-500" />, title: "Team outing scheduled for April 18", time: "2 hours ago" },
-  { icon: <AlertTriangle size={15} className="text-yellow-500" />, title: "Timesheet submission due by Friday", time: "5 hours ago" },
-  { icon: <Bell size={15} className="text-purple-500" />, title: "New company policy update available", time: "1 day ago" },
-];
+const notificationsList = [];
 
 const Notifications = () => (
   <DashCard accentColor="#FFE66D">
     <CardTitle icon={<Bell size={16} />}>Notifications</CardTitle>
-    <div className="space-y-3">
-      {notificationsList.map((n, i) => (
-        <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-            {n.icon}
+    {notificationsList.length > 0 ? (
+      <div className="space-y-3">
+        {notificationsList.map((n, i) => (
+          <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+              {n.icon}
+            </div>
+            <div>
+              <p className="text-sm text-gray-700">{n.title}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{n.time}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-700">{n.title}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{n.time}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+        <Bell size={24} className="mb-2 opacity-20" />
+        <p className="text-sm">No new notifications</p>
+      </div>
+    )}
   </DashCard>
 );
 
@@ -1319,11 +1328,11 @@ const Notifications = () => (
 // QUICK STATS CARDS
 // ============================================
 const statCards = [
-  { label: 'Leave Balance', value: '12', change: 2.5, up: true, accent: '#FF6B6B', icon: <Icons.Calendar /> },
-  { label: 'Pending Leaves', value: '2', change: 0, up: false, accent: '#FFE66D', icon: <Icons.Clock /> },
-  { label: 'Tasks Pending', value: '5', change: 1, up: false, accent: '#A8E6CF', icon: <Icons.Document /> },
-  { label: 'Attendance Rate', value: '96%', change: 1.2, up: true, accent: '#4ECDC4', icon: <Icons.CheckCircle /> },
-  { label: 'Overtime Hours', value: '8h', change: 2, up: true, accent: '#FFB347', icon: <Icons.Chart /> },
+  { label: 'Leave Balance', value: '0', change: 0, up: true, accent: '#FF6B6B', icon: <Icons.Calendar /> },
+  { label: 'Pending Leaves', value: '0', change: 0, up: false, accent: '#FFE66D', icon: <Icons.Clock /> },
+  { label: 'Tasks Pending', value: '0', change: 0, up: false, accent: '#A8E6CF', icon: <Icons.Document /> },
+  { label: 'Attendance Rate', value: '0%', change: 0, up: true, accent: '#4ECDC4', icon: <Icons.CheckCircle /> },
+  { label: 'Overtime Hours', value: '0h', change: 0, up: true, accent: '#FFB347', icon: <Icons.Chart /> },
 ];
 
 const QuickStats = () => (
