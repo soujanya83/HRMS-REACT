@@ -48,6 +48,18 @@ import {
 import axiosClient from "../../axiosClient";
 import SendInviteModal from "../../components/SendInviteModal";
 
+// Helper to ensure date string is formatted strictly as YYYY-MM-DD
+const formatDateToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 // ============================================
 // COLOR PALETTE ICON (Same as Dashboard)
 // ============================================
@@ -439,17 +451,55 @@ export default function EmployeeList() {
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  // Load saved filters from localStorage
+  const savedFilters = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("employeeListFilters")) || {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const [searchTerm, setSearchTerm] = useState(savedFilters.searchTerm || "");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(savedFilters.searchTerm || "");
+  const [selectedStatus, setSelectedStatus] = useState(savedFilters.selectedStatus || "all");
+  const [selectedDepartment, setSelectedDepartment] = useState(savedFilters.selectedDepartment || "all");
   const [view, setView] = useState("active");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(savedFilters.currentPage || 1);
+  const [perPage, setPerPage] = useState(savedFilters.perPage || 10);
   const [isCustomPerPage, setIsCustomPerPage] = useState(false);
   const [customPerPageInput, setCustomPerPageInput] = useState("");
-  const [sortBy, setSortBy] = useState("");
-  const [joiningDate, setJoiningDate] = useState("");
+  const [sortBy, setSortBy] = useState(savedFilters.sortBy || "");
+  const [joiningFromDate, setJoiningFromDate] = useState(savedFilters.joiningFromDate || "");
+  const [joiningToDate, setJoiningToDate] = useState(savedFilters.joiningToDate || "");
+
+  // Persist filters and pagination state to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const filtersToSave = {
+        searchTerm,
+        selectedStatus,
+        selectedDepartment,
+        sortBy,
+        joiningFromDate,
+        joiningToDate,
+        perPage,
+        currentPage,
+      };
+      localStorage.setItem("employeeListFilters", JSON.stringify(filtersToSave));
+    } catch (e) {
+      console.error("Failed to save filters to localStorage:", e);
+    }
+  }, [
+    searchTerm,
+    selectedStatus,
+    selectedDepartment,
+    sortBy,
+    joiningFromDate,
+    joiningToDate,
+    perPage,
+    currentPage,
+  ]);
 
   // Debounce search input to avoid spamming the API on every keystroke
   useEffect(() => {
@@ -461,6 +511,22 @@ export default function EmployeeList() {
       clearTimeout(handler);
     };
   }, [searchTerm]);
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setSelectedStatus("all");
+    setSelectedDepartment("all");
+    setSortBy("");
+    setJoiningFromDate("");
+    setJoiningToDate("");
+    setCurrentPage(1);
+    try {
+      localStorage.removeItem("employeeListFilters");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleApplyCustomPerPage = () => {
     const parsed = parseInt(customPerPageInput, 10);
@@ -603,7 +669,8 @@ export default function EmployeeList() {
           per_page: perPage,
           limit: perPage,
           sort_by: sortBy || undefined,
-          joining_date: joiningDate || undefined,
+          joining_from_date: formatDateToYYYYMMDD(joiningFromDate),
+          joining_to_date: formatDateToYYYYMMDD(joiningToDate),
         });
         employeesData = response.data?.data?.data || [];
         setPagination(response.data?.data);
@@ -663,7 +730,8 @@ export default function EmployeeList() {
     currentPage,
     perPage,
     sortBy,
-    joiningDate,
+    joiningFromDate,
+    joiningToDate,
   ]);
 
   useEffect(() => {
@@ -1165,16 +1233,10 @@ export default function EmployeeList() {
                 selectedStatus !== "all" ||
                 selectedDepartment !== "all" ||
                 sortBy ||
-                joiningDate) && (
+                joiningFromDate ||
+                joiningToDate) && (
                 <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedStatus("all");
-                    setSelectedDepartment("all");
-                    setSortBy("");
-                    setJoiningDate("");
-                    setCurrentPage(1);
-                  }}
+                  onClick={handleResetFilters}
                   className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
                 >
                   <FaTimes className="h-3 w-3" /> Reset Filters
@@ -1183,7 +1245,7 @@ export default function EmployeeList() {
             </div>
 
             {/* Responsive Filters Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
               {/* Search Box */}
               <div className="relative sm:col-span-2 md:col-span-2 lg:col-span-1">
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3.5 w-3.5 pointer-events-none" />
@@ -1251,30 +1313,57 @@ export default function EmployeeList() {
                   <option value="">Sort By (Default)</option>
                   <option value="name_asc">Name (A - Z)</option>
                   <option value="name_desc">Name (Z - A)</option>
+                  <option value="joining_latest">Joining Date (Latest)</option>
                   <option value="joining_oldest">Joining Date (Oldest)</option>
                 </select>
               </div>
 
-              {/* Joining Date Filter */}
+              {/* Joining Date From */}
               <div className="relative">
                 <input
                   type="date"
-                  value={joiningDate}
+                  value={joiningFromDate}
                   onChange={(e) => {
-                    setJoiningDate(e.target.value);
+                    setJoiningFromDate(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-700 transition-all cursor-pointer"
-                  title="Filter by Joining Date"
+                  className="w-full px-2 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-700 transition-all cursor-pointer"
+                  title="Joining Date From"
                 />
-                {joiningDate && (
+                {joiningFromDate && (
                   <button
                     onClick={() => {
-                      setJoiningDate("");
+                      setJoiningFromDate("");
                       setCurrentPage(1);
                     }}
                     className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-red-500 hover:text-red-700 bg-red-50 p-0.5 rounded"
-                    title="Clear date"
+                    title="Clear From Date"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Joining Date To */}
+              <div className="relative">
+                <input
+                  type="date"
+                  value={joiningToDate}
+                  onChange={(e) => {
+                    setJoiningToDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-2 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-700 transition-all cursor-pointer"
+                  title="Joining Date To"
+                />
+                {joiningToDate && (
+                  <button
+                    onClick={() => {
+                      setJoiningToDate("");
+                      setCurrentPage(1);
+                    }}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-red-500 hover:text-red-700 bg-red-50 p-0.5 rounded"
+                    title="Clear To Date"
                   >
                     ✕
                   </button>
