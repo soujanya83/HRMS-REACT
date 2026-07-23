@@ -440,10 +440,39 @@ export default function EmployeeList() {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [view, setView] = useState("active");
   const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [isCustomPerPage, setIsCustomPerPage] = useState(false);
+  const [customPerPageInput, setCustomPerPageInput] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [joiningDate, setJoiningDate] = useState("");
+
+  // Debounce search input to avoid spamming the API on every keystroke
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  const handleApplyCustomPerPage = () => {
+    const parsed = parseInt(customPerPageInput, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      const validLimit = Math.min(parsed, 500);
+      setPerPage(validLimit);
+      setCurrentPage(1);
+      setIsCustomPerPage(false);
+    } else {
+      toast.error("Please enter a valid per-page limit (greater than 0)");
+    }
+  };
   const [pagination, setPagination] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -502,25 +531,29 @@ export default function EmployeeList() {
       label: "Add Employee",
       icon: <FaPlus className="h-4 w-4" />,
       action: () => navigate("/dashboard/employees/new"),
-      color: "bg-[#4ECDC4] hover:bg-[#3db0a5] text-white border-transparent hover:shadow-md",
+      color:
+        "bg-[#4ECDC4] hover:bg-[#3db0a5] text-white border-transparent hover:shadow-md",
     },
     {
       label: "Send Invite",
       icon: <FaEnvelopeOpenText className="h-4 w-4" />,
       action: () => setIsInviteModalOpen(true),
-      color: "bg-[#FF6B6B] hover:bg-[#f25c5c] text-white border-transparent hover:shadow-md",
+      color:
+        "bg-[#FF6B6B] hover:bg-[#f25c5c] text-white border-transparent hover:shadow-md",
     },
     {
       label: "Import",
       icon: <FaUpload className="h-4 w-4" />,
       action: () => toast.info("Import feature coming soon!"),
-      color: "bg-[#FFE66D] hover:bg-[#ebd14f] text-slate-800 border-transparent hover:shadow-md",
+      color:
+        "bg-[#FFE66D] hover:bg-[#ebd14f] text-slate-800 border-transparent hover:shadow-md",
     },
     {
       label: "Export",
       icon: <FaFileDownload className="h-4 w-4" />,
       action: () => exportEmployeeList(),
-      color: "bg-[#A8E6CF] hover:bg-[#95d4bd] text-slate-800 border-transparent hover:shadow-md",
+      color:
+        "bg-[#A8E6CF] hover:bg-[#95d4bd] text-slate-800 border-transparent hover:shadow-md",
     },
     // {
     //   label: "Reports",
@@ -562,11 +595,15 @@ export default function EmployeeList() {
       if (view === "active") {
         response = await getEmployees({
           organization_id: selectedOrganization.id,
-          search: searchTerm,
+          search: debouncedSearchTerm || undefined,
           status: selectedStatus !== "all" ? selectedStatus : undefined,
           department_id:
             selectedDepartment !== "all" ? selectedDepartment : undefined,
           page: currentPage,
+          per_page: perPage,
+          limit: perPage,
+          sort_by: sortBy || undefined,
+          joining_date: joiningDate || undefined,
         });
         employeesData = response.data?.data?.data || [];
         setPagination(response.data?.data);
@@ -620,15 +657,18 @@ export default function EmployeeList() {
   }, [
     selectedOrganization,
     view,
-    searchTerm,
+    debouncedSearchTerm,
     selectedStatus,
     selectedDepartment,
     currentPage,
+    perPage,
+    sortBy,
+    joiningDate,
   ]);
 
   useEffect(() => {
-    applyFilters(employees, searchTerm, selectedStatus, selectedDepartment);
-  }, [searchTerm, selectedStatus, selectedDepartment, employees, applyFilters]);
+    applyFilters(employees, debouncedSearchTerm, selectedStatus, selectedDepartment);
+  }, [debouncedSearchTerm, selectedStatus, selectedDepartment, employees, applyFilters]);
 
   // Fetch departments
   useEffect(() => {
@@ -1084,27 +1124,35 @@ export default function EmployeeList() {
 
         {/* Main Content Card */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-          {/* Toolbar */}
-          <div className="p-3 border-b border-gray-200 bg-gray-50">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
-              {/* View Toggle */}
-              <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg">
+          {/* Toolbar & Responsive Filters */}
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/80 space-y-3">
+            {/* Top Bar: View Tabs & Reset Filters */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* View Tabs (Active / Trash) */}
+              <div className="inline-flex items-center p-1 bg-gray-200/70 rounded-xl">
                 <button
-                  onClick={() => setView("active")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
+                  onClick={() => {
+                    setView("active");
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     view === "active"
                       ? "bg-white text-blue-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  Active
+                  <FaUser className="h-3 w-3" />
+                  Active Employees
                 </button>
                 <button
-                  onClick={() => setView("trashed")}
-                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1 ${
+                  onClick={() => {
+                    setView("trashed");
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     view === "trashed"
                       ? "bg-white text-red-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   <FaTrash className="h-3 w-3" />
@@ -1112,55 +1160,125 @@ export default function EmployeeList() {
                 </button>
               </div>
 
-              {/* Search and Filters */}
-              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                <div className="relative flex-grow min-w-[200px]">
-                  <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
-                  <input
-                    type="text"
-                    placeholder="Search employees..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                  />
-                </div>
+              {/* Reset Filters button if any filter is active */}
+              {(searchTerm ||
+                selectedStatus !== "all" ||
+                selectedDepartment !== "all" ||
+                sortBy ||
+                joiningDate) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedStatus("all");
+                    setSelectedDepartment("all");
+                    setSortBy("");
+                    setJoiningDate("");
+                    setCurrentPage(1);
+                  }}
+                  className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                >
+                  <FaTimes className="h-3 w-3" /> Reset Filters
+                </button>
+              )}
+            </div>
 
-                <div className="flex gap-2">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => {
-                      setSelectedStatus(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[120px]"
-                  >
-                    <option value="all">All Status</option>
-                    {statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+            {/* Responsive Filters Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              {/* Search Box */}
+              <div className="relative sm:col-span-2 md:col-span-2 lg:col-span-1">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3.5 w-3.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, code..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all placeholder:text-gray-400"
+                />
+              </div>
 
-                  <select
-                    value={selectedDepartment}
-                    onChange={(e) => {
-                      setSelectedDepartment(e.target.value);
+              {/* Status Select */}
+              <div>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white font-medium text-gray-700 transition-all cursor-pointer"
+                >
+                  <option value="all">All Statuses</option>
+                  {statuses.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Room/Department Select */}
+              <div>
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => {
+                    setSelectedDepartment(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white font-medium text-gray-700 transition-all cursor-pointer"
+                >
+                  <option value="all">All Rooms</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort By Select */}
+              <div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white font-medium text-gray-700 transition-all cursor-pointer"
+                  title="Sort Employees"
+                >
+                  <option value="">Sort By (Default)</option>
+                  <option value="name_asc">Name (A - Z)</option>
+                  <option value="name_desc">Name (Z - A)</option>
+                  <option value="joining_oldest">Joining Date (Oldest)</option>
+                </select>
+              </div>
+
+              {/* Joining Date Filter */}
+              <div className="relative">
+                <input
+                  type="date"
+                  value={joiningDate}
+                  onChange={(e) => {
+                    setJoiningDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-700 transition-all cursor-pointer"
+                  title="Filter by Joining Date"
+                />
+                {joiningDate && (
+                  <button
+                    onClick={() => {
+                      setJoiningDate("");
                       setCurrentPage(1);
                     }}
-                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[140px]"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-red-500 hover:text-red-700 bg-red-50 p-0.5 rounded"
+                    title="Clear date"
                   >
-                    <option value="all">All Rooms</option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1401,12 +1519,6 @@ export default function EmployeeList() {
                     <FaRedoAlt className="h-3 w-3" />
                     Refresh
                   </button>
-                  <div className="text-xs text-gray-500">
-                    {new Date().toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1414,78 +1526,145 @@ export default function EmployeeList() {
         </div>
 
         {/* Pagination */}
-        {pagination && pagination.last_page > 1 && (
+        {pagination && pagination.total > 0 && (
           <div className="mt-4 flex flex-col md:flex-row justify-between items-center bg-white p-3 shadow-sm rounded-xl border border-gray-200 gap-4">
-            <div className="text-xs text-gray-600">
-              Showing <span className="font-semibold">{pagination.from}</span>{" "}
-              to <span className="font-semibold">{pagination.to}</span> of{" "}
-              <span className="font-semibold">{pagination.total}</span> entries
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                  currentPage === 1
-                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
-                }`}
-              >
-                Prev
-              </button>
-              <div className="flex items-center gap-1">
-                {[...Array(pagination.last_page)].map((_, i) => {
-                  const pageNum = i + 1;
-                  if (
-                    pageNum === 1 ||
-                    pageNum === pagination.last_page ||
-                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
-                          currentPage === pageNum
-                            ? "bg-blue-600 text-white shadow-sm scale-105"
-                            : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  } else if (
-                    pageNum === currentPage - 2 ||
-                    pageNum === currentPage + 2
-                  ) {
-                    return (
-                      <span
-                        key={pageNum}
-                        className="px-1 text-gray-400 text-xs"
-                      >
-                        ...
-                      </span>
-                    );
-                  }
-                  return null;
-                })}
+            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600">
+              <div>
+                Showing{" "}
+                <span className="font-semibold">{pagination.from || 0}</span> to{" "}
+                <span className="font-semibold">{pagination.to || 0}</span> of{" "}
+                <span className="font-semibold">{pagination.total}</span>{" "}
+                entries
               </div>
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) =>
-                    Math.min(prev + 1, pagination.last_page),
-                  )
-                }
-                disabled={currentPage === pagination.last_page}
-                className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                  currentPage === pagination.last_page
-                    ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
-                }`}
-              >
-                Next
-              </button>
+              <div className="flex items-center gap-1.5 border-l border-gray-200 pl-4">
+                <span className="text-gray-500 font-medium">Per page:</span>
+                {isCustomPerPage ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="500"
+                      value={customPerPageInput}
+                      onChange={(e) => setCustomPerPageInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleApplyCustomPerPage();
+                      }}
+                      placeholder="e.g. 25"
+                      className="w-16 px-2 py-1 text-xs border border-blue-400 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleApplyCustomPerPage}
+                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => setIsCustomPerPage(false)}
+                      className="px-1.5 py-1 text-xs text-gray-500 hover:text-gray-700 bg-gray-100 rounded-lg"
+                      title="Cancel custom limit"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={
+                      [10, 20, 50, 100].includes(perPage) ? perPage : "custom"
+                    }
+                    onChange={(e) => {
+                      if (e.target.value === "custom") {
+                        setCustomPerPageInput(perPage.toString());
+                        setIsCustomPerPage(true);
+                      } else {
+                        setPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }
+                    }}
+                    className="px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value="custom">
+                      {[10, 20, 50, 100].includes(perPage)
+                        ? "Custom..."
+                        : `Custom (${perPage})`}
+                    </option>
+                  </select>
+                )}
+              </div>
             </div>
+            {pagination.last_page > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
+                    currentPage === 1
+                      ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                      : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  }`}
+                >
+                  Prev
+                </button>
+                <div className="flex items-center gap-1">
+                  {[...Array(pagination.last_page)].map((_, i) => {
+                    const pageNum = i + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === pagination.last_page ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                            currentPage === pageNum
+                              ? "bg-blue-600 text-white shadow-sm scale-105"
+                              : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-transparent"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    } else if (
+                      pageNum === currentPage - 2 ||
+                      pageNum === currentPage + 2
+                    ) {
+                      return (
+                        <span
+                          key={pageNum}
+                          className="px-1 text-gray-400 text-xs"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(prev + 1, pagination.last_page),
+                    )
+                  }
+                  disabled={currentPage === pagination.last_page}
+                  className={`px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${
+                    currentPage === pagination.last_page
+                      ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200"
+                      : "bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 border-gray-300"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
 
