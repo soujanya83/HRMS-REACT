@@ -287,13 +287,19 @@ const EmployeeRow = ({
 
   const periodRosterIds = getEmployeeRosterIdsForPeriod();
   const hasRosters = periodRosterIds.length > 0;
-  const isAllSelected = hasRosters && periodRosterIds.every((id) => selectedRosterIds.includes(id));
-  const isSomeSelected = hasRosters && !isAllSelected && periodRosterIds.some((id) => selectedRosterIds.includes(id));
+  const isAllSelected =
+    hasRosters && periodRosterIds.every((id) => selectedRosterIds.includes(id));
+  const isSomeSelected =
+    hasRosters &&
+    !isAllSelected &&
+    periodRosterIds.some((id) => selectedRosterIds.includes(id));
 
   const handleToggleEmployeeRosters = (e) => {
     e.stopPropagation();
     if (isAllSelected) {
-      setSelectedRosterIds((prev) => prev.filter((id) => !periodRosterIds.includes(id)));
+      setSelectedRosterIds((prev) =>
+        prev.filter((id) => !periodRosterIds.includes(id)),
+      );
     } else {
       setSelectedRosterIds((prev) => {
         const unique = new Set([...prev, ...periodRosterIds]);
@@ -1670,7 +1676,7 @@ const RostersPage = () => {
 
   const handleDepartmentChange = async (e) => {
     const value = e.target.value;
-    
+
     // First, update the state so UI reflects the selection
     setFormData((prev) => ({ ...prev, department_id: value }));
 
@@ -1683,7 +1689,9 @@ const RostersPage = () => {
           department_id: value.toString(),
         });
         if (response.data?.success) {
-          toast.success(response.data?.message || "Department assigned successfully");
+          toast.success(
+            response.data?.message || "Department assigned successfully",
+          );
           // Refresh list of employees / rosters since department change may affect grouping/filters
           fetchData();
         } else {
@@ -1691,7 +1699,10 @@ const RostersPage = () => {
         }
       } catch (error) {
         console.error("Error assigning department to employee:", error);
-        toast.error(error.response?.data?.message || "Error assigning department to employee");
+        toast.error(
+          error.response?.data?.message ||
+            "Error assigning department to employee",
+        );
       }
     }
   };
@@ -2183,7 +2194,9 @@ const RostersPage = () => {
                           className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                           required
                         >
-                          <option value="">-- Choose Room / Department --</option>
+                          <option value="">
+                            -- Choose Room / Department --
+                          </option>
                           {departments.map((dept) => (
                             <option key={dept.id} value={dept.id}>
                               {dept.name}{" "}
@@ -2789,7 +2802,9 @@ const RostersPage = () => {
                       className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer focus:outline-none"
                       defaultValue=""
                     >
-                      <option value="" disabled>Select Period...</option>
+                      <option value="" disabled>
+                        Select Period...
+                      </option>
                       {view === "week" ? (
                         <option value="week">Current Week</option>
                       ) : (
@@ -2970,7 +2985,7 @@ const RostersPage = () => {
                                     [deptName]: !prev[deptName],
                                   }))
                                 }
-                                className="font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center justify-center gap-2.5 border-b border-black/10 sticky left-0 shadow-sm w-full cursor-pointer hover:opacity-95 select-none transition-all duration-200"
+                                className="font-extrabold text-[11px] uppercase tracking-wider px-4 py-2.5 flex items-center justify-center gap-2.5 border-b border-black/10 sticky left-0 shadow-sm w-full cursor-pointer hover:opacity-95 select-none transition-all duration-200 rounded-md"
                                 style={{
                                   backgroundColor: colorCode,
                                   color: textColor,
